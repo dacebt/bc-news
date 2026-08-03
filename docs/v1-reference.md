@@ -8,7 +8,7 @@ tags: [documentation, reference, v1, predecessor]
 status: stable
 generated:
   by: ebt-skills/okf-v0.2
-  at: "2026-08-02T22:26:59Z"
+  at: "2026-08-03T01:16:00Z"
 authority: descriptive
 ---
 
@@ -74,7 +74,11 @@ Objects anywhere in v1.
   `apps/generator/src/edition-document.ts` before designing v2's boundary.
   One public route existed: `GET /api/edition?region_id=&date=`, with a
   deliberate 500 `edition_unreadable` distinct from 404.
-- **Client identity** — ~250 transportable lines: the paper palette
+- **Client identity** — the UI/UX parity baseline is the **deployed
+  `bc-newspaper`** repo (release tags v0.1.0–v0.1.4, the Pages-deployed
+  product). The monorepo copy is newer in code (alert components, date
+  bounds, tests) but those additions may never have shipped — treat it as
+  code reference, not UX baseline. ~250 transportable lines: the paper palette
   (`apps/newspaper/src/theme/index.ts:18-24`), `PaperSurface.tsx`,
   `styles/paperTexture.ts`, and the masthead/drop-cap/two-column CSS inside
   `pages/EditionPage.tsx`. The "Frozen UI Architecture Rules" section of

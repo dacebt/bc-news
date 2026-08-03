@@ -8,7 +8,7 @@ tags: [product, requirements, bitcraft, cloudflare, llm]
 status: stable
 generated:
   by: ebt-skills/okf-v0.2
-  at: "2026-08-02T20:42:29Z"
+  at: "2026-08-03T01:16:00Z"
 authority: binding
 ---
 
@@ -85,7 +85,7 @@ The exact editorial roles, their degree of autonomy, and their model assignments
 
 ### Reader experience
 
-- Preserve the useful newspaper reading experience from the prototype.
+- The v2 client reproduces the prototype's deployed reading experience at full UI/UX parity; deviations are permitted only where the new edition contract forces them.
 - Client contracts may change when the new generator establishes a better edition representation.
 - Edition history, navigation, and unavailable-state behavior are design decisions for build planning.
 
@@ -137,7 +137,7 @@ The exact editorial roles, their degree of autonomy, and their model assignments
 
 - The editorial capability roster and whether any capability needs bounded agent autonomy.
 - The first production model configuration and fallback policy.
-- The canonical edition contract and how much client parity to carry forward.
+- The canonical edition contract. (Client parity is settled: full UI/UX parity minus contract-forced changes.)
 - The authoritative source for active regions and edition scheduling policy.
 - Missing-data, late-data, regeneration, and manual-control behavior.
 - Persistence, storage, and artifact-retention choices.
