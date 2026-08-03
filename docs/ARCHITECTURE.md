@@ -8,7 +8,7 @@ tags: [documentation, architecture, ports, typescript]
 status: stable
 generated:
   by: ebt-skills/okf-v0.2
-  at: "2026-08-03T01:10:13Z"
+  at: "2026-08-03T01:35:00Z"
 authority: binding
 ---
 
@@ -62,12 +62,14 @@ that forces it.
 - One fact, one home: no value (region lists, date arithmetic, prompt
   text) duplicated across packages the way v1 duplicated them.
 
-## Deliberately open structure
+## Layout and remaining structure
 
-Open per the PRD, to be settled by amendment here or in a new binding doc:
-package layout and workspace shape, the local runner, persistence and
-artifact-retention choices, the capability roster (how many provider-port
-instances), and the evidence contract's concrete schema.
+Package layout follows v1's monorepo shape — pnpm workspaces with apps and
+shared contract packages — modernized to this build. v1's observed behavior
+is the default for product questions (see the [domain model](DOMAIN.md));
+what remains genuinely structural and gets settled by amendment here: the
+local runner, persistence and artifact-retention choices, and the concrete
+schema at the evidence input port.
 
 ## Links
 

@@ -135,6 +135,10 @@ The exact editorial roles, their degree of autonomy, and their model assignments
 
 ## Decisions intentionally left for kickoff
 
+For every product-behavior item below, the prototype's observed behavior is
+the default answer; kickoff decides structure and deliberate deviations, not
+product from scratch.
+
 - The editorial capability roster and whether any capability needs bounded agent autonomy.
 - The first production model configuration and fallback policy.
 - The canonical edition contract. (Client parity is settled: full UI/UX parity minus contract-forced changes.)

@@ -8,7 +8,7 @@ tags: [documentation, domain, vocabulary, editions]
 status: stable
 generated:
   by: ebt-skills/okf-v0.2
-  at: "2026-08-02T22:26:59Z"
+  at: "2026-08-03T01:35:00Z"
 authority: binding
 ---
 
@@ -64,20 +64,24 @@ verbatim in code, schema, tests, and APIs — no synonyms.
 These four rules restate the invariant floor in the repo router; the full
 required behavior lives in the [product requirements](PRD.md).
 
-## Deliberately open domain questions
+## Defaults
 
-These are design decisions for planning, listed here so no implementation
-resolves them silently. Settling one amends this document in the same unit of
-work:
+**v1's observed behavior is the default answer to every product-behavior
+question.** v2 changes structure, not product. The reference for what v1
+did is the [v1 reference map](v1-reference.md); deviations happen only
+where the new structure forces them or a recorded decision changes them,
+and each deviation amends this document in the same unit of work.
 
-- The editorial capability roster and autonomy bounds.
-- The canonical edition contract (structure of a published edition).
-- The authoritative active-region source and the edition scheduling policy.
-- The relationship between a publication date and the window of chat evidence
-  it covers. The predecessor used a fixed one-expression contract
-  (edition date minus one day — see the [v1 reference map](v1-reference.md));
-  v2 has not adopted it.
-- Missing-data, late-data, regeneration, and manual-control behavior.
+Inherited defaults until deliberately changed:
+
+- The editorial roster starts as v1's three stages (announcements and
+  achievements; main story; packaging).
+- The edition contract starts from v1's published edition shape.
+- The active regions are v1's nine, with the list's authoritative home a
+  structural choice, not a product one.
+- A publication date covers the prior day's chat (edition date minus one
+  day).
+- Missing-data and availability behavior follow what v1 observably did.
 
 ## Links
 
