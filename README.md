@@ -14,6 +14,8 @@ Where authority lives:
 - [docs/index.md](docs/index.md) — the documentation bundle root.
 - [docs/PRD.md](docs/PRD.md) — binding product requirements.
 - [docs/DOMAIN.md](docs/DOMAIN.md) — binding domain vocabulary.
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — binding structural discipline.
+- [docs/TESTING.md](docs/TESTING.md) — binding evidence discipline.
 
 The frozen v1 (`bc-news-worker` and siblings, in the parent directory) is
 reference material only — see the [v1 reference map](docs/v1-reference.md).

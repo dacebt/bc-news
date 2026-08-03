@@ -8,7 +8,7 @@ tags: [documentation, reference, v1, predecessor]
 status: stable
 generated:
   by: ebt-skills/okf-v0.2
-  at: "2026-08-03T01:16:00Z"
+  at: "2026-08-03T12:52:42Z"
 authority: descriptive
 ---
 
@@ -58,8 +58,8 @@ Objects anywhere in v1.
   no-silent-default config (`config.ts`). Ingest had no backoff — the
   every-minute cron was the retry.
 - **Date contract** — one expression: messages date = edition date minus one
-  day, at `bc-news-worker/apps/generator/src/utils.ts:88`. v2's equivalent is
-  an open decision in the [domain model](DOMAIN.md).
+  day, at `bc-news-worker/apps/generator/src/utils.ts:88`. v2 inherits this
+  as a default per the [domain model](DOMAIN.md)'s Defaults section.
 - **Prompts** — production template literals in
   `apps/generator/src/llm/prompts.ts`; eval YAML and judge rubrics in
   `apps/eval/prompts/` and `apps/eval/src/eval-judge/rubrics.ts`. Trap: the
@@ -93,8 +93,10 @@ Objects anywhere in v1.
 
 The pipeline was seven steps (count messages → prep → three LLM stages →
 validate → publish) advanced one step per cron tick to dodge Worker limits:
-7 steps × 9 regions = 63 ticks needed per day against 48 declared cron ticks
-— the budget was never reconciled. The generator's `scheduled()` swallowed
+7 steps × 9 regions = 63 ticks needed per day against 72 declared cron ticks
+(three `*/5` schedules over 2-hour windows; the wrangler comments themselves
+miscount them). The budget was never actually reconciled — 9 ticks of slack
+with zero allowance for retries. The generator's `scheduled()` swallowed
 all errors; the admin generate route ran the whole pipeline in one HTTP
 request; publish was a non-atomic D1 batch; admin routes were
 unauthenticated. This is precisely what the PRD's

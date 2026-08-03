@@ -8,7 +8,7 @@ tags: [product, requirements, bitcraft, cloudflare, llm]
 status: stable
 generated:
   by: ebt-skills/okf-v0.2
-  at: "2026-08-03T01:16:00Z"
+  at: "2026-08-03T12:52:42Z"
 authority: binding
 ---
 
@@ -35,7 +35,7 @@ The prototype proved that regional chat can become a useful newspaper, but its g
 ## Product goals
 
 1. Publish one edition for every active region on the intended daily cadence.
-2. Support approximately 10 active regions today and up to 24 as BitCraft expands. The authoritative live-region list will be verified during the rebuild.
+2. Support all active regions — nine today per the verified v1 list — and up to 24 as BitCraft expands.
 3. Preserve the proven ingest behavior while allowing contract and efficiency improvements required by the new generator.
 4. Rebuild generation around one durable, inspectable Workflow definition that is invoked separately for each active region and publication date, so no server process must remain alive across the entire newspaper build.
 5. Allow the model used by each editorial capability to be changed without redesigning the whole generation process.
@@ -126,7 +126,7 @@ The exact editorial roles, their degree of autonomy, and their model assignments
 ## Success signals
 
 - A fixed local conversation can produce and render a complete edition end to end without production data.
-- Ten regional editions, and later 24, can each run through the same Workflow definition as separate instances without requiring one long-lived server invocation.
+- Every active region's edition — nine today, later up to 24 — runs through the same Workflow definition as a separate instance without requiring one long-lived server invocation.
 - An interrupted generation resumes from durable completed work.
 - Replaying the same evaluation inputs makes prompt and model changes meaningfully comparable.
 - Models can be changed per editorial capability without rewriting the workflow.
@@ -148,7 +148,7 @@ product from scratch.
 - Model-provider access, integration, fallback, and concurrency behavior.
 - Operational observability and telemetry detail.
 - Client history, navigation, and unavailable-state behavior.
-- The exact repository language, package layout, local runner, and deployment topology.
+- The local runner and deployment topology. (Language and package layout are settled: TypeScript throughout, v1's monorepo shape.)
 - The evaluation result format and whether a local tool is useful beyond a repository-owned harness.
 
 ## Provenance and navigation

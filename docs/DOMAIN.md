@@ -8,7 +8,7 @@ tags: [documentation, domain, vocabulary, editions]
 status: stable
 generated:
   by: ebt-skills/okf-v0.2
-  at: "2026-08-03T01:35:00Z"
+  at: "2026-08-03T12:52:42Z"
 authority: binding
 ---
 
@@ -26,10 +26,10 @@ verbatim in code, schema, tests, and APIs — no synonyms.
   material for a newspaper. Chat reaches us through **BitJita**, the
   third-party community API for BitCraft data.
 - **active region** — a region currently designated to receive a daily
-  newspaper. Approximately 10 exist today; up to 24 as BitCraft expands. The
-  authoritative source of the active-region list is an open decision (see
-  below); it is not this document and not a hardcoded copy of the
-  predecessor's list.
+  newspaper. Nine are active today (v1's verified list); up to 24 as
+  BitCraft expands. The list's starting content is inherited (see Defaults);
+  its authoritative *home* is an open structural decision — not this
+  document, and not two hand-synced hardcoded copies as in v1.
 - **publication date** — the calendar date an edition is published under.
   Together with an active region it identifies exactly one intended edition.
 - **edition** — the newspaper product: one complete, publishable daily paper
