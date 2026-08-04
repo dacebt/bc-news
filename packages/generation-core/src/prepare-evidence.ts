@@ -1,4 +1,5 @@
 import { EvidenceMessageSchema, type EvidenceMessage } from "@bc-news/contracts";
+import { evidenceWindowForPublicationDate } from "./evidence-date";
 import {
 	PreparedEvidenceSchema,
 	type PreparedEvidence,
@@ -8,6 +9,42 @@ import {
 const MAX_MESSAGES = 300;
 const PER_BUCKET_CAP = Math.ceil(MAX_MESSAGES / 24);
 const BURST_WINDOW_MS = 30 * 1000;
+
+type EvidenceContractErrorCode = "evidence_out_of_window" | "duplicate_evidence_id";
+
+export abstract class EvidenceContractError extends Error {
+	abstract readonly code: EvidenceContractErrorCode;
+}
+
+export class EvidenceOutOfWindowError extends EvidenceContractError {
+	readonly code = "evidence_out_of_window";
+	readonly id: string;
+	readonly ts: number;
+	readonly windowStart: number;
+	readonly windowEnd: number;
+
+	constructor(id: string, ts: number, windowStart: number, windowEnd: number) {
+		super(
+			`Evidence message "${id}" at ts ${ts} falls outside the evidence window [${windowStart}, ${windowEnd})`,
+		);
+		this.name = "EvidenceOutOfWindowError";
+		this.id = id;
+		this.ts = ts;
+		this.windowStart = windowStart;
+		this.windowEnd = windowEnd;
+	}
+}
+
+export class DuplicateEvidenceIdError extends EvidenceContractError {
+	readonly code = "duplicate_evidence_id";
+	readonly id: string;
+
+	constructor(id: string) {
+		super(`Evidence message id "${id}" appears more than once in the evidence input`);
+		this.name = "DuplicateEvidenceIdError";
+		this.id = id;
+	}
+}
 
 type ScoredMessage = PreparedMessage & { score: number };
 
@@ -63,6 +100,26 @@ export function prepareEvidence(input: {
 }): PreparedEvidence {
 	const { activeRegionId, publicationDate } = input;
 	const parsedMessages = EvidenceMessageSchema.array().parse(input.messages);
+
+	/*
+	 * Window and duplicate-id checks run here, on the parsed set, ahead of
+	 * normalize/filter/burst-merge/sampling. Any later placement lets a lossy
+	 * stage mask the violation it exists to catch: burst-merge would silently
+	 * fold a duplicate id into its neighbor, and the empty-after-trim filter
+	 * would silently drop a whitespace-only out-of-window message.
+	 */
+	const { startMs: windowStart, endMs: windowEnd } = evidenceWindowForPublicationDate(publicationDate);
+	const seenIds = new Set<string>();
+	for (const message of parsedMessages) {
+		if (message.ts < windowStart || message.ts >= windowEnd) {
+			throw new EvidenceOutOfWindowError(message.id, message.ts, windowStart, windowEnd);
+		}
+		if (seenIds.has(message.id)) {
+			throw new DuplicateEvidenceIdError(message.id);
+		}
+		seenIds.add(message.id);
+	}
+
 	const dropStats = {
 		empty_after_trim: 0,
 		too_short: 0,

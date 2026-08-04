@@ -1,6 +1,7 @@
 export {
 	DateDerivationError,
 	evidenceDateForPublicationDate,
+	evidenceWindowForPublicationDate,
 } from "./evidence-date";
 export {
 	PreparedEvidenceSchema,
@@ -8,7 +9,12 @@ export {
 	type PreparedEvidence,
 	type PreparedMessage,
 } from "./prepared-evidence";
-export { prepareEvidence } from "./prepare-evidence";
+export {
+	DuplicateEvidenceIdError,
+	EvidenceContractError,
+	EvidenceOutOfWindowError,
+	prepareEvidence,
+} from "./prepare-evidence";
 export {
 	EditorialOutputContractError,
 	MainStoryOutputSchema,

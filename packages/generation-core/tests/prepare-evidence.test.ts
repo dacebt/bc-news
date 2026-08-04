@@ -1,6 +1,26 @@
 import { expect, test } from "vitest";
 import type { EvidenceMessage } from "@bc-news/contracts";
-import { prepareEvidence } from "../src/prepare-evidence";
+import {
+	DuplicateEvidenceIdError,
+	EvidenceOutOfWindowError,
+	prepareEvidence,
+} from "../src/prepare-evidence";
+
+const WINDOW_START = Date.UTC(2026, 0, 24, 0, 0, 0, 0);
+const WINDOW_END = Date.UTC(2026, 0, 25, 0, 0, 0, 0);
+
+function singleMessage(overrides: Partial<EvidenceMessage>): EvidenceMessage[] {
+	return [
+		{
+			id: "m1",
+			ts: WINDOW_START,
+			author_id: "en/Author",
+			author_name: "Author",
+			text: "a message inside the evidence window",
+			...overrides,
+		},
+	];
+}
 
 const HOUR_START = Date.UTC(2026, 0, 24, 14, 0, 0, 0);
 
@@ -74,4 +94,155 @@ test("same evidence yields identical prepared evidence", () => {
 	expect(second).toEqual(first);
 	expect(first.drop_stats.burst_merged).toBe(1);
 	expect(first.drop_stats.sampling_dropped).toBe(2);
+});
+
+test("rejects a message timestamped before the evidence window", () => {
+	const before = WINDOW_START - 1;
+
+	try {
+		prepareEvidence({
+			activeRegionId: "7",
+			publicationDate: "2026-01-25",
+			messages: singleMessage({ id: "early", ts: before }),
+		});
+		expect.unreachable("prepareEvidence should have thrown");
+	} catch (error) {
+		if (!(error instanceof EvidenceOutOfWindowError)) throw error;
+		expect(error.code).toBe("evidence_out_of_window");
+		expect(error.id).toBe("early");
+		expect(error.ts).toBe(before);
+		expect(error.windowStart).toBe(WINDOW_START);
+		expect(error.windowEnd).toBe(WINDOW_END);
+	}
+});
+
+test("rejects a message timestamped at or after the next day", () => {
+	const midNextDay = Date.UTC(2026, 0, 25, 12, 0, 0, 0);
+
+	try {
+		prepareEvidence({
+			activeRegionId: "7",
+			publicationDate: "2026-01-25",
+			messages: singleMessage({ id: "late", ts: midNextDay }),
+		});
+		expect.unreachable("prepareEvidence should have thrown");
+	} catch (error) {
+		if (!(error instanceof EvidenceOutOfWindowError)) throw error;
+		expect(error.code).toBe("evidence_out_of_window");
+		expect(error.id).toBe("late");
+		expect(error.ts).toBe(midNextDay);
+		expect(error.windowStart).toBe(WINDOW_START);
+		expect(error.windowEnd).toBe(WINDOW_END);
+	}
+});
+
+test("accepts a message timestamped at the start of the evidence window", () => {
+	const prepared = prepareEvidence({
+		activeRegionId: "7",
+		publicationDate: "2026-01-25",
+		messages: singleMessage({ id: "boundary-start", ts: WINDOW_START }),
+	});
+
+	expect(prepared.final_count).toBe(1);
+});
+
+test("accepts a message timestamped at the last instant of the evidence window", () => {
+	const prepared = prepareEvidence({
+		activeRegionId: "7",
+		publicationDate: "2026-01-25",
+		messages: singleMessage({ id: "boundary-end-inclusive", ts: WINDOW_END - 1 }),
+	});
+
+	expect(prepared.final_count).toBe(1);
+});
+
+test("rejects a message timestamped at the end of the evidence window", () => {
+	expect(() =>
+		prepareEvidence({
+			activeRegionId: "7",
+			publicationDate: "2026-01-25",
+			messages: singleMessage({ id: "boundary-end", ts: WINDOW_END }),
+		}),
+	).toThrow(EvidenceOutOfWindowError);
+});
+
+test("rejects two messages sharing the same id", () => {
+	const messages: EvidenceMessage[] = [
+		{
+			id: "dupe",
+			ts: WINDOW_START,
+			author_id: "en/First",
+			author_name: "First",
+			text: "the first message with this id",
+		},
+		{
+			id: "dupe",
+			ts: WINDOW_START + 60_000,
+			author_id: "en/Second",
+			author_name: "Second",
+			text: "the second message reusing that id",
+		},
+	];
+
+	try {
+		prepareEvidence({
+			activeRegionId: "7",
+			publicationDate: "2026-01-25",
+			messages,
+		});
+		expect.unreachable("prepareEvidence should have thrown");
+	} catch (error) {
+		if (!(error instanceof DuplicateEvidenceIdError)) throw error;
+		expect(error.code).toBe("duplicate_evidence_id");
+		expect(error.id).toBe("dupe");
+	}
+});
+
+test("rejects duplicate ids even when burst-merge would otherwise combine them", () => {
+	const messages: EvidenceMessage[] = [
+		{
+			id: "dupe-burst",
+			ts: WINDOW_START,
+			author_id: "en/Same",
+			author_name: "Same",
+			text: "first half of a burst",
+		},
+		{
+			id: "dupe-burst",
+			ts: WINDOW_START + 20_000,
+			author_id: "en/Same",
+			author_name: "Same",
+			text: "second half of a burst reusing the id",
+		},
+	];
+
+	try {
+		prepareEvidence({
+			activeRegionId: "7",
+			publicationDate: "2026-01-25",
+			messages,
+		});
+		expect.unreachable("prepareEvidence should have thrown");
+	} catch (error) {
+		if (!(error instanceof DuplicateEvidenceIdError)) throw error;
+		expect(error.code).toBe("duplicate_evidence_id");
+		expect(error.id).toBe("dupe-burst");
+	}
+});
+
+test("rejects an out-of-window message even when its text is whitespace-only", () => {
+	const before = WINDOW_START - 1;
+
+	try {
+		prepareEvidence({
+			activeRegionId: "7",
+			publicationDate: "2026-01-25",
+			messages: singleMessage({ id: "whitespace-early", ts: before, text: "   " }),
+		});
+		expect.unreachable("prepareEvidence should have thrown");
+	} catch (error) {
+		if (!(error instanceof EvidenceOutOfWindowError)) throw error;
+		expect(error.code).toBe("evidence_out_of_window");
+		expect(error.id).toBe("whitespace-early");
+	}
 });

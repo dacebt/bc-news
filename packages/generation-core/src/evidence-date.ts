@@ -27,7 +27,7 @@ export function parseDateParts(dateStr: string): { year: number; month: number; 
 	};
 }
 
-function shiftDateString(dateStr: string, dayOffset: number): string {
+function shiftDate(dateStr: string, dayOffset: number): { dateString: string; shiftedTs: number } {
 	const { year, month, day } = parseDateParts(dateStr);
 	const shiftedTs = Date.UTC(year, month - 1, day + dayOffset, 0, 0, 0, 0);
 	const shiftedDate = new Date(shiftedTs);
@@ -43,7 +43,7 @@ function shiftDateString(dateStr: string, dayOffset: number): string {
 			`Derived date "${shifted}" from "${dateStr}" is outside the representable calendar range`,
 		);
 	}
-	return result.data;
+	return { dateString: result.data, shiftedTs };
 }
 
 /**
@@ -53,5 +53,18 @@ function shiftDateString(dateStr: string, dayOffset: number): string {
  * so no two paths can drift apart by reimplementing the arithmetic separately.
  */
 export function evidenceDateForPublicationDate(publicationDate: string): string {
-	return shiftDateString(publicationDate, -1);
+	return shiftDate(publicationDate, -1).dateString;
+}
+
+/**
+ * Millisecond window backing the same day-before contract, expressed in the
+ * epoch-ms terms evidence timestamps arrive in. Reuses the shiftedTs already
+ * computed while deriving the evidence date string so the window can never
+ * drift from evidenceDateForPublicationDate by reparsing dates independently.
+ */
+export function evidenceWindowForPublicationDate(
+	publicationDate: string,
+): { startMs: number; endMs: number } {
+	const { shiftedTs } = shiftDate(publicationDate, -1);
+	return { startMs: shiftedTs, endMs: shiftedTs + 24 * 60 * 60 * 1000 };
 }

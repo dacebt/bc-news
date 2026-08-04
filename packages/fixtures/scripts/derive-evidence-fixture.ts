@@ -3,11 +3,12 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
 import { EvidenceFixtureSchema, type EvidenceMessage } from "@bc-news/contracts";
+import { evidenceDateForPublicationDate, evidenceWindowForPublicationDate } from "@bc-news/generation-core";
 
 const ACTIVE_REGION_ID = "7";
-const EVIDENCE_DATE = "2026-01-24";
-const WINDOW_START_TS = Date.UTC(2026, 0, 24);
-const WINDOW_END_TS = Date.UTC(2026, 0, 25);
+const PUBLICATION_DATE = "2026-01-25";
+const EVIDENCE_DATE = evidenceDateForPublicationDate(PUBLICATION_DATE);
+const { startMs: WINDOW_START_TS, endMs: WINDOW_END_TS } = evidenceWindowForPublicationDate(PUBLICATION_DATE);
 const MAX_OUTPUT_BYTES = 250 * 1024;
 
 const SourceMessageSchema = z.looseObject({
