@@ -17,7 +17,7 @@ authority: binding
 If implementation and this document disagree, the implementation is wrong
 unless this document is deliberately amended in the same unit of work. It
 binds the structural posture; the *why* is recorded in the project decision
-vault (ADR-001, ADR-002).
+vault (ADR-001, ADR-002, ADR-005, ADR-006).
 
 ## Language
 
@@ -79,8 +79,32 @@ day), end-exclusive. Adapters parse every row against the shared schema and
 reject before returning; ordering is unspecified at the port, and the pure
 core sorts deterministically.
 
+Settled — persistence for the completed edition: one D1 database with a
+single `edition` table, primary key `(active_region_id, publication_date)`.
+Publish is one atomic `INSERT ... ON CONFLICT DO NOTHING` — the first
+published edition wins and is immutable under duplicate invocation. Reads
+serve only by the identity pair and validate `document_json` against the
+same required-`meta` edition schema used at publish; a stored row that
+fails that parse is a distinct `edition_unreadable` failure, never
+masqueraded as absence. Workflow step results are the durable inter-step
+handoff (bounded by the platform's step-result cap and asserted, never
+truncated); no separate artifact store exists, and Workflow instance state
+is never the edition's durable home (ADR-005).
+
+Settled — edition identity enforcement, three layers with the SQL layer
+authoritative: (1) the trigger derives a deterministic Workflow instance
+id from the pair, so duplicate delivery targets one instance rather than
+starting a second *generation run* — observed local-emulation behavior of
+a duplicate id is recorded in ADR-006, and this layer is deliberately not
+load-bearing; (2) the D1 pair primary key plus insert-if-absent publish is
+the authoritative guarantee that a second edition row cannot exist; (3)
+clients address editions only by the pair, so exactly one edition is ever
+addressable per identity. v1's lease/fencing/run-version apparatus is
+deliberately not carried: it compensated for competing stateless cron
+ticks, which one Workflow instance per pair eliminates.
+
 What remains genuinely structural and gets settled by amendment here: the
-local runner, and persistence and artifact-retention choices.
+local runner.
 
 ## Links
 

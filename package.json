@@ -7,6 +7,9 @@
 		"lint": "eslint .",
 		"test": "pnpm -r test"
 	},
+	"pnpm": {
+		"onlyBuiltDependencies": ["esbuild", "workerd"]
+	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",
 		"eslint": "^10.8.0",

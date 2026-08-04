@@ -1,0 +1,23 @@
+{
+	"name": "@bc-news/generation",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"typecheck": "tsc --noEmit && tsc --noEmit -p tests",
+		"test": "vitest run",
+		"dev": "wrangler dev"
+	},
+	"dependencies": {
+		"@bc-news/contracts": "workspace:*",
+		"@bc-news/fixtures": "workspace:*",
+		"@bc-news/generation-core": "workspace:*",
+		"zod": "^4.4.3"
+	},
+	"devDependencies": {
+		"@cloudflare/vitest-pool-workers": "^0.20.1",
+		"@types/node": "^26.1.2",
+		"vitest": "^4.1.10",
+		"wrangler": "^4.118.0"
+	}
+}
