@@ -2,6 +2,7 @@ export {
 	PublicationDateSchema,
 	type PublicationDate,
 } from "./publication-date";
+export { ACTIVE_REGION_IDS } from "./active-regions";
 export {
 	TimestampMillisecondsSchema,
 	type TimestampMilliseconds,
