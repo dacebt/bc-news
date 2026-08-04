@@ -25,6 +25,6 @@
 	},
 	"vars": {
 		"EVIDENCE_INPUT": "fixture",
-		"MODEL_CONFIG": "{\"main_story\":{\"adapter\":\"recorded\"}}"
+		"MODEL_CONFIG": "{\"main_story\":{\"adapter\":\"recorded\"},\"announcements\":{\"adapter\":\"recorded\"}}"
 	}
 }

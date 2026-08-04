@@ -15,6 +15,7 @@ function editionWithHeadline(headline: string): Edition {
 			generated_at_utc: "2026-02-14T00:00:00.000Z",
 			editorial_capabilities: {
 				main_story: { provider: "recorded", model: "recorded/main-story-v1" },
+				announcements: { provider: "recorded", model: "recorded/announcements-v1" },
 			},
 			counts: { raw_count: 1, after_filter_count: 1, after_burst_count: 1, final_count: 1 },
 		},

@@ -2,6 +2,7 @@ import { z } from "zod";
 import { MainStorySchema } from "@bc-news/contracts";
 import type { PreparedEvidence } from "./prepared-evidence";
 import type { EditorialCapability } from "./ports";
+import { fenceUntrustedTranscript } from "./untrusted-data-fence";
 
 export const SYSTEM_CONSTRAINTS = `
 [OUTPUT]
@@ -35,30 +36,7 @@ export const SYSTEM_CONSTRAINTS = `
 - Use \\" for quotes within strings;
 - Use \\n for newlines, \\n\\n for paragraph breaks;`;
 
-/**
- * The transcript is newline-delimited, so a line break inside untrusted
- * message content (or an author name) would forge a fully-formed
- * "[timestamp] Name:" record attributed to another player. Flattening line
- * breaks at this boundary keeps one evidence message to exactly one
- * transcript line, so content can never mint a record.
- */
-function asSingleTranscriptLine(value: string): string {
-	return value.replace(/[\r\n\u2028\u2029]+/g, " ");
-}
-
-function formatMessages(preparedEvidence: PreparedEvidence): string {
-	return preparedEvidence.messages
-		.map((msg) => {
-			const timestamp = new Date(msg.ts).toISOString();
-			const author = asSingleTranscriptLine(msg.author_name || `user_${msg.author_id}`);
-			return `[${timestamp}] ${author}: ${asSingleTranscriptLine(msg.text)}`;
-		})
-		.join("\n");
-}
-
 export function buildMainStoryPrompt(preparedEvidence: PreparedEvidence): string {
-	const chatMessages = formatMessages(preparedEvidence);
-
 	return `[YOUR ASSIGNMENT]
 Region: ${preparedEvidence.active_region_id}
 Date: ${preparedEvidence.publication_date}
@@ -107,7 +85,7 @@ Good: The crisis deepened when **KitServal** posted grim numbers: "230 lost ship
 Bad: **player** said "we should coordinate a response" (if those exact words don't appear in chat)
 
 [CHAT MESSAGES]
-${chatMessages}
+${fenceUntrustedTranscript(preparedEvidence)}
 
 [OUTPUT]
 Return valid JSON:

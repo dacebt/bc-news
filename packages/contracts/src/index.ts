@@ -21,6 +21,7 @@ export {
 	type EvidenceMessage,
 } from "./evidence";
 export {
+	ActiveRegionIdSchema,
 	GenerationRunParamsSchema,
 	type GenerationRunParams,
 } from "./generation-run";

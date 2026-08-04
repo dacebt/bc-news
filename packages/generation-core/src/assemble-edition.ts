@@ -1,4 +1,4 @@
-import { EditionSchema, type Edition, type MainStory } from "@bc-news/contracts";
+import { EditionSchema, type Announcement, type Edition, type MainStory } from "@bc-news/contracts";
 import { parseDateParts } from "./evidence-date";
 import type { PreparedEvidence } from "./prepared-evidence";
 
@@ -20,8 +20,10 @@ export function assembleEdition(input: {
 	activeRegionId: string;
 	publicationDate: string;
 	mainStory: MainStory;
+	announcements: Announcement[];
 	preparedEvidence: PreparedEvidence;
 	mainStoryProvenance: { provider: string; model: string };
+	announcementsProvenance: { provider: string; model: string };
 	generatedAtUtc: string;
 }): Edition {
 	return EditionSchema.parse({
@@ -29,12 +31,13 @@ export function assembleEdition(input: {
 		publication_date: input.publicationDate,
 		title: `Region ${input.activeRegionId} Chronicle`,
 		subtitle: mastheadSubtitle(input.publicationDate),
-		announcements: [],
+		announcements: input.announcements,
 		main_story: input.mainStory,
 		meta: {
 			generated_at_utc: input.generatedAtUtc,
 			editorial_capabilities: {
 				main_story: input.mainStoryProvenance,
+				announcements: input.announcementsProvenance,
 			},
 			counts: {
 				raw_count: input.preparedEvidence.raw_count,

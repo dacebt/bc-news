@@ -23,6 +23,12 @@ export {
 	parseMainStoryOutput,
 	type MainStoryOutput,
 } from "./main-story";
+export {
+	AnnouncementsOutputSchema,
+	buildAnnouncementsPrompt,
+	parseAnnouncementsOutput,
+	type AnnouncementsOutput,
+} from "./announcements";
 export { assembleEdition } from "./assemble-edition";
 export type {
 	EditorialCapability,

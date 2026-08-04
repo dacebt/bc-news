@@ -1,7 +1,6 @@
 import { Box } from "@chakra-ui/react";
 import Markdown from "react-markdown";
-
-const DISALLOWED_ELEMENTS = ["script", "iframe", "object", "embed"];
+import { DISALLOWED_ELEMENTS } from "./markdown-security";
 
 export function MainStoryBody({ text }: { text: string }) {
 	// Single newlines promote to paragraph breaks (v1's main-story readability rule).

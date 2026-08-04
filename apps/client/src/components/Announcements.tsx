@@ -24,11 +24,11 @@ export function Announcements({ announcements }: { announcements: Announcement[]
 						<Box key={index}>
 							<Box py={3}>
 								<Heading as="h4" fontSize="md" fontWeight="bold" mb={2}>
-									<MarkdownText text={announcement.title} />
+									{announcement.title}
 								</Heading>
-								<Text fontSize="sm" color="paper.ink" lineHeight="1.5">
+								<Box fontSize="sm" color="paper.ink" lineHeight="1.5">
 									<MarkdownText text={announcement.summary} />
-								</Text>
+								</Box>
 							</Box>
 							{index < announcements.length - 1 && <Divider borderColor="paper.rule" />}
 						</Box>

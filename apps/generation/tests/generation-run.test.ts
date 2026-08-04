@@ -21,7 +21,11 @@ it("interrupted run does not repeat the model call", async () => {
 	});
 	await instance.waitForStatus("complete");
 
-	expect(modelCalls).toHaveBeenCalledTimes(1);
+	// One call each for compose-main-story and compose-announcements: both
+	// complete and cache before publish-edition's mocked failure forces a
+	// step retry, so the retry repeats only the failed step, not the model
+	// calls that already succeeded.
+	expect(modelCalls).toHaveBeenCalledTimes(2);
 	const served = await readEdition(env.DB, "7", "2026-01-25");
 	expect(served?.active_region_id).toBe("7");
 });

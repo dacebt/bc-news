@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { PublicationDateSchema, TimestampMillisecondsSchema } from "@bc-news/contracts";
+import { ActiveRegionIdSchema, PublicationDateSchema, TimestampMillisecondsSchema } from "@bc-news/contracts";
 
 export const PreparedMessageSchema = z.strictObject({
 	id: z.string(),
@@ -12,7 +12,7 @@ export const PreparedMessageSchema = z.strictObject({
 export type PreparedMessage = z.infer<typeof PreparedMessageSchema>;
 
 export const PreparedEvidenceSchema = z.strictObject({
-	active_region_id: z.string().min(1),
+	active_region_id: ActiveRegionIdSchema,
 	publication_date: PublicationDateSchema,
 	raw_count: z.int().nonnegative(),
 	after_filter_count: z.int().nonnegative(),

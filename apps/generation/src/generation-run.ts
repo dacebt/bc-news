@@ -4,8 +4,10 @@ import { GenerationRunParamsSchema, type GenerationRunParams } from "@bc-news/co
 import {
 	SYSTEM_CONSTRAINTS,
 	assembleEdition,
+	buildAnnouncementsPrompt,
 	buildMainStoryPrompt,
 	evidenceDateForPublicationDate,
+	parseAnnouncementsOutput,
 	parseMainStoryOutput,
 	prepareEvidence,
 	type PreparedEvidence,
@@ -90,16 +92,37 @@ export class GenerationRun extends WorkflowEntrypoint<Env, GenerationRunParams> 
 			}),
 		);
 
+		const announcements = await step.do("compose-announcements", BOUNDED_RETRIES, () =>
+			failNonRetryablyOnDeterministicErrors(async () => {
+				const completion = await ports.modelProviders.announcements.complete({
+					editorialCapability: "announcements",
+					system: SYSTEM_CONSTRAINTS,
+					user: buildAnnouncementsPrompt(preparedEvidence),
+				});
+				const output = parseAnnouncementsOutput(completion.text);
+				return {
+					announcements: output.announcements,
+					provider: completion.provider,
+					model: completion.model,
+				};
+			}),
+		);
+
 		const edition = await step.do("validate-edition", () =>
 			failNonRetryablyOnDeterministicErrors(() =>
 				assembleEdition({
 					activeRegionId: params.active_region_id,
 					publicationDate: params.publication_date,
 					mainStory: mainStory.main_story,
+					announcements: announcements.announcements,
 					preparedEvidence,
 					mainStoryProvenance: {
 						provider: mainStory.provider,
 						model: mainStory.model,
+					},
+					announcementsProvenance: {
+						provider: announcements.provider,
+						model: announcements.model,
 					},
 					generatedAtUtc: new Date().toISOString(),
 				}),

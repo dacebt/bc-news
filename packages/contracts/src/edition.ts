@@ -21,6 +21,11 @@ export const MainStorySchema = z.strictObject({
 
 export type MainStory = z.infer<typeof MainStorySchema>;
 
+const EditorialCapabilityProvenanceSchema = z.strictObject({
+	provider: z.string().min(1),
+	model: z.string().min(1),
+});
+
 export const EditionSchema = z.strictObject({
 	active_region_id: z.string().min(1),
 	publication_date: PublicationDateSchema,
@@ -31,10 +36,8 @@ export const EditionSchema = z.strictObject({
 	meta: z.strictObject({
 		generated_at_utc: z.iso.datetime({ offset: true }),
 		editorial_capabilities: z.strictObject({
-			main_story: z.strictObject({
-				provider: z.string().min(1),
-				model: z.string().min(1),
-			}),
+			main_story: EditorialCapabilityProvenanceSchema,
+			announcements: EditorialCapabilityProvenanceSchema,
 		}),
 		counts: z.strictObject({
 			raw_count: z.int().nonnegative(),
