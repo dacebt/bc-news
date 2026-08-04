@@ -1,0 +1,22 @@
+{
+	"name": "@bc-news/eval",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"typecheck": "tsc --noEmit",
+		"test": "vitest run",
+		"eval": "tsx src/cli.ts"
+	},
+	"dependencies": {
+		"@bc-news/contracts": "workspace:*",
+		"@bc-news/fixtures": "workspace:*",
+		"@bc-news/generation-core": "workspace:*",
+		"zod": "^4.4.3"
+	},
+	"devDependencies": {
+		"@types/node": "^26.1.2",
+		"tsx": "^4.23.5",
+		"vitest": "^4.1.10"
+	}
+}

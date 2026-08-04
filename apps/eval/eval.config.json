@@ -1,0 +1,8 @@
+{
+	"capabilities": {
+		"main_story": { "adapter": "recorded" },
+		"announcements": { "adapter": "recorded" },
+		"packaging": { "adapter": "recorded" }
+	},
+	"judge": { "adapter": "recorded" }
+}
