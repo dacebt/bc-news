@@ -17,7 +17,7 @@ authority: binding
 If implementation and this document disagree, the implementation is wrong
 unless this document is deliberately amended in the same unit of work. It
 binds the structural posture; the *why* is recorded in the project decision
-vault (ADR-001, ADR-002, ADR-005, ADR-006, ADR-007).
+vault (ADR-001, ADR-002, ADR-005, ADR-006, ADR-007, ADR-008).
 
 ## Language
 
@@ -117,8 +117,26 @@ edition schema and the identity pair arrives only via URL query — missing
 or invalid identity renders the explicit no-published-edition state, never
 a fixture default baked into client code.
 
-What remains genuinely structural and gets settled by amendment here: the
-local runner.
+Settled — the local runner (ADR-008): `pnpm walk` runs a TypeScript walk
+script over `wrangler dev`, the only local path that executes the real
+Workflow definition — local emulation covers the Workflow, D1, and static
+assets in one session, and Workflows do not run under `--remote`, so the
+runner is local-only by construction; no mock of Cloudflare exists
+anywhere. The walk builds the workspace, applies the D1 migrations into a
+per-run isolated local persistence directory (every walk starts from
+absence, so the first trigger is genuinely the first), starts
+`wrangler dev`, triggers one *generation run* for the fixture pair, polls
+the edition read until it serves and parses the body against the shared
+edition schema, re-triggers the same pair asserting the served edition is
+byte-identical while recording the duplicate-create signal (ADR-006),
+asserts an unknown pair answers 404, and asserts the client HTML serves.
+On timeout it prints the generation run's status — failures surface,
+never vanish — and the exit code reflects the assertions. The default
+mode holds `wrangler dev` for human browser observation until Ctrl-C; a
+non-interactive mode (`--non-interactive` or `WALK_NON_INTERACTIVE=1`)
+shuts down after the assertions for automation. The walk touches no
+production data, no live network, and no paid models by construction:
+fixture evidence and the recorded model provider are its only inputs.
 
 ## Links
 

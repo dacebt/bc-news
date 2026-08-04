@@ -8,9 +8,15 @@ importers:
 
   .:
     devDependencies:
+      '@bc-news/contracts':
+        specifier: workspace:*
+        version: link:packages/contracts
       '@eslint/js':
         specifier: ^10.0.1
         version: 10.0.1(eslint@10.8.0)
+      '@types/node':
+        specifier: ^26.1.2
+        version: 26.1.2
       eslint:
         specifier: ^10.8.0
         version: 10.8.0
