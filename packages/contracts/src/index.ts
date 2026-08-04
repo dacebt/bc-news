@@ -1,4 +1,7 @@
 export {
+	ActiveRegionIdSchema,
+} from "./active-region-id";
+export {
 	PublicationDateSchema,
 	type PublicationDate,
 } from "./publication-date";
@@ -23,7 +26,6 @@ export {
 	type EvidenceMessage,
 } from "./evidence";
 export {
-	ActiveRegionIdSchema,
 	GenerationRunParamsSchema,
 	type GenerationRunParams,
 } from "./generation-run";
