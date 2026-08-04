@@ -4,9 +4,11 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"typecheck": "tsc --noEmit && tsc --noEmit -p tests",
+		"typecheck": "tsc --noEmit && tsc --noEmit -p tests && tsc --noEmit -p scripts",
 		"test": "vitest run",
-		"dev": "wrangler dev"
+		"dev": "wrangler dev",
+		"re-record-model-responses": "tsx scripts/re-record-model-responses.ts",
+		"re-record-model-responses:verify": "tsx scripts/verify-re-record-model-responses.ts"
 	},
 	"dependencies": {
 		"@bc-news/contracts": "workspace:*",
@@ -17,6 +19,7 @@
 	"devDependencies": {
 		"@cloudflare/vitest-pool-workers": "^0.20.1",
 		"@types/node": "^26.1.2",
+		"tsx": "^4.23.5",
 		"vitest": "^4.1.10",
 		"wrangler": "^4.118.0"
 	}

@@ -34,7 +34,58 @@ it("rejects model config that is not valid json", () => {
 it("rejects model config with an unknown adapter id", () => {
 	const invalidEnv = envWith({
 		MODEL_CONFIG: JSON.stringify({
+			main_story: { adapter: "hosted" },
+			announcements: { adapter: "recorded" },
+			packaging: { adapter: "recorded" },
+		}),
+	});
+
+	expect(() => resolveGenerationPorts(invalidEnv)).toThrow(GenerationConfigError);
+});
+
+it("requires LM Studio base URL when any capability selects the adapter", () => {
+	const invalidEnv = envWith({
+		MODEL_CONFIG: JSON.stringify({
+			main_story: { adapter: "lmstudio", model: "local-main" },
+			announcements: { adapter: "recorded" },
+			packaging: { adapter: "recorded" },
+		}),
+	});
+
+	expect(() => resolveGenerationPorts(invalidEnv)).toThrow(GenerationConfigError);
+});
+
+it("rejects LM Studio config without a model", () => {
+	const invalidEnv = envWith({
+		LMSTUDIO_BASE_URL: "http://127.0.0.1:1234/v1",
+		MODEL_CONFIG: JSON.stringify({
 			main_story: { adapter: "lmstudio" },
+			announcements: { adapter: "recorded" },
+			packaging: { adapter: "recorded" },
+		}),
+	});
+
+	expect(() => resolveGenerationPorts(invalidEnv)).toThrow(GenerationConfigError);
+});
+
+it("rejects LM Studio config with a whitespace-only model", () => {
+	const invalidEnv = envWith({
+		LMSTUDIO_BASE_URL: "http://127.0.0.1:1234/v1",
+		MODEL_CONFIG: JSON.stringify({
+			main_story: { adapter: "lmstudio", model: " \t " },
+			announcements: { adapter: "recorded" },
+			packaging: { adapter: "recorded" },
+		}),
+	});
+
+	expect(() => resolveGenerationPorts(invalidEnv)).toThrow(GenerationConfigError);
+});
+
+it("rejects invalid LM Studio base URL", () => {
+	const invalidEnv = envWith({
+		LMSTUDIO_BASE_URL: "file:///tmp/lmstudio",
+		MODEL_CONFIG: JSON.stringify({
+			main_story: { adapter: "lmstudio", model: "local-main" },
 			announcements: { adapter: "recorded" },
 			packaging: { adapter: "recorded" },
 		}),

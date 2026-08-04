@@ -6,7 +6,8 @@ import {
 	EvidenceContractError,
 } from "@bc-news/generation-core";
 import { FixtureEvidenceMismatchError, RecordedModelProviderError } from "@bc-news/fixtures";
-import { GenerationConfigError } from "./config";
+import { LmStudioDeterministicError } from "./adapters/lmstudio-model-provider";
+import { GenerationConfigError } from "./config-error";
 
 const DETERMINISTIC_FAILURES = [
 	ZodError,
@@ -15,6 +16,7 @@ const DETERMINISTIC_FAILURES = [
 	EvidenceContractError,
 	FixtureEvidenceMismatchError,
 	RecordedModelProviderError,
+	LmStudioDeterministicError,
 	GenerationConfigError,
 ] as const;
 

@@ -6,8 +6,9 @@ import type {
 } from "@bc-news/generation-core";
 import { EvidenceAdapterIdSchema, evidenceAdapterFactories } from "./adapters/evidence-adapters";
 import { ModelAdapterConfigSchema, resolveModelProvider } from "./adapters/model-adapters";
+import { GenerationConfigError } from "./config-error";
 
-const ModelConfigSchema = z.strictObject({
+export const ModelConfigSchema = z.strictObject({
 	main_story: ModelAdapterConfigSchema,
 	announcements: ModelAdapterConfigSchema,
 	packaging: ModelAdapterConfigSchema,
@@ -28,14 +29,7 @@ const GenerationConfigVarsSchema = z.object({
 		.pipe(ModelConfigSchema),
 });
 
-export class GenerationConfigError extends Error {
-	readonly code = "invalid_generation_config";
-
-	constructor(message: string) {
-		super(message);
-		this.name = "GenerationConfigError";
-	}
-}
+export { GenerationConfigError } from "./config-error";
 
 export interface GenerationPorts {
 	evidenceInput: EvidenceInputPort;

@@ -26,6 +26,11 @@ const BOUNDED_RETRIES = {
 	retries: { limit: 2, delay: "1 second", backoff: "exponential" },
 } as const;
 
+const MODEL_STEP_CONFIG = {
+	...BOUNDED_RETRIES,
+	timeout: "11 minutes",
+} as const;
+
 const STEP_RESULT_BYTE_CAP = 1_048_576;
 
 function assertWithinStepResultCap(preparedEvidence: PreparedEvidence): void {
@@ -78,7 +83,7 @@ export class GenerationRun extends WorkflowEntrypoint<Env, GenerationRunParams> 
 			}),
 		);
 
-		const mainStory = await step.do("compose-main-story", BOUNDED_RETRIES, () =>
+		const mainStory = await step.do("compose-main-story", MODEL_STEP_CONFIG, () =>
 			failNonRetryablyOnDeterministicErrors(async () => {
 				const completion = await ports.modelProviders.main_story.complete({
 					editorialCapability: "main_story",
@@ -94,7 +99,7 @@ export class GenerationRun extends WorkflowEntrypoint<Env, GenerationRunParams> 
 			}),
 		);
 
-		const announcements = await step.do("compose-announcements", BOUNDED_RETRIES, () =>
+		const announcements = await step.do("compose-announcements", MODEL_STEP_CONFIG, () =>
 			failNonRetryablyOnDeterministicErrors(async () => {
 				const completion = await ports.modelProviders.announcements.complete({
 					editorialCapability: "announcements",
@@ -110,7 +115,7 @@ export class GenerationRun extends WorkflowEntrypoint<Env, GenerationRunParams> 
 			}),
 		);
 
-		const packaging = await step.do("compose-packaging", BOUNDED_RETRIES, () =>
+		const packaging = await step.do("compose-packaging", MODEL_STEP_CONFIG, () =>
 			failNonRetryablyOnDeterministicErrors(async () => {
 				const completion = await ports.modelProviders.packaging.complete({
 					editorialCapability: "packaging",

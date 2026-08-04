@@ -4,13 +4,14 @@ import announcementsResponseJson from "../model-responses/announcements.json";
 import mainStoryResponseJson from "../model-responses/main_story.json";
 import packagingResponseJson from "../model-responses/packaging.json";
 
-const RecordedModelResponseSchema = z.strictObject({
+export const RecordedModelResponseSchema = z.strictObject({
 	editorial_capability: z.string().min(1),
 	provider: z.string().min(1),
 	model: z.string().min(1),
 	prompt_sha256: z.string().regex(/^[0-9a-f]{64}$/),
 	text: z.string().min(1),
 });
+export type RecordedModelResponse = z.infer<typeof RecordedModelResponseSchema>;
 
 type RecordedModelProviderErrorCode =
 	| "unknown_editorial_capability"
