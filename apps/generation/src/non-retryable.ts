@@ -6,6 +6,7 @@ import {
 	EvidenceContractError,
 } from "@bc-news/generation-core";
 import { FixtureEvidenceMismatchError, RecordedModelProviderError } from "@bc-news/fixtures";
+import { D1ChatEvidenceError } from "./adapters/d1-chat-evidence";
 import { GenerationConfigError } from "./config";
 
 const DETERMINISTIC_FAILURES = [
@@ -16,6 +17,7 @@ const DETERMINISTIC_FAILURES = [
 	FixtureEvidenceMismatchError,
 	RecordedModelProviderError,
 	GenerationConfigError,
+	D1ChatEvidenceError,
 ] as const;
 
 function hasCode(error: object): error is { code: string } {

@@ -1,6 +1,7 @@
 export {
 	DateDerivationError,
 	evidenceDateForPublicationDate,
+	evidenceWindowForEvidenceDate,
 	evidenceWindowForPublicationDate,
 } from "./evidence-date";
 export {

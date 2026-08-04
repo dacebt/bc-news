@@ -8,7 +8,7 @@ tags: [documentation, architecture, ports, typescript]
 status: stable
 generated:
   by: ebt-skills/okf-v0.2
-  at: "2026-08-04T15:02:46Z"
+  at: "2026-08-04T18:01:01Z"
 authority: binding
 ---
 
@@ -157,8 +157,12 @@ success or failure. The default mode holds `wrangler dev` for human browser
 observation until Ctrl-C; a non-interactive mode (`--non-interactive` or
 `WALK_NON_INTERACTIVE=1`) shuts down after the assertions for automation.
 The walk touches no production data, no live network, and no paid models by
-construction: fixture evidence, the recorded model provider, and the
-walk-owned BitJita stub are its only inputs.
+construction: the walk-owned BitJita stub and the recorded model provider are
+its only inputs. Generation reads evidence through `EVIDENCE_INPUT=d1_chat`,
+the committed local default — the edition it publishes is generated from the
+`chat_messages` rows the ingest phase just inserted from the stub corpus, not
+from the fixture adapter. The fixture evidence adapter remains registered and
+explicitly selectable for tests and evaluation, but it is not the local default.
 
 ## Links
 

@@ -1,11 +1,11 @@
 # @bc-news/fixtures
 
-Everything deterministic the skeleton walk feeds in: the committed evidence
-fixture, the committed recorded model response, and the two fixture adapters
-implementing the ports defined by `@bc-news/generation-core`
-(`fixtureEvidenceInput` for the evidence input port, `recordedModelProvider`
-for the model provider port). One evidence corpus, shared by the walk, tests,
-and the future eval harness.
+The skeleton walk feeds the committed BitJita wire corpus at
+`bitjita/active-region-7_2026-01-24.json` through the stub, ingest worker, and
+D1-backed generation path. The evidence corpus at
+`evidence/active-region-7_2026-01-24.json` feeds the explicitly selected
+`fixtureEvidenceInput` adapter for tests and evaluation. The recorded model
+provider remains deterministic.
 
 ## Evidence fixture provenance
 

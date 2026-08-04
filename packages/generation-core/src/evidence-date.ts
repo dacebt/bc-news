@@ -46,11 +46,16 @@ function shiftDate(dateStr: string, dayOffset: number): { dateString: string; sh
 	return { dateString: result.data, shiftedTs };
 }
 
+function utcDayWindow(dateStr: string, dayOffset: number): { startMs: number; endMs: number } {
+	const { shiftedTs } = shiftDate(dateStr, dayOffset);
+	return { startMs: shiftedTs, endMs: shiftedTs + 24 * 60 * 60 * 1000 };
+}
+
 /**
  * The date contract: an edition published on a given publication date sources
  * its evidence from the day before. This is the single expression of that
- * relationship -- every path derives the evidence window through this function
- * so no two paths can drift apart by reimplementing the arithmetic separately.
+ * relationship; all date and window paths delegate to shiftDate so they cannot
+ * drift apart by reimplementing the arithmetic separately.
  */
 export function evidenceDateForPublicationDate(publicationDate: string): string {
 	return shiftDate(publicationDate, -1).dateString;
@@ -58,13 +63,24 @@ export function evidenceDateForPublicationDate(publicationDate: string): string 
 
 /**
  * Millisecond window backing the same day-before contract, expressed in the
- * epoch-ms terms evidence timestamps arrive in. Reuses the shiftedTs already
- * computed while deriving the evidence date string so the window can never
- * drift from evidenceDateForPublicationDate by reparsing dates independently.
+ * epoch-ms terms evidence timestamps arrive in. Delegates to the shared UTC-day
+ * window calculation so its bounds cannot drift from the direct evidence-date
+ * window path.
  */
 export function evidenceWindowForPublicationDate(
 	publicationDate: string,
 ): { startMs: number; endMs: number } {
-	const { shiftedTs } = shiftDate(publicationDate, -1);
-	return { startMs: shiftedTs, endMs: shiftedTs + 24 * 60 * 60 * 1000 };
+	return utcDayWindow(publicationDate, -1);
+}
+
+/**
+ * Millisecond window for an evidence date taken directly, rather than derived
+ * from a publication date. Reuses shiftDate with a zero offset so the window
+ * bounds share the exact same range-validation and epoch-ms arithmetic as
+ * evidenceWindowForPublicationDate instead of a second hand-rolled path.
+ */
+export function evidenceWindowForEvidenceDate(
+	evidenceDate: string,
+): { startMs: number; endMs: number } {
+	return utcDayWindow(evidenceDate, 0);
 }
