@@ -1,0 +1,54 @@
+---
+type: shape
+title: >-
+  Shape: v2 full rebuild — skeleton to finished product, pre-deployment
+description: >-
+  Session boundaries, cadence, and success signal for growing the walking skeleton into the complete bc-news v2 product, stopping deliberately before production Cloudflare deployment.
+tags: [wsd, direction, shape]
+status: stable
+generated:
+  by: ebt-wsd/okf-v0.2
+  at: "2026-08-04T12:44:48Z"
+---
+# Shape: v2 full rebuild — skeleton to finished product, pre-deployment
+
+**Declared:** 2026-08-04
+**Cadence:** Loose
+**Git strategy:** other — wsd-flow slice branches in per-slice worktrees; the orchestrator verifies (walk + review) and merge-gates every slice onto main; no PRs; main only ever receives accepted, walked work
+
+## In scope
+
+- Skeleton follow-ups from the review pass (markdown-security dedup, evidence tie-break, evidence-window enforcement in core, nullable author_name coverage).
+- The full three-stage editorial roster (announcements/achievements, main story, packaging) with v1's prompts carried near-verbatim; edition contract and client thicken accordingly.
+- Real model-provider adapters: config-dispatched port lookup, an OpenAI-compatible local adapter (LM Studio), recorded adapter retained for the walk.
+- Ingest app: v1's proven engine carried forward into this monorepo (cursor, watermark, boundary rejection), storing validated chat in D1 and feeding generation through a production evidence adapter behind the same evidence port.
+- Scheduling: cron-driven end to end locally — one authoritative active-region home, one Workflow instance per (active region, publication date), operator-visible run status.
+- Client full UI/UX parity with deployed bc-newspaper v0.1.x (history/navigation, unavailable states, code-splitting) minus contract-forced deviations.
+- Eval harness: fixture conversations replayed through the evidence port, comparable retained results, judge rubrics carried from v1.
+
+## Out of scope (deliberately)
+
+- Production Cloudflare setup of any kind — provisioning, deploys, secrets, real database_id. User-led, after this session.
+- Live BitJita network calls and paid model calls; LM Studio is the only live model and only when the user enables it and provides the URL.
+- Migrating v1 data or modifying the frozen v1 repos.
+- Paid evaluation services or any recurring paid infrastructure.
+
+## Known risks
+
+- LM Studio is an external dependency the user must enable; slices needing fresh recorded responses can block on it — sequence so derived/hand-authored recordings unblock the walk first.
+- Local emulation gaps (cron triggers, duplicate Workflow instance-id no-op per ADR-006) may make some production behavior observable only at deployment; those obligations are named, not silently absorbed.
+- Many parallel slices touch the shared contracts package; the edition-contract seam must be frozen early and owned by one slice at a time or reconciled at merge.
+
+## Success signal
+
+`pnpm walk` (extended as slices land) passes tier-1 for the full product: fixture chat ingested into local D1 by the ingest worker, a cron-style trigger fans out per active region, the generation run produces a three-capability edition (announcements populated, main story, packaged), the client renders it at v1 parity, and the eval harness replays the same fixtures producing retained comparable results — all local, no production data, no paid calls.
+
+## Notes
+
+Rulings in force: Claude never touches production Cloudflare; slice branches invited under wsd-flow with orchestrator merge-gate; build direction and parallelization are the orchestrator's call; LM Studio URL supplied by the user on request. DOMAIN.md names may be adjusted deliberately (amend in the same unit of work).
+
+## Related documentation
+
+- [Capability map](2026-08-04-v2-full-rebuild.map.md) — the carve of this scope into ordered vertical capabilities.
+- [Binding product requirements](../PRD.md) — the authority this shape serves.
+- [Documentation index](../index.md) — bundle root.
