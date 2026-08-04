@@ -28,8 +28,9 @@ verbatim in code, schema, tests, and APIs — no synonyms.
 - **active region** — a region currently designated to receive a daily
   newspaper. Nine are active today (v1's verified list); up to 24 as
   BitCraft expands. The list's starting content is inherited (see Defaults);
-  its authoritative *home* is an open structural decision — not this
-  document, and not two hand-synced hardcoded copies as in v1.
+  its authoritative *home* is settled as `packages/contracts/src/active-regions.ts`
+  (see [ARCHITECTURE.md](ARCHITECTURE.md)) — not this document, and not two
+  hand-synced hardcoded copies as in v1.
 - **publication date** — the calendar date an edition is published under.
   Together with an active region it identifies exactly one intended edition.
 - **evidence date** — the calendar day of chat an edition draws on: the

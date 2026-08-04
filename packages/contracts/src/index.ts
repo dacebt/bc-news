@@ -5,6 +5,7 @@ export {
 	PublicationDateSchema,
 	type PublicationDate,
 } from "./publication-date";
+export { ACTIVE_REGION_IDS } from "./active-regions";
 export {
 	MAX_TIMESTAMP_MILLISECONDS,
 	MIN_TIMESTAMP_MILLISECONDS,

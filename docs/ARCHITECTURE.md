@@ -60,7 +60,10 @@ that forces it.
 - Errors surface. No swallowed failures inside scheduler or workflow
   glue; v1's error-eating `scheduled()` is the named anti-pattern.
 - One fact, one home: no value (region lists, date arithmetic, prompt
-  text) duplicated across packages the way v1 duplicated them.
+  text) duplicated across packages the way v1 duplicated them. Settled —
+  the active region list's authoritative home is
+  `packages/contracts/src/active-regions.ts` (the [domain model](DOMAIN.md)'s
+  open structural decision), consumed by the scheduler and the client alike.
 
 ## Layout and remaining structure
 

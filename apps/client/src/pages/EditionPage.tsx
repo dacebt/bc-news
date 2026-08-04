@@ -1,102 +1,237 @@
 import { useEffect, useState } from "react";
-import { Box, Flex, Grid, Text } from "@chakra-ui/react";
-import {
-	GenerationRunParamsSchema,
-	type Edition,
-	type GenerationRunParams,
-} from "@bc-news/contracts";
+import { Box, Flex, Grid, Spinner, Text } from "@chakra-ui/react";
+import type { Edition } from "@bc-news/contracts";
 import { getEdition } from "../api/edition";
 import { Announcements } from "../components/Announcements";
+import { ControlsBar } from "../components/ControlsBar";
 import { Dateline } from "../components/Dateline";
+import { EditionOutcomeAlert, type EditionDisplayError } from "../components/EditionOutcomeAlert";
 import { MainStory } from "../components/MainStory";
 import { Masthead } from "../components/Masthead";
 import { PaperContent, PaperTextureLayer, PaperWrapper } from "../components/PaperSurface";
-import { PAPER_SERIF_NARROW } from "../components/typography";
-
-type EditionView =
-	| { state: "loading" }
-	| { state: "published"; edition: Edition }
-	| { state: "unavailable" };
-
-function editionIdentityFromUrl(): GenerationRunParams | undefined {
-	const query = new URLSearchParams(window.location.search);
-	const result = GenerationRunParamsSchema.safeParse({
-		active_region_id: query.get("active_region_id"),
-		publication_date: query.get("publication_date"),
-	});
-	return result.success ? result.data : undefined;
-}
+import { useEditionDateRange } from "../dates/use-edition-date-range";
+import { formatLocalPublishTime, GENERATION_PUBLISH_UTC_MINUTES } from "../dates/publish-time";
+import type { EditionSelection } from "../selection/edition-selection";
+import { useEditionSelection } from "../selection/use-edition-selection";
 
 function PublishedPaper({ edition }: { edition: Edition }) {
 	return (
-		<PaperWrapper>
-			<PaperTextureLayer />
-			<PaperContent>
-				<Box mb={6}>
-					<Masthead title={edition.title} />
-					<Dateline
-						activeRegionId={edition.active_region_id}
-						publicationDate={edition.publication_date}
-					/>
-				</Box>
-				<Grid templateColumns={{ base: "1fr", lg: "2fr 1fr" }} gap={8}>
-					<MainStory mainStory={edition.main_story} />
-					<Announcements announcements={edition.announcements} />
-				</Grid>
-			</PaperContent>
-		</PaperWrapper>
+		<Flex justify="center" p={{ base: 4, md: 8 }}>
+			<PaperWrapper>
+				<PaperTextureLayer />
+				<PaperContent>
+					<Box mb={6}>
+						<Masthead title={edition.title} />
+						<Dateline
+							activeRegionId={edition.active_region_id}
+							publicationDate={edition.publication_date}
+						/>
+					</Box>
+					<Grid templateColumns={{ base: "1fr", lg: "2fr 1fr" }} gap={8}>
+						<MainStory mainStory={edition.main_story} />
+						<Announcements announcements={edition.announcements} />
+					</Grid>
+				</PaperContent>
+			</PaperWrapper>
+		</Flex>
 	);
 }
 
-function UnavailablePaper() {
-	return (
-		<PaperWrapper>
-			<PaperTextureLayer />
-			<PaperContent>
-				<Flex justify="center" py={16}>
-					<Text
-						fontFamily={PAPER_SERIF_NARROW}
-						fontSize="lg"
-						fontStyle="italic"
-						color="paper.muted"
-					>
-						No published edition.
-					</Text>
-				</Flex>
-			</PaperContent>
-		</PaperWrapper>
+// Grace period after the publish time before an absent today's edition means
+// generation failed rather than simply hasn't run yet. Ported from the
+// deployed v0.1.4 client's isWaitingForTodaysEdition (bc-newspaper
+// src/pages/EditionPage.tsx), where this was folded into a single literal;
+// split out here so the publish hour itself lives once, in
+// dates/publish-time.ts, and this file only adds the grace period on top.
+const WAITING_GRACE_PERIOD_MINUTES = 30;
+const GENERATION_WINDOW_END_UTC_MINUTES = GENERATION_PUBLISH_UTC_MINUTES + WAITING_GRACE_PERIOD_MINUTES;
+
+// Waiting only applies to the pair a completed response actually answered
+// for, never the reader's still-pending selection - a fetch that resolved to
+// "not found" grades against the request that produced that answer, not
+// whatever the reader has since typed into the date field. `todayUtc` must be
+// derived from the same `now` this is called with, never from
+// `dateRange.maxDate` - that value only moves when the rollover timer fires,
+// so across UTC midnight it can read yesterday for as long as the timer is
+// late (a throttled background tab routinely delays it tens of seconds or
+// more), grading a stale pair against a fresh clock.
+function isWaitingForTodaysEdition(pairDate: string, todayUtc: string, now: Date): boolean {
+	if (pairDate !== todayUtc) {
+		return false;
+	}
+	const currentUtcMinutes = now.getUTCHours() * 60 + now.getUTCMinutes();
+	return currentUtcMinutes < GENERATION_WINDOW_END_UTC_MINUTES;
+}
+
+// The actual UTC calendar date `now` falls on - never `maxServableDate(now)`,
+// which clamps to EARLIEST_PUBLICATION_DATE when the clock reads before the
+// deployment date. That clamp exists to keep the date range non-empty; fed
+// into `todayUtc` here it would instead claim a future date is "today" and
+// grade a not-found response as merely waiting on it.
+function utcCalendarDate(instant: Date): string {
+	return instant.toISOString().slice(0, 10);
+}
+
+// The generation window's close is a wall-clock fact the same way UTC
+// midnight is for the date-range rollover in use-edition-date-range.ts: a
+// tab left open across it must regrade an already-rendered "waiting" alert
+// into "absent" on its own, without the reader touching a control.
+function msUntilGenerationWindowEnd(instant: Date): number {
+	const boundaryToday = Date.UTC(
+		instant.getUTCFullYear(),
+		instant.getUTCMonth(),
+		instant.getUTCDate(),
+		0,
+		GENERATION_WINDOW_END_UTC_MINUTES,
 	);
+	const nextBoundary = boundaryToday > instant.getTime() ? boundaryToday : boundaryToday + 24 * 60 * 60 * 1000;
+	return nextBoundary - instant.getTime();
+}
+
+interface EditionAlert {
+	outcome: EditionDisplayError;
+	// The (region, date) pair the fetch that produced `outcome` actually ran
+	// for - captured at request time so a later change to the pending
+	// selection can never retroactively regrade an alert already on screen.
+	pair: EditionSelection;
 }
 
 export function EditionPage() {
-	const [identity] = useState(() => editionIdentityFromUrl());
-	const [view, setView] = useState<EditionView>(
-		identity === undefined ? { state: "unavailable" } : { state: "loading" },
-	);
+	const dateRange = useEditionDateRange();
+	const { selection, setSelection } = useEditionSelection(dateRange);
+	const [edition, setEdition] = useState<Edition | null>(null);
+	const [loading, setLoading] = useState(true);
+	const [alert, setAlert] = useState<EditionAlert | null>(null);
+	// Exists only to force a re-render when the generation window boundary
+	// crosses on an open tab - `now` is read fresh every render, but nothing
+	// else schedules one at all across that boundary.
+	const [, forceRerenderAtGenerationWindowEnd] = useState(0);
 
 	useEffect(() => {
-		if (identity === undefined) {
-			return;
-		}
-		let cancelled = false;
-		getEdition(identity.active_region_id, identity.publication_date)
-			.then((edition) => {
-				if (!cancelled) setView({ state: "published", edition });
-			})
-			.catch((error: unknown) => {
-				if (cancelled) return;
-				console.error("edition unavailable", error);
-				setView({ state: "unavailable" });
-			});
-		return () => {
-			cancelled = true;
+		const controller = new AbortController();
+		// Built from the two dependency-listed fields rather than aliasing
+		// `selection` itself, so this effect's captured request pair can never
+		// drift from what its dependency array actually re-runs on.
+		const requestedPair: EditionSelection = {
+			activeRegionId: selection.activeRegionId,
+			publicationDate: selection.publicationDate,
 		};
-	}, [identity]);
+
+		void (async () => {
+			setLoading(true);
+			// Cleared as soon as this fetch starts, not when it resolves - an
+			// alert from the previous pair must never linger on screen while a
+			// different pair is loading.
+			setAlert(null);
+			try {
+				const outcome = await getEdition({
+					activeRegionId: requestedPair.activeRegionId,
+					publicationDate: requestedPair.publicationDate,
+					signal: controller.signal,
+				});
+				// getEdition never throws for a cancelled request - it reports the
+				// modeled `aborted` outcome instead - so this page's own
+				// signal.aborted read is the only thing standing between an abort
+				// and it ever reaching setAlert. Checking both keeps that true even
+				// if the two ever disagree (for example, an abort a caller other
+				// than this effect's cleanup drove).
+				if (controller.signal.aborted || outcome.outcome === "aborted") return;
+				if (outcome.outcome === "published") {
+					setEdition(outcome.edition);
+				} else {
+					setEdition(null);
+					setAlert({ outcome, pair: requestedPair });
+				}
+			} catch (err) {
+				if (controller.signal.aborted) return;
+				// getEdition never throws for any expected case, abort included
+				// (see its own catch blocks); anything reaching here means it broke
+				// its own contract, so it is reported honestly rather than
+				// mislabeled as one of the modeled outcomes.
+				console.error("EditionPage: getEdition rejected unexpectedly", err);
+				setEdition(null);
+				setAlert({ outcome: { outcome: "unexpected_error" }, pair: requestedPair });
+			} finally {
+				if (!controller.signal.aborted) {
+					setLoading(false);
+				}
+			}
+		})();
+
+		return () => controller.abort();
+	}, [selection.activeRegionId, selection.publicationDate]);
+
+	useEffect(() => {
+		if (loading) {
+			document.title = "Loading... - BitCraft News";
+		} else if (edition) {
+			document.title = `Region ${edition.active_region_id} - ${edition.main_story.headline} - BitCraft News`;
+		} else {
+			document.title = "BitCraft News - Daily Regional Newspaper";
+		}
+	}, [loading, edition]);
+
+	useEffect(() => {
+		let timer: number;
+		// Re-armed from inside the callback, mirroring the midnight rollover in
+		// use-edition-date-range.ts, so an open tab keeps regrading at every
+		// day's boundary rather than only the first one after mount.
+		const scheduleBoundary = () => {
+			timer = window.setTimeout(() => {
+				forceRerenderAtGenerationWindowEnd((tick) => tick + 1);
+				scheduleBoundary();
+			}, msUntilGenerationWindowEnd(new Date()));
+		};
+		scheduleBoundary();
+		return () => window.clearTimeout(timer);
+	}, []);
+
+	// One wall-clock read, shared by the today comparison, the waiting
+	// determination, and the local generation time it renders when waiting.
+	// `utcCalendarDate(now)` - not `maxServableDate(now)` or `dateRange.maxDate`
+	// - supplies "today": `maxServableDate` clamps to EARLIEST_PUBLICATION_DATE
+	// and would claim a future date is today when the clock reads before it,
+	// and `dateRange.maxDate` only advances when the midnight rollover timer
+	// fires and can lag the real clock across UTC midnight.
+	const now = new Date();
+	const isWaiting =
+		alert !== null && isWaitingForTodaysEdition(alert.pair.publicationDate, utcCalendarDate(now), now);
+	// The full-page spinner covers "no edition is on screen to show" - first
+	// load, and any later load that starts with no edition currently
+	// rendered (for example, right after a not-found). It never returns once
+	// an edition is showing: a subsequent load keeps that edition visible
+	// with only the controls bar's inline busy indicator, per criterion 4.
+	const showFullPageSpinner = loading && edition === null;
 
 	return (
-		<Flex justify="center" bg="surface.base" minH="100vh" p={{ base: 4, md: 8 }}>
-			{view.state === "published" && <PublishedPaper edition={view.edition} />}
-			{view.state === "unavailable" && <UnavailablePaper />}
-		</Flex>
+		<Box bg="surface.base" color="text.primary" minH="100vh">
+			<ControlsBar
+				selection={selection}
+				onSelectionChange={setSelection}
+				dateRange={dateRange}
+				isBusy={loading}
+			/>
+			{showFullPageSpinner ? (
+				<Flex justify="center" align="center" minH="60vh">
+					<Flex direction="column" align="center" gap={4}>
+						<Spinner size="xl" color="text.primary" />
+						<Text color="text.primary">Loading edition...</Text>
+					</Flex>
+				</Flex>
+			) : (
+				<>
+					{alert && (
+						<Box p={4}>
+							<EditionOutcomeAlert
+								outcome={alert.outcome}
+								isWaitingForTodaysEdition={isWaiting}
+								localGenerationTime={isWaiting ? formatLocalPublishTime(now) : ""}
+							/>
+						</Box>
+					)}
+					{edition && <PublishedPaper edition={edition} />}
+				</>
+			)}
+		</Box>
 	);
 }
