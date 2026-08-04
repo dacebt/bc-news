@@ -1,4 +1,5 @@
 import { handlePoll } from "./routes";
+import { schedulePoll } from "./scheduler";
 
 export default {
 	async fetch(request, env): Promise<Response> {
@@ -10,5 +11,8 @@ export default {
 			status: 404,
 			headers: { "Content-Type": "application/json" },
 		});
+	},
+	async scheduled(_controller, env): Promise<void> {
+		await schedulePoll(env);
 	},
 } satisfies ExportedHandler<Env>;

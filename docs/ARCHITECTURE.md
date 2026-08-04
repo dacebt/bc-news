@@ -104,8 +104,12 @@ Settled — edition identity enforcement, three layers with the SQL layer
 authoritative: (1) the trigger derives a deterministic Workflow instance
 id from the pair, so duplicate delivery targets one instance rather than
 starting a second *generation run* — observed local-emulation behavior of
-a duplicate id is recorded in ADR-006, and this layer is deliberately not
-load-bearing; (2) the D1 pair primary key plus insert-if-absent publish is
+a duplicate id is a silently resolved no-op, while the documented production
+create rejection has no observed machine-identifiable duplicate signal. Every
+create rejection therefore surfaces unchanged; classifying a production
+duplicate remains a deployment-observation obligation recorded in ADR-006,
+and this layer is deliberately not load-bearing; (2) the D1 pair primary key
+plus insert-if-absent publish is
 the authoritative guarantee that a second edition row cannot exist; (3)
 clients address editions only by the pair, so exactly one edition is ever
 addressable per identity. v1's lease/fencing/run-version apparatus is
@@ -142,14 +146,17 @@ absence, so the first trigger is genuinely the first), starts a node
 `packages/fixtures/bitjita/` corpus, starts `wrangler dev` for the
 generation Worker and a second `wrangler dev` for the ingest Worker on a
 `WALK_PORT`-derived port sharing the same persistence directory (so both
-Workers read and write the identical local D1), polls the ingest Worker's
-poll endpoint until the fixture corpus is drained, then asserts an
-immediate re-poll inserts zero, proving dedup and overlap — then triggers
-one *generation run* for the fixture pair, polls the edition read until it
-serves and parses the body against the shared edition schema, re-triggers
-the same pair asserting the served edition is byte-identical while
-recording the duplicate-create signal (ADR-006), asserts an unknown pair
-answers 404, and asserts the client HTML serves. The runner honors
+Workers read and write the identical local D1). It dispatches the ingest
+Worker's real local scheduled event until the fixture corpus is drained,
+queries that isolated local D1 to prove the exact fixture row count, and
+dispatches the event again to prove dedup and overlap preserve the count.
+It then dispatches the generation Worker's real local scheduled event at
+the fixture publication instant, observes all nine deterministic Workflow
+identities, observes an absent-evidence region fail explicitly without
+blocking region 7, polls region 7's edition read until it serves and parses
+the body against the shared edition schema, repeats the scheduled event and
+asserts the first served edition remains byte-identical, asserts an unknown
+pair answers 404, and asserts the client HTML serves. The runner honors
 `WALK_PORT` end to end — both `wrangler dev` processes, both readiness
 probes, the pre-spawn port-silence assertions, and the printed browser URL
 all defer to it, defaulting to 8787 (generation) and 8788 (ingest) when
@@ -166,6 +173,24 @@ the committed local default — the edition it publishes is generated from the
 `chat_messages` rows the ingest phase just inserted from the stub corpus, not
 from the fixture adapter. The fixture evidence adapter remains registered and
 explicitly selectable for tests and evaluation, but it is not the local default.
+
+Settled — scheduled publication is direct Cloudflare shell code, not a third
+port. The ingest Worker runs every minute and directly awaits the same
+configuration-validating poll path as its manual endpoint; complete polls
+return, while partial, failed, invalid-config, and unexpected failures escape
+the handler with their phase and message intact. The generation Worker runs at
+00:00 UTC and treats the scheduled event's supplied timestamp as the sole
+clock, deriving and validating its UTC publication date before attempting one
+deterministically identified Workflow instance for every entry in
+`ACTIVE_REGION_IDS`. A rejected create is never classified as a duplicate by
+probing for same-ID existence: local Wrangler's observed same-ID no-op resolves
+successfully, while any create rejection surfaces unchanged. Unexpected launch
+failures are isolated while all regions are attempted, then surfaced together
+with every failed active-region/publication-date pair. Production duplicate
+error classification remains an explicit deployment observation obligation.
+Workflow execution remains independently isolated per region; missing evidence
+therefore fails that region's run explicitly and never creates an empty or
+synthetic edition for it.
 
 ## Links
 

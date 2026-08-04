@@ -1,5 +1,6 @@
-import { IngestConfigError, resolvePollConfig } from "./config";
-import { pollChatMessages, type PollResult } from "./poller";
+import { IngestConfigError } from "./config";
+import { runPoll } from "./poll-run";
+import type { PollResult } from "./poller";
 
 function jsonResponse(status: number, body: unknown): Response {
 	return new Response(JSON.stringify(body), {
@@ -27,9 +28,10 @@ function pollResponseBody(result: PollResult): Record<string, unknown> {
 }
 
 export async function handlePoll(env: Env): Promise<Response> {
-	let config;
 	try {
-		config = resolvePollConfig(env);
+		const result = await runPoll(env);
+		const status = result.outcome === "complete" ? 200 : 502;
+		return jsonResponse(status, pollResponseBody(result));
 	} catch (error) {
 		if (error instanceof IngestConfigError) {
 			// 500, not 502: a rejected env var is this deployment's own
@@ -38,9 +40,4 @@ export async function handlePoll(env: Env): Promise<Response> {
 		}
 		throw error;
 	}
-
-	const result: PollResult = await pollChatMessages(env.DB, config);
-
-	const status = result.outcome === "complete" ? 200 : 502;
-	return jsonResponse(status, pollResponseBody(result));
 }

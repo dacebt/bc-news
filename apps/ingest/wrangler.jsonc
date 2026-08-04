@@ -3,8 +3,9 @@
 	"name": "bc-news-ingest",
 	"main": "src/index.ts",
 	"compatibility_date": "2026-08-03",
-	// No `triggers.crons` entry and no `scheduled()` handler: wiring a live
-	// cron is slice F's decision, not this one's.
+	"triggers": {
+		"crons": ["*/1 * * * *"]
+	},
 	"d1_databases": [
 		{
 			"binding": "DB",

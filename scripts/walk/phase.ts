@@ -7,6 +7,11 @@ export interface WalkState {
 export interface WalkContext {
 	baseUrl: string;
 	ingestBaseUrl: string;
+	generationDir: string;
+	persistDir: string;
+	scheduledTime: number;
+	generationCron: string;
+	ingestCron: string;
 	pair: GenerationRunParams;
 	unpublishedPair: GenerationRunParams;
 	state: WalkState;

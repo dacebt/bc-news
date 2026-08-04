@@ -8,9 +8,11 @@ import { startBitJitaStubServer, type BitJitaStubServer } from "./walk/bitjita-s
 import type { WalkContext } from "./walk/phase";
 import { walkPhases } from "./walk/phases/index";
 import { POLL_INTERVAL_MS, sleep } from "./walk/timing";
+import { readSingleWranglerCron } from "./walk/wrangler-cron";
 
 const ACTIVE_REGION_ID = "7";
 const PUBLICATION_DATE = "2026-01-25";
+const SCHEDULED_TIME = 1_769_299_200_000;
 const UNPUBLISHED_PUBLICATION_DATE = "2026-01-26";
 const DEFAULT_PORT = 8787;
 const READINESS_TIMEOUT_MS = 90_000;
@@ -293,6 +295,10 @@ async function main(): Promise<void> {
 	const ingestPort = port + 1;
 	const ingestBaseUrl = `http://127.0.0.1:${ingestPort}`;
 	const browserUrl = `http://localhost:${port}/?active_region_id=${ACTIVE_REGION_ID}&publication_date=${PUBLICATION_DATE}`;
+	const [generationCron, ingestCron] = await Promise.all([
+		readSingleWranglerCron(join(generationDir, "wrangler.jsonc")),
+		readSingleWranglerCron(join(ingestDir, "wrangler.jsonc")),
+	]);
 
 	console.log("walk: building workspace");
 	await runCommand("pnpm", ["typecheck"], repoRoot);
@@ -340,7 +346,18 @@ async function main(): Promise<void> {
 				active_region_id: ACTIVE_REGION_ID,
 				publication_date: UNPUBLISHED_PUBLICATION_DATE,
 			};
-			const ctx: WalkContext = { baseUrl, ingestBaseUrl, pair, unpublishedPair, state: {} };
+			const ctx: WalkContext = {
+				baseUrl,
+				ingestBaseUrl,
+				generationDir,
+				persistDir,
+				scheduledTime: SCHEDULED_TIME,
+				generationCron,
+				ingestCron,
+				pair,
+				unpublishedPair,
+				state: {},
+			};
 			await runPhases(ctx);
 			console.log("WALK PASS");
 			console.log(browserUrl);
