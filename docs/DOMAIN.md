@@ -32,6 +32,10 @@ verbatim in code, schema, tests, and APIs — no synonyms.
   document, and not two hand-synced hardcoded copies as in v1.
 - **publication date** — the calendar date an edition is published under.
   Together with an active region it identifies exactly one intended edition.
+- **evidence date** — the calendar day of chat an edition draws on: the
+  publication date minus one day (the inherited v1 date contract, see
+  Defaults). Always derived from a publication date through the one date
+  function in code; never supplied independently.
 - **edition** — the newspaper product: one complete, publishable daily paper
   for one active region and one publication date, built from that region's
   validated chat activity.
@@ -80,8 +84,19 @@ Inherited defaults until deliberately changed:
 - The active regions are v1's nine, with the list's authoritative home a
   structural choice, not a product one.
 - A publication date covers the prior day's chat (edition date minus one
-  day).
+  day). The covered day is the *evidence date*.
 - Missing-data and availability behavior follow what v1 observably did.
+- The edition contract carries v1's published shape with these settled
+  deviations: identity fields use the domain terms (`active_region_id`,
+  `publication_date`); `meta.editorial_capabilities` records provider and
+  model per editorial capability, replacing v1's single provider enum and
+  stage-keyed model list; provider is an open string so local and recorded
+  models are representable; `meta` is required at both publish and read;
+  identity fields and `meta` are never part of any model's output contract.
+- Until the roster thickens to v1's three stages, the skeleton runs exactly
+  one editorial capability — `main_story` (v1's stage 2) — with a
+  deterministically derived masthead and empty announcements as labeled
+  skeleton fills.
 
 ## Links
 

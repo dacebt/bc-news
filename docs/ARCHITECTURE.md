@@ -66,10 +66,21 @@ that forces it.
 
 Package layout follows v1's monorepo shape — pnpm workspaces with apps and
 shared contract packages — modernized to this build. v1's observed behavior
-is the default for product questions (see the [domain model](DOMAIN.md));
-what remains genuinely structural and gets settled by amendment here: the
-local runner, persistence and artifact-retention choices, and the concrete
-schema at the evidence input port.
+is the default for product questions (see the [domain model](DOMAIN.md)).
+
+Settled — the concrete schema at the evidence input port: the port carries
+validated chat messages, `{ id, ts (UTC milliseconds), author_id,
+author_name (nullable), text }`, grounded in the seam v1's generator
+observably consumed. An adapter receives an active region and an *evidence
+date* (see the [domain model](DOMAIN.md)) — never a publication date; the
+derivation lives once in the functional core — and returns that day's
+messages in the UTC window [00:00 of the evidence date, 00:00 of the next
+day), end-exclusive. Adapters parse every row against the shared schema and
+reject before returning; ordering is unspecified at the port, and the pure
+core sorts deterministically.
+
+What remains genuinely structural and gets settled by amendment here: the
+local runner, and persistence and artifact-retention choices.
 
 ## Links
 

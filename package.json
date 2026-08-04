@@ -1,0 +1,17 @@
+{
+	"name": "bc-news",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"typecheck": "pnpm -r typecheck",
+		"lint": "eslint .",
+		"test": "pnpm -r test"
+	},
+	"devDependencies": {
+		"@eslint/js": "^10.0.1",
+		"eslint": "^10.8.0",
+		"tsx": "^4.23.5",
+		"typescript": "^6.0.3",
+		"typescript-eslint": "^8.66.0"
+	}
+}
