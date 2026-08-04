@@ -11,12 +11,20 @@ function envWith(overrides: Record<string, unknown>): Env {
 }
 
 it("valid config resolves the fixture and recorded ports", () => {
-	const ports = resolveGenerationPorts(env);
+	const fixtureEnv = envWith({ EVIDENCE_INPUT: "fixture" });
+	const ports = resolveGenerationPorts(fixtureEnv);
 
 	expect(ports.evidenceInput).toBe(fixtureEvidenceInput);
 	expect(ports.modelProviders.main_story).toBe(recordedModelProvider);
 	expect(ports.modelProviders.announcements).toBe(recordedModelProvider);
 	expect(ports.modelProviders.packaging).toBe(recordedModelProvider);
+});
+
+it("committed default resolves a d1-backed evidence port, not the fixture", () => {
+	const ports = resolveGenerationPorts(env);
+
+	expect(ports.evidenceInput).toBeDefined();
+	expect(ports.evidenceInput).not.toBe(fixtureEvidenceInput);
 });
 
 it("rejects unknown evidence adapter id", () => {

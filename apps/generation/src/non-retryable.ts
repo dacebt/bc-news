@@ -6,6 +6,7 @@ import {
 	EvidenceContractError,
 } from "@bc-news/generation-core";
 import { FixtureEvidenceMismatchError, RecordedModelProviderError } from "@bc-news/fixtures";
+import { D1ChatEvidenceError } from "./adapters/d1-chat-evidence";
 import { LmStudioDeterministicError } from "./adapters/lmstudio-model-provider";
 import { GenerationConfigError } from "./config-error";
 
@@ -18,6 +19,7 @@ const DETERMINISTIC_FAILURES = [
 	RecordedModelProviderError,
 	LmStudioDeterministicError,
 	GenerationConfigError,
+	D1ChatEvidenceError,
 ] as const;
 
 function hasCode(error: object): error is { code: string } {

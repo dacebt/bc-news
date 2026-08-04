@@ -24,7 +24,7 @@
 		"directory": "../client/dist"
 	},
 	"vars": {
-		"EVIDENCE_INPUT": "fixture",
+		"EVIDENCE_INPUT": "d1_chat",
 		"MODEL_CONFIG": "{\"main_story\":{\"adapter\":\"recorded\"},\"announcements\":{\"adapter\":\"recorded\"},\"packaging\":{\"adapter\":\"recorded\"}}"
 	}
 }

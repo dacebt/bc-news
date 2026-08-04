@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { ActiveRegionIdSchema, PublicationDateSchema, TimestampMillisecondsSchema } from "@bc-news/contracts";
+import {
+	ActiveRegionIdSchema,
+	PublicationDateSchema,
+	TimestampMillisecondsSchema,
+} from "@bc-news/contracts";
 
 export const PreparedMessageSchema = z.strictObject({
 	id: z.string(),

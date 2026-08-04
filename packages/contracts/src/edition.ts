@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ActiveRegionIdSchema } from "./active-region-id";
 import { PublicationDateSchema } from "./publication-date";
 
 export const AnnouncementSchema = z.strictObject({
@@ -27,7 +28,7 @@ const EditorialCapabilityProvenanceSchema = z.strictObject({
 });
 
 export const EditionSchema = z.strictObject({
-	active_region_id: z.string().min(1),
+	active_region_id: ActiveRegionIdSchema,
 	publication_date: PublicationDateSchema,
 	title: z.string().min(1),
 	subtitle: z.string().min(1),

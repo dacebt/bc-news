@@ -8,7 +8,7 @@ tags: [documentation, architecture, ports, typescript]
 status: stable
 generated:
   by: ebt-skills/okf-v0.2
-  at: "2026-08-04T13:57:32Z"
+  at: "2026-08-04T18:01:01Z"
 authority: binding
 ---
 
@@ -79,9 +79,15 @@ day), end-exclusive. Adapters parse every row against the shared schema and
 reject before returning; ordering is unspecified at the port, and the pure
 core sorts deterministically.
 
-Settled — persistence for the completed edition: one D1 database with a
-single `edition` table, primary key `(active_region_id, publication_date)`.
-Publish is one atomic `INSERT ... ON CONFLICT DO NOTHING` — the first
+Settled — one D1 database, three tables, one migration owner: alongside
+`edition` (publish target, primary key `(active_region_id,
+publication_date)`), the same database now holds `chat_messages` and
+`poll_state` — the ingest Worker's durable chat storage and cursor
+watermark. The migration chain lives solely in `apps/generation/migrations`;
+the ingest Worker binds the identical database (matching `database_name`
+and `database_id`) but declares no `migrations_dir` of its own, so a serial
+resource keeps exactly one owner. Publish is one atomic
+`INSERT ... ON CONFLICT DO NOTHING` — the first
 published edition wins and is immutable under duplicate invocation. Reads
 serve only by the identity pair and validate `document_json` against the
 same required-`meta` edition schema used at publish; a stored row that
@@ -111,7 +117,11 @@ serves the whole product — dev topology equals production topology. Routing
 is asset-first: a request matching a built asset is served without invoking
 Worker code; every other request reaches the Worker's routes, so an unknown
 path is the Worker's explicit 404, never a silent asset fallback. No Pages
-project and no second Worker exist. The client validates at its boundary
+project exists. A second Worker now exists — ingest — but it serves no
+client or reader traffic: it exposes only its own poll endpoint, binds the
+same D1 database as the generation Worker, and carries no static assets, so
+the client and `/api/edition` remain exactly the single-origin surface this
+paragraph describes. The client validates at its boundary
 like every other seam: `/api/edition` responses parse with the shared
 edition schema and the identity pair arrives only via URL query — missing
 or invalid identity renders the explicit no-published-edition state, never
@@ -124,22 +134,35 @@ assets in one session, and Workflows do not run under `--remote`, so the
 runner is local-only by construction; no mock of Cloudflare exists
 anywhere. The walk builds the workspace, applies the D1 migrations into a
 per-run isolated local persistence directory (every walk starts from
-absence, so the first trigger is genuinely the first), starts
-`wrangler dev`, triggers one *generation run* for the fixture pair, polls
-the edition read until it serves and parses the body against the shared
-edition schema, re-triggers the same pair asserting the served edition is
-byte-identical while recording the duplicate-create signal (ADR-006),
-asserts an unknown pair answers 404, and asserts the client HTML serves.
-The runner honors `WALK_PORT` end to end — `wrangler dev`, the readiness
-probe, the pre-spawn port-silence assertion, and the printed browser
-URL all defer to it, defaulting to 8787 when unset. On timeout it prints
-the generation run's status — failures surface,
-never vanish — and the exit code reflects the assertions. The default
-mode holds `wrangler dev` for human browser observation until Ctrl-C; a
-non-interactive mode (`--non-interactive` or `WALK_NON_INTERACTIVE=1`)
-shuts down after the assertions for automation. The walk touches no
-production data, no live network, and no paid models by construction:
-fixture evidence and the recorded model provider are its only inputs.
+absence, so the first trigger is genuinely the first), starts a node
+`http` server that stubs BitJita by serving the committed
+`packages/fixtures/bitjita/` corpus, starts `wrangler dev` for the
+generation Worker and a second `wrangler dev` for the ingest Worker on a
+`WALK_PORT`-derived port sharing the same persistence directory (so both
+Workers read and write the identical local D1), polls the ingest Worker's
+poll endpoint until the fixture corpus is drained, then asserts an
+immediate re-poll inserts zero, proving dedup and overlap — then triggers
+one *generation run* for the fixture pair, polls the edition read until it
+serves and parses the body against the shared edition schema, re-triggers
+the same pair asserting the served edition is byte-identical while
+recording the duplicate-create signal (ADR-006), asserts an unknown pair
+answers 404, and asserts the client HTML serves. The runner honors
+`WALK_PORT` end to end — both `wrangler dev` processes, both readiness
+probes, the pre-spawn port-silence assertions, and the printed browser URL
+all defer to it, defaulting to 8787 (generation) and 8788 (ingest) when
+unset. On timeout it prints the generation run's status — failures
+surface, never vanish — and the exit code reflects the assertions; shutdown
+stops both `wrangler dev` processes and the stub server on every path,
+success or failure. The default mode holds `wrangler dev` for human browser
+observation until Ctrl-C; a non-interactive mode (`--non-interactive` or
+`WALK_NON_INTERACTIVE=1`) shuts down after the assertions for automation.
+The walk touches no production data, no live network, and no paid models by
+construction: the walk-owned BitJita stub and the recorded model provider are
+its only inputs. Generation reads evidence through `EVIDENCE_INPUT=d1_chat`,
+the committed local default — the edition it publishes is generated from the
+`chat_messages` rows the ingest phase just inserted from the stub corpus, not
+from the fixture adapter. The fixture evidence adapter remains registered and
+explicitly selectable for tests and evaluation, but it is not the local default.
 
 ## Links
 

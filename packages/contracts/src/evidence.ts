@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ActiveRegionIdSchema } from "./active-region-id";
 import { PublicationDateSchema } from "./publication-date";
 import { TimestampMillisecondsSchema } from "./timestamp";
 
@@ -13,7 +14,7 @@ export const EvidenceMessageSchema = z.strictObject({
 export type EvidenceMessage = z.infer<typeof EvidenceMessageSchema>;
 
 export const EvidenceFixtureSchema = z.strictObject({
-	active_region_id: z.string().min(1),
+	active_region_id: ActiveRegionIdSchema,
 	evidence_date: PublicationDateSchema,
 	messages: z.array(EvidenceMessageSchema).min(1),
 });
