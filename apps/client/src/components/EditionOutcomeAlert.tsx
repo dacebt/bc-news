@@ -1,18 +1,17 @@
 import type { ReactNode } from "react";
 import { Alert, AlertIcon, Box } from "@chakra-ui/react";
 import type { EditionFetchOutcome } from "../api/edition";
+import { formatUtcPublishTime } from "../dates/publish-time";
 
-// Every non-success outcome getEdition can produce, plus one local-only case:
-// getEdition rejects with AbortError and nothing else (see its own catch
-// blocks), and an abort landing after getEdition has already resolved
-// resolves normally instead - the page's own signal.aborted check, not
-// getEdition's catch block, handles that case. So this page should never
-// observe anything but AbortError from a rejected getEdition call. If it
-// does, that is a bug rather than a modeled fetch outcome - report it
-// honestly instead of mislabeling it as one of the typed cases below.
+// Every non-published outcome getEdition can produce except `aborted` (a
+// cancelled request never reaches this component - EditionPage filters it
+// out before calling setAlert), plus one local-only case: something other
+// than getEdition threw during the fetch effect, which is a bug rather than
+// a modeled fetch outcome, reported honestly instead of mislabeling it as one
+// of the typed cases below.
 export type EditionDisplayError =
-	| Exclude<EditionFetchOutcome, { status: "success" }>
-	| { status: "unexpected-error" };
+	| Exclude<EditionFetchOutcome, { outcome: "published" } | { outcome: "aborted" }>
+	| { outcome: "unexpected_error" };
 
 interface EditionOutcomeAlertProps {
 	outcome: EditionDisplayError;
@@ -21,62 +20,62 @@ interface EditionOutcomeAlertProps {
 }
 
 // Static, single-sentence messages for the outcomes that don't need any
-// per-render data beyond the outcome itself. 'not-found' (depends on
-// isWaitingForTodaysEdition/localGenerationTime) and 'service-error'
+// per-render data beyond the outcome itself. 'absent' (depends on
+// isWaitingForTodaysEdition/localGenerationTime) and 'service_error'
 // (depends on the HTTP status) render distinct structured content instead
 // and are handled directly in the switch below.
 const STATIC_MESSAGES: Record<
-	Exclude<EditionDisplayError["status"], "not-found" | "service-error">,
+	Exclude<EditionDisplayError["outcome"], "absent" | "service_error">,
 	string
 > = {
-	"invalid-request": "This request was invalid. Try a different region or date.",
-	"network-error": "Could not reach the news service. Check your connection and try again.",
+	invalid_request: "This request was invalid. Try a different region or date.",
+	network_error: "Could not reach the news service. Check your connection and try again.",
 	// Names the client-side cause (misconfiguration/misrouting) rather than
 	// blaming the service - a 2xx that isn't JSON never reached the
 	// generation Worker.
-	"misrouted-response":
+	misrouted_response:
 		"This request did not reach the news service as expected — check the site's configuration and try again.",
-	"invalid-response": "The news service returned data in an unexpected format.",
-	"unexpected-error": "Something went wrong loading this edition.",
+	invalid_response: "The news service returned data in an unexpected format.",
+	unexpected_error: "Something went wrong loading this edition.",
 };
 
-// Renders the diagnostic message for one non-success fetch outcome. Genuine
-// absence (not-found) and actual operational failures use different Alert
+// Renders the diagnostic message for one non-published fetch outcome.
+// Genuine absence and actual operational failures use different Alert
 // statuses so the distinction is visible, not just present in the text.
 export function EditionOutcomeAlert({
 	outcome,
 	isWaitingForTodaysEdition,
 	localGenerationTime,
 }: EditionOutcomeAlertProps) {
-	let status: "info" | "warning" | "error";
+	let status: "info" | "error";
 	let content: ReactNode;
 
-	switch (outcome.status) {
-		case "not-found":
-			status = isWaitingForTodaysEdition ? "info" : "warning";
+	switch (outcome.outcome) {
+		case "absent":
+			status = isWaitingForTodaysEdition ? "info" : "error";
 			content = isWaitingForTodaysEdition ? (
 				<Box>
 					No edition published for this region for today's date. A new edition is published daily
-					at 10:00 AM UTC ({localGenerationTime} your time). Check back later or select a previous
-					date to view past editions!
+					at {formatUtcPublishTime()} ({localGenerationTime} your time). Check back later or select
+					a previous date to view past editions!
 				</Box>
 			) : (
 				<Box>No published edition for this region/date.</Box>
 			);
 			break;
-		case "service-error":
+		case "service_error":
 			status = "error";
 			content = (
 				<Box>The news service returned an error (HTTP {outcome.httpStatus}). Try again shortly.</Box>
 			);
 			break;
-		case "invalid-request":
-		case "network-error":
-		case "misrouted-response":
-		case "invalid-response":
-		case "unexpected-error":
+		case "invalid_request":
+		case "network_error":
+		case "misrouted_response":
+		case "invalid_response":
+		case "unexpected_error":
 			status = "error";
-			content = <Box>{STATIC_MESSAGES[outcome.status]}</Box>;
+			content = <Box>{STATIC_MESSAGES[outcome.outcome]}</Box>;
 			break;
 		default: {
 			// Exhaustiveness guard: adding a new EditionFetchOutcome variant

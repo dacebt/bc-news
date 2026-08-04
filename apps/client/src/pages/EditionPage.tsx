@@ -10,6 +10,7 @@ import { MainStory } from "../components/MainStory";
 import { Masthead } from "../components/Masthead";
 import { PaperContent, PaperTextureLayer, PaperWrapper } from "../components/PaperSurface";
 import { useEditionDateRange } from "../dates/use-edition-date-range";
+import { formatLocalPublishTime, GENERATION_PUBLISH_UTC_MINUTES } from "../dates/publish-time";
 import type { EditionSelection } from "../selection/edition-selection";
 import { useEditionSelection } from "../selection/use-edition-selection";
 
@@ -36,12 +37,14 @@ function PublishedPaper({ edition }: { edition: Edition }) {
 	);
 }
 
-// The daily generation window's close, in UTC minutes since midnight. Ported
-// from the deployed v0.1.4 client's isWaitingForTodaysEdition
-// (bc-newspaper src/pages/EditionPage.tsx): generation starts at 10:00 AM
-// UTC, and this is the point past which an absent today's edition means
-// generation failed rather than simply hasn't run yet.
-const GENERATION_WINDOW_END_UTC_MINUTES = 10 * 60 + 30;
+// Grace period after the publish time before an absent today's edition means
+// generation failed rather than simply hasn't run yet. Ported from the
+// deployed v0.1.4 client's isWaitingForTodaysEdition (bc-newspaper
+// src/pages/EditionPage.tsx), where this was folded into a single literal;
+// split out here so the publish hour itself lives once, in
+// dates/publish-time.ts, and this file only adds the grace period on top.
+const WAITING_GRACE_PERIOD_MINUTES = 30;
+const GENERATION_WINDOW_END_UTC_MINUTES = GENERATION_PUBLISH_UTC_MINUTES + WAITING_GRACE_PERIOD_MINUTES;
 
 // Waiting only applies to the pair a completed response actually answered
 // for, never the reader's still-pending selection - a fetch that resolved to
@@ -85,17 +88,6 @@ function msUntilGenerationWindowEnd(instant: Date): number {
 	return nextBoundary - instant.getTime();
 }
 
-// 10:00 AM UTC, formatted in the reader's own zone, for the waiting-edition
-// copy. Takes the same `now` isWaitingForTodaysEdition was evaluated against
-// rather than reading the clock again - only the reader's UTC offset varies
-// with which instant is passed in, and that is fixed for the duration of one
-// render.
-function formatLocalGenerationTime(now: Date): string {
-	const generationTime = new Date(now);
-	generationTime.setUTCHours(10, 0, 0, 0);
-	return generationTime.toLocaleTimeString([], { hour: "numeric", minute: "2-digit", hour12: true });
-}
-
 interface EditionAlert {
 	outcome: EditionDisplayError;
 	// The (region, date) pair the fetch that produced `outcome` actually ran
@@ -132,11 +124,19 @@ export function EditionPage() {
 			// different pair is loading.
 			setAlert(null);
 			try {
-				const outcome = await getEdition(requestedPair.activeRegionId, requestedPair.publicationDate, {
+				const outcome = await getEdition({
+					activeRegionId: requestedPair.activeRegionId,
+					publicationDate: requestedPair.publicationDate,
 					signal: controller.signal,
 				});
-				if (controller.signal.aborted) return;
-				if (outcome.status === "success") {
+				// getEdition never throws for a cancelled request - it reports the
+				// modeled `aborted` outcome instead - so this page's own
+				// signal.aborted read is the only thing standing between an abort
+				// and it ever reaching setAlert. Checking both keeps that true even
+				// if the two ever disagree (for example, an abort a caller other
+				// than this effect's cleanup drove).
+				if (controller.signal.aborted || outcome.outcome === "aborted") return;
+				if (outcome.outcome === "published") {
 					setEdition(outcome.edition);
 				} else {
 					setEdition(null);
@@ -144,12 +144,13 @@ export function EditionPage() {
 				}
 			} catch (err) {
 				if (controller.signal.aborted) return;
-				// getEdition only ever rethrows AbortError (see its own catch
-				// blocks); anything else reaching here means it broke its own
-				// contract, so it is reported honestly rather than mislabeled.
+				// getEdition never throws for any expected case, abort included
+				// (see its own catch blocks); anything reaching here means it broke
+				// its own contract, so it is reported honestly rather than
+				// mislabeled as one of the modeled outcomes.
 				console.error("EditionPage: getEdition rejected unexpectedly", err);
 				setEdition(null);
-				setAlert({ outcome: { status: "unexpected-error" }, pair: requestedPair });
+				setAlert({ outcome: { outcome: "unexpected_error" }, pair: requestedPair });
 			} finally {
 				if (!controller.signal.aborted) {
 					setLoading(false);
@@ -224,7 +225,7 @@ export function EditionPage() {
 							<EditionOutcomeAlert
 								outcome={alert.outcome}
 								isWaitingForTodaysEdition={isWaiting}
-								localGenerationTime={isWaiting ? formatLocalGenerationTime(now) : ""}
+								localGenerationTime={isWaiting ? formatLocalPublishTime(now) : ""}
 							/>
 						</Box>
 					)}
