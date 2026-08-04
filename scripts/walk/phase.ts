@@ -6,6 +6,7 @@ export interface WalkState {
 
 export interface WalkContext {
 	baseUrl: string;
+	ingestBaseUrl: string;
 	pair: GenerationRunParams;
 	unpublishedPair: GenerationRunParams;
 	state: WalkState;

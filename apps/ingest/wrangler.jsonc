@@ -1,0 +1,28 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "bc-news-ingest",
+	"main": "src/index.ts",
+	"compatibility_date": "2026-08-03",
+	// No `triggers.crons` entry and no `scheduled()` handler: wiring a live
+	// cron is slice F's decision, not this one's.
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "bc-news-editions",
+			// Same database as apps/generation — one D1 database holds edition,
+			// chat_messages, and poll_state. No migrations_dir here: the migration
+			// chain lives solely in apps/generation/migrations, one owner for a
+			// serial resource.
+			"database_id": "00000000-0000-0000-0000-000000000000"
+		}
+	],
+	"vars": {
+		"POLL_LIMIT": "100",
+		"POLL_OVERLAP_SECONDS": "10",
+		"POLL_CURSOR_KEY": "chat_firehose"
+		// BITJITA_API_BASE is deliberately absent: it is required with no
+		// default (unlike the vars above), so a deployment that forgets to set
+		// it rejects at config resolution instead of silently polling
+		// production BitJita. The walk supplies it via `wrangler dev --var`.
+	}
+}
