@@ -6,6 +6,7 @@ import { runEvalChecks, type CheckResult } from "./checks/index";
 import { loadConfig, type EvalConfig } from "./config";
 import { loadFixture } from "./evidence-fixture";
 import { collectRunFingerprint, WORKSPACE_ROOT, type ProviderParamEntry, type ProviderParams } from "./fingerprint";
+import { runJudge, type JudgeStepResult } from "./judge";
 import { resolveModelProvider } from "./model-adapters";
 import { generateRunId, saveRunFile, type RunFile } from "./run-file";
 
@@ -16,22 +17,12 @@ export interface RunCommandOptions {
 	readonly noJudge: boolean;
 }
 
-export class JudgeNotImplementedError extends Error {
-	readonly code = "judge_not_implemented";
-
-	constructor() {
-		super(
-			"Judge execution is not implemented in this slice; pass --no-judge or set judge: null in the config",
-		);
-		this.name = "JudgeNotImplementedError";
-	}
-}
-
 interface CapabilityStepResult {
 	readonly capability: EditorialCapability;
 	readonly promptSha256: string;
 	readonly output: Record<string, unknown>;
 	readonly checks: readonly CheckResult[];
+	readonly judge: JudgeStepResult | null;
 	readonly providerParam: ProviderParamEntry;
 }
 
@@ -39,11 +30,12 @@ async function runCapability(
 	capability: EditorialCapability,
 	config: EvalConfig,
 	preparedEvidence: PreparedEvidence,
+	noJudge: boolean,
 ): Promise<CapabilityStepResult> {
 	const runner = capabilityRunners[capability];
 	const prompt = runner.buildPrompt(preparedEvidence);
 	const promptSha256 = createHash("sha256").update(prompt).digest("hex");
-	const provider = resolveModelProvider(capability, config.capabilities[capability]);
+	const provider = resolveModelProvider(capability, config.capabilities[capability], "capability");
 	const completion = await provider.complete({ editorialCapability: capability, system: runner.system, user: prompt });
 	const output = runner.parseOutput(completion.text);
 	const checks = runEvalChecks({
@@ -52,11 +44,26 @@ async function runCapability(
 		output,
 		preparedEvidence,
 	});
+
+	// A judge run is per-capability step, gated the same way the whole judge
+	// stage is: a configured adapter and no --no-judge override. Absent
+	// either, `judge` stays null and the step carries deterministic checks only.
+	const judge =
+		config.judge === null || noJudge
+			? null
+			: await runJudge({
+					capability,
+					outputText: completion.text,
+					preparedEvidence,
+					provider: resolveModelProvider(capability, config.judge, "judge"),
+				});
+
 	return {
 		capability,
 		promptSha256,
 		output,
 		checks,
+		judge,
 		providerParam: { provider: completion.provider, model: completion.model },
 	};
 }
@@ -71,7 +78,11 @@ function assembleProviderParams(results: readonly CapabilityStepResult[]): Provi
 	if (mainStory === undefined) {
 		throw new Error("main_story capability produced no result; provider_params cannot be assembled");
 	}
-	return { main_story: mainStory.providerParam };
+	const judgeProviderParam = results.find((result) => result.judge !== null)?.judge?.providerParam;
+	return {
+		main_story: mainStory.providerParam,
+		...(judgeProviderParam === undefined ? {} : { judge: judgeProviderParam }),
+	};
 }
 
 /**
@@ -84,16 +95,14 @@ function assembleProviderParams(results: readonly CapabilityStepResult[]): Provi
  */
 export async function runCommand(options: RunCommandOptions): Promise<{ path: string; run: RunFile }> {
 	const config = await loadConfig(options.configPath);
-	if (config.judge !== null && !options.noJudge) {
-		throw new JudgeNotImplementedError();
-	}
 
 	const loadedFixture = await loadFixture(options.fixturePath);
 	// Fingerprint content is collected here, before any provider call, per the
 	// fingerprint discipline: identity describes what actually produced the
 	// run, not whatever the checks/providers/schemas had drifted to by the
 	// time the run finished.
-	const fingerprintContent = await collectRunFingerprint(loadedFixture.bytes);
+	const usesJudge = config.judge !== null && !options.noJudge;
+	const fingerprintContent = await collectRunFingerprint(loadedFixture.bytes, usesJudge);
 
 	const startedAt = new Date().toISOString();
 	const preparedEvidence = prepareEvidence({
@@ -105,7 +114,7 @@ export async function runCommand(options: RunCommandOptions): Promise<{ path: st
 	// Every roster entry has a required config.capabilities entry (schema-enforced),
 	// so the full roster runs -- independently, per the run's execution topology.
 	const results = await Promise.all(
-		CAPABILITY_ROSTER.map((capability) => runCapability(capability, config, preparedEvidence)),
+		CAPABILITY_ROSTER.map((capability) => runCapability(capability, config, preparedEvidence, options.noJudge)),
 	);
 	const completedAt = new Date().toISOString();
 
@@ -121,7 +130,20 @@ export async function runCommand(options: RunCommandOptions): Promise<{ path: st
 			output: result.output,
 			schema_valid: true,
 			checks: [...result.checks],
-			judge: null,
+			judge:
+				result.judge === null
+					? null
+					: {
+							scores: result.judge.scores,
+							reasoning: result.judge.reasoning,
+							aggregate: result.judge.aggregate,
+							weighting: result.judge.weighting,
+							provenance: {
+								source: result.judge.provenance.source,
+								prompt_sha256: result.judge.provenance.promptSha256,
+								response_sha256: result.judge.provenance.responseSha256,
+							},
+						},
 		})),
 		started_at: startedAt,
 		completed_at: completedAt,

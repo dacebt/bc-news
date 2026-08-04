@@ -2,5 +2,5 @@
 	"capabilities": {
 		"main_story": { "adapter": "recorded" }
 	},
-	"judge": null
+	"judge": { "adapter": "recorded" }
 }

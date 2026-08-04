@@ -22,6 +22,20 @@ const RECORDED_MODEL_PROVIDER_PATH = join(
 	"src",
 	"recorded-model-provider.ts",
 );
+const RECORDED_RESPONSE_PATH = join(
+	WORKSPACE_ROOT,
+	"packages",
+	"fixtures",
+	"src",
+	"recorded-response.ts",
+);
+const RECORDED_JUDGE_MODEL_PROVIDER_PATH = join(
+	WORKSPACE_ROOT,
+	"packages",
+	"fixtures",
+	"src",
+	"recorded-judge-model-provider.ts",
+);
 const RECORDED_MODEL_RESPONSE_PATH = join(
 	WORKSPACE_ROOT,
 	"packages",
@@ -29,6 +43,16 @@ const RECORDED_MODEL_RESPONSE_PATH = join(
 	"model-responses",
 	"main_story.json",
 );
+const RECORDED_JUDGE_RESPONSE_PATH = join(
+	WORKSPACE_ROOT,
+	"packages",
+	"fixtures",
+	"model-responses",
+	"judge",
+	"main_story.json",
+);
+const RUBRICS_PATH = join(SRC_DIRECTORY, "rubrics.ts");
+const JUDGE_PATH = join(SRC_DIRECTORY, "judge.ts");
 
 export const Sha256HashSchema = z.string().regex(/^[0-9a-f]{64}$/);
 const ProviderParamEntrySchema = z.strictObject({
@@ -152,13 +176,16 @@ export async function resolveCodeVersion(cwd: string): Promise<string | null> {
  * name bytes the run never consumed. Call this immediately after the fixture
  * is read, before any provider call, per the fingerprint discipline.
  *
- * rubrics_sha256 has no rubrics file to hash this slice (judge is null;
- * decision recorded in the hand report): hashing the empty file list keeps
- * the field a well-defined, deterministic sha256 like every other directory
- * hash here, rather than introducing a second meaning for `null` alongside
- * code_version's "git resolution failed" meaning.
+ * A judged run hashes the rubric, judge prompt, recorded judge provider, and
+ * recorded judge response. A no-judge run excludes those inputs and carries
+ * the stable empty rubrics hash, because none of them participated in that
+ * run. The boolean is derived from effective config plus --no-judge before
+ * this function is called.
  */
-export async function collectRunFingerprint(fixtureBytes: Uint8Array): Promise<RunFingerprintContent> {
+export async function collectRunFingerprint(
+	fixtureBytes: Uint8Array,
+	usesJudge: boolean,
+): Promise<RunFingerprintContent> {
 	const [checkFilePaths, contractsFilePaths, generationCoreFilePaths] = await Promise.all([
 		listDirectoryTypeScriptFiles(CHECKS_DIRECTORY),
 		listDirectoryTypeScriptFiles(CONTRACTS_SRC_DIRECTORY),
@@ -166,8 +193,14 @@ export async function collectRunFingerprint(fixtureBytes: Uint8Array): Promise<R
 	]);
 	const [checksSha256, providersSha256, rubricsSha256, schemasSha256, codeVersion] = await Promise.all([
 		hashSortedFileConcatenation(checkFilePaths),
-		hashSortedFileConcatenation([PROVIDERS_PATH, RECORDED_MODEL_PROVIDER_PATH, RECORDED_MODEL_RESPONSE_PATH]),
-		hashSortedFileConcatenation([]),
+		hashSortedFileConcatenation([
+			PROVIDERS_PATH,
+			RECORDED_RESPONSE_PATH,
+			RECORDED_MODEL_PROVIDER_PATH,
+			RECORDED_MODEL_RESPONSE_PATH,
+			...(usesJudge ? [RECORDED_JUDGE_MODEL_PROVIDER_PATH, RECORDED_JUDGE_RESPONSE_PATH] : []),
+		]),
+		hashSortedFileConcatenation(usesJudge ? [RUBRICS_PATH, JUDGE_PATH] : []),
 		hashSortedFileConcatenation([...contractsFilePaths, ...generationCoreFilePaths]),
 		resolveCodeVersion(PACKAGE_DIRECTORY),
 	]);

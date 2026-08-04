@@ -75,11 +75,6 @@ export function parseEvalCliCommand(argv: readonly string[]): EvalCliCommand {
 			fixturePath: values.fixture,
 			...(values.config === undefined ? {} : { configPath: values.config }),
 			...(values["results-dir"] === undefined ? {} : { resultsDirectory: values["results-dir"] }),
-			// Defaults false, not true: the committed default config already carries
-			// `judge: null`, so the common case needs no flag at all. `--no-judge`
-			// is the deliberate override that lets a config naming a live judge
-			// adapter still run without one; omitting it must leave the
-			// JudgeNotImplementedError guard in run-command.ts reachable.
 			noJudge: values["no-judge"] ?? false,
 		};
 	}

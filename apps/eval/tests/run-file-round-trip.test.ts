@@ -3,7 +3,7 @@ import { mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, test } from "vitest";
-import { generateRunId, listRunFiles, loadRunFile, saveRunFile, type RunFile } from "../src/run-file";
+import { RunFileSchema, generateRunId, listRunFiles, loadRunFile, saveRunFile, type RunFile } from "../src/run-file";
 
 function hash(value: string): string {
 	return createHash("sha256").update(value).digest("hex");
@@ -69,6 +69,154 @@ test("keeps both run files when ids collide", async () => {
 	const second: unknown = JSON.parse(await readFile(secondPath, "utf8"));
 	expect((second as { id: string }).id).toBe(`${run.id}-2`);
 	await expect(readFile(firstPath, "utf8")).resolves.toBe(firstBytes);
+});
+
+test("loads a part-1-shaped run file whose judge steps are plain null", async () => {
+	const directory = await tempResultsDirectory();
+	// Modeled on results/2026-08-04T16-57-33-530Z.json: no judge shape existed
+	// yet, so the step simply carried `judge: null` with no dimension scores.
+	const partOneRun = {
+		id: "2026-08-04T16-57-33-530Z",
+		config: { capabilities: { main_story: { adapter: "recorded" } }, judge: null },
+		fixture: { path: "packages/fixtures", fixture_sha256: hash("fixture") },
+		steps: [
+			{
+				capability: "main_story",
+				prompt_sha256: hash("prompt"),
+				output: { main_story: { headline: "h", lede: "l", body: "b" } },
+				schema_valid: true,
+				checks: [{ name: "injection", passed: false, detail: "Tone violation: :)" }],
+				judge: null,
+			},
+		],
+		started_at: "2026-08-04T16:57:33.520Z",
+		completed_at: "2026-08-04T16:57:33.530Z",
+		fingerprint: {
+			provider_params: { main_story: { provider: "recorded", model: "recorded/main-story-v1" } },
+			fixture_sha256: hash("fixture"),
+			checks_sha256: hash("checks"),
+			providers_sha256: hash("providers"),
+			rubrics_sha256: hash(""),
+			schemas_sha256: hash("schemas"),
+			code_version: "4c7ad2d365e8a75f394129c17da350cdf58cb0a1-dirty-eb98160bf547",
+		},
+	};
+	await writeFile(join(directory, `${partOneRun.id}.json`), `${JSON.stringify(partOneRun)}\n`, {
+		encoding: "utf8",
+		flag: "wx",
+	});
+
+	const read = await loadRunFile(partOneRun.id, directory);
+
+	expect(read.id).toBe(partOneRun.id);
+	expect(read.steps[0]?.judge).toBeNull();
+});
+
+test("round-trips a judged run carrying strict per-dimension scores and the weighting disposition", async () => {
+	const directory = await tempResultsDirectory();
+	const run: RunFile = {
+		...sampleRun(generateRunId()),
+		steps: [
+			{
+				capability: "main_story",
+				prompt_sha256: hash("prompt"),
+				output: { main_story: { headline: "h", lede: "l", body: "b" } },
+				schema_valid: true,
+				checks: [{ name: "injection", passed: true, detail: "no injection markers" }],
+				judge: {
+					scores: { grounding: 5, voice: 4, structure: 4 },
+					reasoning: "well grounded, in-world voice, coherent paragraphs",
+					aggregate: 4.35,
+					weighting: "v1_rubric_weighted_mean",
+					provenance: {
+						source: "recorded_replay",
+						prompt_sha256: hash("judge prompt"),
+						response_sha256: hash("judge response"),
+					},
+				},
+			},
+		],
+	};
+
+	const path = await saveRunFile(run, directory);
+	const read = await loadRunFile(run.id, directory);
+
+	expect(read.id).toBe(run.id);
+	const judge = read.steps[0]?.judge as { scores: Record<string, number>; weighting: string } | null;
+	expect(judge?.weighting).toBe("v1_rubric_weighted_mean");
+	expect(judge?.scores).toEqual({ grounding: 5, voice: 4, structure: 4 });
+	await expect(readFile(path, "utf8")).resolves.toContain("v1_rubric_weighted_mean");
+});
+
+test("rejects an out-of-range judge score at write time", () => {
+	const run = sampleRun(generateRunId());
+	const withBadScore = {
+		...run,
+		steps: [
+			{
+				...run.steps[0],
+				judge: {
+					scores: { grounding: 6, voice: 4, structure: 4 },
+					reasoning: "x",
+					aggregate: 4.67,
+					weighting: "v1_rubric_weighted_mean",
+					provenance: {
+						source: "recorded_replay",
+						prompt_sha256: hash("judge prompt"),
+						response_sha256: hash("judge response"),
+					},
+				},
+			},
+		],
+	};
+
+	expect(RunFileSchema.safeParse(withBadScore).success).toBe(false);
+});
+
+test("rejects judge dimensions that do not exactly match the capability rubric", () => {
+	const run = sampleRun(generateRunId());
+	const withDriftedDimensions = {
+		...run,
+		steps: [{
+			...run.steps[0],
+			judge: {
+				scores: { grounding: 5, voice: 4, structure: 4, invented: 5 },
+				reasoning: "x",
+				aggregate: 4.35,
+				weighting: "v1_rubric_weighted_mean",
+				provenance: {
+					source: "recorded_replay",
+					prompt_sha256: hash("judge prompt"),
+					response_sha256: hash("judge response"),
+				},
+			},
+		}],
+	};
+
+	expect(RunFileSchema.safeParse(withDriftedDimensions).success).toBe(false);
+});
+
+test("rejects a retained aggregate that disagrees with rubric weights", () => {
+	const run = sampleRun(generateRunId());
+	const withTrustedAggregate = {
+		...run,
+		steps: [{
+			...run.steps[0],
+			judge: {
+				scores: { grounding: 5, voice: 4, structure: 4 },
+				reasoning: "x",
+				aggregate: 5,
+				weighting: "v1_rubric_weighted_mean",
+				provenance: {
+					source: "recorded_replay",
+					prompt_sha256: hash("judge prompt"),
+					response_sha256: hash("judge response"),
+				},
+			},
+		}],
+	};
+
+	expect(RunFileSchema.safeParse(withTrustedAggregate).success).toBe(false);
 });
 
 test("lists and shows a run file carrying unknown keys the write schema would reject", async () => {

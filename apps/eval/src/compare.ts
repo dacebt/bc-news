@@ -1,11 +1,29 @@
 import { createHash } from "node:crypto";
-import type { RunFileRead } from "./run-file";
+import { z } from "zod";
+import { CAPABILITY_ROSTER } from "./capability-runners";
+import { JudgeStepSchema, type RunFileRead } from "./run-file";
+import { rubricDimensionNames } from "./rubrics";
 
 export interface CheckComparison {
 	readonly name: string;
 	readonly left: boolean | null;
 	readonly right: boolean | null;
 	readonly changed: boolean;
+}
+
+export interface JudgeDimensionComparison {
+	readonly name: string;
+	readonly left: number | null;
+	readonly right: number | null;
+	readonly changed: boolean;
+}
+
+export interface JudgeComparison {
+	readonly weighting: "v1_rubric_weighted_mean" | null;
+	readonly aggregateLeft: number | null;
+	readonly aggregateRight: number | null;
+	readonly dimensions: readonly JudgeDimensionComparison[];
+	readonly rubricMismatch: string | null;
 }
 
 export interface StepComparison {
@@ -16,6 +34,7 @@ export interface StepComparison {
 	readonly outputHashRight: string | null;
 	readonly outputHashEqual: boolean;
 	readonly checks: readonly CheckComparison[];
+	readonly judge: JudgeComparison;
 }
 
 export interface FingerprintFieldDiff {
@@ -53,6 +72,7 @@ interface ComparableStep {
 	readonly capability: string;
 	readonly output?: unknown;
 	readonly checks?: readonly { readonly name: string; readonly passed: boolean }[];
+	readonly judge?: unknown;
 }
 
 function stepsByCapability(run: RunFileRead): Map<string, ComparableStep> {
@@ -68,6 +88,72 @@ function compareChecks(left: ComparableStep | undefined, right: ComparableStep |
 		const rightPassed = rightChecks.get(name) ?? null;
 		return { name, left: leftPassed, right: rightPassed, changed: leftPassed !== rightPassed };
 	});
+}
+
+/**
+ * A step's judge field is `unknown` on the permissive read path; a value
+ * that doesn't parse as a valid judge step (including an older run's plain
+ * `null`) degrades to `null` here rather than throwing -- compare must stay
+ * usable against every run the read schema accepts, and a judge-less side
+ * is a comparison outcome (never a 0), not a comparison failure.
+ */
+function judgeFromStep(step: ComparableStep | undefined) {
+	if (step === undefined) return null;
+	const parsed = JudgeStepSchema.nullable().safeParse(step.judge);
+	return parsed.success ? parsed.data : null;
+}
+
+function judgeScore(
+	judge: ReturnType<typeof judgeFromStep>,
+	dimensionName: string,
+): number | null {
+	if (judge === null) return null;
+	return Object.entries(judge.scores).find(([name]) => name === dimensionName)?.[1] ?? null;
+}
+
+const ComparableCapabilitySchema = z.enum(CAPABILITY_ROSTER);
+
+function judgeDimensionNames(
+	capability: string,
+	leftJudge: ReturnType<typeof judgeFromStep>,
+	rightJudge: ReturnType<typeof judgeFromStep>,
+): { readonly names: readonly string[]; readonly rubricMismatch: string | null } {
+	if (leftJudge === null && rightJudge === null) return { names: [], rubricMismatch: null };
+	const parsedCapability = ComparableCapabilitySchema.safeParse(capability);
+	if (parsedCapability.success) {
+		return { names: rubricDimensionNames(parsedCapability.data), rubricMismatch: null };
+	}
+	const names = [
+		...new Set([
+			...Object.keys(leftJudge?.scores ?? {}),
+			...Object.keys(rightJudge?.scores ?? {}),
+		]),
+	].sort();
+	return {
+		names,
+		rubricMismatch: `Judged historical capability "${capability}" has no current rubric`,
+	};
+}
+
+function compareJudge(
+	capability: string,
+	left: ComparableStep | undefined,
+	right: ComparableStep | undefined,
+): JudgeComparison {
+	const leftJudge = judgeFromStep(left);
+	const rightJudge = judgeFromStep(right);
+	const { names, rubricMismatch } = judgeDimensionNames(capability, leftJudge, rightJudge);
+	return {
+		weighting: leftJudge?.weighting ?? rightJudge?.weighting ?? null,
+		aggregateLeft: leftJudge?.aggregate ?? null,
+		aggregateRight: rightJudge?.aggregate ?? null,
+		dimensions: names.map((name) => {
+			const leftScore = judgeScore(leftJudge, name);
+			const rightScore = judgeScore(rightJudge, name);
+			return { name, left: leftScore, right: rightScore, changed: leftScore !== rightScore };
+		}),
+		rubricMismatch,
+	};
 }
 
 const FINGERPRINT_FIELDS = [
@@ -114,6 +200,7 @@ export function compareRuns(left: RunFileRead, right: RunFileRead): RunCompariso
 				outputHashRight: rightHash,
 				outputHashEqual: leftHash !== null && leftHash === rightHash,
 				checks: compareChecks(leftStep, rightStep),
+				judge: compareJudge(capability, leftStep, rightStep),
 			};
 		}),
 		fingerprintFields: FINGERPRINT_FIELDS.map((field) => {

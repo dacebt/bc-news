@@ -1,8 +1,21 @@
 import type { RunComparison } from "./compare";
-import type { RunFile, RunFileRead } from "./run-file";
+import { JudgeStepSchema, type JudgeStep, type RunFile, type RunFileRead } from "./run-file";
 
 function displayHash(value: string | null): string {
 	return value ?? "missing";
+}
+
+function displayNumber(value: number | null): string {
+	return value === null ? "missing" : String(value);
+}
+
+function formatJudgeSummary(judge: JudgeStep | null): string {
+	if (judge === null) return "judge: skipped";
+	const scores = Object.entries(judge.scores)
+		.map(([name, score]) => `${name}=${score}`)
+		.join(", ");
+	const source = judge.provenance.source === "recorded_replay" ? "recorded judge replay" : "model judgment";
+	return `${source} (${judge.weighting}): ${judge.aggregate.toFixed(2)} [${scores}]`;
 }
 
 export function formatRunSummary(run: RunFile, outputPath: string): string {
@@ -10,7 +23,7 @@ export function formatRunSummary(run: RunFile, outputPath: string): string {
 	for (const step of run.steps) {
 		const checks = step.checks ?? [];
 		const passed = checks.filter((check) => check.passed).length;
-		lines.push(`${step.capability}: ${passed}/${checks.length} checks passed`);
+		lines.push(`${step.capability}: ${passed}/${checks.length} checks passed; ${formatJudgeSummary(step.judge)}`);
 	}
 	return lines.join("\n");
 }
@@ -40,6 +53,8 @@ export function formatRunDetail(run: RunFileRead): string {
 		for (const check of checks) {
 			lines.push(`- ${check.name}: ${check.passed ? "pass" : "fail"}${check.detail === undefined ? "" : `; ${check.detail}`}`);
 		}
+		const judge = JudgeStepSchema.nullable().safeParse(step.judge);
+		lines.push(formatJudgeSummary(judge.success ? judge.data : null));
 		lines.push("Output:", JSON.stringify(step.output, null, 2));
 	}
 	return lines.join("\n");
@@ -69,6 +84,17 @@ export function formatRunComparison(comparison: RunComparison): string {
 			const left = check.left === null ? "missing" : check.left ? "pass" : "fail";
 			const right = check.right === null ? "missing" : check.right ? "pass" : "fail";
 			lines.push(`- ${check.name}: ${left} -> ${right}${check.changed ? " (changed)" : ""}`);
+		}
+		lines.push(
+			`Judge (${step.judge.weighting ?? "n/a"}): ${displayNumber(step.judge.aggregateLeft)} -> ${displayNumber(step.judge.aggregateRight)}`,
+		);
+		if (step.judge.rubricMismatch !== null) {
+			lines.push(`Judge rubric mismatch: ${step.judge.rubricMismatch}`);
+		}
+		for (const dimension of step.judge.dimensions) {
+			lines.push(
+				`- judge:${dimension.name}: ${displayNumber(dimension.left)} -> ${displayNumber(dimension.right)}${dimension.changed ? " (changed)" : ""}`,
+			);
 		}
 	}
 	return lines.join("\n");

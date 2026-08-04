@@ -3,6 +3,8 @@ export {
 	fixtureEvidenceInput,
 } from "./fixture-evidence-input";
 export {
-	RecordedModelProviderError,
-	recordedModelProvider,
-} from "./recorded-model-provider";
+	modelRequestSha256,
+	recordedJudgeModelProvider,
+} from "./recorded-judge-model-provider";
+export { recordedModelProvider } from "./recorded-model-provider";
+export { RecordedModelProviderError } from "./recorded-response";

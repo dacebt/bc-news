@@ -4,6 +4,7 @@ import { z } from "zod";
 import { CAPABILITY_ROSTER } from "./capability-runners";
 import { EvalConfigSchema } from "./config";
 import { RunFingerprintSchema, Sha256HashSchema } from "./fingerprint";
+import { rubricWeightedAggregate } from "./rubrics";
 
 export const RunIdSchema = z.string().regex(
 	/^[A-Za-z0-9][A-Za-z0-9_-]{0,199}$/,
@@ -18,24 +19,43 @@ export const CheckResultSchema = z.strictObject({
 
 const EditorialCapabilitySchema = z.enum(CAPABILITY_ROSTER);
 
-/**
- * Judge-weight disposition (recorded per the thickening, not deferred to a
- * residual risk): v1's rubric weights were decorative -- read but never
- * multiplied into the compare-time aggregate. This slice implements no judge
- * at all (--no-judge is the default, judge: null is the only accepted config,
- * a non-null judge config rejects with JudgeNotImplementedError), so `judge`
- * here is `null`, carrying no weight field. Weights become real -- applied in
- * an aggregate score, not decorative text -- only when a live judge adapter
- * is wired; that adapter's slice adds the weighted-score shape here
- * deliberately, not by widening this null.
- */
+const JudgeScoreSchema = z.number().int().min(1).max(5);
+
+export const JudgeStepSchema = z
+	.strictObject({
+		scores: z.strictObject({
+			grounding: JudgeScoreSchema,
+			voice: JudgeScoreSchema,
+			structure: JudgeScoreSchema,
+		}),
+		reasoning: z.string().trim().min(1),
+		aggregate: z.number(),
+		weighting: z.literal("v1_rubric_weighted_mean"),
+		provenance: z.strictObject({
+			source: z.enum(["recorded_replay", "model_completion"]),
+			prompt_sha256: Sha256HashSchema,
+			response_sha256: Sha256HashSchema,
+		}),
+	})
+	.superRefine((judge, context) => {
+		const expected = rubricWeightedAggregate("main_story", judge.scores);
+		if (Math.abs(judge.aggregate - expected) > Number.EPSILON) {
+			context.addIssue({
+				code: "custom",
+				path: ["aggregate"],
+				message: `aggregate must equal the v1 rubric-weighted score ${expected}`,
+			});
+		}
+	});
+export type JudgeStep = z.infer<typeof JudgeStepSchema>;
+
 export const RunStepSchema = z.strictObject({
-	capability: EditorialCapabilitySchema,
+	capability: z.literal("main_story").pipe(EditorialCapabilitySchema),
 	prompt_sha256: Sha256HashSchema,
 	output: z.record(z.string(), z.unknown()),
 	schema_valid: z.boolean(),
 	checks: z.array(CheckResultSchema).optional(),
-	judge: z.null().optional(),
+	judge: JudgeStepSchema.nullable(),
 });
 
 /**

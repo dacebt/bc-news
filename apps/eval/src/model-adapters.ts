@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { EditorialCapability, ModelProviderPort } from "@bc-news/generation-core";
-import { recordedModelProvider } from "@bc-news/fixtures";
+import { recordedJudgeModelProvider, recordedModelProvider } from "@bc-news/fixtures";
 
 /**
  * Mirrors apps/generation/src/adapters/model-adapters.ts's discriminated-union
@@ -18,13 +18,21 @@ export const ModelAdapterConfigSchema = z.discriminatedUnion("adapter", [
 ]);
 export type ModelAdapterConfig = z.infer<typeof ModelAdapterConfigSchema>;
 
+/**
+ * `role` distinguishes producing a capability's output from judging it: both
+ * resolve through this one function (one adapter home), but a "recorded"
+ * adapter backs a different recorded response set per role. Adding a live
+ * (e.g. lmstudio) adapter later is a new case in this switch, not a second
+ * resolution path.
+ */
 export function resolveModelProvider(
 	editorialCapability: EditorialCapability,
 	config: ModelAdapterConfig,
+	role: "capability" | "judge",
 ): ModelProviderPort {
 	void editorialCapability;
 	switch (config.adapter) {
 		case "recorded":
-			return recordedModelProvider;
+			return role === "judge" ? recordedJudgeModelProvider : recordedModelProvider;
 	}
 }
