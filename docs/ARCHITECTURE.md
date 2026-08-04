@@ -17,7 +17,7 @@ authority: binding
 If implementation and this document disagree, the implementation is wrong
 unless this document is deliberately amended in the same unit of work. It
 binds the structural posture; the *why* is recorded in the project decision
-vault (ADR-001, ADR-002, ADR-005, ADR-006).
+vault (ADR-001, ADR-002, ADR-005, ADR-006, ADR-007).
 
 ## Language
 
@@ -102,6 +102,20 @@ clients address editions only by the pair, so exactly one edition is ever
 addressable per identity. v1's lease/fencing/run-version apparatus is
 deliberately not carried: it compensated for competing stateless cron
 ticks, which one Workflow instance per pair eliminates.
+
+Settled — serving topology (ADR-007): the client is a Vite-built SPA whose
+`dist/` mounts as Workers static assets on the single generation Worker.
+One origin serves reader and API traffic, so the client's `/api/edition`
+read is same-origin with no CORS surface, and one `wrangler dev` session
+serves the whole product — dev topology equals production topology. Routing
+is asset-first: a request matching a built asset is served without invoking
+Worker code; every other request reaches the Worker's routes, so an unknown
+path is the Worker's explicit 404, never a silent asset fallback. No Pages
+project and no second Worker exist. The client validates at its boundary
+like every other seam: `/api/edition` responses parse with the shared
+edition schema and the identity pair arrives only via URL query — missing
+or invalid identity renders the explicit no-published-edition state, never
+a fixture default baked into client code.
 
 What remains genuinely structural and gets settled by amendment here: the
 local runner.

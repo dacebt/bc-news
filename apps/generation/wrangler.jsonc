@@ -20,6 +20,9 @@
 			"migrations_dir": "migrations"
 		}
 	],
+	"assets": {
+		"directory": "../client/dist"
+	},
 	"vars": {
 		"EVIDENCE_INPUT": "fixture",
 		"MODEL_CONFIG": "{\"main_story\":{\"adapter\":\"recorded\"}}"
