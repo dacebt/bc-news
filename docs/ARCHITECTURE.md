@@ -17,7 +17,7 @@ authority: binding
 If implementation and this document disagree, the implementation is wrong
 unless this document is deliberately amended in the same unit of work. It
 binds the structural posture; the *why* is recorded in the project decision
-vault (ADR-001, ADR-002, ADR-005, ADR-006, ADR-007, ADR-008).
+vault (ADR-001, ADR-002, ADR-005, ADR-006, ADR-007, ADR-008, ADR-009).
 
 ## Language
 
@@ -68,8 +68,8 @@ Package layout follows v1's monorepo shape — pnpm workspaces with apps and
 shared contract packages — modernized to this build. v1's observed behavior
 is the default for product questions (see the [domain model](DOMAIN.md)).
 
-Settled — the concrete schema at the evidence input port: the port carries
-validated chat messages, `{ id, ts (UTC milliseconds), author_id,
+Settled — the concrete schema at the evidence input port (ADR-009): the
+port carries validated chat messages, `{ id, ts (UTC milliseconds), author_id,
 author_name (nullable), text }`, grounded in the seam v1's generator
 observably consumed. An adapter receives an active region and an *evidence
 date* (see the [domain model](DOMAIN.md)) — never a publication date; the

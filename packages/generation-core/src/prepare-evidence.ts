@@ -127,10 +127,9 @@ export function prepareEvidence(input: {
 		}
 	}
 
-	const finalMessages = selected.length > MAX_MESSAGES
-		? selected.slice(0, MAX_MESSAGES)
-		: selected;
-	dropStats.sampling_dropped = afterBurst.length - finalMessages.length;
+	const sampled = selected.length > MAX_MESSAGES ? selected.slice(0, MAX_MESSAGES) : selected;
+	dropStats.sampling_dropped = afterBurst.length - sampled.length;
+	const finalMessages = sampled.sort(compareMessages);
 
 	return PreparedEvidenceSchema.parse({
 		active_region_id: activeRegionId,

@@ -43,15 +43,56 @@ function runCommand(command: string, args: string[], cwd: string): Promise<void>
 	});
 }
 
-function startWranglerDev(persistDir: string): ChildProcess {
+interface WranglerDev {
+	child: ChildProcess;
+	listening: Promise<void>;
+}
+
+/**
+ * Every assertion must be answered by the wrangler dev this run spawned — an
+ * orphaned or concurrent server on the port could otherwise serve a stale
+ * edition and certify a build the walk never executed. So the port must be
+ * silent before spawning, and readiness is the child's own "Ready on" line.
+ */
+async function assertPortSilent(): Promise<void> {
+	let occupied = true;
+	try {
+		await fetch(`${BASE_URL}/api/edition`);
+	} catch {
+		occupied = false;
+	}
+	if (occupied) {
+		throw new WalkFailure(
+			`port ${String(PORT)} is already answering before wrangler dev was spawned — stop the other server (an orphaned wrangler dev from a previous walk?) and re-run`,
+		);
+	}
+}
+
+function startWranglerDev(persistDir: string): WranglerDev {
 	const child = spawn(
 		"pnpm",
 		["exec", "wrangler", "dev", "--port", String(PORT), "--persist-to", persistDir],
 		{ cwd: generationDir, stdio: ["ignore", "pipe", "pipe"], detached: true },
 	);
+	const listening = new Promise<void>((resolve, reject) => {
+		let output = "";
+		child.stdout?.on("data", (chunk: Buffer) => {
+			output += chunk.toString();
+			if (output.includes("Ready on") && output.includes(`:${String(PORT)}`)) {
+				resolve();
+			}
+		});
+		child.once("exit", (code) => {
+			reject(
+				new WalkFailure(
+					`wrangler dev exited with code ${String(code)} before reporting Ready on port ${String(PORT)}`,
+				),
+			);
+		});
+	});
 	child.stdout?.pipe(process.stdout);
 	child.stderr?.pipe(process.stderr);
-	return child;
+	return { child, listening };
 }
 
 async function stopWranglerDev(child: ChildProcess): Promise<void> {
@@ -73,9 +114,24 @@ async function stopWranglerDev(child: ChildProcess): Promise<void> {
 	clearTimeout(forceKill);
 }
 
-async function waitForReadiness(): Promise<void> {
+async function waitForReadiness(wranglerDev: WranglerDev): Promise<void> {
+	let readyTimer: NodeJS.Timeout | undefined;
+	const readyTimeout = new Promise<never>((_, reject) => {
+		readyTimer = setTimeout(() => {
+			reject(new WalkFailure(`wrangler dev not ready within ${READINESS_TIMEOUT_MS} ms`));
+		}, READINESS_TIMEOUT_MS);
+	});
+	try {
+		await Promise.race([wranglerDev.listening, readyTimeout]);
+	} finally {
+		clearTimeout(readyTimer);
+	}
+
 	const deadline = Date.now() + READINESS_TIMEOUT_MS;
 	while (Date.now() < deadline) {
+		if (wranglerDev.child.exitCode !== null) {
+			throw new WalkFailure("wrangler dev exited while the walk was probing readiness");
+		}
 		let status: number | undefined;
 		try {
 			status = (await fetch(`${BASE_URL}/api/edition`)).status;
@@ -87,7 +143,7 @@ async function waitForReadiness(): Promise<void> {
 			return;
 		}
 		throw new WalkFailure(
-			`readiness probe expected 400 for /api/edition without identity params, got ${status}`,
+			`readiness probe expected 400 for /api/edition without identity params, got ${String(status)}`,
 		);
 	}
 	throw new WalkFailure(`wrangler dev not ready within ${READINESS_TIMEOUT_MS} ms`);
@@ -176,8 +232,8 @@ async function probeClientHtml(): Promise<void> {
 	console.log("walk: client HTML served with 200");
 }
 
-async function runAssertions(): Promise<void> {
-	await waitForReadiness();
+async function runAssertions(wranglerDev: WranglerDev): Promise<void> {
+	await waitForReadiness(wranglerDev);
 	const trigger = await triggerGenerationRun();
 	if (trigger.status !== 202) {
 		throw new WalkFailure(`generation run trigger expected 202, got ${trigger.status} ${trigger.body}`);
@@ -215,23 +271,24 @@ async function main(): Promise<void> {
 	);
 
 	console.log("walk: starting wrangler dev");
+	await assertPortSilent();
 	const wranglerDev = startWranglerDev(persistDir);
 	process.on("SIGINT", () => {
 		if (interactiveHoldRelease === undefined) {
-			void stopWranglerDev(wranglerDev)
+			void stopWranglerDev(wranglerDev.child)
 				.then(() => rm(persistDir, { recursive: true, force: true }))
 				.finally(() => process.exit(130));
 		}
 	});
 	try {
-		await runAssertions();
+		await runAssertions(wranglerDev);
 		console.log("WALK PASS");
 		console.log(BROWSER_URL);
 		if (!nonInteractive) {
 			await holdForHumanObservation();
 		}
 	} finally {
-		await stopWranglerDev(wranglerDev);
+		await stopWranglerDev(wranglerDev.child);
 		await rm(persistDir, { recursive: true, force: true });
 	}
 }

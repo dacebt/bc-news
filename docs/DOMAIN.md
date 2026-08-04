@@ -87,7 +87,7 @@ Inherited defaults until deliberately changed:
   day). The covered day is the *evidence date*.
 - Missing-data and availability behavior follow what v1 observably did.
 - The edition contract carries v1's published shape with these settled
-  deviations: identity fields use the domain terms (`active_region_id`,
+  deviations (ADR-010): identity fields use the domain terms (`active_region_id`,
   `publication_date`); `meta.editorial_capabilities` records provider and
   model per editorial capability, replacing v1's single provider enum and
   stage-keyed model list; provider is an open string so local and recorded
@@ -96,7 +96,7 @@ Inherited defaults until deliberately changed:
 - Until the roster thickens to v1's three stages, the skeleton runs exactly
   one editorial capability — `main_story` (v1's stage 2) — with a
   deterministically derived masthead and empty announcements as labeled
-  skeleton fills.
+  skeleton fills (ADR-011).
 
 ## Links
 

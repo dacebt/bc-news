@@ -47,6 +47,18 @@ function sampleEvidence(): EvidenceMessage[] {
 	return [...crowd, ...burst, ...tie];
 }
 
+test("emits messages in chronological order", () => {
+	const prepared = prepareEvidence({
+		activeRegionId: "7",
+		publicationDate: "2026-01-25",
+		messages: sampleEvidence(),
+	});
+
+	const timestamps = prepared.messages.map((message) => message.ts);
+	expect(timestamps).toEqual([...timestamps].sort((a, b) => a - b));
+	expect(prepared.final_count).toBeGreaterThan(10);
+});
+
 test("same evidence yields identical prepared evidence", () => {
 	const first = prepareEvidence({
 		activeRegionId: "7",

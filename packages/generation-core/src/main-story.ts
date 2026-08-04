@@ -35,12 +35,23 @@ export const SYSTEM_CONSTRAINTS = `
 - Use \\" for quotes within strings;
 - Use \\n for newlines, \\n\\n for paragraph breaks;`;
 
+/**
+ * The transcript is newline-delimited, so a line break inside untrusted
+ * message content (or an author name) would forge a fully-formed
+ * "[timestamp] Name:" record attributed to another player. Flattening line
+ * breaks at this boundary keeps one evidence message to exactly one
+ * transcript line, so content can never mint a record.
+ */
+function asSingleTranscriptLine(value: string): string {
+	return value.replace(/[\r\n\u2028\u2029]+/g, " ");
+}
+
 function formatMessages(preparedEvidence: PreparedEvidence): string {
 	return preparedEvidence.messages
 		.map((msg) => {
 			const timestamp = new Date(msg.ts).toISOString();
-			const author = msg.author_name || `user_${msg.author_id}`;
-			return `[${timestamp}] ${author}: ${msg.text}`;
+			const author = asSingleTranscriptLine(msg.author_name || `user_${msg.author_id}`);
+			return `[${timestamp}] ${author}: ${asSingleTranscriptLine(msg.text)}`;
 		})
 		.join("\n");
 }
