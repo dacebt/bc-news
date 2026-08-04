@@ -37,6 +37,7 @@ On success it prints `WALK PASS` plus the edition URL and holds
 stop. `pnpm walk --non-interactive` (or `WALK_NON_INTERACTIVE=1`) shuts
 down after the assertions instead; the exit code reflects the assertions
 either way. On timeout the walk prints the generation run's status.
+`WALK_PORT` overrides the port `wrangler dev` binds to (default `8787`).
 
 Where authority lives:
 

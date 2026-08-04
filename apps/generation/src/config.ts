@@ -1,15 +1,18 @@
 import { z } from "zod";
-import type { EvidenceInputPort, ModelProviderPort } from "@bc-news/generation-core";
-import { fixtureEvidenceInput, recordedModelProvider } from "@bc-news/fixtures";
+import type {
+	EditorialCapability,
+	EvidenceInputPort,
+	ModelProviderPort,
+} from "@bc-news/generation-core";
+import { EvidenceAdapterIdSchema, evidenceAdapterFactories } from "./adapters/evidence-adapters";
+import { ModelAdapterConfigSchema, resolveModelProvider } from "./adapters/model-adapters";
 
 const ModelConfigSchema = z.strictObject({
-	main_story: z.strictObject({
-		adapter: z.literal("recorded"),
-	}),
+	main_story: ModelAdapterConfigSchema,
 });
 
 const GenerationConfigVarsSchema = z.object({
-	EVIDENCE_INPUT: z.literal("fixture"),
+	EVIDENCE_INPUT: EvidenceAdapterIdSchema,
 	MODEL_CONFIG: z
 		.string()
 		.transform((raw, context) => {
@@ -34,7 +37,7 @@ export class GenerationConfigError extends Error {
 
 export interface GenerationPorts {
 	evidenceInput: EvidenceInputPort;
-	modelProviders: { main_story: ModelProviderPort };
+	modelProviders: Record<EditorialCapability, ModelProviderPort>;
 }
 
 export function resolveGenerationPorts(env: Env): GenerationPorts {
@@ -44,8 +47,11 @@ export function resolveGenerationPorts(env: Env): GenerationPorts {
 			`Generation config vars rejected: ${result.error.message}`,
 		);
 	}
+	const { EVIDENCE_INPUT, MODEL_CONFIG } = result.data;
 	return {
-		evidenceInput: fixtureEvidenceInput,
-		modelProviders: { main_story: recordedModelProvider },
+		evidenceInput: evidenceAdapterFactories[EVIDENCE_INPUT](env),
+		modelProviders: {
+			main_story: resolveModelProvider("main_story", MODEL_CONFIG.main_story, env),
+		},
 	};
 }

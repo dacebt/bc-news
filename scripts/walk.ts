@@ -3,19 +3,16 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { EditionSchema } from "@bc-news/contracts";
+import type { GenerationRunParams } from "@bc-news/contracts";
+import type { WalkContext } from "./walk/phase";
+import { walkPhases } from "./walk/phases/index";
+import { POLL_INTERVAL_MS, sleep } from "./walk/timing";
 
 const ACTIVE_REGION_ID = "7";
 const PUBLICATION_DATE = "2026-01-25";
 const UNPUBLISHED_PUBLICATION_DATE = "2026-01-26";
-const PORT = 8787;
-const BASE_URL = `http://127.0.0.1:${PORT}`;
-const EDITION_URL = `${BASE_URL}/api/edition?active_region_id=${ACTIVE_REGION_ID}&publication_date=${PUBLICATION_DATE}`;
-const GENERATION_RUN_STATUS_URL = `${BASE_URL}/generation-run/generation-run-${ACTIVE_REGION_ID}-${PUBLICATION_DATE}`;
-const BROWSER_URL = `http://localhost:${PORT}/?active_region_id=${ACTIVE_REGION_ID}&publication_date=${PUBLICATION_DATE}`;
+const DEFAULT_PORT = 8787;
 const READINESS_TIMEOUT_MS = 90_000;
-const PUBLISH_TIMEOUT_MS = 60_000;
-const POLL_INTERVAL_MS = 1_000;
 const SHUTDOWN_GRACE_MS = 10_000;
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -23,10 +20,29 @@ const generationDir = join(repoRoot, "apps", "generation");
 const nonInteractive =
 	process.argv.includes("--non-interactive") || process.env["WALK_NON_INTERACTIVE"] === "1";
 
-class WalkFailure extends Error {}
+class WalkFailure extends Error {
+	readonly code = "walk_failure";
 
-function sleep(ms: number): Promise<void> {
-	return new Promise((resolve) => setTimeout(resolve, ms));
+	constructor(message: string, options?: ErrorOptions) {
+		super(message, options);
+		this.name = "WalkFailure";
+	}
+}
+
+function parseWalkPort(raw: string | undefined): number {
+	if (raw === undefined) {
+		return DEFAULT_PORT;
+	}
+	if (!/^[1-9][0-9]*$/.test(raw)) {
+		throw new WalkFailure(
+			`WALK_PORT must be a positive integer with no leading/trailing characters, got ${JSON.stringify(raw)}`,
+		);
+	}
+	const parsed = Number(raw);
+	if (parsed > 65535) {
+		throw new WalkFailure(`WALK_PORT must be <= 65535, got ${JSON.stringify(raw)}`);
+	}
+	return parsed;
 }
 
 function runCommand(command: string, args: string[], cwd: string): Promise<void> {
@@ -49,43 +65,61 @@ interface WranglerDev {
 }
 
 /**
+ * fetch() throws TypeError both for a refused connection (cause.code
+ * ECONNREFUSED — the port is genuinely silent) and for unrelated failures
+ * (e.g. cause.code ERR_INVALID_URL from a malformed URL). Only the former is
+ * evidence of silence.
+ */
+function isConnectionRefused(error: unknown): boolean {
+	if (!(error instanceof TypeError) || !(error.cause instanceof Error)) {
+		return false;
+	}
+	return (error.cause as NodeJS.ErrnoException).code === "ECONNREFUSED";
+}
+
+/**
  * Every assertion must be answered by the wrangler dev this run spawned — an
  * orphaned or concurrent server on the port could otherwise serve a stale
  * edition and certify a build the walk never executed. So the port must be
  * silent before spawning, and readiness is the child's own "Ready on" line.
  */
-async function assertPortSilent(): Promise<void> {
+async function assertPortSilent(baseUrl: string, port: number): Promise<void> {
 	let occupied = true;
 	try {
-		await fetch(`${BASE_URL}/api/edition`);
-	} catch {
+		await fetch(`${baseUrl}/api/edition`);
+	} catch (error) {
+		if (!isConnectionRefused(error)) {
+			throw new WalkFailure(
+				`could not determine whether port ${String(port)} is silent before spawning wrangler dev: ${error instanceof Error ? error.message : String(error)}`,
+			);
+		}
 		occupied = false;
 	}
 	if (occupied) {
 		throw new WalkFailure(
-			`port ${String(PORT)} is already answering before wrangler dev was spawned — stop the other server (an orphaned wrangler dev from a previous walk?) and re-run`,
+			`port ${String(port)} is already answering before wrangler dev was spawned — stop the other server (an orphaned wrangler dev from a previous walk?) and re-run`,
 		);
 	}
 }
 
-function startWranglerDev(persistDir: string): WranglerDev {
+function startWranglerDev(persistDir: string, port: number): WranglerDev {
 	const child = spawn(
 		"pnpm",
-		["exec", "wrangler", "dev", "--port", String(PORT), "--persist-to", persistDir],
+		["exec", "wrangler", "dev", "--port", String(port), "--persist-to", persistDir],
 		{ cwd: generationDir, stdio: ["ignore", "pipe", "pipe"], detached: true },
 	);
 	const listening = new Promise<void>((resolve, reject) => {
 		let output = "";
 		child.stdout?.on("data", (chunk: Buffer) => {
 			output += chunk.toString();
-			if (output.includes("Ready on") && output.includes(`:${String(PORT)}`)) {
+			if (output.includes("Ready on") && output.includes(`:${String(port)}`)) {
 				resolve();
 			}
 		});
 		child.once("exit", (code) => {
 			reject(
 				new WalkFailure(
-					`wrangler dev exited with code ${String(code)} before reporting Ready on port ${String(PORT)}`,
+					`wrangler dev exited with code ${String(code)} before reporting Ready on port ${String(port)}`,
 				),
 			);
 		});
@@ -95,13 +129,29 @@ function startWranglerDev(persistDir: string): WranglerDev {
 	return { child, listening };
 }
 
+/**
+ * Always attempts the process-group kill, even when the leader already
+ * exited: a group sibling (e.g. workerd) can outlive the leader and would
+ * otherwise orphan the port. `exited` is only awaited when the leader has
+ * not already exited — its 'exit' event fired in the past and a fresh
+ * listener would never resolve, hanging the walk.
+ */
 async function stopWranglerDev(child: ChildProcess): Promise<void> {
-	if (child.pid === undefined || child.exitCode !== null) {
+	if (child.pid === undefined) {
 		return;
 	}
+	const alreadyExited = child.exitCode !== null || child.signalCode !== null;
+	const exited = alreadyExited
+		? Promise.resolve()
+		: new Promise<void>((resolve) => child.once("exit", () => resolve()));
 	const processGroup = -child.pid;
-	const exited = new Promise<void>((resolve) => child.once("exit", () => resolve()));
-	process.kill(processGroup, "SIGINT");
+	try {
+		process.kill(processGroup, "SIGINT");
+	} catch (error) {
+		if ((error as NodeJS.ErrnoException).code !== "ESRCH") {
+			throw error;
+		}
+	}
 	const forceKill = setTimeout(() => {
 		try {
 			process.kill(processGroup, "SIGKILL");
@@ -114,7 +164,7 @@ async function stopWranglerDev(child: ChildProcess): Promise<void> {
 	clearTimeout(forceKill);
 }
 
-async function waitForReadiness(wranglerDev: WranglerDev): Promise<void> {
+async function waitForReadiness(wranglerDev: WranglerDev, baseUrl: string): Promise<void> {
 	let readyTimer: NodeJS.Timeout | undefined;
 	const readyTimeout = new Promise<never>((_, reject) => {
 		readyTimer = setTimeout(() => {
@@ -134,7 +184,7 @@ async function waitForReadiness(wranglerDev: WranglerDev): Promise<void> {
 		}
 		let status: number | undefined;
 		try {
-			status = (await fetch(`${BASE_URL}/api/edition`)).status;
+			status = (await fetch(`${baseUrl}/api/edition`)).status;
 		} catch {
 			await sleep(POLL_INTERVAL_MS);
 			continue;
@@ -149,101 +199,15 @@ async function waitForReadiness(wranglerDev: WranglerDev): Promise<void> {
 	throw new WalkFailure(`wrangler dev not ready within ${READINESS_TIMEOUT_MS} ms`);
 }
 
-async function triggerGenerationRun(): Promise<{ status: number; body: string }> {
-	const response = await fetch(`${BASE_URL}/generation-run`, {
-		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({
-			active_region_id: ACTIVE_REGION_ID,
-			publication_date: PUBLICATION_DATE,
-		}),
-	});
-	return { status: response.status, body: await response.text() };
-}
-
-async function printGenerationRunStatus(): Promise<void> {
-	try {
-		const response = await fetch(GENERATION_RUN_STATUS_URL);
-		console.error(`walk: generation run status (${response.status}): ${await response.text()}`);
-	} catch (error) {
-		console.error(`walk: could not fetch generation run status: ${String(error)}`);
-	}
-}
-
-async function pollPublishedEdition(): Promise<string> {
-	const deadline = Date.now() + PUBLISH_TIMEOUT_MS;
-	while (Date.now() < deadline) {
-		const response = await fetch(EDITION_URL);
-		if (response.status === 200) {
-			const body = await response.text();
-			EditionSchema.parse(JSON.parse(body));
-			return body;
+async function runPhases(ctx: WalkContext): Promise<void> {
+	for (const phase of walkPhases) {
+		try {
+			await phase.run(ctx);
+		} catch (error) {
+			const message = error instanceof Error ? error.message : String(error);
+			throw new WalkFailure(`[${phase.name}] ${message}`, { cause: error });
 		}
-		if (response.status !== 404) {
-			throw new WalkFailure(
-				`edition read returned ${response.status} while waiting for publish: ${await response.text()}`,
-			);
-		}
-		await sleep(POLL_INTERVAL_MS);
 	}
-	await printGenerationRunStatus();
-	throw new WalkFailure(`edition not published within ${PUBLISH_TIMEOUT_MS} ms`);
-}
-
-async function probeIdempotency(firstServedEdition: string): Promise<void> {
-	const duplicate = await triggerGenerationRun();
-	console.log(
-		`walk: duplicate generation run signal recorded: ${duplicate.status} ${duplicate.body}`,
-	);
-	if (duplicate.status !== 202 && duplicate.status !== 409) {
-		throw new WalkFailure(
-			`duplicate trigger expected the recorded local no-op 202 or the documented 409, got ${duplicate.status}`,
-		);
-	}
-	const response = await fetch(EDITION_URL);
-	if (response.status !== 200) {
-		throw new WalkFailure(`edition read after duplicate trigger returned ${response.status}`);
-	}
-	const servedAgain = await response.text();
-	if (servedAgain !== firstServedEdition) {
-		throw new WalkFailure("edition served after duplicate trigger is not byte-identical");
-	}
-	console.log("walk: duplicate trigger served a byte-identical edition");
-}
-
-async function probeUnknownPair(): Promise<void> {
-	const response = await fetch(
-		`${BASE_URL}/api/edition?active_region_id=${ACTIVE_REGION_ID}&publication_date=${UNPUBLISHED_PUBLICATION_DATE}`,
-	);
-	if (response.status !== 404) {
-		throw new WalkFailure(`unknown pair expected 404, got ${response.status}`);
-	}
-	console.log("walk: unknown pair answered 404");
-}
-
-async function probeClientHtml(): Promise<void> {
-	const response = await fetch(`${BASE_URL}/`);
-	const contentType = response.headers.get("Content-Type") ?? "";
-	if (response.status !== 200 || !contentType.includes("text/html")) {
-		throw new WalkFailure(
-			`client HTML expected 200 text/html, got ${response.status} ${contentType}`,
-		);
-	}
-	console.log("walk: client HTML served with 200");
-}
-
-async function runAssertions(wranglerDev: WranglerDev): Promise<void> {
-	await waitForReadiness(wranglerDev);
-	const trigger = await triggerGenerationRun();
-	if (trigger.status !== 202) {
-		throw new WalkFailure(`generation run trigger expected 202, got ${trigger.status} ${trigger.body}`);
-	}
-	console.log(`walk: generation run accepted: ${trigger.body}`);
-	const servedEdition = await pollPublishedEdition();
-	console.log("walk: published edition served and parsed against EditionSchema");
-	await probeIdempotency(servedEdition);
-	await probeUnknownPair();
-	await probeClientHtml();
 }
 
 let interactiveHoldRelease: (() => void) | undefined;
@@ -257,38 +221,70 @@ async function holdForHumanObservation(): Promise<void> {
 	interactiveHoldRelease = undefined;
 }
 
+function logShutdownWarning(error: unknown): void {
+	console.error(`walk: shutdown warning — ${error instanceof Error ? error.message : String(error)}`);
+}
+
 async function main(): Promise<void> {
+	const port = parseWalkPort(process.env["WALK_PORT"]);
+	const baseUrl = `http://127.0.0.1:${port}`;
+	const browserUrl = `http://localhost:${port}/?active_region_id=${ACTIVE_REGION_ID}&publication_date=${PUBLICATION_DATE}`;
+
 	console.log("walk: building workspace");
 	await runCommand("pnpm", ["typecheck"], repoRoot);
 	await runCommand("pnpm", ["-r", "build"], repoRoot);
 
-	const persistDir = await mkdtemp(join(tmpdir(), "bc-news-walk-"));
-	console.log(`walk: applying local D1 migrations (persist dir ${persistDir})`);
-	await runCommand(
-		"pnpm",
-		["exec", "wrangler", "d1", "migrations", "apply", "bc-news-editions", "--local", "--persist-to", persistDir],
-		generationDir,
-	);
-
 	console.log("walk: starting wrangler dev");
-	await assertPortSilent();
-	const wranglerDev = startWranglerDev(persistDir);
-	process.on("SIGINT", () => {
-		if (interactiveHoldRelease === undefined) {
-			void stopWranglerDev(wranglerDev.child)
-				.then(() => rm(persistDir, { recursive: true, force: true }))
-				.finally(() => process.exit(130));
-		}
-	});
+	await assertPortSilent(baseUrl, port);
+
+	// The persist dir is created here and removed in the finally immediately
+	// below, so every throw from this point on — migrations, spawn,
+	// readiness, phases — reaches the removal; no path can leak the dir.
+	const persistDir = await mkdtemp(join(tmpdir(), "bc-news-walk-"));
 	try {
-		await runAssertions(wranglerDev);
-		console.log("WALK PASS");
-		console.log(BROWSER_URL);
-		if (!nonInteractive) {
-			await holdForHumanObservation();
+		console.log(`walk: applying local D1 migrations (persist dir ${persistDir})`);
+		await runCommand(
+			"pnpm",
+			["exec", "wrangler", "d1", "migrations", "apply", "bc-news-editions", "--local", "--persist-to", persistDir],
+			generationDir,
+		);
+
+		const wranglerDev = startWranglerDev(persistDir, port);
+		process.on("SIGINT", () => {
+			if (interactiveHoldRelease === undefined) {
+				void stopWranglerDev(wranglerDev.child)
+					.catch(logShutdownWarning)
+					.then(() => rm(persistDir, { recursive: true, force: true }))
+					.finally(() => process.exit(130));
+			}
+		});
+		try {
+			await waitForReadiness(wranglerDev, baseUrl);
+			const pair: GenerationRunParams = {
+				active_region_id: ACTIVE_REGION_ID,
+				publication_date: PUBLICATION_DATE,
+			};
+			const unpublishedPair: GenerationRunParams = {
+				active_region_id: ACTIVE_REGION_ID,
+				publication_date: UNPUBLISHED_PUBLICATION_DATE,
+			};
+			const ctx: WalkContext = { baseUrl, pair, unpublishedPair, state: {} };
+			await runPhases(ctx);
+			console.log("WALK PASS");
+			console.log(browserUrl);
+			if (!nonInteractive) {
+				await holdForHumanObservation();
+			}
+		} finally {
+			// Shutdown problems are reported, never thrown: a kill-related
+			// error here must not replace the walk's real success or failure.
+			try {
+				await stopWranglerDev(wranglerDev.child);
+			} catch (error) {
+				logShutdownWarning(error);
+			}
 		}
 	} finally {
-		await stopWranglerDev(wranglerDev.child);
 		await rm(persistDir, { recursive: true, force: true });
 	}
 }

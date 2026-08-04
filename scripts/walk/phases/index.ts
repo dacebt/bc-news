@@ -1,0 +1,14 @@
+import type { WalkPhase } from "../phase";
+import { walkPhase as clientHtml } from "./client-html";
+import { walkPhase as idempotency } from "./idempotency";
+import { walkPhase as publishPoll } from "./publish-poll";
+import { walkPhase as triggerGenerationRun } from "./trigger-generation-run";
+import { walkPhase as unknownPair } from "./unknown-pair";
+
+export const walkPhases: readonly WalkPhase[] = [
+	triggerGenerationRun,
+	publishPoll,
+	idempotency,
+	unknownPair,
+	clientHtml,
+];

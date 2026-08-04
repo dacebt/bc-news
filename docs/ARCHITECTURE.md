@@ -8,7 +8,7 @@ tags: [documentation, architecture, ports, typescript]
 status: stable
 generated:
   by: ebt-skills/okf-v0.2
-  at: "2026-08-03T01:35:00Z"
+  at: "2026-08-04T13:57:32Z"
 authority: binding
 ---
 
@@ -130,7 +130,10 @@ the edition read until it serves and parses the body against the shared
 edition schema, re-triggers the same pair asserting the served edition is
 byte-identical while recording the duplicate-create signal (ADR-006),
 asserts an unknown pair answers 404, and asserts the client HTML serves.
-On timeout it prints the generation run's status — failures surface,
+The runner honors `WALK_PORT` end to end — `wrangler dev`, the readiness
+probe, the pre-spawn port-silence assertion, and the printed browser
+URL all defer to it, defaulting to 8787 when unset. On timeout it prints
+the generation run's status — failures surface,
 never vanish — and the exit code reflects the assertions. The default
 mode holds `wrangler dev` for human browser observation until Ctrl-C; a
 non-interactive mode (`--non-interactive` or `WALK_NON_INTERACTIVE=1`)
