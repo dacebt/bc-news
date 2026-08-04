@@ -1,36 +1,24 @@
 import { EditionSchema, type Announcement, type Edition, type MainStory } from "@bc-news/contracts";
-import { parseDateParts } from "./evidence-date";
 import type { PreparedEvidence } from "./prepared-evidence";
-
-const MONTH_NAMES = [
-	"January", "February", "March", "April", "May", "June",
-	"July", "August", "September", "October", "November", "December",
-] as const;
-
-function mastheadSubtitle(publicationDate: string): string {
-	const { year, month, day } = parseDateParts(publicationDate);
-	const monthName = MONTH_NAMES[month - 1];
-	if (monthName === undefined) {
-		throw new Error(`Publication date "${publicationDate}" has no representable month name`);
-	}
-	return `${monthName} ${day}, ${year}`;
-}
 
 export function assembleEdition(input: {
 	activeRegionId: string;
 	publicationDate: string;
+	title: string;
+	subtitle: string;
 	mainStory: MainStory;
 	announcements: Announcement[];
 	preparedEvidence: PreparedEvidence;
 	mainStoryProvenance: { provider: string; model: string };
 	announcementsProvenance: { provider: string; model: string };
+	packagingProvenance: { provider: string; model: string };
 	generatedAtUtc: string;
 }): Edition {
 	return EditionSchema.parse({
 		active_region_id: input.activeRegionId,
 		publication_date: input.publicationDate,
-		title: `Region ${input.activeRegionId} Chronicle`,
-		subtitle: mastheadSubtitle(input.publicationDate),
+		title: input.title,
+		subtitle: input.subtitle,
 		announcements: input.announcements,
 		main_story: input.mainStory,
 		meta: {
@@ -38,6 +26,7 @@ export function assembleEdition(input: {
 			editorial_capabilities: {
 				main_story: input.mainStoryProvenance,
 				announcements: input.announcementsProvenance,
+				packaging: input.packagingProvenance,
 			},
 			counts: {
 				raw_count: input.preparedEvidence.raw_count,

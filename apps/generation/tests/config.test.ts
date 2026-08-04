@@ -16,6 +16,7 @@ it("valid config resolves the fixture and recorded ports", () => {
 	expect(ports.evidenceInput).toBe(fixtureEvidenceInput);
 	expect(ports.modelProviders.main_story).toBe(recordedModelProvider);
 	expect(ports.modelProviders.announcements).toBe(recordedModelProvider);
+	expect(ports.modelProviders.packaging).toBe(recordedModelProvider);
 });
 
 it("rejects unknown evidence adapter id", () => {
@@ -35,6 +36,7 @@ it("rejects model config with an unknown adapter id", () => {
 		MODEL_CONFIG: JSON.stringify({
 			main_story: { adapter: "lmstudio" },
 			announcements: { adapter: "recorded" },
+			packaging: { adapter: "recorded" },
 		}),
 	});
 
@@ -43,7 +45,21 @@ it("rejects model config with an unknown adapter id", () => {
 
 it("rejects missing announcements key", () => {
 	const invalidEnv = envWith({
-		MODEL_CONFIG: JSON.stringify({ main_story: { adapter: "recorded" } }),
+		MODEL_CONFIG: JSON.stringify({
+			main_story: { adapter: "recorded" },
+			packaging: { adapter: "recorded" },
+		}),
+	});
+
+	expect(() => resolveGenerationPorts(invalidEnv)).toThrow(GenerationConfigError);
+});
+
+it("rejects missing packaging key", () => {
+	const invalidEnv = envWith({
+		MODEL_CONFIG: JSON.stringify({
+			main_story: { adapter: "recorded" },
+			announcements: { adapter: "recorded" },
+		}),
 	});
 
 	expect(() => resolveGenerationPorts(invalidEnv)).toThrow(GenerationConfigError);
@@ -54,6 +70,7 @@ it("rejects model config with an extra capability key", () => {
 		MODEL_CONFIG: JSON.stringify({
 			main_story: { adapter: "recorded" },
 			announcements: { adapter: "recorded" },
+			packaging: { adapter: "recorded" },
 			side_story: { adapter: "recorded" },
 		}),
 	});

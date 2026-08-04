@@ -10,6 +10,7 @@ import { ModelAdapterConfigSchema, resolveModelProvider } from "./adapters/model
 const ModelConfigSchema = z.strictObject({
 	main_story: ModelAdapterConfigSchema,
 	announcements: ModelAdapterConfigSchema,
+	packaging: ModelAdapterConfigSchema,
 });
 
 const GenerationConfigVarsSchema = z.object({
@@ -54,6 +55,7 @@ export function resolveGenerationPorts(env: Env): GenerationPorts {
 		modelProviders: {
 			main_story: resolveModelProvider("main_story", MODEL_CONFIG.main_story, env),
 			announcements: resolveModelProvider("announcements", MODEL_CONFIG.announcements, env),
+			packaging: resolveModelProvider("packaging", MODEL_CONFIG.packaging, env),
 		},
 	};
 }

@@ -38,6 +38,7 @@ export const EditionSchema = z.strictObject({
 		editorial_capabilities: z.strictObject({
 			main_story: EditorialCapabilityProvenanceSchema,
 			announcements: EditorialCapabilityProvenanceSchema,
+			packaging: EditorialCapabilityProvenanceSchema,
 		}),
 		counts: z.strictObject({
 			raw_count: z.int().nonnegative(),

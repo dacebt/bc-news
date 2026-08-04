@@ -6,9 +6,11 @@ import {
 	assembleEdition,
 	buildAnnouncementsPrompt,
 	buildMainStoryPrompt,
+	buildPackagingPrompt,
 	evidenceDateForPublicationDate,
 	parseAnnouncementsOutput,
 	parseMainStoryOutput,
+	parsePackagingOutput,
 	prepareEvidence,
 	type PreparedEvidence,
 } from "@bc-news/generation-core";
@@ -108,11 +110,37 @@ export class GenerationRun extends WorkflowEntrypoint<Env, GenerationRunParams> 
 			}),
 		);
 
+		const packaging = await step.do("compose-packaging", BOUNDED_RETRIES, () =>
+			failNonRetryablyOnDeterministicErrors(async () => {
+				const completion = await ports.modelProviders.packaging.complete({
+					editorialCapability: "packaging",
+					system: SYSTEM_CONSTRAINTS,
+					user: buildPackagingPrompt(
+						{ main_story: mainStory.main_story },
+						{ announcements: announcements.announcements },
+						{
+							activeRegionId: params.active_region_id,
+							publicationDate: params.publication_date,
+						},
+					),
+				});
+				const output = parsePackagingOutput(completion.text);
+				return {
+					title: output.title,
+					subtitle: output.subtitle,
+					provider: completion.provider,
+					model: completion.model,
+				};
+			}),
+		);
+
 		const edition = await step.do("validate-edition", () =>
 			failNonRetryablyOnDeterministicErrors(() =>
 				assembleEdition({
 					activeRegionId: params.active_region_id,
 					publicationDate: params.publication_date,
+					title: packaging.title,
+					subtitle: packaging.subtitle,
 					mainStory: mainStory.main_story,
 					announcements: announcements.announcements,
 					preparedEvidence,
@@ -123,6 +151,10 @@ export class GenerationRun extends WorkflowEntrypoint<Env, GenerationRunParams> 
 					announcementsProvenance: {
 						provider: announcements.provider,
 						model: announcements.model,
+					},
+					packagingProvenance: {
+						provider: packaging.provider,
+						model: packaging.model,
 					},
 					generatedAtUtc: new Date().toISOString(),
 				}),

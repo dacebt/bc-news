@@ -8,7 +8,7 @@ tags: [documentation, domain, vocabulary, editions]
 status: stable
 generated:
   by: ebt-skills/okf-v0.2
-  at: "2026-08-03T12:52:42Z"
+  at: "2026-08-04T17:17:28Z"
 authority: binding
 ---
 
@@ -93,10 +93,15 @@ Inherited defaults until deliberately changed:
   stage-keyed model list; provider is an open string so local and recorded
   models are representable; `meta` is required at both publish and read;
   identity fields and `meta` are never part of any model's output contract.
-- Until the roster thickens to v1's three stages, the skeleton runs exactly
-  one editorial capability — `main_story` (v1's stage 2) — with a
-  deterministically derived masthead and empty announcements as labeled
-  skeleton fills (ADR-011).
+- The roster now runs all three of v1's stages — `announcements` (stage 1),
+  `main_story` (stage 2), and `packaging` (stage 3) — retiring the
+  single-capability skeleton default from ADR-011. `packaging` authors ONLY
+  the edition's `title` and `subtitle`, grounded solely in the announcements
+  and main story outputs (no chat transcript reaches it); every other
+  edition field is composed deterministically in code. v1's stage 3
+  round-tripped the whole edition through the model with preservation
+  unenforced; v2 deliberately rejects that and narrows the model's
+  authority to the two presentation fields.
 
 ## Links
 

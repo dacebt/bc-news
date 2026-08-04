@@ -7,7 +7,7 @@ function editionWithHeadline(headline: string): Edition {
 	return {
 		active_region_id: "9",
 		publication_date: "2026-02-14",
-		title: "Region 9 Chronicle",
+		title: "The Widmoria Muster",
 		subtitle: "February 14, 2026",
 		announcements: [],
 		main_story: { headline, lede: "A lede.", body: "A body." },
@@ -16,6 +16,7 @@ function editionWithHeadline(headline: string): Edition {
 			editorial_capabilities: {
 				main_story: { provider: "recorded", model: "recorded/main-story-v1" },
 				announcements: { provider: "recorded", model: "recorded/announcements-v1" },
+				packaging: { provider: "recorded", model: "recorded/packaging-v1" },
 			},
 			counts: { raw_count: 1, after_filter_count: 1, after_burst_count: 1, final_count: 1 },
 		},

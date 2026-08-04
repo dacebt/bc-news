@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { ModelProviderPort } from "@bc-news/generation-core";
 import announcementsResponseJson from "../model-responses/announcements.json";
 import mainStoryResponseJson from "../model-responses/main_story.json";
+import packagingResponseJson from "../model-responses/packaging.json";
 
 const RecordedModelResponseSchema = z.strictObject({
 	editorial_capability: z.string().min(1),
@@ -34,6 +35,7 @@ export class RecordedModelProviderError extends Error {
 const recordedResponsesByEditorialCapability: Readonly<Record<string, unknown>> = {
 	main_story: mainStoryResponseJson,
 	announcements: announcementsResponseJson,
+	packaging: packagingResponseJson,
 };
 
 /**

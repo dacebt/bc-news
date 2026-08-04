@@ -1,6 +1,6 @@
 import type { EvidenceMessage } from "@bc-news/contracts";
 
-export type EditorialCapability = "main_story" | "announcements";
+export type EditorialCapability = "main_story" | "announcements" | "packaging";
 
 export interface EvidenceInputPort {
 	loadEvidence(request: {

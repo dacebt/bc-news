@@ -29,6 +29,12 @@ export {
 	parseAnnouncementsOutput,
 	type AnnouncementsOutput,
 } from "./announcements";
+export {
+	PackagingOutputSchema,
+	buildPackagingPrompt,
+	parsePackagingOutput,
+	type PackagingOutput,
+} from "./packaging";
 export { assembleEdition } from "./assemble-edition";
 export type {
 	EditorialCapability,
