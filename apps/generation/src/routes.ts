@@ -1,6 +1,6 @@
 import { GenerationRunParamsSchema } from "@bc-news/contracts";
 import { EditionUnreadableError, readEdition } from "./edition-store";
-import { generationRunInstanceId } from "./generation-run";
+import { InvalidGenerationRunParamsError, launchGenerationRun } from "./run-launch";
 
 function jsonResponse(status: number, body: unknown, headers?: Record<string, string>): Response {
 	return new Response(JSON.stringify(body), {
@@ -16,17 +16,6 @@ function errorShape(error: unknown): { name: string; message: string } {
 	return { name: "UnknownError", message: String(error) };
 }
 
-async function existingGenerationRun(
-	env: Env,
-	instanceId: string,
-): Promise<WorkflowInstance | undefined> {
-	try {
-		return await env.GENERATION_RUN.get(instanceId);
-	} catch {
-		return undefined;
-	}
-}
-
 export async function createGenerationRun(request: Request, env: Env): Promise<Response> {
 	let body: unknown;
 	try {
@@ -37,34 +26,22 @@ export async function createGenerationRun(request: Request, env: Env): Promise<R
 			detail: "Request body is not valid JSON",
 		});
 	}
-	const result = GenerationRunParamsSchema.safeParse(body);
-	if (!result.success) {
-		return jsonResponse(400, {
-			error: "invalid_generation_run_params",
-			issues: result.error.issues,
-		});
-	}
-	const params = result.data;
-	const instanceId = generationRunInstanceId(params);
-
-	let instance: WorkflowInstance;
+	let launch;
 	try {
-		instance = await env.GENERATION_RUN.create({ id: instanceId, params });
-	} catch (createError) {
-		const duplicate = await existingGenerationRun(env, instanceId);
-		if (duplicate === undefined) {
-			throw createError;
+		launch = await launchGenerationRun(body, env.GENERATION_RUN);
+	} catch (error) {
+		if (error instanceof InvalidGenerationRunParamsError) {
+			return jsonResponse(400, {
+				error: "invalid_generation_run_params",
+				issues: error.issues,
+			});
 		}
-		return jsonResponse(409, {
-			error: "duplicate_generation_run",
-			id: instanceId,
-			platform_error: errorShape(createError),
-		});
+		throw error;
 	}
 	return jsonResponse(202, {
-		id: instance.id,
-		active_region_id: params.active_region_id,
-		publication_date: params.publication_date,
+		id: launch.id,
+		active_region_id: launch.params.active_region_id,
+		publication_date: launch.params.publication_date,
 	});
 }
 

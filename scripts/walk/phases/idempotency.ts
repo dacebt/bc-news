@@ -1,5 +1,6 @@
 import type { WalkContext, WalkPhase } from "../phase";
-import { editionUrl, triggerGenerationRun } from "../edition-api";
+import { editionUrl } from "../edition-api";
+import { dispatchScheduledEvent } from "../scheduled-event";
 
 async function run(ctx: WalkContext): Promise<void> {
 	if (ctx.state.firstServedEditionBody === undefined) {
@@ -9,13 +10,13 @@ async function run(ctx: WalkContext): Promise<void> {
 	}
 	const firstServedEditionBody = ctx.state.firstServedEditionBody;
 
-	const duplicate = await triggerGenerationRun(ctx);
+	const duplicate = await dispatchScheduledEvent(ctx.baseUrl, ctx.generationCron, ctx.scheduledTime);
 	console.log(
-		`walk: duplicate generation run signal recorded: ${duplicate.status} ${duplicate.body}`,
+		`walk: repeated scheduled generation signal recorded: ${duplicate.status} ${duplicate.body}`,
 	);
-	if (duplicate.status !== 202 && duplicate.status !== 409) {
+	if (duplicate.status !== 200) {
 		throw new Error(
-			`duplicate trigger expected the recorded local no-op 202 or the documented 409, got ${duplicate.status}`,
+			`repeated scheduled generation expected idempotent 200, got ${duplicate.status}`,
 		);
 	}
 
@@ -25,9 +26,9 @@ async function run(ctx: WalkContext): Promise<void> {
 	}
 	const servedAgain = await response.text();
 	if (servedAgain !== firstServedEditionBody) {
-		throw new Error("edition served after duplicate trigger is not byte-identical");
+		throw new Error("edition served after repeated scheduled generation is not byte-identical");
 	}
-	console.log("walk: duplicate trigger served a byte-identical edition");
+	console.log("walk: repeated scheduled generation served the first edition byte-identically");
 }
 
 export const walkPhase: WalkPhase = { name: "idempotency", run };

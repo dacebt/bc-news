@@ -1,4 +1,5 @@
 import { createGenerationRun, getGenerationRunStatus, getPublishedEdition } from "./routes";
+import { scheduleGenerationRuns } from "./scheduler";
 
 export { GenerationRun } from "./generation-run";
 
@@ -20,5 +21,8 @@ export default {
 			status: 404,
 			headers: { "Content-Type": "application/json" },
 		});
+	},
+	async scheduled(controller, env): Promise<void> {
+		await scheduleGenerationRuns(controller.scheduledTime, env);
 	},
 } satisfies ExportedHandler<Env>;

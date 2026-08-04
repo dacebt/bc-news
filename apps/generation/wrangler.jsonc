@@ -3,6 +3,9 @@
 	"name": "bc-news-generation",
 	"main": "src/index.ts",
 	"compatibility_date": "2026-08-03",
+	"triggers": {
+		"crons": ["0 0 * * *"]
+	},
 	"workflows": [
 		{
 			"name": "generation-run",
