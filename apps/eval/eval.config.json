@@ -1,0 +1,6 @@
+{
+	"capabilities": {
+		"main_story": { "adapter": "recorded" }
+	},
+	"judge": null
+}

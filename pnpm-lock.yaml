@@ -73,6 +73,31 @@ importers:
         specifier: ^8.2.0
         version: 8.2.0(@types/node@26.1.2)(esbuild@0.28.1)(tsx@4.23.5)
 
+  apps/eval:
+    dependencies:
+      '@bc-news/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      '@bc-news/fixtures':
+        specifier: workspace:*
+        version: link:../../packages/fixtures
+      '@bc-news/generation-core':
+        specifier: workspace:*
+        version: link:../../packages/generation-core
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+    devDependencies:
+      '@types/node':
+        specifier: ^26.1.2
+        version: 26.1.2
+      tsx:
+        specifier: ^4.23.5
+        version: 4.23.5
+      vitest:
+        specifier: ^4.1.10
+        version: 4.1.10(@types/node@26.1.2)(vite@8.2.0(@types/node@26.1.2)(esbuild@0.28.1)(tsx@4.23.5))
+
   apps/generation:
     dependencies:
       '@bc-news/contracts':
