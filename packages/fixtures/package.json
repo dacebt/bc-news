@@ -1,0 +1,20 @@
+{
+	"name": "@bc-news/fixtures",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"exports": "./src/index.ts",
+	"scripts": {
+		"typecheck": "tsc --noEmit && tsc --noEmit -p scripts",
+		"derive-evidence-fixture": "tsx scripts/derive-evidence-fixture.ts"
+	},
+	"dependencies": {
+		"@bc-news/contracts": "workspace:*",
+		"@bc-news/generation-core": "workspace:*",
+		"zod": "^4.4.3"
+	},
+	"devDependencies": {
+		"@types/node": "^26.1.2",
+		"tsx": "^4.23.5"
+	}
+}

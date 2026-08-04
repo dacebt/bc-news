@@ -1,0 +1,4416 @@
+{
+	"active_region_id": "7",
+	"evidence_date": "2026-01-24",
+	"messages": [
+		{
+			"id": "504403158437065750",
+			"ts": 1769214417000,
+			"author_id": "en/ChickenBake",
+			"author_name": "ChickenBake",
+			"text": "350k forestry at sages of the mines"
+		},
+		{
+			"id": "504403158437065757",
+			"ts": 1769214432000,
+			"author_id": "cs/Auric Ore",
+			"author_name": "Auric Ore",
+			"text": "Tier eleventy?"
+		},
+		{
+			"id": "504403158437065760",
+			"ts": 1769214440000,
+			"author_id": "en/ChickenBake",
+			"author_name": "ChickenBake",
+			"text": "t5"
+		},
+		{
+			"id": "504403158437073974",
+			"ts": 1769216917000,
+			"author_id": "en/Astralite",
+			"author_name": "Astralite",
+			"text": "THE ORE PROVIDES"
+		},
+		{
+			"id": "504403158437074043",
+			"ts": 1769216942000,
+			"author_id": "cs/Auric Ore",
+			"author_name": "Auric Ore",
+			"text": "THE ORE PROVIDES!"
+		},
+		{
+			"id": "504403158437074057",
+			"ts": 1769216949000,
+			"author_id": "en/Argent Ore",
+			"author_name": "Argent Ore",
+			"text": "THE ORE PROVIDES"
+		},
+		{
+			"id": "504403158437074940",
+			"ts": 1769217169000,
+			"author_id": "en/Akela",
+			"author_name": "Akela",
+			"text": "aryn you still on"
+		},
+		{
+			"id": "504403158437074972",
+			"ts": 1769217179000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "yes'm"
+		},
+		{
+			"id": "504403158437075128",
+			"ts": 1769217204000,
+			"author_id": "en/Akela",
+			"author_name": "Akela",
+			"text": "is there a good amount of t4 lake fish near galore?"
+		},
+		{
+			"id": "504403158437075169",
+			"ts": 1769217215000,
+			"author_id": "en/Akela",
+			"author_name": "Akela",
+			"text": "gonna start grinding out some t4 oil soon"
+		},
+		{
+			"id": "504403158437075190",
+			"ts": 1769217220000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "yep, esp if you stay by the coast cuz its autumn forest territory"
+		},
+		{
+			"id": "504403158437075267",
+			"ts": 1769217238000,
+			"author_id": "en/Akela",
+			"author_name": "Akela",
+			"text": "Ok I thought so wanted to make sure!"
+		},
+		{
+			"id": "504403158437075301",
+			"ts": 1769217245000,
+			"author_id": "en/Akela",
+			"author_name": "Akela",
+			"text": "Thank you (:"
+		},
+		{
+			"id": "504403158437075610",
+			"ts": 1769217252000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "of course!"
+		},
+		{
+			"id": "504403158437076514",
+			"ts": 1769217392000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "im out and about rn but if you follow the western coast of the big land mass of autumn forest that oretopia is on, there's a tooonnn of t4 fish around that im seeing rn"
+		},
+		{
+			"id": "504403158437076652",
+			"ts": 1769217420000,
+			"author_id": "cs/Auric Ore",
+			"author_name": "Auric Ore",
+			"text": "Yes, we are wealthy in chub"
+		},
+		{
+			"id": "504403158437076681",
+			"ts": 1769217429000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "half or full chubs"
+		},
+		{
+			"id": "504403158437076683",
+			"ts": 1769217434000,
+			"author_id": "cs/Auric Ore",
+			"author_name": "Auric Ore",
+			"text": "Yes"
+		},
+		{
+			"id": "504403158437076694",
+			"ts": 1769217437000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "nice"
+		},
+		{
+			"id": "504403158437076774",
+			"ts": 1769217457000,
+			"author_id": "en/Akela",
+			"author_name": "Akela",
+			"text": "Chub is a chub (:"
+		},
+		{
+			"id": "504403158437076818",
+			"ts": 1769217470000,
+			"author_id": "cs/Auric Ore",
+			"author_name": "Auric Ore",
+			"text": "Comparison is the thief of joy"
+		},
+		{
+			"id": "504403158437077033",
+			"ts": 1769217537000,
+			"author_id": "en/MadamBloggs",
+			"author_name": "MadamBloggs",
+			"text": "juice infused chub..."
+		},
+		{
+			"id": "504403158437077081",
+			"ts": 1769217550000,
+			"author_id": "en/Argent Ore",
+			"author_name": "Argent Ore",
+			"text": "THE ORE PROVIDES"
+		},
+		{
+			"id": "504403158437077082",
+			"ts": 1769217550000,
+			"author_id": "cs/Auric Ore",
+			"author_name": "Auric Ore",
+			"text": "Reinforced by the ORE"
+		},
+		{
+			"id": "504403158437077444",
+			"ts": 1769217570000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "i make juicy deluxe food out of my chubs"
+		},
+		{
+			"id": "504403158437077473",
+			"ts": 1769217580000,
+			"author_id": "cs/Auric Ore",
+			"author_name": "Auric Ore",
+			"text": "Finally, some good effin' food"
+		},
+		{
+			"id": "504403158437077491",
+			"ts": 1769217589000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "i need more rum"
+		},
+		{
+			"id": "504403158437077493",
+			"ts": 1769217591000,
+			"author_id": "en/Argent Ore",
+			"author_name": "Argent Ore",
+			"text": "i have a chub"
+		},
+		{
+			"id": "504403158437077506",
+			"ts": 1769217595000,
+			"author_id": "cs/Auric Ore",
+			"author_name": "Auric Ore",
+			"text": "Where's all the rum gone?"
+		},
+		{
+			"id": "504403158437077552",
+			"ts": 1769217615000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "downstairs, guarding the wine rack while the wine bottles are on vacation rn"
+		},
+		{
+			"id": "504403158437077600",
+			"ts": 1769217720000,
+			"author_id": "cs/Auric Ore",
+			"author_name": "Auric Ore",
+			"text": "Ohhh, sounds like they're having a JUICY time"
+		},
+		{
+			"id": "504403158437078724",
+			"ts": 1769218211000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "80k t3 farming at sanctuary"
+		},
+		{
+			"id": "504403158437081666",
+			"ts": 1769219451000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "akela where r u pookie?"
+		},
+		{
+			"id": "504403158437081745",
+			"ts": 1769219463000,
+			"author_id": "en/Akela",
+			"author_name": "Akela",
+			"text": "Right here bb"
+		},
+		{
+			"id": "504403158437082486",
+			"ts": 1769219751000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "80 LW, TINY WHERE U AT?"
+		},
+		{
+			"id": "504403158437082686",
+			"ts": 1769219841000,
+			"author_id": "en/MadamBloggs",
+			"author_name": "MadamBloggs",
+			"text": "Tiny cant get to chat right now. Leave a message and she will return as soon as she is back fishing"
+		},
+		{
+			"id": "504403158437082771",
+			"ts": 1769219873000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "\"Hey Tiny, I have more debt for you, come take it\""
+		},
+		{
+			"id": "504403158437082886",
+			"ts": 1769219922000,
+			"author_id": "en/caffeine",
+			"author_name": "caffeine",
+			"text": "\"Hey Tiny, I followed you on Twitch for hot high heels content, still waiting\""
+		},
+		{
+			"id": "504403158437082902",
+			"ts": 1769219941000,
+			"author_id": "en/MadamBloggs",
+			"author_name": "MadamBloggs",
+			"text": "lmao"
+		},
+		{
+			"id": "504403158437084183",
+			"ts": 1769220311000,
+			"author_id": "cs/Auric Ore",
+			"author_name": "Auric Ore",
+			"text": "She'll put her cat in high heels or somethin'"
+		},
+		{
+			"id": "504403158437086868",
+			"ts": 1769221196000,
+			"author_id": "en/MadamBloggs",
+			"author_name": "MadamBloggs",
+			"text": "meow"
+		},
+		{
+			"id": "504403158437086869",
+			"ts": 1769221210000,
+			"author_id": "en/Astralite",
+			"author_name": "Astralite",
+			"text": "^_^"
+		},
+		{
+			"id": "504403158437086879",
+			"ts": 1769221224000,
+			"author_id": "en/MadamBloggs",
+			"author_name": "MadamBloggs",
+			"text": "been smoking haha took me awhile to get to chat haha"
+		},
+		{
+			"id": "504403158437086889",
+			"ts": 1769221242000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "i know where the rum's gone"
+		},
+		{
+			"id": "504403158437086913",
+			"ts": 1769221261000,
+			"author_id": "en/MadamBloggs",
+			"author_name": "MadamBloggs",
+			"text": "damn him! He said we had nomore alcohol"
+		},
+		{
+			"id": "504403158437086969",
+			"ts": 1769221289000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "in mah belleh"
+		},
+		{
+			"id": "504403158437086990",
+			"ts": 1769221323000,
+			"author_id": "en/MadamBloggs",
+			"author_name": "MadamBloggs",
+			"text": "when you back to school again?"
+		},
+		{
+			"id": "504403158437086998",
+			"ts": 1769221329000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "mid july"
+		},
+		{
+			"id": "504403158437087001",
+			"ts": 1769221334000,
+			"author_id": "en/Akela",
+			"author_name": "Akela",
+			"text": "Sad I have no more :("
+		},
+		{
+			"id": "504403158437087006",
+			"ts": 1769221348000,
+			"author_id": "en/MadamBloggs",
+			"author_name": "MadamBloggs",
+			"text": "omg what are you going to do with your time"
+		},
+		{
+			"id": "504403158437087008",
+			"ts": 1769221359000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "study for my board exam :p"
+		},
+		{
+			"id": "504403158437087053",
+			"ts": 1769221392000,
+			"author_id": "en/MadamBloggs",
+			"author_name": "MadamBloggs",
+			"text": "good girl. There's some that would push for last minute to do list haha"
+		},
+		{
+			"id": "504403158437087058",
+			"ts": 1769221404000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "oh you cant do last minute with boards"
+		},
+		{
+			"id": "504403158437087580",
+			"ts": 1769221476000,
+			"author_id": "en/MadamBloggs",
+			"author_name": "MadamBloggs",
+			"text": "Yeh was hard enough studying the human anatomy for massage therapy. Lots of studies for medical field."
+		},
+		{
+			"id": "504403158437097678",
+			"ts": 1769225037000,
+			"author_id": "en/Archaelic",
+			"author_name": "Archaelic",
+			"text": "task reset in 35 min"
+		},
+		{
+			"id": "504403158437098278",
+			"ts": 1769225052000,
+			"author_id": "en/Sinklar",
+			"author_name": "Sinklar",
+			"text": "300k T1 smithing remains at RRR"
+		},
+		{
+			"id": "504403158437098279",
+			"ts": 1769225056000,
+			"author_id": "en/Sinklar",
+			"author_name": "Sinklar",
+			"text": "1.2m down"
+		},
+		{
+			"id": "504403158437138168",
+			"ts": 1769227302000,
+			"author_id": "en/Cyxlinux",
+			"author_name": "Cyxlinux",
+			"text": "since im ne wto this game im at t3 now i wonder if anyone would need t8 t9 hunters? haha... thoughts?"
+		},
+		{
+			"id": "504403158437138169",
+			"ts": 1769227312000,
+			"author_id": "en/Cyxlinux",
+			"author_name": "Cyxlinux",
+			"text": "if thats my goal to hunt non stop"
+		},
+		{
+			"id": "504403158437138172",
+			"ts": 1769227329000,
+			"author_id": "en/Astralite",
+			"author_name": "Astralite",
+			"text": "EVERYONE needs hunters"
+		},
+		{
+			"id": "504403158437138173",
+			"ts": 1769227333000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "thier useful but a majority of hunting is tiers 1-5"
+		},
+		{
+			"id": "504403158437138176",
+			"ts": 1769227336000,
+			"author_id": "en/Bloggs",
+			"author_name": "Bloggs",
+			"text": "not a lot atm - most ppl need mass amounts of t1-3"
+		},
+		{
+			"id": "504403158437138186",
+			"ts": 1769227351000,
+			"author_id": "en/Cyxlinux",
+			"author_name": "Cyxlinux",
+			"text": "i see, so the entire world have nothing to offer? lol"
+		},
+		{
+			"id": "504403158437138219",
+			"ts": 1769227382000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "wdym?"
+		},
+		{
+			"id": "504403158437138222",
+			"ts": 1769227392000,
+			"author_id": "en/MadamBloggs",
+			"author_name": "MadamBloggs",
+			"text": "You need less materials higher you go"
+		},
+		{
+			"id": "504403158437138230",
+			"ts": 1769227426000,
+			"author_id": "en/Peanuts",
+			"author_name": "Peanuts",
+			"text": "so i'm tier4, i spend more time hunting Tier1 birds than i spend hunting Tier2 goats... and more time on goats than T3 .. etc"
+		},
+		{
+			"id": "504403158437138233",
+			"ts": 1769227435000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "yeah"
+		},
+		{
+			"id": "504403158437138235",
+			"ts": 1769227444000,
+			"author_id": "en/Cyxlinux",
+			"author_name": "Cyxlinux",
+			"text": "i see, i like to hear from t6+ hunter experiences to share so i can learn of their insights"
+		},
+		{
+			"id": "504403158437138691",
+			"ts": 1769227466000,
+			"author_id": "en/Cyxlinux",
+			"author_name": "Cyxlinux",
+			"text": "t1 all the time? really? dont we need more higher tier stuff as we go?"
+		},
+		{
+			"id": "504403158437138710",
+			"ts": 1769227478000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "no"
+		},
+		{
+			"id": "504403158437138717",
+			"ts": 1769227484000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "you need multiple t1 for each t2 etc"
+		},
+		{
+			"id": "504403158437138718",
+			"ts": 1769227490000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "so in the end game you need thousands of t1s"
+		},
+		{
+			"id": "504403158437138719",
+			"ts": 1769227495000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "and maybe a few hundred t8s"
+		},
+		{
+			"id": "504403158437138730",
+			"ts": 1769227498000,
+			"author_id": "en/Peanuts",
+			"author_name": "Peanuts",
+			"text": "its a pyramid , every time the pyramid gets bigger, but the base of the pyramid is always Tier1"
+		},
+		{
+			"id": "504403158437138732",
+			"ts": 1769227506000,
+			"author_id": "en/Cyxlinux",
+			"author_name": "Cyxlinux",
+			"text": "ah.. refinements ?"
+		},
+		{
+			"id": "504403158437138757",
+			"ts": 1769227532000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "yup"
+		},
+		{
+			"id": "504403158437138766",
+			"ts": 1769227546000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "if its for crafting, you craft a bunch of t1/t2 items then a fraction go from t3-t10"
+		},
+		{
+			"id": "504403158437138768",
+			"ts": 1769227551000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "so u still get more low level mats"
+		},
+		{
+			"id": "504403158437138771",
+			"ts": 1769227555000,
+			"author_id": "en/Cyxlinux",
+			"author_name": "Cyxlinux",
+			"text": "maybe devs should have better op drops at higher tier mobs for motivation"
+		},
+		{
+			"id": "504403158437138799",
+			"ts": 1769227571000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "trust me"
+		},
+		{
+			"id": "504403158437138805",
+			"ts": 1769227579000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "if u hunt higher tier mobs theirs alot of motivation"
+		},
+		{
+			"id": "504403158437138812",
+			"ts": 1769227582000,
+			"author_id": "en/Cyxlinux",
+			"author_name": "Cyxlinux",
+			"text": "what made u rather to hunt t1 than few high tier mobs? they are hard to kill?"
+		},
+		{
+			"id": "504403158437138828",
+			"ts": 1769227582000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "their worth insane amounts"
+		},
+		{
+			"id": "504403158437138859",
+			"ts": 1769227600000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "they did mention implementing a \"big/large game\" system to give you more drops for huntable animals"
+		},
+		{
+			"id": "504403158437138913",
+			"ts": 1769227632000,
+			"author_id": "en/Bloggs",
+			"author_name": "Bloggs",
+			"text": "some will buy carcasses cuz they dont know how to hunt properly - I see some ppl still using goats lol - but yeah its an income stream"
+		},
+		{
+			"id": "504403158437139067",
+			"ts": 1769227676000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "yeah def should sell me corpses, I'll gladly buy all you can hunt"
+		},
+		{
+			"id": "504403158437139104",
+			"ts": 1769227685000,
+			"author_id": "en/Cyxlinux",
+			"author_name": "Cyxlinux",
+			"text": "ah cuz so many people are low tiers, got it -- need more player base and plus trade market need to be global not per town"
+		},
+		{
+			"id": "504403158437139107",
+			"ts": 1769227700000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "if they make the market global, game will be dead"
+		},
+		{
+			"id": "504403158437139123",
+			"ts": 1769227702000,
+			"author_id": "en/Peanuts",
+			"author_name": "Peanuts",
+			"text": "no magic teleporting trades"
+		},
+		{
+			"id": "504403158437139150",
+			"ts": 1769227711000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "I agree with a regional market tho"
+		},
+		{
+			"id": "504403158437139161",
+			"ts": 1769227714000,
+			"author_id": "en/Cyxlinux",
+			"author_name": "Cyxlinux",
+			"text": "dont we perfer active trade market if its global?"
+		},
+		{
+			"id": "504403158437139162",
+			"ts": 1769227719000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "no"
+		},
+		{
+			"id": "504403158437139185",
+			"ts": 1769227725000,
+			"author_id": "en/Bloggs",
+			"author_name": "Bloggs",
+			"text": "most ppl quit before they need t7+ tools"
+		},
+		{
+			"id": "504403158437139196",
+			"ts": 1769227733000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "global markets will ruin the core gameplay loop"
+		},
+		{
+			"id": "504403158437139197",
+			"ts": 1769227747000,
+			"author_id": "en/Peanuts",
+			"author_name": "Peanuts",
+			"text": "well, the biggest killer of this game is trucking your Tier4 stone back home (for me)"
+		},
+		{
+			"id": "504403158437139660",
+			"ts": 1769227758000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "2nd, it means u never need to move items, since u just make t4 outposts eveywhere u want then market ur items home"
+		},
+		{
+			"id": "504403158437139661",
+			"ts": 1769227763000,
+			"author_id": "en/Bloggs",
+			"author_name": "Bloggs",
+			"text": "hmmm - then dont ;p - process it on site"
+		},
+		{
+			"id": "504403158437139662",
+			"ts": 1769227763000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "would ruin any sense of difficulty"
+		},
+		{
+			"id": "504403158437139667",
+			"ts": 1769227776000,
+			"author_id": "en/Cyxlinux",
+			"author_name": "Cyxlinux",
+			"text": "ah... transport issues"
+		},
+		{
+			"id": "504403158437139680",
+			"ts": 1769227803000,
+			"author_id": "en/Peanuts",
+			"author_name": "Peanuts",
+			"text": "yeah, i have a huge wagon, but can't move the wagon over rivers"
+		},
+		{
+			"id": "504403158437139682",
+			"ts": 1769227810000,
+			"author_id": "en/Peanuts",
+			"author_name": "Peanuts",
+			"text": "so the huge wagon is useless"
+		},
+		{
+			"id": "504403158437139683",
+			"ts": 1769227812000,
+			"author_id": "en/Bloggs",
+			"author_name": "Bloggs",
+			"text": "spend a few days breaking stone into pebbles - pack it - then transport it."
+		},
+		{
+			"id": "504403158437139688",
+			"ts": 1769227822000,
+			"author_id": "en/Bloggs",
+			"author_name": "Bloggs",
+			"text": "you wont need that tier again for a long while"
+		},
+		{
+			"id": "504403158437139715",
+			"ts": 1769227856000,
+			"author_id": "en/Cyxlinux",
+			"author_name": "Cyxlinux",
+			"text": "why dont you guys hunt on shores and throw tons of carcasses on the ships haha"
+		},
+		{
+			"id": "504403158437139718",
+			"ts": 1769227872000,
+			"author_id": "en/Bloggs",
+			"author_name": "Bloggs",
+			"text": "or sell stuff you like doing and contract someone else to ferry you the pebbles"
+		},
+		{
+			"id": "504403158437139728",
+			"ts": 1769227913000,
+			"author_id": "en/Peanuts",
+			"author_name": "Peanuts",
+			"text": "its the same problem for someone else then... wagon with massive storage can't be used to truck goods"
+		},
+		{
+			"id": "504403158437139732",
+			"ts": 1769227929000,
+			"author_id": "en/Bloggs",
+			"author_name": "Bloggs",
+			"text": "yeah you shouldnt use wagons"
+		},
+		{
+			"id": "504403158437139774",
+			"ts": 1769227974000,
+			"author_id": "en/Bloggs",
+			"author_name": "Bloggs",
+			"text": "unless you absolutely have to"
+		},
+		{
+			"id": "504403158437139775",
+			"ts": 1769227976000,
+			"author_id": "en/Peanuts",
+			"author_name": "Peanuts",
+			"text": "I need clipper"
+		},
+		{
+			"id": "504403158437139777",
+			"ts": 1769227986000,
+			"author_id": "en/MadamBloggs",
+			"author_name": "MadamBloggs",
+			"text": "Anytime I use wagon, ox, ship I find small crossings recall deployable then haul to other side. Until they make some sort of crossing its the way it is"
+		},
+		{
+			"id": "504403158437139778",
+			"ts": 1769227987000,
+			"author_id": "en/Bloggs",
+			"author_name": "Bloggs",
+			"text": "ocean/river transport all the way"
+		},
+		{
+			"id": "504403158437140358",
+			"ts": 1769228070000,
+			"author_id": "en/Bloggs",
+			"author_name": "Bloggs",
+			"text": "if the population was more robust it would be better - but aside from rares not much ability to make decent coin these days"
+		},
+		{
+			"id": "504403158437140372",
+			"ts": 1769228086000,
+			"author_id": "en/Tyburn",
+			"author_name": "Tyburn",
+			"text": "When thisa game first launched in EA... people everywhere!"
+		},
+		{
+			"id": "504403158437140382",
+			"ts": 1769228108000,
+			"author_id": "en/Bloggs",
+			"author_name": "Bloggs",
+			"text": "other regions fare better but R7 is mostly DIY"
+		},
+		{
+			"id": "504403158437140387",
+			"ts": 1769228123000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "yeah if u want trade in r7, you have me :)"
+		},
+		{
+			"id": "504403158437140446",
+			"ts": 1769228185000,
+			"author_id": "en/MadamBloggs",
+			"author_name": "MadamBloggs",
+			"text": "not best prices. I but all my epics for 65-85 k"
+		},
+		{
+			"id": "504403158437140453",
+			"ts": 1769228200000,
+			"author_id": "en/Bloggs",
+			"author_name": "Bloggs",
+			"text": "A lot of gauging in R7 for sure"
+		},
+		{
+			"id": "504403158437140454",
+			"ts": 1769228211000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "lmk when u wanna sell, ill glad buy your under priced epics bloggs :0"
+		},
+		{
+			"id": "504403158437140462",
+			"ts": 1769228238000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "especially when u sell t3 rares at 30k. Im sure your the eptiome of good prices"
+		},
+		{
+			"id": "504403158437140468",
+			"ts": 1769228256000,
+			"author_id": "en/MadamBloggs",
+			"author_name": "MadamBloggs",
+			"text": "yeh sorry wont buy or sell to you hun ;p"
+		},
+		{
+			"id": "504403158437140553",
+			"ts": 1769228331000,
+			"author_id": "en/MadamBloggs",
+			"author_name": "MadamBloggs",
+			"text": "If you are trying to talk to hubby hun he has had you muted since river Spire"
+		},
+		{
+			"id": "504403158437140803",
+			"ts": 1769228357000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "pussy"
+		},
+		{
+			"id": "504403158437140886",
+			"ts": 1769228434000,
+			"author_id": "en/Peanuts",
+			"author_name": "Peanuts",
+			"text": "speaking of cats, why is my ox so afraid of crossing a little road"
+		},
+		{
+			"id": "504403158437140888",
+			"ts": 1769228453000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "it just got its nails done, its delicate"
+		},
+		{
+			"id": "504403158437140892",
+			"ts": 1769228465000,
+			"author_id": "en/Bloggs",
+			"author_name": "Bloggs",
+			"text": "the one bug that seems terribly hard to fix xD"
+		},
+		{
+			"id": "504403158437140921",
+			"ts": 1769228479000,
+			"author_id": "en/Peanuts",
+			"author_name": "Peanuts",
+			"text": "that and climb ("
+		},
+		{
+			"id": "504403158437140955",
+			"ts": 1769228515000,
+			"author_id": "en/Bloggs",
+			"author_name": "Bloggs",
+			"text": "Ive not encountered this climb bug too often - mostly cuz I cant be arsed to climb for stuff I spose ;p"
+		},
+		{
+			"id": "504403158437140996",
+			"ts": 1769228532000,
+			"author_id": "en/Tyburn",
+			"author_name": "Tyburn",
+			"text": "Invalid Climb Type?"
+		},
+		{
+			"id": "504403158437141001",
+			"ts": 1769228542000,
+			"author_id": "en/Tyburn",
+			"author_name": "Tyburn",
+			"text": "Or the run one?"
+		},
+		{
+			"id": "504403158437141009",
+			"ts": 1769228559000,
+			"author_id": "en/Peanuts",
+			"author_name": "Peanuts",
+			"text": "really? you climb up and then you can't interact with anything until you mount a goat"
+		},
+		{
+			"id": "504403158437141012",
+			"ts": 1769228565000,
+			"author_id": "en/Tyburn",
+			"author_name": "Tyburn",
+			"text": "Oh that"
+		},
+		{
+			"id": "504403158437141018",
+			"ts": 1769228577000,
+			"author_id": "en/Bloggs",
+			"author_name": "Bloggs",
+			"text": "the only one that is semi annoying is aggroing something at the top and being half dead by the time you get there...."
+		},
+		{
+			"id": "504403158437141020",
+			"ts": 1769228581000,
+			"author_id": "en/MadamBloggs",
+			"author_name": "MadamBloggs",
+			"text": "Never had climbing bug myself"
+		},
+		{
+			"id": "504403158437141047",
+			"ts": 1769228601000,
+			"author_id": "en/Cyxlinux",
+			"author_name": "Cyxlinux",
+			"text": "here the trick, when you right click on mobs and chase after it while on ride, it overrides climbing in a way u see what i mean?"
+		},
+		{
+			"id": "504403158437141048",
+			"ts": 1769228601000,
+			"author_id": "en/Peanuts",
+			"author_name": "Peanuts",
+			"text": "is it a wasd thing?"
+		},
+		{
+			"id": "504403158437141052",
+			"ts": 1769228608000,
+			"author_id": "en/MadamBloggs",
+			"author_name": "MadamBloggs",
+			"text": "I use mouse"
+		},
+		{
+			"id": "504403158437141070",
+			"ts": 1769228641000,
+			"author_id": "en/Bloggs",
+			"author_name": "Bloggs",
+			"text": "if I die I just eat some food - job done"
+		},
+		{
+			"id": "504403158437141305",
+			"ts": 1769228663000,
+			"author_id": "en/Cyxlinux",
+			"author_name": "Cyxlinux",
+			"text": "wasd i do use that, but its so much trouble in mountains , best use mouse chasing after mobs"
+		},
+		{
+			"id": "504403158437141309",
+			"ts": 1769228670000,
+			"author_id": "en/MadamBloggs",
+			"author_name": "MadamBloggs",
+			"text": "same I get pissed and curse but get back up and gather with my hr food lol"
+		},
+		{
+			"id": "504403158437141354",
+			"ts": 1769228747000,
+			"author_id": "en/Bloggs",
+			"author_name": "Bloggs",
+			"text": "Id like to see mobs having to use the F key rather than just teleporting up cliffs"
+		},
+		{
+			"id": "504403158437141359",
+			"ts": 1769228759000,
+			"author_id": "en/MadamBloggs",
+			"author_name": "MadamBloggs",
+			"text": "lmao"
+		},
+		{
+			"id": "504403158437144218",
+			"ts": 1769229935000,
+			"author_id": "en/Bloggs",
+			"author_name": "Bloggs",
+			"text": "anyone know what Svim pays for a T6 tarp?"
+		},
+		{
+			"id": "504403158437144258",
+			"ts": 1769230005000,
+			"author_id": "cs/Auric Ore",
+			"author_name": "Auric Ore",
+			"text": "\"Favors\""
+		},
+		{
+			"id": "504403158437144352",
+			"ts": 1769230142000,
+			"author_id": "en/Peanuts",
+			"author_name": "Peanuts",
+			"text": "Has anyone integrated ai into the api?"
+		},
+		{
+			"id": "504403158437146177",
+			"ts": 1769230880000,
+			"author_id": "en/Cyxlinux",
+			"author_name": "Cyxlinux",
+			"text": "explain more nuts"
+		},
+		{
+			"id": "504403158437146191",
+			"ts": 1769230916000,
+			"author_id": "en/Cyxlinux",
+			"author_name": "Cyxlinux",
+			"text": "use cli with ai that the inner working of it that we are using its api unless local ai to host"
+		},
+		{
+			"id": "504403158437146310",
+			"ts": 1769231049000,
+			"author_id": "en/Peanuts",
+			"author_name": "Peanuts",
+			"text": "just something to think for you sometimes... like \"how many rocks do i need to build 5 more tanning tubs\""
+		},
+		{
+			"id": "504403158437146722",
+			"ts": 1769231063000,
+			"author_id": "en/Cyxlinux",
+			"author_name": "Cyxlinux",
+			"text": "we still talking about it"
+		},
+		{
+			"id": "504403158437146749",
+			"ts": 1769231114000,
+			"author_id": "en/Bloggs",
+			"author_name": "Bloggs",
+			"text": "Phlux made a baller app for upgrades"
+		},
+		{
+			"id": "504403158437146763",
+			"ts": 1769231147000,
+			"author_id": "en/Cyxlinux",
+			"author_name": "Cyxlinux",
+			"text": "gl on vibe coding :P"
+		},
+		{
+			"id": "504403158437146776",
+			"ts": 1769231193000,
+			"author_id": "en/Akela",
+			"author_name": "Akela",
+			"text": "Goodnight everyone!"
+		},
+		{
+			"id": "504403158437146783",
+			"ts": 1769231204000,
+			"author_id": "en/Bloggs",
+			"author_name": "Bloggs",
+			"text": "nn"
+		},
+		{
+			"id": "504403158437150617",
+			"ts": 1769232809000,
+			"author_id": "en/Omakase",
+			"author_name": "Omakase",
+			"text": "hOWDY"
+		},
+		{
+			"id": "504403158437150893",
+			"ts": 1769232854000,
+			"author_id": "en/Omakase",
+			"author_name": "Omakase",
+			"text": "Ok"
+		},
+		{
+			"id": "504403158437150932",
+			"ts": 1769232902000,
+			"author_id": "en/Astralite",
+			"author_name": "Astralite",
+			"text": "hello"
+		},
+		{
+			"id": "504403158437156501",
+			"ts": 1769235627000,
+			"author_id": "en/Sorata",
+			"author_name": "Sorata",
+			"text": "THE ORE PROVIDES"
+		},
+		{
+			"id": "504403158437156502",
+			"ts": 1769235634000,
+			"author_id": "cs/Auric Ore",
+			"author_name": "Auric Ore",
+			"text": "THE ORE PROVIDES!"
+		},
+		{
+			"id": "504403158437156568",
+			"ts": 1769235660000,
+			"author_id": "cs/Auric Ore",
+			"author_name": "Auric Ore",
+			"text": "Brother Sorata, how fare you from the seas and lands afar? Have you news?"
+		},
+		{
+			"id": "504403158437156595",
+			"ts": 1769235666000,
+			"author_id": "en/Astralite",
+			"author_name": "Astralite",
+			"text": "THE ORE PROVIDES"
+		},
+		{
+			"id": "504403158437156606",
+			"ts": 1769235695000,
+			"author_id": "en/Sorata",
+			"author_name": "Sorata",
+			"text": "I have travelled the world far and wide and discover the secret world formula to life"
+		},
+		{
+			"id": "504403158437156611",
+			"ts": 1769235706000,
+			"author_id": "en/Sorata",
+			"author_name": "Sorata",
+			"text": "which is.... 67"
+		},
+		{
+			"id": "504403158437156623",
+			"ts": 1769235724000,
+			"author_id": "cs/Auric Ore",
+			"author_name": "Auric Ore",
+			"text": "My goodness"
+		},
+		{
+			"id": "504403158437156627",
+			"ts": 1769235726000,
+			"author_id": "en/Peanuts",
+			"author_name": "Peanuts",
+			"text": "six seven ahahahahaaaaa"
+		},
+		{
+			"id": "504403158437156628",
+			"ts": 1769235745000,
+			"author_id": "cs/Auric Ore",
+			"author_name": "Auric Ore",
+			"text": "A PROPHECY FORETOLD IN CRYPTIC NUMBERING"
+		},
+		{
+			"id": "504403158437156637",
+			"ts": 1769235774000,
+			"author_id": "en/Sorata",
+			"author_name": "Sorata",
+			"text": "remember to do the hand gesture when u say it, its the clue to the meaning of life"
+		},
+		{
+			"id": "504403158437156683",
+			"ts": 1769235842000,
+			"author_id": "en/Peanuts",
+			"author_name": "Peanuts",
+			"text": "i just do the finger gesture"
+		},
+		{
+			"id": "504403158437161905",
+			"ts": 1769237973000,
+			"author_id": "en/Omakase",
+			"author_name": "Omakase",
+			"text": "i feel like the view storage bug is even worse now"
+		},
+		{
+			"id": "504403158437163627",
+			"ts": 1769238930000,
+			"author_id": "en/Archaelic",
+			"author_name": "Archaelic",
+			"text": "45 minutes until task reset"
+		},
+		{
+			"id": "504403158437169636",
+			"ts": 1769241084000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "oma check discord"
+		},
+		{
+			"id": "504403158437169642",
+			"ts": 1769241107000,
+			"author_id": "en/Omakase",
+			"author_name": "Omakase",
+			"text": "nah that's cheating"
+		},
+		{
+			"id": "504403158437169659",
+			"ts": 1769241131000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "LOL"
+		},
+		{
+			"id": "504403158437205077",
+			"ts": 1769242342000,
+			"author_id": "en/Omakase",
+			"author_name": "Omakase",
+			"text": "ugh ease of travel my ass"
+		},
+		{
+			"id": "504403158437205078",
+			"ts": 1769242346000,
+			"author_id": "en/Omakase",
+			"author_name": "Omakase",
+			"text": "there's a waterfall"
+		},
+		{
+			"id": "504403158437205084",
+			"ts": 1769242360000,
+			"author_id": "en/Omakase",
+			"author_name": "Omakase",
+			"text": "I should have stuck to the river salt"
+		},
+		{
+			"id": "504403158437205164",
+			"ts": 1769242441000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "oh"
+		},
+		{
+			"id": "504403158437205593",
+			"ts": 1769242452000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "u just stop at asgard and get off"
+		},
+		{
+			"id": "504403158437205594",
+			"ts": 1769242454000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "walk to ocean"
+		},
+		{
+			"id": "504403158437205612",
+			"ts": 1769242460000,
+			"author_id": "en/Omakase",
+			"author_name": "Omakase",
+			"text": "terrible"
+		},
+		{
+			"id": "504403158437205617",
+			"ts": 1769242468000,
+			"author_id": "en/Omakase",
+			"author_name": "Omakase",
+			"text": "will never use again"
+		},
+		{
+			"id": "504403158437205672",
+			"ts": 1769242563000,
+			"author_id": "en/Omakase",
+			"author_name": "Omakase",
+			"text": "Now all i have to do is stay awake until I reach the little man in the boat"
+		},
+		{
+			"id": "504403158437212670",
+			"ts": 1769245765000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "oma"
+		},
+		{
+			"id": "504403158437212709",
+			"ts": 1769245790000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "does salt, have t6 metal to sell?"
+		},
+		{
+			"id": "504403158437215532",
+			"ts": 1769247128000,
+			"author_id": "en/Toczys",
+			"author_name": "Toczys",
+			"text": "Wre i can find T5 Flower?"
+		},
+		{
+			"id": "504403158437215558",
+			"ts": 1769247168000,
+			"author_id": "en/IgnisRoman",
+			"author_name": "IgnisRoman",
+			"text": "autumn, jungle, swamp"
+		},
+		{
+			"id": "504403158437215589",
+			"ts": 1769247196000,
+			"author_id": "en/MezTheMirewarden",
+			"author_name": "MezTheMirewarden",
+			"text": "Southwest of R7. or Southeast of R7."
+		},
+		{
+			"id": "504403158437215617",
+			"ts": 1769247238000,
+			"author_id": "en/MezTheMirewarden",
+			"author_name": "MezTheMirewarden",
+			"text": "Pink lillies in those palces"
+		},
+		{
+			"id": "504403158437216003",
+			"ts": 1769247294000,
+			"author_id": "en/MezTheMirewarden",
+			"author_name": "MezTheMirewarden",
+			"text": "Morning Glory in the same places as the Pink lillies, but also located in the Western isles."
+		},
+		{
+			"id": "504403158437216111",
+			"ts": 1769247332000,
+			"author_id": "en/Toczys",
+			"author_name": "Toczys",
+			"text": "Realm of Crown And Cask teritory?"
+		},
+		{
+			"id": "504403158437216145",
+			"ts": 1769247346000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "BEST option is imo the jungle road near port spire"
+		},
+		{
+			"id": "504403158437216152",
+			"ts": 1769247352000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "large area to harvest with road and lamps"
+		},
+		{
+			"id": "504403158437216199",
+			"ts": 1769247391000,
+			"author_id": "en/Toczys",
+			"author_name": "Toczys",
+			"text": "i know where is Rivers Spire, where is port spire?"
+		},
+		{
+			"id": "504403158437216223",
+			"ts": 1769247424000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "middle of jungle bottom right"
+		},
+		{
+			"id": "504403158437216233",
+			"ts": 1769247438000,
+			"author_id": "en/IgnisRoman",
+			"author_name": "IgnisRoman",
+			"text": "Toczys, what is you base of operation?"
+		},
+		{
+			"id": "504403158437216238",
+			"ts": 1769247452000,
+			"author_id": "en/Toczys",
+			"author_name": "Toczys",
+			"text": "i can traverl everywhere"
+		},
+		{
+			"id": "504403158437216291",
+			"ts": 1769247503000,
+			"author_id": "en/MezTheMirewarden",
+			"author_name": "MezTheMirewarden",
+			"text": "Sages of the mine in the East, The Argent City for the isle"
+		},
+		{
+			"id": "504403158437216303",
+			"ts": 1769247531000,
+			"author_id": "en/MezTheMirewarden",
+			"author_name": "MezTheMirewarden",
+			"text": "Emerald Grove for the West"
+		},
+		{
+			"id": "504403158437216307",
+			"ts": 1769247550000,
+			"author_id": "en/IgnisRoman",
+			"author_name": "IgnisRoman",
+			"text": "it's easier for heople to poit you one place that every possible option"
+		},
+		{
+			"id": "504403158437216769",
+			"ts": 1769247563000,
+			"author_id": "en/IgnisRoman",
+			"author_name": "IgnisRoman",
+			"text": "sorry for typos"
+		},
+		{
+			"id": "504403158437216793",
+			"ts": 1769247594000,
+			"author_id": "en/Toczys",
+			"author_name": "Toczys",
+			"text": "Im mostly next to Charlowe and Ironrest"
+		},
+		{
+			"id": "504403158437216891",
+			"ts": 1769247649000,
+			"author_id": "en/MezTheMirewarden",
+			"author_name": "MezTheMirewarden",
+			"text": "Head west to the Argent city, it's the shortest trip"
+		},
+		{
+			"id": "504403158437216898",
+			"ts": 1769247670000,
+			"author_id": "en/IgnisRoman",
+			"author_name": "IgnisRoman",
+			"text": "in that case the clothest spot is Autimn foresr - east territories of Chilling Place"
+		},
+		{
+			"id": "504403158437216905",
+			"ts": 1769247685000,
+			"author_id": "en/IgnisRoman",
+			"author_name": "IgnisRoman",
+			"text": "man, so many typos..."
+		},
+		{
+			"id": "504403158437217008",
+			"ts": 1769247726000,
+			"author_id": "en/Toczys",
+			"author_name": "Toczys",
+			"text": "no worries im not native English so i mostly know what do you mean"
+		},
+		{
+			"id": "504403158437217388",
+			"ts": 1769247861000,
+			"author_id": "en/Toczys",
+			"author_name": "Toczys",
+			"text": "Found it :) Thanks Ignis"
+		},
+		{
+			"id": "504403158437217397",
+			"ts": 1769247884000,
+			"author_id": "en/IgnisRoman",
+			"author_name": "IgnisRoman",
+			"text": "o7"
+		},
+		{
+			"id": "504403158437218810",
+			"ts": 1769248544000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "keyser or any salt member on?"
+		},
+		{
+			"id": "504403158437219469",
+			"ts": 1769249011000,
+			"author_id": "en/cyberPunkHippi",
+			"author_name": "cyberPunkHippi",
+			"text": "River Spire !!!"
+		},
+		{
+			"id": "504403158437219481",
+			"ts": 1769249048000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "does anyone from rs still play?"
+		},
+		{
+			"id": "504403158437221018",
+			"ts": 1769249614000,
+			"author_id": "en/caffeine",
+			"author_name": "caffeine",
+			"text": "Does Talis not play anymore??"
+		},
+		{
+			"id": "504403158437221095",
+			"ts": 1769249641000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "he quit after the war"
+		},
+		{
+			"id": "504403158437221565",
+			"ts": 1769249654000,
+			"author_id": "en/caffeine",
+			"author_name": "caffeine",
+			"text": "what war?"
+		},
+		{
+			"id": "504403158437221601",
+			"ts": 1769249664000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "the war with sanctuary"
+		},
+		{
+			"id": "504403158437221616",
+			"ts": 1769249677000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "he threathened me for land when i just started my settlement so i had to give it to him"
+		},
+		{
+			"id": "504403158437221617",
+			"ts": 1769249679000,
+			"author_id": "en/caffeine",
+			"author_name": "caffeine",
+			"text": "Idk wtf that means lol"
+		},
+		{
+			"id": "504403158437221618",
+			"ts": 1769249684000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "when i got build up, i took it back and he quit"
+		},
+		{
+			"id": "504403158437221621",
+			"ts": 1769249689000,
+			"author_id": "en/caffeine",
+			"author_name": "caffeine",
+			"text": "Oh nice"
+		},
+		{
+			"id": "504403158437221632",
+			"ts": 1769249692000,
+			"author_id": "en/caffeine",
+			"author_name": "caffeine",
+			"text": "Good for you"
+		},
+		{
+			"id": "504403158437221735",
+			"ts": 1769249713000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "ty"
+		},
+		{
+			"id": "504403158437233013",
+			"ts": 1769254604000,
+			"author_id": "en/Astralite",
+			"author_name": "Astralite",
+			"text": "sage do you have a rare spear and shield?"
+		},
+		{
+			"id": "504403158437233057",
+			"ts": 1769254716000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "i could make one"
+		},
+		{
+			"id": "504403158437233058",
+			"ts": 1769254727000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "but id really not want to tbh"
+		},
+		{
+			"id": "504403158437233092",
+			"ts": 1769254739000,
+			"author_id": "en/Astralite",
+			"author_name": "Astralite",
+			"text": "i will prepay for it"
+		},
+		{
+			"id": "504403158437233481",
+			"ts": 1769254798000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "sorry but im gonna say no"
+		},
+		{
+			"id": "504403158437233482",
+			"ts": 1769254804000,
+			"author_id": "en/Hydra",
+			"author_name": "Hydra",
+			"text": "20 minutes untill task reset"
+		},
+		{
+			"id": "504403158437233483",
+			"ts": 1769254805000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "weapons are a bitch since they use different scrap"
+		},
+		{
+			"id": "504403158437233502",
+			"ts": 1769254812000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "and i dont want spend the mats"
+		},
+		{
+			"id": "504403158437233503",
+			"ts": 1769254820000,
+			"author_id": "en/JellyCatBee",
+			"author_name": "JellyCatBee",
+			"text": "Hewwooo!)"
+		},
+		{
+			"id": "504403158437233507",
+			"ts": 1769254833000,
+			"author_id": "en/Hydra",
+			"author_name": "Hydra",
+			"text": "hiya jelly"
+		},
+		{
+			"id": "504403158437233508",
+			"ts": 1769254833000,
+			"author_id": "en/Astralite",
+			"author_name": "Astralite",
+			"text": "fair enough"
+		},
+		{
+			"id": "504403158437233729",
+			"ts": 1769255011000,
+			"author_id": "en/Akela",
+			"author_name": "Akela",
+			"text": "I should need be awake right now this is bs"
+		},
+		{
+			"id": "504403158437233730",
+			"ts": 1769255023000,
+			"author_id": "en/Akela",
+			"author_name": "Akela",
+			"text": "not be awake wtf"
+		},
+		{
+			"id": "504403158437234943",
+			"ts": 1769255444000,
+			"author_id": "en/JellyCatBee",
+			"author_name": "JellyCatBee",
+			"text": "well, go back to sleep)"
+		},
+		{
+			"id": "504403158437235022",
+			"ts": 1769255528000,
+			"author_id": "en/Akela",
+			"author_name": "Akela",
+			"text": "Yeah sadly im wide awake now after getting called out for an emergency"
+		},
+		{
+			"id": "504403158437270442",
+			"ts": 1769257093000,
+			"author_id": "en/Archaelic",
+			"author_name": "Archaelic",
+			"text": "'morning everyone."
+		},
+		{
+			"id": "504403158437270450",
+			"ts": 1769257109000,
+			"author_id": "en/Astralite",
+			"author_name": "Astralite",
+			"text": "good morning"
+		},
+		{
+			"id": "504403158437271006",
+			"ts": 1769257172000,
+			"author_id": "en/JellyCatBee",
+			"author_name": "JellyCatBee",
+			"text": "Morning!)"
+		},
+		{
+			"id": "504403158437271010",
+			"ts": 1769257207000,
+			"author_id": "en/YouLi",
+			"author_name": "YouLi",
+			"text": "Morning!"
+		},
+		{
+			"id": "504403158437271146",
+			"ts": 1769257248000,
+			"author_id": "en/YouLi",
+			"author_name": "YouLi",
+			"text": "gonna be a cold one today"
+		},
+		{
+			"id": "504403158437271149",
+			"ts": 1769257267000,
+			"author_id": "en/Savior",
+			"author_name": "Savior",
+			"text": "Very cold here in the south"
+		},
+		{
+			"id": "504403158437271189",
+			"ts": 1769257292000,
+			"author_id": "de/Lomacil",
+			"author_name": "Lomacil",
+			"text": "morning"
+		},
+		{
+			"id": "504403158437271255",
+			"ts": 1769257363000,
+			"author_id": "en/YouLi",
+			"author_name": "YouLi",
+			"text": "-27C here"
+		},
+		{
+			"id": "504403158437271281",
+			"ts": 1769257374000,
+			"author_id": "en/Astralite",
+			"author_name": "Astralite",
+			"text": "ouch. its 47 here"
+		},
+		{
+			"id": "504403158437271436",
+			"ts": 1769257410000,
+			"author_id": "en/YouLi",
+			"author_name": "YouLi",
+			"text": "nvm its -33C didnt check the right location lol"
+		},
+		{
+			"id": "504403158437271499",
+			"ts": 1769257447000,
+			"author_id": "en/Astralite",
+			"author_name": "Astralite",
+			"text": "eww"
+		},
+		{
+			"id": "504403158437271913",
+			"ts": 1769257459000,
+			"author_id": "en/Sorata",
+			"author_name": "Sorata",
+			"text": "THE ORE PROVIDES"
+		},
+		{
+			"id": "504403158437271925",
+			"ts": 1769257464000,
+			"author_id": "en/YouLi",
+			"author_name": "YouLi",
+			"text": "eww indeed, well my igloo is not gonna melt iguess"
+		},
+		{
+			"id": "504403158437271940",
+			"ts": 1769257471000,
+			"author_id": "en/Astralite",
+			"author_name": "Astralite",
+			"text": "THE OR PROVIDES"
+		},
+		{
+			"id": "504403158437271965",
+			"ts": 1769257481000,
+			"author_id": "en/Archaelic",
+			"author_name": "Archaelic",
+			"text": "Yikes, that's......much to cold for my bones."
+		},
+		{
+			"id": "504403158437271994",
+			"ts": 1769257525000,
+			"author_id": "en/YouLi",
+			"author_name": "YouLi",
+			"text": "i had the brilliant idea to take the dog out in slippers... i regret that decision so bad"
+		},
+		{
+			"id": "504403158437271999",
+			"ts": 1769257543000,
+			"author_id": "en/Archaelic",
+			"author_name": "Archaelic",
+			"text": "I'd imagine!"
+		},
+		{
+			"id": "504403158437272005",
+			"ts": 1769257569000,
+			"author_id": "en/Astralite",
+			"author_name": "Astralite",
+			"text": "Sorata have you seen the Argent City?"
+		},
+		{
+			"id": "504403158437272010",
+			"ts": 1769257582000,
+			"author_id": "en/JellyCatBee",
+			"author_name": "JellyCatBee",
+			"text": "Ooof, yeah, we had winter like that 2 years ago, not a fan..."
+		},
+		{
+			"id": "504403158437272014",
+			"ts": 1769257606000,
+			"author_id": "en/Sorata",
+			"author_name": "Sorata",
+			"text": "no i havent been to the holy land"
+		},
+		{
+			"id": "504403158437272020",
+			"ts": 1769257616000,
+			"author_id": "en/Astralite",
+			"author_name": "Astralite",
+			"text": "You should come visit"
+		},
+		{
+			"id": "504403158437272032",
+			"ts": 1769257652000,
+			"author_id": "en/Sorata",
+			"author_name": "Sorata",
+			"text": "thank u for the invitation, i shall perform my religious prilimage soon"
+		},
+		{
+			"id": "504403158437272037",
+			"ts": 1769257664000,
+			"author_id": "en/Astralite",
+			"author_name": "Astralite",
+			"text": "im glad to hear it"
+		},
+		{
+			"id": "504403158437277221",
+			"ts": 1769259938000,
+			"author_id": "en/MezTheMirewarden",
+			"author_name": "MezTheMirewarden",
+			"text": "Xyp"
+		},
+		{
+			"id": "504403158437277225",
+			"ts": 1769259951000,
+			"author_id": "en/MezTheMirewarden",
+			"author_name": "MezTheMirewarden",
+			"text": "You want free t7 roots?"
+		},
+		{
+			"id": "504403158437278301",
+			"ts": 1769260515000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "ignis u on?"
+		},
+		{
+			"id": "504403158437279706",
+			"ts": 1769261224000,
+			"author_id": "en/MezTheMirewarden",
+			"author_name": "MezTheMirewarden",
+			"text": "gun"
+		},
+		{
+			"id": "504403158437279766",
+			"ts": 1769261264000,
+			"author_id": "en/MezTheMirewarden",
+			"author_name": "MezTheMirewarden",
+			"text": "Want free t7 Roots?"
+		},
+		{
+			"id": "504403158437279860",
+			"ts": 1769261346000,
+			"author_id": "en/HereticalSage",
+			"author_name": "HereticalSage",
+			"text": "100k t1 smithing at sanctuary"
+		},
+		{
+			"id": "504403158437289206",
+			"ts": 1769265002000,
+			"author_id": "en/Akela",
+			"author_name": "Akela",
+			"text": "Good morning!"
+		},
+		{
+			"id": "504403158437289287",
+			"ts": 1769265028000,
+			"author_id": "en/Lilitha",
+			"author_name": "Lilitha",
+			"text": "ellou"
+		},
+		{
+			"id": "504403158437289350",
+			"ts": 1769265051000,
+			"author_id": "en/Akela",
+			"author_name": "Akela",
+			"text": "Hows everyone"
+		},
+		{
+			"id": "504403158437289485",
+			"ts": 1769265093000,
+			"author_id": "en/Lilitha",
+			"author_name": "Lilitha",
+			"text": "peachy"
+		},
+		{
+			"id": "504403158437289544",
+			"ts": 1769265115000,
+			"author_id": "en/Lilitha",
+			"author_name": "Lilitha",
+			"text": "working on my farming backlog =)"
+		},
+		{
+			"id": "504403158437289915",
+			"ts": 1769265194000,
+			"author_id": "en/Astralite",
+			"author_name": "Astralite",
+			"text": "hello brother Akela"
+		},
+		{
+			"id": "504403158437289992",
+			"ts": 1769265208000,
+			"author_id": "en/Akela",
+			"author_name": "Akela",
+			"text": "Hello Brother Astra (:"
+		},
+		{
+			"id": "504403158437291622",
+			"ts": 1769265389000,
+			"author_id": "en/Lilitha",
+			"author_name": "Lilitha",
+			"text": "why do i have red grid on my map/minimap? oO.. how do i turn it off?"
+		},
+		{
+			"id": "504403158437292668",
+			"ts": 1769265607000,
+			"author_id": "en/PluckYew",
+			"author_name": "PluckYew",
+			"text": "Morning Lilitha, not sure about the map"
+		},
+		{
+			"id": "504403158437292731",
+			"ts": 1769265685000,
+			"author_id": "en/Astralite",
+			"author_name": "Astralite",
+			"text": "fantastic name Pluck"
+		},
+		{
+			"id": "504403158437292737",
+			"ts": 1769265700000,
+			"author_id": "en/PluckYew",
+			"author_name": "PluckYew",
+			"text": "Thank you"
+		},
+		{
+			"id": "504403158437292741",
+			"ts": 1769265711000,
+			"author_id": "en/Astralite",
+			"author_name": "Astralite",
+			"text": "youre welcome"
+		},
+		{
+			"id": "504403158437292824",
+			"ts": 1769265831000,
+			"author_id": "en/Ariakan",
+			"author_name": "Ariakan",
+			"text": "M F2"
+		},
+		{
+			"id": "504403158437296157",
+			"ts": 1769266893000,
+			"author_id": "en/KeyserSoze",
+			"author_name": "KeyserSoze",
+			"text": "sailing 75"
+		},
+		{
+			"id": "504403158437296164",
+			"ts": 1769266904000,
+			"author_id": "en/Akela",
+			"author_name": "Akela",
+			"text": "heck yeah"
+		},
+		{
+			"id": "504403158437300061",
+			"ts": 1769268282000,
+			"author_id": "en/Astralite",
+			"author_name": "Astralite",
+			"text": "TINY are you on??"
+		},
+		{
+			"id": "504403158437343246",
+			"ts": 1769271725000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "making codexes at the bungalow if anyone wants some scholar xp! 45k of t1 rn, going to t2 after, etc. :) come help speed up OFG's upgrade for everyone's benefit! :P <3"
+		},
+		{
+			"id": "504403158437343497",
+			"ts": 1769271794000,
+			"author_id": "en/JellyCatBee",
+			"author_name": "JellyCatBee",
+			"text": "This is probably the only case were are job offers for experience are actually acceptable)))"
+		},
+		{
+			"id": "504403158437343599",
+			"ts": 1769271828000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "xD <3"
+		},
+		{
+			"id": "504403158437343632",
+			"ts": 1769271851000,
+			"author_id": "en/Bloggs",
+			"author_name": "Bloggs",
+			"text": "unfortunately im ont tother side of world atm"
+		},
+		{
+			"id": "504403158437343927",
+			"ts": 1769271857000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "womp womp"
+		},
+		{
+			"id": "504403158437343988",
+			"ts": 1769271886000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "oh is keyser on"
+		},
+		{
+			"id": "504403158437359212",
+			"ts": 1769277653000,
+			"author_id": "en/Peanuts",
+			"author_name": "Peanuts",
+			"text": "task reset in 2 hours"
+		},
+		{
+			"id": "504403158437359469",
+			"ts": 1769277724000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "thats my job !"
+		},
+		{
+			"id": "504403158437359571",
+			"ts": 1769277744000,
+			"author_id": "en/Astralite",
+			"author_name": "Astralite",
+			"text": "tiny! haiii"
+		},
+		{
+			"id": "504403158437359615",
+			"ts": 1769277760000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "ahoy!!"
+		},
+		{
+			"id": "504403158437359644",
+			"ts": 1769277771000,
+			"author_id": "en/Astralite",
+			"author_name": "Astralite",
+			"text": "whats your cooking tiny?"
+		},
+		{
+			"id": "504403158437359656",
+			"ts": 1769277775000,
+			"author_id": "en/Akela",
+			"author_name": "Akela",
+			"text": "Captain!"
+		},
+		{
+			"id": "504403158437359668",
+			"ts": 1769277790000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "71 cooking"
+		},
+		{
+			"id": "504403158437359678",
+			"ts": 1769277806000,
+			"author_id": "en/Astralite",
+			"author_name": "Astralite",
+			"text": "are you willling to assist me with a cat fish by chance?"
+		},
+		{
+			"id": "504403158437359688",
+			"ts": 1769277814000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "of course!"
+		},
+		{
+			"id": "504403158437359734",
+			"ts": 1769277844000,
+			"author_id": "en/Astralite",
+			"author_name": "Astralite",
+			"text": "aweosme! where should I meet you?"
+		},
+		{
+			"id": "504403158437360159",
+			"ts": 1769277869000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "I'm at the Ranch if you wanna pop over here?"
+		},
+		{
+			"id": "504403158437360186",
+			"ts": 1769277881000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "you need the T4 mats?"
+		},
+		{
+			"id": "504403158437360215",
+			"ts": 1769277914000,
+			"author_id": "en/Akela",
+			"author_name": "Akela",
+			"text": "Why does t4 wispweave take so long to grow ugggg"
+		},
+		{
+			"id": "504403158437360238",
+			"ts": 1769277934000,
+			"author_id": "en/Astralite",
+			"author_name": "Astralite",
+			"text": "what all do I need to finish the cat fish?"
+		},
+		{
+			"id": "504403158437360268",
+			"ts": 1769277966000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "4 T4 uncooked meat and 4 lake filets. I have the filets, just not a lot of uncooked meat"
+		},
+		{
+			"id": "504403158437361075",
+			"ts": 1769278317000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "has anyone seen keyser around"
+		},
+		{
+			"id": "504403158437361079",
+			"ts": 1769278324000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "i require his planks"
+		},
+		{
+			"id": "504403158437361107",
+			"ts": 1769278338000,
+			"author_id": "en/Ariakan",
+			"author_name": "Ariakan",
+			"text": "trading planks for oil"
+		},
+		{
+			"id": "504403158437361121",
+			"ts": 1769278348000,
+			"author_id": "en/Astralite",
+			"author_name": "Astralite",
+			"text": "THE ORE PROVIDES!"
+		},
+		{
+			"id": "504403158437361126",
+			"ts": 1769278355000,
+			"author_id": "en/Ariakan",
+			"author_name": "Ariakan",
+			"text": "heyshutup"
+		},
+		{
+			"id": "504403158437361130",
+			"ts": 1769278356000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "THE ORE PROVIDES"
+		},
+		{
+			"id": "504403158437361136",
+			"ts": 1769278371000,
+			"author_id": "en/Mystic",
+			"author_name": "Mystic",
+			"text": "*crushes ore in a futile attempt for fish oil*"
+		},
+		{
+			"id": "504403158437361152",
+			"ts": 1769278380000,
+			"author_id": "en/Ariakan",
+			"author_name": "Ariakan",
+			"text": "begone scalper"
+		},
+		{
+			"id": "504403158437361156",
+			"ts": 1769278382000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "thats a mood"
+		},
+		{
+			"id": "504403158437361159",
+			"ts": 1769278387000,
+			"author_id": "en/Hydra",
+			"author_name": "Hydra",
+			"text": "ah, kids and their minerals"
+		},
+		{
+			"id": "504403158437361166",
+			"ts": 1769278394000,
+			"author_id": "de/Lomacil",
+			"author_name": "Lomacil",
+			"text": "the ribbit provides"
+		},
+		{
+			"id": "504403158437361167",
+			"ts": 1769278400000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "R I B B I T"
+		},
+		{
+			"id": "504403158437361170",
+			"ts": 1769278406000,
+			"author_id": "de/Lomacil",
+			"author_name": "Lomacil",
+			"text": "hm got the hickups"
+		},
+		{
+			"id": "504403158437361184",
+			"ts": 1769278413000,
+			"author_id": "de/Lomacil",
+			"author_name": "Lomacil",
+			"text": "RIBBIT"
+		},
+		{
+			"id": "504403158437361188",
+			"ts": 1769278422000,
+			"author_id": "en/MezTheMirewarden",
+			"author_name": "MezTheMirewarden",
+			"text": "ribbit"
+		},
+		{
+			"id": "504403158437361207",
+			"ts": 1769278427000,
+			"author_id": "en/Astralite",
+			"author_name": "Astralite",
+			"text": "ribbit"
+		},
+		{
+			"id": "504403158437361694",
+			"ts": 1769278457000,
+			"author_id": "en/Peanuts",
+			"author_name": "Peanuts",
+			"text": "T H E  R I B B I T  P R O V I D E S"
+		},
+		{
+			"id": "504403158437361709",
+			"ts": 1769278475000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "woah crossover event!"
+		},
+		{
+			"id": "504403158437361750",
+			"ts": 1769278502000,
+			"author_id": "de/Lomacil",
+			"author_name": "Lomacil",
+			"text": "mining frogs and tadpoles from the ground"
+		},
+		{
+			"id": "504403158437363211",
+			"ts": 1769278984000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "tiny are we fishing out of RRR after dungeon crawls"
+		},
+		{
+			"id": "504403158437365774",
+			"ts": 1769279660000,
+			"author_id": "en/Akela",
+			"author_name": "Akela",
+			"text": "Just got back, any body doing any events today"
+		},
+		{
+			"id": "504403158437365790",
+			"ts": 1769279691000,
+			"author_id": "en/Ariakan",
+			"author_name": "Ariakan",
+			"text": "they wanted to do dungeons"
+		},
+		{
+			"id": "504403158437365868",
+			"ts": 1769279757000,
+			"author_id": "en/JellyCatBee",
+			"author_name": "JellyCatBee",
+			"text": "Oh, dungeons? Can I join? I'm have T3 armor"
+		},
+		{
+			"id": "504403158437366019",
+			"ts": 1769279840000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "Loma when are we wanting to do dungeons?"
+		},
+		{
+			"id": "504403158437366021",
+			"ts": 1769279844000,
+			"author_id": "en/Astralite",
+			"author_name": "Astralite",
+			"text": "can someone come remove a t7 sand for us at argent city please?"
+		},
+		{
+			"id": "504403158437366027",
+			"ts": 1769279856000,
+			"author_id": "en/Peanuts",
+			"author_name": "Peanuts",
+			"text": "expand the claim!"
+		},
+		{
+			"id": "504403158437368319",
+			"ts": 1769280696000,
+			"author_id": "en/Hydra",
+			"author_name": "Hydra",
+			"text": "sure i'll come over later if its still arround"
+		},
+		{
+			"id": "504403158437369260",
+			"ts": 1769280913000,
+			"author_id": "de/Naxta",
+			"author_name": "Naxta",
+			"text": "do somebody sell 12 peerless leather? T6?"
+		},
+		{
+			"id": "504403158437370098",
+			"ts": 1769281241000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "im ready for dungeon crawls when everyone else is"
+		},
+		{
+			"id": "504403158437370847",
+			"ts": 1769281543000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "confirming dungeon runs atm"
+		},
+		{
+			"id": "504403158437370949",
+			"ts": 1769281583000,
+			"author_id": "en/Astralite",
+			"author_name": "Astralite",
+			"text": "do you need a tank for dungeon runs?"
+		},
+		{
+			"id": "504403158437370958",
+			"ts": 1769281592000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "always, I am also a tank"
+		},
+		{
+			"id": "504403158437370961",
+			"ts": 1769281598000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "but the more the merrier pls"
+		},
+		{
+			"id": "504403158437370962",
+			"ts": 1769281603000,
+			"author_id": "en/Astralite",
+			"author_name": "Astralite",
+			"text": "im so down"
+		},
+		{
+			"id": "504403158437370973",
+			"ts": 1769281617000,
+			"author_id": "en/Astralite",
+			"author_name": "Astralite",
+			"text": "im in t5 armor with a t4 spear and shield"
+		},
+		{
+			"id": "504403158437371268",
+			"ts": 1769281720000,
+			"author_id": "en/Archaelic",
+			"author_name": "Archaelic",
+			"text": "Would love to join, just dont have any plate."
+		},
+		{
+			"id": "504403158437371269",
+			"ts": 1769281733000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "where we starting at"
+		},
+		{
+			"id": "504403158437371310",
+			"ts": 1769281740000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "got a bow n arrow? just be in the back"
+		},
+		{
+			"id": "504403158437371323",
+			"ts": 1769281744000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "im dps claymore"
+		},
+		{
+			"id": "504403158437371692",
+			"ts": 1769281757000,
+			"author_id": "en/Archaelic",
+			"author_name": "Archaelic",
+			"text": "Yeah, I got xbow."
+		},
+		{
+			"id": "504403158437371717",
+			"ts": 1769281765000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "oh yeah youll be fine just wear leather"
+		},
+		{
+			"id": "504403158437371728",
+			"ts": 1769281768000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "Charlowe then Widmoria?"
+		},
+		{
+			"id": "504403158437371729",
+			"ts": 1769281770000,
+			"author_id": "en/Archaelic",
+			"author_name": "Archaelic",
+			"text": "How many deep are yall?"
+		},
+		{
+			"id": "504403158437371741",
+			"ts": 1769281780000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "roll call! o7"
+		},
+		{
+			"id": "504403158437371747",
+			"ts": 1769281785000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "oh we havent started yet"
+		},
+		{
+			"id": "504403158437371749",
+			"ts": 1769281789000,
+			"author_id": "en/Drayfin",
+			"author_name": "Drayfin",
+			"text": "i might jump in"
+		},
+		{
+			"id": "504403158437371781",
+			"ts": 1769281797000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "are we doing baby ones too or just t3"
+		},
+		{
+			"id": "504403158437371868",
+			"ts": 1769281813000,
+			"author_id": "en/Lilitha",
+			"author_name": "Lilitha",
+			"text": "i will come too"
+		},
+		{
+			"id": "504403158437371869",
+			"ts": 1769281815000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "do we have folks needing baby ones? I need the T7 tbh"
+		},
+		{
+			"id": "504403158437371972",
+			"ts": 1769281835000,
+			"author_id": "en/Akela",
+			"author_name": "Akela",
+			"text": "If i join up ill be honest I havent touched a single dungeon yet haha"
+		},
+		{
+			"id": "504403158437371987",
+			"ts": 1769281840000,
+			"author_id": "en/Akela",
+			"author_name": "Akela",
+			"text": "But im ok with whatever"
+		},
+		{
+			"id": "504403158437372008",
+			"ts": 1769281847000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "aight so T1 first for sure"
+		},
+		{
+			"id": "504403158437372033",
+			"ts": 1769281854000,
+			"author_id": "en/Lilitha",
+			"author_name": "Lilitha",
+			"text": "t1 are soloable so start with t3 and see how it goes?"
+		},
+		{
+			"id": "504403158437372137",
+			"ts": 1769281874000,
+			"author_id": "en/Krypt",
+			"author_name": "Krypt",
+			"text": "i havent done any dungeons yet"
+		},
+		{
+			"id": "504403158437372167",
+			"ts": 1769281877000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "yeah lets do t3 first, akela do you have at least like t3 gear?"
+		},
+		{
+			"id": "504403158437372242",
+			"ts": 1769281891000,
+			"author_id": "en/Akela",
+			"author_name": "Akela",
+			"text": "yeah i got t3"
+		},
+		{
+			"id": "504403158437372265",
+			"ts": 1769281896000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "then youll be fine"
+		},
+		{
+			"id": "504403158437372433",
+			"ts": 1769281975000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "we all ready then? meet at widmoria t3?"
+		},
+		{
+			"id": "504403158437372438",
+			"ts": 1769281988000,
+			"author_id": "en/Archaelic",
+			"author_name": "Archaelic",
+			"text": "I dont have it unlocked."
+		},
+		{
+			"id": "504403158437372473",
+			"ts": 1769281994000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "give us like 30 min or so"
+		},
+		{
+			"id": "504403158437372478",
+			"ts": 1769281997000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "okie"
+		},
+		{
+			"id": "504403158437372506",
+			"ts": 1769282008000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "ill finish my ink then :p"
+		},
+		{
+			"id": "504403158437372518",
+			"ts": 1769282023000,
+			"author_id": "en/Archaelic",
+			"author_name": "Archaelic",
+			"text": "Where is Windmoria anyway??"
+		},
+		{
+			"id": "504403158437372540",
+			"ts": 1769282040000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "NW of the Ranch"
+		},
+		{
+			"id": "504403158437372553",
+			"ts": 1769282044000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "the widmoria dungeon is just southeast of grand exchange"
+		},
+		{
+			"id": "504403158437373000",
+			"ts": 1769282057000,
+			"author_id": "en/Peanuts",
+			"author_name": "Peanuts",
+			"text": "new question..."
+		},
+		{
+			"id": "504403158437373001",
+			"ts": 1769282059000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "almost directly west of RRR"
+		},
+		{
+			"id": "504403158437373003",
+			"ts": 1769282066000,
+			"author_id": "en/Archaelic",
+			"author_name": "Archaelic",
+			"text": "Oh, okay."
+		},
+		{
+			"id": "504403158437373009",
+			"ts": 1769282069000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "look for dungeon outpost of widmoria tp claim"
+		},
+		{
+			"id": "504403158437373035",
+			"ts": 1769282096000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "im gonna go refuel on iced coffee o7"
+		},
+		{
+			"id": "504403158437373038",
+			"ts": 1769282102000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "VALID"
+		},
+		{
+			"id": "504403158437373067",
+			"ts": 1769282120000,
+			"author_id": "cs/Auric Ore",
+			"author_name": "Auric Ore",
+			"text": "HAI TINY"
+		},
+		{
+			"id": "504403158437373077",
+			"ts": 1769282136000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "AHOY"
+		},
+		{
+			"id": "504403158437373751",
+			"ts": 1769282313000,
+			"author_id": "cs/Auric Ore",
+			"author_name": "Auric Ore",
+			"text": "Ahoy hoy"
+		},
+		{
+			"id": "504403158437374429",
+			"ts": 1769282354000,
+			"author_id": "en/Archaelic",
+			"author_name": "Archaelic",
+			"text": "Im just inside the entrance to the Windomoria one."
+		},
+		{
+			"id": "504403158437374874",
+			"ts": 1769282428000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "lmk when yall are heading there, ill tp"
+		},
+		{
+			"id": "504403158437376021",
+			"ts": 1769282667000,
+			"author_id": "en/Akela",
+			"author_name": "Akela",
+			"text": "Im just chillin at the entrance, grabbing more coffee"
+		},
+		{
+			"id": "504403158437376425",
+			"ts": 1769282913000,
+			"author_id": "en/Astralite",
+			"author_name": "Astralite",
+			"text": "omw to the dungeon sorry for the delays"
+		},
+		{
+			"id": "504403158437376499",
+			"ts": 1769282935000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "all good the Ranchers haven't left yet"
+		},
+		{
+			"id": "504403158437377066",
+			"ts": 1769282965000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "i would love to do t7 dungeons sometime soon but i have to upgrade my gear before i try that again"
+		},
+		{
+			"id": "504403158437377120",
+			"ts": 1769282980000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "I'm gonna attempt it in t3 haha"
+		},
+		{
+			"id": "504403158437377123",
+			"ts": 1769282989000,
+			"author_id": "en/Orielne",
+			"author_name": "Orielne",
+			"text": "hi hi everyone"
+		},
+		{
+			"id": "504403158437377124",
+			"ts": 1769282992000,
+			"author_id": "en/Cyxlinux",
+			"author_name": "Cyxlinux",
+			"text": "i will do soon :)"
+		},
+		{
+			"id": "504403158437377137",
+			"ts": 1769282998000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "if we have enough bodies they can't KILL US ALL"
+		},
+		{
+			"id": "504403158437377257",
+			"ts": 1769283033000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "you would think"
+		},
+		{
+			"id": "504403158437377288",
+			"ts": 1769283044000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "i just rmbr when we did the t7 dungeons like last month"
+		},
+		{
+			"id": "504403158437377293",
+			"ts": 1769283058000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "felt like i was at war"
+		},
+		{
+			"id": "504403158437377300",
+			"ts": 1769283085000,
+			"author_id": "en/Archaelic",
+			"author_name": "Archaelic",
+			"text": "Oof. So.......how much tp energy is this all going to eat up, btw??"
+		},
+		{
+			"id": "504403158437377302",
+			"ts": 1769283090000,
+			"author_id": "en/Scun",
+			"author_name": "Scun",
+			"text": "is everything a crazy grind like getting to lvl 20 on everything has been a choreeeee"
+		},
+		{
+			"id": "504403158437377330",
+			"ts": 1769283099000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "oh you sweet summer child"
+		},
+		{
+			"id": "504403158437377331",
+			"ts": 1769283106000,
+			"author_id": "en/Archaelic",
+			"author_name": "Archaelic",
+			"text": "xD"
+		},
+		{
+			"id": "504403158437377332",
+			"ts": 1769283110000,
+			"author_id": "en/Scun",
+			"author_name": "Scun",
+			"text": ":-("
+		},
+		{
+			"id": "504403158437377337",
+			"ts": 1769283117000,
+			"author_id": "en/Archaelic",
+			"author_name": "Archaelic",
+			"text": "Wait til you start the grind of all T7...."
+		},
+		{
+			"id": "504403158437377353",
+			"ts": 1769283125000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "and arch i usually tp home after each one, deposit my stuff, and then tp to next. So a decent amount but not insane"
+		},
+		{
+			"id": "504403158437377354",
+			"ts": 1769283125000,
+			"author_id": "en/Archaelic",
+			"author_name": "Archaelic",
+			"text": "you'll LOVE it. Promise"
+		},
+		{
+			"id": "504403158437377414",
+			"ts": 1769283142000,
+			"author_id": "en/Archaelic",
+			"author_name": "Archaelic",
+			"text": "Okay. Just wondering was all."
+		},
+		{
+			"id": "504403158437377427",
+			"ts": 1769283146000,
+			"author_id": "en/Scun",
+			"author_name": "Scun",
+			"text": "the life of a solo is ever dismal"
+		},
+		{
+			"id": "504403158437378003",
+			"ts": 1769283344000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "tiinnnyyyy"
+		},
+		{
+			"id": "504403158437378019",
+			"ts": 1769283348000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "COMIN"
+		},
+		{
+			"id": "504403158437378036",
+			"ts": 1769283356000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "WE ARE OUT OF FOOD"
+		},
+		{
+			"id": "504403158437378139",
+			"ts": 1769283368000,
+			"author_id": "en/Archaelic",
+			"author_name": "Archaelic",
+			"text": "Oh nooo...."
+		},
+		{
+			"id": "504403158437378247",
+			"ts": 1769283383000,
+			"author_id": "de/Lomacil",
+			"author_name": "Lomacil",
+			"text": "we have some in the chest"
+		},
+		{
+			"id": "504403158437378268",
+			"ts": 1769283386000,
+			"author_id": "en/Archaelic",
+			"author_name": "Archaelic",
+			"text": "I would have brought some had I known"
+		},
+		{
+			"id": "504403158437378283",
+			"ts": 1769283390000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "I have failed at my cooking job haha"
+		},
+		{
+			"id": "504403158437379259",
+			"ts": 1769283589000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "wait are we at Widmoria or Charlowe haha"
+		},
+		{
+			"id": "504403158437379268",
+			"ts": 1769283594000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "widmoria"
+		},
+		{
+			"id": "504403158437379274",
+			"ts": 1769283602000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "COMING"
+		},
+		{
+			"id": "504403158437380820",
+			"ts": 1769283997000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "N6353 E1176 Mex"
+		},
+		{
+			"id": "504403158437380896",
+			"ts": 1769284022000,
+			"author_id": "en/JellyCatBee",
+			"author_name": "JellyCatBee",
+			"text": "what's there?"
+		},
+		{
+			"id": "504403158437380945",
+			"ts": 1769284034000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "T3 dungeon"
+		},
+		{
+			"id": "504403158437380961",
+			"ts": 1769284039000,
+			"author_id": "en/Twixie",
+			"author_name": "Twixie",
+			"text": "mexico"
+		},
+		{
+			"id": "504403158437380987",
+			"ts": 1769284044000,
+			"author_id": "en/JellyCatBee",
+			"author_name": "JellyCatBee",
+			"text": "XD"
+		},
+		{
+			"id": "504403158437381043",
+			"ts": 1769284067000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "tiny is it cool if we just clear out this first room"
+		},
+		{
+			"id": "504403158437381085",
+			"ts": 1769284080000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "go for it"
+		},
+		{
+			"id": "504403158437381381",
+			"ts": 1769284129000,
+			"author_id": "en/Bloggs",
+			"author_name": "Bloggs",
+			"text": "afternoon Hydra"
+		},
+		{
+			"id": "504403158437381514",
+			"ts": 1769284151000,
+			"author_id": "en/Hydra",
+			"author_name": "Hydra",
+			"text": "hiya"
+		},
+		{
+			"id": "504403158437383886",
+			"ts": 1769284681000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "CHAAAAARGE"
+		},
+		{
+			"id": "504403158437418192",
+			"ts": 1769284815000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "back up"
+		},
+		{
+			"id": "504403158437418205",
+			"ts": 1769284821000,
+			"author_id": "en/enginnerd",
+			"author_name": "enginnerd",
+			"text": "Tasks reset! while Tiny is busy"
+		},
+		{
+			"id": "504403158437418417",
+			"ts": 1769284908000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "alright, blackdog/sanctuary dungeon next"
+		},
+		{
+			"id": "504403158437418653",
+			"ts": 1769284994000,
+			"author_id": "en/Astralite",
+			"author_name": "Astralite",
+			"text": "are we doing a t7?"
+		},
+		{
+			"id": "504403158437418696",
+			"ts": 1769285018000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "not yet, t3"
+		},
+		{
+			"id": "504403158437418697",
+			"ts": 1769285019000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "I would like to, doing the T3 by Sanctuary first"
+		},
+		{
+			"id": "504403158437418718",
+			"ts": 1769285034000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "ill come for t7s, but i gotta stick with xbow lol"
+		},
+		{
+			"id": "504403158437419069",
+			"ts": 1769285068000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "and i need more potions"
+		},
+		{
+			"id": "504403158437419087",
+			"ts": 1769285085000,
+			"author_id": "en/Akela",
+			"author_name": "Akela",
+			"text": "yeah i shoulda grabbed potions"
+		},
+		{
+			"id": "504403158437419109",
+			"ts": 1769285105000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "which T7 will we do? The jungle one?"
+		},
+		{
+			"id": "504403158437419112",
+			"ts": 1769285115000,
+			"author_id": "en/Archaelic",
+			"author_name": "Archaelic",
+			"text": "please"
+		},
+		{
+			"id": "504403158437419135",
+			"ts": 1769285123000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "sweet, I have that one haha"
+		},
+		{
+			"id": "504403158437419180",
+			"ts": 1769285132000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "yeah ive got the jungle ones, not tundra"
+		},
+		{
+			"id": "504403158437419211",
+			"ts": 1769285148000,
+			"author_id": "en/Astralite",
+			"author_name": "Astralite",
+			"text": "where in the jungle is it?"
+		},
+		{
+			"id": "504403158437419317",
+			"ts": 1769285190000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "NW of Emerald"
+		},
+		{
+			"id": "504403158437419319",
+			"ts": 1769285197000,
+			"author_id": "en/Lilitha",
+			"author_name": "Lilitha",
+			"text": "which one in the jungle? east or west one?"
+		},
+		{
+			"id": "504403158437419324",
+			"ts": 1769285207000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": ":O theres multiple down there?"
+		},
+		{
+			"id": "504403158437419325",
+			"ts": 1769285211000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "ye two"
+		},
+		{
+			"id": "504403158437419391",
+			"ts": 1769285219000,
+			"author_id": "en/Archaelic",
+			"author_name": "Archaelic",
+			"text": "^^"
+		},
+		{
+			"id": "504403158437419393",
+			"ts": 1769285220000,
+			"author_id": "en/Lilitha",
+			"author_name": "Lilitha",
+			"text": "=)"
+		},
+		{
+			"id": "504403158437419400",
+			"ts": 1769285222000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "oh I have the chill TP unlocked"
+		},
+		{
+			"id": "504403158437419441",
+			"ts": 1769285237000,
+			"author_id": "en/Archaelic",
+			"author_name": "Archaelic",
+			"text": ".......the right one? Or is that the left?"
+		},
+		{
+			"id": "504403158437419454",
+			"ts": 1769285241000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "I have spent 0 time in the jungle outside of that haha"
+		},
+		{
+			"id": "504403158437419465",
+			"ts": 1769285244000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "is everyone at blackdog dungeon thats coming"
+		},
+		{
+			"id": "504403158437419499",
+			"ts": 1769285248000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "left one I suppose"
+		},
+		{
+			"id": "504403158437419524",
+			"ts": 1769285259000,
+			"author_id": "en/Lilitha",
+			"author_name": "Lilitha",
+			"text": "ok"
+		},
+		{
+			"id": "504403158437419535",
+			"ts": 1769285263000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "waiting on Mez"
+		},
+		{
+			"id": "504403158437419536",
+			"ts": 1769285267000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "k"
+		},
+		{
+			"id": "504403158437419537",
+			"ts": 1769285267000,
+			"author_id": "en/Lilitha",
+			"author_name": "Lilitha",
+			"text": "me and Arch already inside"
+		},
+		{
+			"id": "504403158437419538",
+			"ts": 1769285275000,
+			"author_id": "en/Archaelic",
+			"author_name": "Archaelic",
+			"text": "......shit. Okay. Gonna take a bit to get to that one then."
+		},
+		{
+			"id": "504403158437419544",
+			"ts": 1769285282000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "can you wait for the rest of us pls :))"
+		},
+		{
+			"id": "504403158437419547",
+			"ts": 1769285289000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "our swamp monster doesn't get out much"
+		},
+		{
+			"id": "504403158437419548",
+			"ts": 1769285290000,
+			"author_id": "en/Lilitha",
+			"author_name": "Lilitha",
+			"text": "ofc, no rush =)"
+		},
+		{
+			"id": "504403158437419555",
+			"ts": 1769285303000,
+			"author_id": "en/Archaelic",
+			"author_name": "Archaelic",
+			"text": "Lol, we're just chillin. haven't started attacking or anything."
+		},
+		{
+			"id": "504403158437419575",
+			"ts": 1769285308000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "ah okay"
+		},
+		{
+			"id": "504403158437419630",
+			"ts": 1769285324000,
+			"author_id": "en/Archaelic",
+			"author_name": "Archaelic",
+			"text": "Im dumb, but not that dumb"
+		},
+		{
+			"id": "504403158437419643",
+			"ts": 1769285325000,
+			"author_id": "en/MezTheMirewarden",
+			"author_name": "MezTheMirewarden",
+			"text": "I don't know these waters!"
+		},
+		{
+			"id": "504403158437419702",
+			"ts": 1769285338000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "i see you!"
+		},
+		{
+			"id": "504403158437420272",
+			"ts": 1769285401000,
+			"author_id": "en/Astralite",
+			"author_name": "Astralite",
+			"text": "ill have to pass on the next dungeons, thanks for letting me join in on the first one!"
+		},
+		{
+			"id": "504403158437420497",
+			"ts": 1769285452000,
+			"author_id": "en/Tyburn",
+			"author_name": "Tyburn",
+			"text": "Which one are you goign to? T3 east of blackdog?"
+		},
+		{
+			"id": "504403158437420502",
+			"ts": 1769285463000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "yup there rn"
+		},
+		{
+			"id": "504403158437420503",
+			"ts": 1769285464000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "yep we are here now"
+		},
+		{
+			"id": "504403158437420512",
+			"ts": 1769285482000,
+			"author_id": "cs/Auric Ore",
+			"author_name": "Auric Ore",
+			"text": "I HAVE BRACERS ON"
+		},
+		{
+			"id": "504403158437420634",
+			"ts": 1769285534000,
+			"author_id": "en/Tyburn",
+			"author_name": "Tyburn",
+			"text": "I refuse to believe we can tame oxs but not jakyls"
+		},
+		{
+			"id": "504403158437420720",
+			"ts": 1769285561000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "friend shapes"
+		},
+		{
+			"id": "504403158437420737",
+			"ts": 1769285567000,
+			"author_id": "en/Tyburn",
+			"author_name": "Tyburn",
+			"text": "I dont care how many bites i get, i shall prevail"
+		},
+		{
+			"id": "504403158437420916",
+			"ts": 1769285593000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "I may only hug a bear once in my life BUT I AM GONNA HUG A BEAR IN MY LIFE"
+		},
+		{
+			"id": "504403158437420975",
+			"ts": 1769285619000,
+			"author_id": "cs/Auric Ore",
+			"author_name": "Auric Ore",
+			"text": "THEY EAT US ALIVE"
+		},
+		{
+			"id": "504403158437420985",
+			"ts": 1769285621000,
+			"author_id": "en/Tyburn",
+			"author_name": "Tyburn",
+			"text": "Oooo yes"
+		},
+		{
+			"id": "504403158437421002",
+			"ts": 1769285631000,
+			"author_id": "cs/Auric Ore",
+			"author_name": "Auric Ore",
+			"text": "SO WE CAN STAY WITH THEM A BIT LONGER"
+		},
+		{
+			"id": "504403158437421004",
+			"ts": 1769285633000,
+			"author_id": "en/Astralite",
+			"author_name": "Astralite",
+			"text": "alas we must hug them anyways"
+		},
+		{
+			"id": "504403158437421015",
+			"ts": 1769285638000,
+			"author_id": "cs/Auric Ore",
+			"author_name": "Auric Ore",
+			"text": "Kind bears"
+		},
+		{
+			"id": "504403158437421018",
+			"ts": 1769285643000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "why friend shape if not friend !!"
+		},
+		{
+			"id": "504403158437421509",
+			"ts": 1769285700000,
+			"author_id": "cs/Auric Ore",
+			"author_name": "Auric Ore",
+			"text": "All of you wear so much garb, do you not find it restricting?"
+		},
+		{
+			"id": "504403158437421576",
+			"ts": 1769285714000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "unnatural sunscreem"
+		},
+		{
+			"id": "504403158437421700",
+			"ts": 1769285730000,
+			"author_id": "en/Tyburn",
+			"author_name": "Tyburn",
+			"text": "Is this the armor speech or the nudist speech?"
+		},
+		{
+			"id": "504403158437422511",
+			"ts": 1769285860000,
+			"author_id": "en/MezTheMirewarden",
+			"author_name": "MezTheMirewarden",
+			"text": "Brohter share you oats!"
+		},
+		{
+			"id": "504403158437423242",
+			"ts": 1769285995000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "BLEH"
+		},
+		{
+			"id": "504403158437423467",
+			"ts": 1769286082000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "brazier"
+		},
+		{
+			"id": "504403158437423523",
+			"ts": 1769286090000,
+			"author_id": "en/Archaelic",
+			"author_name": "Archaelic",
+			"text": "Another insignia...."
+		},
+		{
+			"id": "504403158437423565",
+			"ts": 1769286100000,
+			"author_id": "en/Archaelic",
+			"author_name": "Archaelic",
+			"text": "Alright....you said the left T7 dungeon?"
+		},
+		{
+			"id": "504403158437423566",
+			"ts": 1769286101000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "save for tasks"
+		},
+		{
+			"id": "504403158437423612",
+			"ts": 1769286112000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "we got west t3 left still"
+		},
+		{
+			"id": "504403158437423640",
+			"ts": 1769286123000,
+			"author_id": "en/Archaelic",
+			"author_name": "Archaelic",
+			"text": "?? Wheres that one near?"
+		},
+		{
+			"id": "504403158437423686",
+			"ts": 1769286133000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "Azim Steppe dungeon?"
+		},
+		{
+			"id": "504403158437423687",
+			"ts": 1769286134000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "chill dungeont3 settlement"
+		},
+		{
+			"id": "504403158437423703",
+			"ts": 1769286135000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "yup"
+		},
+		{
+			"id": "504403158437423714",
+			"ts": 1769286137000,
+			"author_id": "en/Lilitha",
+			"author_name": "Lilitha",
+			"text": "t7 might be a bitpainful =p.. im up for it tho"
+		},
+		{
+			"id": "504403158437423758",
+			"ts": 1769286153000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "yeah maybe we wait till this evening for t7? let people stock up and we'll maybe have more players on"
+		},
+		{
+			"id": "504403158437423821",
+			"ts": 1769286175000,
+			"author_id": "en/Tyburn",
+			"author_name": "Tyburn",
+			"text": "yeah"
+		},
+		{
+			"id": "504403158437423823",
+			"ts": 1769286178000,
+			"author_id": "en/Akela",
+			"author_name": "Akela",
+			"text": "Where we goin?"
+		},
+		{
+			"id": "504403158437423824",
+			"ts": 1769286179000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "all of you who live on this side can just TP T.T"
+		},
+		{
+			"id": "504403158437423829",
+			"ts": 1769286188000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "cuz im still down to do it, we just need more manpower"
+		},
+		{
+			"id": "504403158437423869",
+			"ts": 1769286211000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "t3 chill dungeon"
+		},
+		{
+			"id": "504403158437423870",
+			"ts": 1769286213000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "maybe? I don't know how bad the t7 is tbh"
+		},
+		{
+			"id": "504403158437423899",
+			"ts": 1769286220000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "oh they're...bad"
+		},
+		{
+			"id": "504403158437423920",
+			"ts": 1769286232000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "like gave me fake ptsd bad"
+		},
+		{
+			"id": "504403158437424003",
+			"ts": 1769286249000,
+			"author_id": "de/Lomacil",
+			"author_name": "Lomacil",
+			"text": "I dont think we would make it^^"
+		},
+		{
+			"id": "504403158437424014",
+			"ts": 1769286252000,
+			"author_id": "en/Akela",
+			"author_name": "Akela",
+			"text": "whats closest settlement to the next one"
+		},
+		{
+			"id": "504403158437424431",
+			"ts": 1769286253000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "yeeahhhh"
+		},
+		{
+			"id": "504403158437424484",
+			"ts": 1769286270000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "akela if you port to bungalow, its right across the water, on the big grassland pennisula"
+		},
+		{
+			"id": "504403158437424486",
+			"ts": 1769286279000,
+			"author_id": "en/Peanuts",
+			"author_name": "Peanuts",
+			"text": "what pootion is good for a dungeon? or potions?"
+		},
+		{
+			"id": "504403158437424504",
+			"ts": 1769286281000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "just a few moments sailing"
+		},
+		{
+			"id": "504403158437424505",
+			"ts": 1769286285000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "just health potions"
+		},
+		{
+			"id": "504403158437424538",
+			"ts": 1769286326000,
+			"author_id": "cs/Auric Ore",
+			"author_name": "Auric Ore",
+			"text": "GLIZZARD"
+		},
+		{
+			"id": "504403158437424545",
+			"ts": 1769286341000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "LIZARD"
+		},
+		{
+			"id": "504403158437424594",
+			"ts": 1769286369000,
+			"author_id": "cs/Auric Ore",
+			"author_name": "Auric Ore",
+			"text": "BUT WITH GLIZZ"
+		},
+		{
+			"id": "504403158437424616",
+			"ts": 1769286388000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "or if ur midwest, gizzard"
+		},
+		{
+			"id": "504403158437424621",
+			"ts": 1769286392000,
+			"author_id": "en/Orielne",
+			"author_name": "Orielne",
+			"text": "O.o"
+		},
+		{
+			"id": "504403158437424626",
+			"ts": 1769286395000,
+			"author_id": "en/MezTheMirewarden",
+			"author_name": "MezTheMirewarden",
+			"text": "GLIZZ ORE?"
+		},
+		{
+			"id": "504403158437424630",
+			"ts": 1769286401000,
+			"author_id": "cs/Auric Ore",
+			"author_name": "Auric Ore",
+			"text": "I like how you think Mez"
+		},
+		{
+			"id": "504403158437424631",
+			"ts": 1769286403000,
+			"author_id": "cs/Auric Ore",
+			"author_name": "Auric Ore",
+			"text": "You're hired"
+		},
+		{
+			"id": "504403158437424634",
+			"ts": 1769286405000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "fried with some secret sauce, GOT DAMN"
+		},
+		{
+			"id": "504403158437424639",
+			"ts": 1769286418000,
+			"author_id": "en/MezTheMirewarden",
+			"author_name": "MezTheMirewarden",
+			"text": "WOOO! BELONGING!"
+		},
+		{
+			"id": "504403158437424648",
+			"ts": 1769286423000,
+			"author_id": "cs/Auric Ore",
+			"author_name": "Auric Ore",
+			"text": "The pay is abysmal but the community is untouchable"
+		},
+		{
+			"id": "504403158437424667",
+			"ts": 1769286443000,
+			"author_id": "en/Akela",
+			"author_name": "Akela",
+			"text": "Im coming! slowly"
+		},
+		{
+			"id": "504403158437424680",
+			"ts": 1769286450000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "wait y'all are getting paid"
+		},
+		{
+			"id": "504403158437424696",
+			"ts": 1769286468000,
+			"author_id": "en/MezTheMirewarden",
+			"author_name": "MezTheMirewarden",
+			"text": "Wait we get paid?"
+		},
+		{
+			"id": "504403158437424700",
+			"ts": 1769286479000,
+			"author_id": "en/MezTheMirewarden",
+			"author_name": "MezTheMirewarden",
+			"text": "I was told to eat bugs"
+		},
+		{
+			"id": "504403158437424708",
+			"ts": 1769286487000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "AVAST, I SEE AN AKELA HEADED THIS WAY"
+		},
+		{
+			"id": "504403158437424712",
+			"ts": 1769286499000,
+			"author_id": "en/Tyburn",
+			"author_name": "Tyburn",
+			"text": "Wait, you guys didnt have to pay aryn and tiny?"
+		},
+		{
+			"id": "504403158437424720",
+			"ts": 1769286512000,
+			"author_id": "en/Akela",
+			"author_name": "Akela",
+			"text": "Ahoy!"
+		},
+		{
+			"id": "504403158437424721",
+			"ts": 1769286513000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "i just live here idk"
+		},
+		{
+			"id": "504403158437424726",
+			"ts": 1769286517000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "ONWARD"
+		},
+		{
+			"id": "504403158437431050",
+			"ts": 1769288243000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "could i comission someone to make a batch of potions for me? I used like all of my vials for upgrading OFG :p"
+		},
+		{
+			"id": "504403158437431122",
+			"ts": 1769288320000,
+			"author_id": "de/Naxta",
+			"author_name": "Naxta",
+			"text": "lilitha, distracting is main activity in bitcraft"
+		},
+		{
+			"id": "504403158437431155",
+			"ts": 1769288345000,
+			"author_id": "en/Lilitha",
+			"author_name": "Lilitha",
+			"text": "idd lol"
+		},
+		{
+			"id": "504403158437431610",
+			"ts": 1769288367000,
+			"author_id": "en/Archaelic",
+			"author_name": "Archaelic",
+			"text": "Lol, how many at what tier?"
+		},
+		{
+			"id": "504403158437431676",
+			"ts": 1769288413000,
+			"author_id": "en/TinyHouseGamer",
+			"author_name": "TinyHouseGamer",
+			"text": "damn R9 is doing T7 dungeons atm T.T"
+		},
+		{
+			"id": "504403158437431707",
+			"ts": 1769288430000,
+			"author_id": "en/Archaelic",
+			"author_name": "Archaelic",
+			"text": "Oof."
+		},
+		{
+			"id": "504403158437439071",
+			"ts": 1769290713000,
+			"author_id": "en/Bloggs",
+			"author_name": "Bloggs",
+			"text": "Hey Pluck sry missed u ;p"
+		},
+		{
+			"id": "504403158437439535",
+			"ts": 1769290767000,
+			"author_id": "en/PluckYew",
+			"author_name": "PluckYew",
+			"text": "NP man, figured you were distracted"
+		},
+		{
+			"id": "504403158437439597",
+			"ts": 1769290796000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "this is my hourly check for keyser xD"
+		},
+		{
+			"id": "504403158437448880",
+			"ts": 1769294348000,
+			"author_id": "de/Naxta",
+			"author_name": "Naxta",
+			"text": "How much Epic tools u guys have?"
+		},
+		{
+			"id": "504403158437449402",
+			"ts": 1769294374000,
+			"author_id": "en/Sinklar",
+			"author_name": "Sinklar",
+			"text": "full set"
+		},
+		{
+			"id": "504403158437449405",
+			"ts": 1769294379000,
+			"author_id": "en/Sinklar",
+			"author_name": "Sinklar",
+			"text": "tools"
+		},
+		{
+			"id": "504403158437449408",
+			"ts": 1769294381000,
+			"author_id": "en/Sinklar",
+			"author_name": "Sinklar",
+			"text": "+1 leg"
+		},
+		{
+			"id": "504403158437449455",
+			"ts": 1769294422000,
+			"author_id": "en/Archaelic",
+			"author_name": "Archaelic",
+			"text": "Uhh........"
+		},
+		{
+			"id": "504403158437449457",
+			"ts": 1769294427000,
+			"author_id": "en/Archaelic",
+			"author_name": "Archaelic",
+			"text": "1"
+		},
+		{
+			"id": "504403158437449502",
+			"ts": 1769294453000,
+			"author_id": "en/Akela",
+			"author_name": "Akela",
+			"text": "4"
+		},
+		{
+			"id": "504403158437449557",
+			"ts": 1769294524000,
+			"author_id": "en/Twixie",
+			"author_name": "Twixie",
+			"text": "7"
+		},
+		{
+			"id": "504403158437449611",
+			"ts": 1769294591000,
+			"author_id": "en/Tatiana",
+			"author_name": "Tatiana",
+			"text": "hey"
+		},
+		{
+			"id": "504403158437449612",
+			"ts": 1769294592000,
+			"author_id": "en/Bloggs",
+			"author_name": "Bloggs",
+			"text": "11"
+		},
+		{
+			"id": "504403158437459573",
+			"ts": 1769298040000,
+			"author_id": "en/Tyburn",
+			"author_name": "Tyburn",
+			"text": "1"
+		},
+		{
+			"id": "504403158437459576",
+			"ts": 1769298053000,
+			"author_id": "en/KeyserSoze",
+			"author_name": "KeyserSoze",
+			"text": "2"
+		},
+		{
+			"id": "504403158437459611",
+			"ts": 1769298062000,
+			"author_id": "en/YouLi",
+			"author_name": "YouLi",
+			"text": "3"
+		},
+		{
+			"id": "504403158437459646",
+			"ts": 1769298076000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "keyser are you joining the t7 dungeon run"
+		},
+		{
+			"id": "504403158437459657",
+			"ts": 1769298079000,
+			"author_id": "en/Orielne",
+			"author_name": "Orielne",
+			"text": "lol"
+		},
+		{
+			"id": "504403158437459680",
+			"ts": 1769298089000,
+			"author_id": "en/KeyserSoze",
+			"author_name": "KeyserSoze",
+			"text": "there's a t7 dungeon run?"
+		},
+		{
+			"id": "504403158437459693",
+			"ts": 1769298096000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "yup, in like 20 min"
+		},
+		{
+			"id": "504403158437459714",
+			"ts": 1769298101000,
+			"author_id": "en/Ariakan",
+			"author_name": "Ariakan",
+			"text": "you have you run scheduled same time as airams"
+		},
+		{
+			"id": "504403158437459733",
+			"ts": 1769298105000,
+			"author_id": "en/Ariakan",
+			"author_name": "Ariakan",
+			"text": "just saying"
+		},
+		{
+			"id": "504403158437459763",
+			"ts": 1769298119000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "who?"
+		},
+		{
+			"id": "504403158437459764",
+			"ts": 1769298125000,
+			"author_id": "en/Ariakan",
+			"author_name": "Ariakan",
+			"text": "dude from r6"
+		},
+		{
+			"id": "504403158437459765",
+			"ts": 1769298130000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "oh"
+		},
+		{
+			"id": "504403158437459776",
+			"ts": 1769298139000,
+			"author_id": "en/Ariakan",
+			"author_name": "Ariakan",
+			"text": "he hosts weekly round of t7 dungeons"
+		},
+		{
+			"id": "504403158437459808",
+			"ts": 1769298145000,
+			"author_id": "en/Ariakan",
+			"author_name": "Ariakan",
+			"text": "they are doing like 15-20 in a row"
+		},
+		{
+			"id": "504403158437459821",
+			"ts": 1769298150000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "oh shit"
+		},
+		{
+			"id": "504403158437459833",
+			"ts": 1769298152000,
+			"author_id": "en/Ariakan",
+			"author_name": "Ariakan",
+			"text": "check either dungeons dc or game dc"
+		},
+		{
+			"id": "504403158437459855",
+			"ts": 1769298158000,
+			"author_id": "en/Ariakan",
+			"author_name": "Ariakan",
+			"text": "they have a map"
+		},
+		{
+			"id": "504403158437459890",
+			"ts": 1769298173000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "well shit we should join them, do they come to r7?"
+		},
+		{
+			"id": "504403158437459892",
+			"ts": 1769298178000,
+			"author_id": "en/Ariakan",
+			"author_name": "Ariakan",
+			"text": "nah"
+		},
+		{
+			"id": "504403158437459899",
+			"ts": 1769298193000,
+			"author_id": "en/Ariakan",
+			"author_name": "Ariakan",
+			"text": "they do round r3-r4-r5-r6"
+		},
+		{
+			"id": "504403158437459903",
+			"ts": 1769298197000,
+			"author_id": "en/KeyserSoze",
+			"author_name": "KeyserSoze",
+			"text": "in the end, all roads lead to r7"
+		},
+		{
+			"id": "504403158437459907",
+			"ts": 1769298204000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "oh, so then it doesnt matter"
+		},
+		{
+			"id": "504403158437459908",
+			"ts": 1769298204000,
+			"author_id": "en/Ariakan",
+			"author_name": "Ariakan",
+			"text": "nah we ded"
+		},
+		{
+			"id": "504403158437459911",
+			"ts": 1769298216000,
+			"author_id": "en/KeyserSoze",
+			"author_name": "KeyserSoze",
+			"text": "except the Plaza, taht thing goes wherever it wants"
+		},
+		{
+			"id": "504403158437459915",
+			"ts": 1769298220000,
+			"author_id": "en/Ariakan",
+			"author_name": "Ariakan",
+			"text": "it matters cause couple of asgard guys going there for instance"
+		},
+		{
+			"id": "504403158437460381",
+			"ts": 1769298253000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "is arch on rn"
+		},
+		{
+			"id": "504403158437460382",
+			"ts": 1769298254000,
+			"author_id": "en/Ariakan",
+			"author_name": "Ariakan",
+			"text": "dont wanna discourage you just saying that your run overlaps with heavily promoited weekly thing"
+		},
+		{
+			"id": "504403158437460383",
+			"ts": 1769298259000,
+			"author_id": "en/KeyserSoze",
+			"author_name": "KeyserSoze",
+			"text": "yeah Aryn, stop scheduling your dungeon runs at the same time as other people you don't know about in other regions, sheesh."
+		},
+		{
+			"id": "504403158437460394",
+			"ts": 1769298271000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "yeah my bad"
+		},
+		{
+			"id": "504403158437460396",
+			"ts": 1769298288000,
+			"author_id": "en/KeyserSoze",
+			"author_name": "KeyserSoze",
+			"text": "it's okay, just don't ever let it happen again"
+		},
+		{
+			"id": "504403158437460408",
+			"ts": 1769298308000,
+			"author_id": "en/Ariakan",
+			"author_name": "Ariakan",
+			"text": "sorry for informing you won't happen again"
+		},
+		{
+			"id": "504403158437460615",
+			"ts": 1769298434000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "lol we're just teasing you, ill def look into that for the future"
+		},
+		{
+			"id": "504403158437460645",
+			"ts": 1769298445000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "looks like you have to have all tp points unlocked before you join anyway"
+		},
+		{
+			"id": "504403158437460660",
+			"ts": 1769298467000,
+			"author_id": "en/Ariakan",
+			"author_name": "Ariakan",
+			"text": "yes thats the catch"
+		},
+		{
+			"id": "504403158437460661",
+			"ts": 1769298474000,
+			"author_id": "en/Ariakan",
+			"author_name": "Ariakan",
+			"text": "takes quite some time to run it all 1st time"
+		},
+		{
+			"id": "504403158437460691",
+			"ts": 1769298502000,
+			"author_id": "en/Ariakan",
+			"author_name": "Ariakan",
+			"text": "im all for running t7s here domesctically, just hard to gather people with our pop"
+		},
+		{
+			"id": "504403158437460709",
+			"ts": 1769298529000,
+			"author_id": "en/Ariakan",
+			"author_name": "Ariakan",
+			"text": "when we finish t8 ill whip our players so we will be able to make at least half of the roster on demand lol"
+		},
+		{
+			"id": "504403158437460720",
+			"ts": 1769298536000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "nice"
+		},
+		{
+			"id": "504403158437461384",
+			"ts": 1769298555000,
+			"author_id": "en/KeyserSoze",
+			"author_name": "KeyserSoze",
+			"text": "aryn where is the t7 dungeon?"
+		},
+		{
+			"id": "504403158437461410",
+			"ts": 1769298566000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "we're doing the jungle ones, do you have the tp's?"
+		},
+		{
+			"id": "504403158437461442",
+			"ts": 1769298579000,
+			"author_id": "en/KeyserSoze",
+			"author_name": "KeyserSoze",
+			"text": "I have two"
+		},
+		{
+			"id": "504403158437461443",
+			"ts": 1769298581000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "yup"
+		},
+		{
+			"id": "504403158437461636",
+			"ts": 1769298654000,
+			"author_id": "en/Ariakan",
+			"author_name": "Ariakan",
+			"text": "how many ppl you got?"
+		},
+		{
+			"id": "504403158437461642",
+			"ts": 1769298673000,
+			"author_id": "en/Cyxlinux",
+			"author_name": "Cyxlinux",
+			"text": "ah t7 dg thats where this game are at hmmm"
+		},
+		{
+			"id": "504403158437461650",
+			"ts": 1769298684000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "not sure, i know the majority of our t3 run group wanted to do them"
+		},
+		{
+			"id": "504403158437461687",
+			"ts": 1769298745000,
+			"author_id": "en/Cyxlinux",
+			"author_name": "Cyxlinux",
+			"text": "im not done with my xbow but im doing something else haha"
+		},
+		{
+			"id": "504403158437461689",
+			"ts": 1769298750000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "we might not be able to do it idk"
+		},
+		{
+			"id": "504403158437461713",
+			"ts": 1769298788000,
+			"author_id": "en/KeyserSoze",
+			"author_name": "KeyserSoze",
+			"text": "let me know if you are gonna make the attempt and I'll tp down"
+		},
+		{
+			"id": "504403158437461725",
+			"ts": 1769298811000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "just need a roll call"
+		},
+		{
+			"id": "504403158437461729",
+			"ts": 1769298819000,
+			"author_id": "en/Argent Ore",
+			"author_name": "Argent Ore",
+			"text": "aryn what are you doing"
+		},
+		{
+			"id": "504403158437461730",
+			"ts": 1769298823000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "rn?"
+		},
+		{
+			"id": "504403158437461732",
+			"ts": 1769298834000,
+			"author_id": "en/Argent Ore",
+			"author_name": "Argent Ore",
+			"text": "just in general any events planned for tonight?"
+		},
+		{
+			"id": "504403158437461815",
+			"ts": 1769298841000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "t7 dungeons!"
+		},
+		{
+			"id": "504403158437461820",
+			"ts": 1769298843000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": ":P"
+		},
+		{
+			"id": "504403158437461821",
+			"ts": 1769298850000,
+			"author_id": "en/Argent Ore",
+			"author_name": "Argent Ore",
+			"text": "when"
+		},
+		{
+			"id": "504403158437462182",
+			"ts": 1769298855000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "uhh... like now"
+		},
+		{
+			"id": "504403158437462183",
+			"ts": 1769298862000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "or i guess ASAP"
+		},
+		{
+			"id": "504403158437462184",
+			"ts": 1769298864000,
+			"author_id": "en/Argent Ore",
+			"author_name": "Argent Ore",
+			"text": "where at"
+		},
+		{
+			"id": "504403158437462187",
+			"ts": 1769298876000,
+			"author_id": "en/Argent Ore",
+			"author_name": "Argent Ore",
+			"text": "jungle?"
+		},
+		{
+			"id": "504403158437462198",
+			"ts": 1769298879000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "we'll start at chill araknir dungeon, yeah"
+		},
+		{
+			"id": "504403158437462201",
+			"ts": 1769298884000,
+			"author_id": "en/Hydra",
+			"author_name": "Hydra",
+			"text": "so to the one who own argent city i just saw t7 sand spawn in if front of me"
+		},
+		{
+			"id": "504403158437462215",
+			"ts": 1769298894000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "ALRIGHT BITCHES, RAISE UR HAND if you're coming to t7 dungeons"
+		},
+		{
+			"id": "504403158437462216",
+			"ts": 1769298896000,
+			"author_id": "en/Hydra",
+			"author_name": "Hydra",
+			"text": "so you're not gonna get rid of it"
+		},
+		{
+			"id": "504403158437462217",
+			"ts": 1769298902000,
+			"author_id": "en/Akela",
+			"author_name": "Akela",
+			"text": "How many people are there joining for the run??"
+		},
+		{
+			"id": "504403158437462221",
+			"ts": 1769298910000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "me"
+		},
+		{
+			"id": "504403158437462222",
+			"ts": 1769298911000,
+			"author_id": "en/Akela",
+			"author_name": "Akela",
+			"text": ":P"
+		},
+		{
+			"id": "504403158437462224",
+			"ts": 1769298916000,
+			"author_id": "en/Argent Ore",
+			"author_name": "Argent Ore",
+			"text": "hand raised and hydra what"
+		},
+		{
+			"id": "504403158437462280",
+			"ts": 1769298933000,
+			"author_id": "en/KeyserSoze",
+			"author_name": "KeyserSoze",
+			"text": "I'm in if needed"
+		},
+		{
+			"id": "504403158437462343",
+			"ts": 1769298943000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "wheres tiny"
+		},
+		{
+			"id": "504403158437462354",
+			"ts": 1769298947000,
+			"author_id": "en/YouLi",
+			"author_name": "YouLi",
+			"text": "i dont think im good enough to do a dg"
+		},
+		{
+			"id": "504403158437462501",
+			"ts": 1769298970000,
+			"author_id": "en/KeyserSoze",
+			"author_name": "KeyserSoze",
+			"text": "but my main job during high level raids is to look handsome and shout my vaunted battle cry: \"NOT IN THE FACE!\""
+		},
+		{
+			"id": "504403158437462599",
+			"ts": 1769298994000,
+			"author_id": "en/Ariakan",
+			"author_name": "Ariakan",
+			"text": "lol keyser i like you"
+		},
+		{
+			"id": "504403158437462600",
+			"ts": 1769298996000,
+			"author_id": "en/Krypt",
+			"author_name": "Krypt",
+			"text": "i can join as fodder"
+		},
+		{
+			"id": "504403158437462604",
+			"ts": 1769298997000,
+			"author_id": "en/Akela",
+			"author_name": "Akela",
+			"text": "aryn last i saw on discord tiny was playing something else"
+		},
+		{
+			"id": "504403158437462616",
+			"ts": 1769299003000,
+			"author_id": "en/Hydra",
+			"author_name": "Hydra",
+			"text": "hiya"
+		},
+		{
+			"id": "504403158437462631",
+			"ts": 1769299016000,
+			"author_id": "en/YouLi",
+			"author_name": "YouLi",
+			"text": "she playinjg hell divers"
+		},
+		{
+			"id": "504403158437462646",
+			"ts": 1769299030000,
+			"author_id": "en/KeyserSoze",
+			"author_name": "KeyserSoze",
+			"text": "that's only because everyone likes me. I'm extremely likeable."
+		},
+		{
+			"id": "504403158437462669",
+			"ts": 1769299043000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "lmao she's the one that wanted to do this xD tell her to get her butt on here"
+		},
+		{
+			"id": "504403158437462700",
+			"ts": 1769299062000,
+			"author_id": "en/YouLi",
+			"author_name": "YouLi",
+			"text": "ill blackmail her on discord"
+		},
+		{
+			"id": "504403158437462701",
+			"ts": 1769299064000,
+			"author_id": "en/Drayfin",
+			"author_name": "Drayfin",
+			"text": "i'm a maybe gotta cook something soon though"
+		},
+		{
+			"id": "504403158437462718",
+			"ts": 1769299092000,
+			"author_id": "en/KeyserSoze",
+			"author_name": "KeyserSoze",
+			"text": "Drayfin I got some salmon you can have"
+		},
+		{
+			"id": "504403158437462736",
+			"ts": 1769299102000,
+			"author_id": "en/Argent Ore",
+			"author_name": "Argent Ore",
+			"text": "i will"
+		},
+		{
+			"id": "504403158437462762",
+			"ts": 1769299107000,
+			"author_id": "en/Argent Ore",
+			"author_name": "Argent Ore",
+			"text": "im on my way"
+		},
+		{
+			"id": "504403158437462770",
+			"ts": 1769299120000,
+			"author_id": "en/Drayfin",
+			"author_name": "Drayfin",
+			"text": "t8? i have a bunch in dragons head"
+		},
+		{
+			"id": "504403158437462776",
+			"ts": 1769299130000,
+			"author_id": "en/KeyserSoze",
+			"author_name": "KeyserSoze",
+			"text": "I'm making chicken tortilla soup in the slow cooker tonite y'all"
+		},
+		{
+			"id": "504403158437462778",
+			"ts": 1769299135000,
+			"author_id": "en/Aryn",
+			"author_name": "Aryn",
+			"text": "mmmmmmmm"
+		},
+		{
+			"id": "504403158437462780",
+			"ts": 1769299140000,
+			"author_id": "en/Argent Ore",
+			"author_name": "Argent Ore",
+			"text": "for meeeeee?"
+		},
+		{
+			"id": "504403158437462782",
+			"ts": 1769299142000,
+			"author_id": "en/Akela",
+			"author_name": "Akela",
+			"text": "oh that sounds good"
+		},
+		{
+			"id": "504403158437462783",
+			"ts": 1769299145000,
+			"author_id": "en/YouLi",
+			"author_name": "YouLi",
+			"text": "CAN YOU SHARE?"
+		},
+		{
+			"id": "504403158437463124",
+			"ts": 1769299173000,
+			"author_id": "en/KeyserSoze",
+			"author_name": "KeyserSoze",
+			"text": "sure, just fax me your email address and I'll share a bowl to your discord"
+		},
+		{
+			"id": "504403158437463139",
+			"ts": 1769299194000,
+			"author_id": "en/YouLi",
+			"author_name": "YouLi",
+			"text": "R u an old man? Fax? no one use this"
+		}
+	]
+}
