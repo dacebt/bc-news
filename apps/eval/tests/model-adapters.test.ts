@@ -1,6 +1,7 @@
 import { afterEach, expect, it, vi } from "vitest";
 import type { EditorialCapability } from "@bc-news/generation-core";
 import { resolveModelProvider } from "../src/model-adapters";
+import { rubricDimensionNames } from "../src/rubrics";
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -60,22 +61,34 @@ it.each([
 	expectInlineStrictObjectSchemas(responseFormat.json_schema.schema);
 });
 
-it("sends the judge contract to LM Studio judge requests", async () => {
-	const body = await capturedRequestBody("main_story", "judge");
+it.each([
+	["main_story", "main_story_judge_output"],
+	["announcements", "announcements_judge_output"],
+	["packaging", "packaging_judge_output"],
+] as const)("sends the exact %s judge contract to LM Studio", async (capability, name) => {
+	const body = await capturedRequestBody(capability, "judge");
 	const responseFormat = body.response_format as {
 		type: string;
 		json_schema: { name: string; strict: boolean; schema: Record<string, unknown> };
 	};
+	const schema = responseFormat.json_schema.schema;
+	const scores = (schema.properties as Record<string, unknown>).scores as Record<string, unknown>;
+	const expectedDimensions = rubricDimensionNames(capability);
 
 	expect(responseFormat.type).toBe("json_schema");
 	expect(responseFormat.json_schema).toMatchObject({
-		name: "editorial_judge_output",
+		name,
 		strict: true,
 		schema: {
 			type: "object",
 			additionalProperties: false,
-			properties: { scores: { type: "object" }, reasoning: { type: "string" } },
+			properties: {
+				scores: { type: "object", additionalProperties: false },
+				reasoning: { type: "string" },
+			},
 		},
 	});
-	expectInlineStrictObjectSchemas(responseFormat.json_schema.schema);
+	expect(Object.keys(scores.properties as Record<string, unknown>)).toEqual(expectedDimensions);
+	expect(scores.required).toEqual(expectedDimensions);
+	expectInlineStrictObjectSchemas(schema);
 });

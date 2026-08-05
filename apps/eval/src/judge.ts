@@ -9,7 +9,7 @@ import type {
 import { modelUsageRecord } from "@bc-news/generation-core";
 import { modelRequestSha256 } from "@bc-news/fixtures";
 import type { ProviderParamEntry } from "./fingerprint";
-import { RUBRICS, rubricDimensionMismatch, rubricDimensionNames, rubricWeightedAggregate } from "./rubrics";
+import { RUBRICS, rubricDimensionNames, rubricWeightedAggregate } from "./rubrics";
 
 type JudgeErrorCode = "invalid_json" | "invalid_output" | "dimension_mismatch";
 
@@ -35,10 +35,31 @@ export class JudgeError extends Error {
 }
 
 const JudgeScoreSchema = z.number().int().min(1).max(5);
-export const JudgeOutputSchema = z.strictObject({
+const JudgeReasoningSchema = z.string().trim().min(1);
+const JudgeOutputSchema = z.strictObject({
 	scores: z.record(z.string().min(1), JudgeScoreSchema),
-	reasoning: z.string().trim().min(1),
+	reasoning: JudgeReasoningSchema,
 });
+
+function buildJudgeOutputSchema(capability: EditorialCapability) {
+	const scoreShape = Object.fromEntries(
+		rubricDimensionNames(capability).map((dimension) => [dimension, JudgeScoreSchema]),
+	);
+	return z.strictObject({
+		scores: z.strictObject(scoreShape),
+		reasoning: JudgeReasoningSchema,
+	});
+}
+
+const JudgeOutputSchemas = {
+	main_story: buildJudgeOutputSchema("main_story"),
+	announcements: buildJudgeOutputSchema("announcements"),
+	packaging: buildJudgeOutputSchema("packaging"),
+} satisfies Record<EditorialCapability, z.ZodType>;
+
+export function judgeOutputSchema(capability: EditorialCapability) {
+	return JudgeOutputSchemas[capability];
+}
 
 export const WEIGHTING = "v1_rubric_weighted_mean" as const;
 
@@ -146,8 +167,8 @@ function parseJudgeOutput(
 			`Judge output for ${capability} failed the invalid_output category`,
 		);
 	}
-	const mismatch = rubricDimensionMismatch(capability, parsed.data.scores);
-	if (mismatch.missing.length > 0 || mismatch.unexpected.length > 0) {
+	const capabilityOutput = judgeOutputSchema(capability).safeParse(parsed.data);
+	if (!capabilityOutput.success) {
 		throw new JudgeError(
 			"dimension_mismatch",
 			capability,
@@ -155,7 +176,11 @@ function parseJudgeOutput(
 			`Judge output for ${capability} failed the dimension_mismatch category`,
 		);
 	}
-	return { scores: parsed.data.scores, reasoning: parsed.data.reasoning, responseSha256 };
+	return {
+		scores: capabilityOutput.data.scores,
+		reasoning: capabilityOutput.data.reasoning,
+		responseSha256,
+	};
 }
 
 export async function runJudge(request: {
