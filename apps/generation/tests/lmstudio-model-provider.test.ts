@@ -44,7 +44,14 @@ it("sends OpenAI-compatible auth, model, and messages", async () => {
 			system: "system constraints",
 			user: "main story prompt",
 		}),
-	).resolves.toEqual({ text: "model output", provider: "lmstudio", model: "local-model" });
+	).resolves.toEqual({
+		text: "model output",
+		provider: "lmstudio",
+		model: "local-model",
+		execution: "local_inference",
+		token_usage: { measurement: "unavailable" },
+		external_billing: { classification: "none", amount_usd: 0, reason: "local_inference" },
+	});
 
 	const request = fetchCall.mock.calls[0];
 	const requestTarget = request?.[0];
@@ -140,6 +147,42 @@ it.each([
 	Response.json({ choices: [{ message: { content: "" } }] }),
 ])("rejects malformed completion responses non-retryably", async (response) => {
 	vi.spyOn(globalThis, "fetch").mockResolvedValue(response);
+	const provider = createLmStudioModelProvider({ baseUrl: "http://localhost/v1", model: "local" });
+
+	await expect(
+		failNonRetryablyOnDeterministicErrors(() =>
+			provider.complete({ editorialCapability: "main_story", system: "system", user: "user" }),
+		),
+	).rejects.toBeInstanceOf(NonRetryableError);
+});
+
+it("maps complete internally consistent token usage", async () => {
+	vi.spyOn(globalThis, "fetch").mockResolvedValue(
+		Response.json({
+			choices: [{ message: { content: "model output" } }],
+			usage: { prompt_tokens: 3, completion_tokens: 2, total_tokens: 5 },
+		}),
+	);
+	const provider = createLmStudioModelProvider({ baseUrl: "http://localhost/v1", model: "local" });
+
+	await expect(
+		provider.complete({ editorialCapability: "main_story", system: "system", user: "user" }),
+	).resolves.toMatchObject({
+		execution: "local_inference",
+		token_usage: { measurement: "reported", input_tokens: 3, output_tokens: 2, total_tokens: 5 },
+		external_billing: { classification: "none", amount_usd: 0, reason: "local_inference" },
+	});
+});
+
+it.each([
+	{ prompt_tokens: 1, completion_tokens: 2 },
+	{ prompt_tokens: -1, completion_tokens: 2, total_tokens: 1 },
+	{ prompt_tokens: 1.5, completion_tokens: 2, total_tokens: 3.5 },
+	{ prompt_tokens: 1, completion_tokens: 2, total_tokens: 4 },
+])("rejects malformed supplied token usage %# non-retryably", async (usage) => {
+	vi.spyOn(globalThis, "fetch").mockResolvedValue(
+		Response.json({ choices: [{ message: { content: "model output" } }], usage }),
+	);
 	const provider = createLmStudioModelProvider({ baseUrl: "http://localhost/v1", model: "local" });
 
 	await expect(

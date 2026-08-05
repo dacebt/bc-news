@@ -2,6 +2,7 @@ import type { GenerationRunParams } from "@bc-news/contracts";
 
 export interface WalkState {
 	firstServedEditionBody?: string;
+	firstModelUsageBody?: string;
 }
 
 export interface WalkContext {

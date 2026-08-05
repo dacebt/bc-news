@@ -1,4 +1,4 @@
-import type { ModelProviderPort } from "@bc-news/generation-core";
+import type { ModelCompletion, ModelProviderPort } from "@bc-news/generation-core";
 import announcementsResponseJson from "../model-responses/announcements.json";
 import mainStoryResponseJson from "../model-responses/main_story.json";
 import packagingResponseJson from "../model-responses/packaging.json";
@@ -17,7 +17,7 @@ const recordedResponsesByEditorialCapability: Readonly<Record<string, unknown>> 
  * informational provenance, never branched on.
  */
 export const recordedModelProvider: ModelProviderPort = {
-	complete(request): Promise<{ text: string; provider: string; model: string }> {
+	complete(request): Promise<ModelCompletion> {
 		const recorded =
 			recordedResponsesByEditorialCapability[request.editorialCapability];
 		if (recorded === undefined) {
@@ -39,6 +39,13 @@ export const recordedModelProvider: ModelProviderPort = {
 			text: parsed.text,
 			provider: parsed.provider,
 			model: parsed.model,
+			execution: "recorded_replay",
+			token_usage: { measurement: "unavailable" },
+			external_billing: {
+				classification: "none",
+				amount_usd: 0,
+				reason: "recorded_replay",
+			},
 		});
 	},
 };

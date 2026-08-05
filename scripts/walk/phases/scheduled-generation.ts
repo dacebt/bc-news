@@ -1,112 +1,22 @@
 import { ACTIVE_REGION_IDS } from "@bc-news/contracts";
 import type { WalkContext, WalkPhase } from "../phase";
 import { dispatchScheduledEvent } from "../scheduled-event";
+import { fetchGenerationRunStatus, type WalkGenerationRunStatus } from "../generation-run-status";
 import { POLL_INTERVAL_MS, sleep } from "../timing";
 
 const FAILURE_TIMEOUT_MS = 60_000;
-const NO_EVIDENCE_ERROR_CODE = "no_evidence_for_publication_date";
-const INSTANCE_STATUSES = new Set([
-	"queued",
-	"running",
-	"paused",
-	"errored",
-	"terminated",
-	"complete",
-	"waiting",
-	"waitingForPause",
-	"unknown",
-]);
 
-interface GenerationRunStatusResponse {
-	id: string;
-	status: {
-		status: string;
-		error?: { name: string; message: string; code?: string };
-	};
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-	return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function normalizedWorkflowErrorCode(name: string, message: string): string | undefined {
-	if (name === NO_EVIDENCE_ERROR_CODE) {
-		return NO_EVIDENCE_ERROR_CODE;
-	}
-	if (name === "Error" && message.startsWith(`${NO_EVIDENCE_ERROR_CODE}: `)) {
-		return NO_EVIDENCE_ERROR_CODE;
-	}
-	return undefined;
-}
-
-export function parseGenerationRunStatusResponse(
-	body: string,
-	expectedId: string,
-): GenerationRunStatusResponse {
-	let parsed: unknown;
-	try {
-		parsed = JSON.parse(body);
-	} catch (error) {
-		throw new Error(`generation run status for ${expectedId} is not valid JSON`, { cause: error });
-	}
-	if (!isRecord(parsed) || parsed["id"] !== expectedId || !isRecord(parsed["status"])) {
-		throw new Error(`generation run status for ${expectedId} has an invalid envelope: ${body}`);
-	}
-	const status = parsed["status"];
-	if (typeof status["status"] !== "string" || !INSTANCE_STATUSES.has(status["status"])) {
-		throw new Error(`generation run status for ${expectedId} has an invalid nested state: ${body}`);
-	}
-	let workflowError: { name: string; message: string; code?: string } | undefined;
-	if (status["error"] !== undefined) {
-		if (
-			!isRecord(status["error"]) ||
-			typeof status["error"]["name"] !== "string" ||
-			typeof status["error"]["message"] !== "string"
-		) {
-			throw new Error(`generation run status for ${expectedId} has an invalid nested error: ${body}`);
-		}
-		const name = status["error"]["name"];
-		const message = status["error"]["message"];
-		const code = normalizedWorkflowErrorCode(name, message);
-		workflowError = { name, message, ...(code !== undefined ? { code } : {}) };
-	}
-	return {
-		id: expectedId,
-		status: {
-			status: status["status"],
-			...(workflowError !== undefined ? { error: workflowError } : {}),
-		},
-	};
-}
-
-export function assertExplicitNoEvidenceFailure(
-	response: GenerationRunStatusResponse,
-): void {
+export function assertExplicitNoEvidenceFailure(response: WalkGenerationRunStatus): void {
 	if (
-		response.status.status !== "errored" ||
-		response.status.error?.code !== NO_EVIDENCE_ERROR_CODE
+		response.state !== "errored" ||
+		response.failure?.step !== "prepare-evidence" ||
+		response.failure.code !== "no_evidence_for_publication_date" ||
+		response.model_usage.length !== 0
 	) {
 		throw new Error(
-			`generation run ${response.id} did not expose nested errored/no_evidence_for_publication_date status: ${JSON.stringify(response)}`,
+			`generation run ${response.generation_run_id} did not expose prepare-evidence/no-evidence failure with empty usage: ${JSON.stringify(response)}`,
 		);
 	}
-}
-
-function instanceId(activeRegionId: string, publicationDate: string): string {
-	return `generation-run-${activeRegionId}-${publicationDate}`;
-}
-
-async function generationRunStatus(
-	ctx: WalkContext,
-	activeRegionId: string,
-): Promise<GenerationRunStatusResponse> {
-	const id = instanceId(activeRegionId, ctx.pair.publication_date);
-	const response = await fetch(`${ctx.baseUrl}/generation-run/${id}`);
-	const body = await response.text();
-	if (response.status !== 200) {
-		throw new Error(`scheduled generation identity ${id} expected status 200, got ${response.status} ${body}`);
-	}
-	return parseGenerationRunStatusResponse(body, id);
 }
 
 async function run(ctx: WalkContext): Promise<void> {
@@ -117,7 +27,14 @@ async function run(ctx: WalkContext): Promise<void> {
 		);
 	}
 
-	await Promise.all(ACTIVE_REGION_IDS.map((activeRegionId) => generationRunStatus(ctx, activeRegionId)));
+	await Promise.all(
+		ACTIVE_REGION_IDS.map((activeRegionId) =>
+			fetchGenerationRunStatus(ctx.baseUrl, {
+				active_region_id: activeRegionId,
+				publication_date: ctx.pair.publication_date,
+			}),
+		),
+	);
 	console.log(
 		`walk: scheduled publication created all ${String(ACTIVE_REGION_IDS.length)} authoritative generation identities`,
 	);
@@ -126,13 +43,17 @@ async function run(ctx: WalkContext): Promise<void> {
 	if (absentRegionId === undefined) {
 		throw new Error("authoritative active-region roster has no absent-evidence region for the walk");
 	}
+	const absentPair = {
+		active_region_id: absentRegionId,
+		publication_date: ctx.pair.publication_date,
+	};
 	const deadline = Date.now() + FAILURE_TIMEOUT_MS;
 	while (Date.now() < deadline) {
-		const response = await generationRunStatus(ctx, absentRegionId);
-		if (response.status.status === "errored") {
+		const response = await fetchGenerationRunStatus(ctx.baseUrl, absentPair);
+		if (response.state === "errored") {
 			assertExplicitNoEvidenceFailure(response);
 			console.log(
-				`walk: absent region ${absentRegionId} failed explicitly while the scheduled region fan-out remained isolated`,
+				`walk: absent region ${absentRegionId} failed explicitly with no model usage while sibling runs remained isolated`,
 			);
 			return;
 		}

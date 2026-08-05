@@ -31,7 +31,14 @@ function preparedEvidence(): PreparedEvidence {
 
 function stubProvider(text: string): ModelProviderPort {
 	return {
-		complete: () => Promise.resolve({ text, provider: "stub", model: "stub-v1" }),
+		complete: () => Promise.resolve({
+			text,
+			provider: "stub",
+			model: "stub-v1",
+			execution: "recorded_replay",
+			token_usage: { measurement: "unavailable" },
+			external_billing: { classification: "none", amount_usd: 0, reason: "recorded_replay" },
+		}),
 	};
 }
 
@@ -84,6 +91,9 @@ test("neutralizes judge data delimiters in source evidence and capability output
 				text: JSON.stringify({ scores: { grounding: 3, voice: 3, structure: 3 }, reasoning: "captured" }),
 				provider: "stub",
 				model: "capture",
+				execution: "recorded_replay",
+				token_usage: { measurement: "unavailable" },
+				external_billing: { classification: "none", amount_usd: 0, reason: "recorded_replay" },
 			});
 		},
 	};

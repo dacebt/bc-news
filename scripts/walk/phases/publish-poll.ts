@@ -2,11 +2,12 @@ import { EditionSchema } from "@bc-news/contracts";
 import type { WalkContext, WalkPhase } from "../phase";
 import { editionUrl } from "../edition-api";
 import { POLL_INTERVAL_MS, sleep } from "../timing";
+import { generationRunStatusUrl } from "../generation-run-status";
 
 const PUBLISH_TIMEOUT_MS = 60_000;
 
 async function printGenerationRunStatus(ctx: WalkContext): Promise<void> {
-	const statusUrl = `${ctx.baseUrl}/generation-run/generation-run-${ctx.pair.active_region_id}-${ctx.pair.publication_date}`;
+	const statusUrl = generationRunStatusUrl(ctx.baseUrl, ctx.pair);
 	try {
 		const response = await fetch(statusUrl);
 		console.error(`walk: generation run status (${response.status}): ${await response.text()}`);

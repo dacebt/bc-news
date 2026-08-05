@@ -1,4 +1,5 @@
 import { expect, it, vi } from "vitest";
+import { env } from "cloudflare:workers";
 import { ACTIVE_REGION_IDS, type GenerationRunParams } from "@bc-news/contracts";
 import { launchGenerationRun, type GenerationRunLaunch } from "../src/run-launch";
 import { publicationDateForScheduledTime, scheduleGenerationRuns } from "../src/scheduler";
@@ -39,7 +40,7 @@ it("launches the authoritative active-region roster exactly once", async () => {
 
 	const results = await scheduleGenerationRuns(
 		Date.parse("2026-01-25T00:00:00Z"),
-		{ GENERATION_RUN: workflow },
+		{ GENERATION_RUN: workflow, DB: env.DB },
 		launcher,
 	);
 
@@ -59,7 +60,7 @@ it("attempts later regions after one launch fails", async () => {
 	await expect(
 		scheduleGenerationRuns(
 			Date.parse("2026-01-25T00:00:00Z"),
-			{ GENERATION_RUN: workflowWith(vi.fn()) },
+			{ GENERATION_RUN: workflowWith(vi.fn()), DB: env.DB },
 			launcher,
 		),
 	).rejects.toThrow("7/2026-01-25");
@@ -78,7 +79,7 @@ it("aggregates every unexpected regional launch failure", async () => {
 	try {
 		await scheduleGenerationRuns(
 			Date.parse("2026-01-25T00:00:00Z"),
-			{ GENERATION_RUN: workflowWith(vi.fn()) },
+			{ GENERATION_RUN: workflowWith(vi.fn()), DB: env.DB },
 			launcher,
 		);
 	} catch (error) {
@@ -97,7 +98,7 @@ it("returns created when local Wrangler silently resolves a same-id create", asy
 		vi.fn().mockResolvedValue({ id: "generation-run-7-2026-01-25" }),
 	);
 
-	await expect(launchGenerationRun(params, workflow)).resolves.toMatchObject({
+	await expect(launchGenerationRun(params, workflow, env.DB)).resolves.toMatchObject({
 		outcome: "created",
 		id: "generation-run-7-2026-01-25",
 	});

@@ -1,4 +1,9 @@
-import { createGenerationRun, getGenerationRunStatus, getPublishedEdition } from "./routes";
+import {
+	createGenerationRun,
+	getGenerationRunStatus,
+	getGenerationRunStatusByPair,
+	getPublishedEdition,
+} from "./routes";
 import { scheduleGenerationRuns } from "./scheduler";
 
 export { GenerationRun } from "./generation-run";
@@ -10,6 +15,9 @@ export default {
 		const url = new URL(request.url);
 		if (request.method === "POST" && url.pathname === "/generation-run") {
 			return createGenerationRun(request, env);
+		}
+		if (request.method === "GET" && url.pathname === "/generation-run") {
+			return getGenerationRunStatusByPair(url, env);
 		}
 		if (request.method === "GET" && url.pathname.startsWith(GENERATION_RUN_STATUS_PATH)) {
 			return getGenerationRunStatus(url.pathname.slice(GENERATION_RUN_STATUS_PATH.length), env);

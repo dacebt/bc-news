@@ -82,11 +82,13 @@ day), end-exclusive. Adapters parse every row against the shared schema and
 reject before returning; ordering is unspecified at the port, and the pure
 core sorts deterministically.
 
-Settled — one D1 database, three tables, one migration owner: alongside
+Settled — one D1 database, four tables, one migration owner: alongside
 `edition` (publish target, primary key `(active_region_id,
 publication_date)`), the same database now holds `chat_messages` and
 `poll_state` — the ingest Worker's durable chat storage and cursor
-watermark. The migration chain lives solely in `apps/generation/migrations`;
+watermark — plus `generation_run_status`, the operator projection keyed by
+the same active-region/publication-date pair. The migration chain lives solely
+in `apps/generation/migrations`;
 the ingest Worker binds the identical database (matching `database_name`
 and `database_id`) but declares no `migrations_dir` of its own, so a serial
 resource keeps exactly one owner. Publish is one atomic
@@ -99,6 +101,25 @@ masqueraded as absence. Workflow step results are the durable inter-step
 handoff (bounded by the platform's step-result cap and asserted, never
 truncated); no separate artifact store exists, and Workflow instance state
 is never the edition's durable home (ADR-005).
+
+`generation_run_status` is direct D1 shell code, not a repository or a third
+port. It holds queued/running/complete/errored progress, ordered completed
+generation steps, structured terminal failure, and one usage record per
+completed editorial capability. Full-array replacement makes retried status
+writes idempotent; terminal rows cannot regress. Reads validate stored JSON and
+cross-field state strictly, and corruption surfaces as
+`generation_run_status_unreadable`, never absence or a partial projection.
+This operational evidence does not replace or mutate the immutable edition.
+
+The model provider port returns content and provenance plus truthful execution,
+token-usage, and external-billing classifications. Recorded adapters report
+recorded replay, unavailable token measurement, and zero external billing;
+LM Studio reports local inference, validates complete provider token counts
+when present, marks wholly absent counts unavailable, and reports zero external
+billing for local execution. Counts and USD amounts are never estimated. A
+future hosted adapter fits this existing port, but routine hosted use without
+provider-reported or pricing-reference-calculated cost cannot satisfy production
+readiness.
 
 Settled — edition identity enforcement, three layers with the SQL layer
 authoritative: (1) the trigger derives a deterministic Workflow instance
@@ -173,6 +194,17 @@ the committed local default — the edition it publishes is generated from the
 `chat_messages` rows the ingest phase just inserted from the stub corpus, not
 from the fixture adapter. The fixture evidence adapter remains registered and
 explicitly selectable for tests and evaluation, but it is not the local default.
+
+The same walk uses `GET /generation-run?active_region_id=...&publication_date=...`
+as the operator surface rather than requiring an opaque Workflow id. It proves
+the absent-evidence pair reaches a structured prepare-evidence failure with no
+model usage, and proves region 7 reaches complete with all six ordered
+generation steps and exactly one recorded-replay usage record for main story,
+announcements, and packaging, each with unavailable token measurement and zero
+external billing. Repeated scheduled delivery must leave both edition bytes and
+retained usage unchanged. The JSON response keeps the durable D1 projection
+separate from a strictly parsed, explicitly available or unavailable current
+Workflow observation; the id-addressed route remains a low-level diagnostic.
 
 Settled — scheduled publication is direct Cloudflare shell code, not a third
 port. The ingest Worker runs every minute and directly awaits the same
