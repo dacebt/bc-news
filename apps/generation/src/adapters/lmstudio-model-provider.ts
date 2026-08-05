@@ -10,6 +10,17 @@ const OpenAiCompletionSchema = z.object({
 			}),
 		)
 		.min(1),
+	usage: z
+		.strictObject({
+			prompt_tokens: z.int().nonnegative(),
+			completion_tokens: z.int().nonnegative(),
+			total_tokens: z.int().nonnegative(),
+		})
+		.refine(
+			(usage) => usage.total_tokens === usage.prompt_tokens + usage.completion_tokens,
+			"total_tokens must equal prompt_tokens plus completion_tokens",
+		)
+		.optional(),
 });
 
 type LmStudioDeterministicErrorCode =
@@ -173,7 +184,27 @@ export function createLmStudioModelProvider(input: {
 					"LM Studio completion response contains no choices",
 				);
 			}
-			return { text: choice.message.content, provider: "lmstudio", model: input.model };
+			const usage = parsed.data.usage;
+			return {
+				text: choice.message.content,
+				provider: "lmstudio",
+				model: input.model,
+				execution: "local_inference",
+				token_usage:
+					usage === undefined
+						? { measurement: "unavailable" as const }
+						: {
+								measurement: "reported" as const,
+								input_tokens: usage.prompt_tokens,
+								output_tokens: usage.completion_tokens,
+								total_tokens: usage.total_tokens,
+							},
+				external_billing: {
+					classification: "none",
+					amount_usd: 0,
+					reason: "local_inference",
+				},
+			};
 		},
 	};
 }

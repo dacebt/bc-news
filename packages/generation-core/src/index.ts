@@ -40,5 +40,9 @@ export { assembleEdition } from "./assemble-edition";
 export type {
 	EditorialCapability,
 	EvidenceInputPort,
+	ExternalBilling,
+	ModelCompletion,
 	ModelProviderPort,
+	ModelUsageRecord,
+	TokenUsage,
 } from "./ports";

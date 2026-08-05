@@ -1,4 +1,4 @@
-import type { ModelProviderPort } from "@bc-news/generation-core";
+import type { ModelCompletion, ModelProviderPort } from "@bc-news/generation-core";
 import judgeAnnouncementsResponseJson from "../model-responses/judge/announcements.json";
 import judgeMainStoryResponseJson from "../model-responses/judge/main_story.json";
 import judgePackagingResponseJson from "../model-responses/judge/packaging.json";
@@ -20,7 +20,7 @@ export async function modelRequestSha256(request: {
 }
 
 export const recordedJudgeModelProvider: ModelProviderPort = {
-	async complete(request): Promise<{ text: string; provider: string; model: string }> {
+	async complete(request): Promise<ModelCompletion> {
 		const recorded = recordedJudgeResponsesByEditorialCapability[request.editorialCapability];
 		if (recorded === undefined) {
 			throw new RecordedModelProviderError(
@@ -49,6 +49,13 @@ export const recordedJudgeModelProvider: ModelProviderPort = {
 			text: parsed.text,
 			provider: parsed.provider,
 			model: parsed.model,
+			execution: "recorded_replay",
+			token_usage: { measurement: "unavailable" },
+			external_billing: {
+				classification: "none",
+				amount_usd: 0,
+				reason: "recorded_replay",
+			},
 		};
 	},
 };

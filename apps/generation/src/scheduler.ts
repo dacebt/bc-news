@@ -9,6 +9,7 @@ import { launchGenerationRun, type GenerationRunLaunch } from "./run-launch";
 type GenerationRunLauncher = (
 	params: GenerationRunParams,
 	workflow: Workflow<GenerationRunParams>,
+	db: D1Database,
 ) => Promise<GenerationRunLaunch>;
 
 export function publicationDateForScheduledTime(scheduledTime: number): PublicationDate {
@@ -28,7 +29,7 @@ export function publicationDateForScheduledTime(scheduledTime: number): Publicat
 
 export async function scheduleGenerationRuns(
 	scheduledTime: number,
-	env: Pick<Env, "GENERATION_RUN">,
+	env: Pick<Env, "GENERATION_RUN" | "DB">,
 	launcher: GenerationRunLauncher = launchGenerationRun,
 ): Promise<readonly GenerationRunLaunch[]> {
 	const publicationDate = publicationDateForScheduledTime(scheduledTime);
@@ -39,7 +40,7 @@ export async function scheduleGenerationRuns(
 				publication_date: publicationDate,
 			};
 			try {
-				return { result: await launcher(params, env.GENERATION_RUN) } as const;
+				return { result: await launcher(params, env.GENERATION_RUN, env.DB) } as const;
 			} catch (error) {
 				return { error, params } as const;
 			}
