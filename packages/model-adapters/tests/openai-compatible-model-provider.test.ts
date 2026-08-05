@@ -54,6 +54,23 @@ function localProvider() {
 	});
 }
 
+function mockLocalCompletion(content: string) {
+	vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({
+		model: "returned-local-model",
+		choices: [{ message: { content } }],
+	}));
+}
+
+async function completeLocalText(content: string): Promise<string> {
+	mockLocalCompletion(content);
+	const completion = await localProvider().complete({
+		editorialCapability: "main_story",
+		system: "system",
+		user: "prompt",
+	});
+	return completion.text;
+}
+
 it("maps strict hosted provenance, usage, and calculated billing", async () => {
 	vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({
 		model: "returned-model",
@@ -147,6 +164,83 @@ it.each([
 		token_usage: { measurement: "reported", input_tokens: 100, output_tokens: 25, total_tokens: 125 },
 		external_billing: { classification: "none", amount_usd: 0, reason: "local_inference" },
 	});
+});
+
+it("repairs paired unescaped prose quotes in local JSON string values", async () => {
+	const malformed = '{"headline":"A herald called it "the first victory" today","summary":"Players named it "wildly ambitious" after launch","tags":["news"]}';
+	const expected = '{"headline":"A herald called it \\"the first victory\\" today","summary":"Players named it \\"wildly ambitious\\" after launch","tags":["news"]}';
+
+	await expect(completeLocalText(malformed)).resolves.toBe(expected);
+	expect(JSON.parse(expected)).toEqual({
+		headline: 'A herald called it "the first victory" today',
+		summary: 'Players named it "wildly ambitious" after launch',
+		tags: ["news"],
+	});
+});
+
+it("repairs local JSON quotes after Unicode and emoji without shifting the candidate position", async () => {
+	const malformed = '{"summary":"Café 🎉 called it "a triumph" today"}';
+	const expected = '{"summary":"Café 🎉 called it \\"a triumph\\" today"}';
+
+	await expect(completeLocalText(malformed)).resolves.toBe(expected);
+});
+
+it("returns valid local JSON without additional normalization", async () => {
+	const valid = '{\n  "summary": "already \\"quoted\\""\n}';
+	await expect(completeLocalText(valid)).resolves.toBe(valid);
+});
+
+it.each([
+	'{"first":"one" "second":"two"}',
+	'["one" "two"]',
+	'{"summary":"a stray " quote"}',
+	'Here is the result: {"summary":"called it "good" today"}',
+	'```json\n{"summary":"called it "good" today"}\n```',
+	'{"bad "quoted key" name":"value"}',
+	'{"summary":"x" junk "y"}',
+	'{"summary":"x" true "y"}',
+	'{"summary":"x" 123 "y"}',
+	'{"summary":"x" : "y"}',
+	'{"summary":"x " : , " y"}',
+])("leaves unsupported local JSON corruption unchanged: %s", async (malformed) => {
+	await expect(completeLocalText(malformed)).resolves.toBe(malformed);
+});
+
+it("repairs at most 64 quote candidates in local JSON", async () => {
+	const value = Array.from(
+		{ length: 32 },
+		(_, index) => `item ${index} "quoted phrase" continued`,
+	).join("; ");
+	const malformed = JSON.stringify({ summary: value }).replaceAll('\\"', '"');
+	const expected = JSON.stringify({ summary: value });
+
+	await expect(completeLocalText(malformed)).resolves.toBe(expected);
+});
+
+it("leaves local JSON requiring more than 64 quote repairs unchanged", async () => {
+	const pairedValue = Array.from(
+		{ length: 32 },
+		(_, index) => `item ${index} "quoted phrase" continued`,
+	).join("; ");
+	const malformed = `{"summary":"${pairedValue}; final "unpaired phrase" continued"}`;
+
+	await expect(completeLocalText(malformed)).resolves.toBe(malformed);
+});
+
+it("keeps hosted malformed completion text byte-for-byte", async () => {
+	const malformed = '{"summary":"called it "good" today"}';
+	vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({
+		model: "returned-model",
+		choices: [{ message: { content: malformed } }],
+		usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+	}));
+
+	const completion = await hostedProvider().complete({
+		editorialCapability: "main_story",
+		system: "system",
+		user: "prompt",
+	});
+	expect(completion.text).toBe(malformed);
 });
 
 it.each([

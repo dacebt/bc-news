@@ -5,6 +5,7 @@ import {
 	OpenAiCompatibleDeterministicError,
 	OpenAiCompatibleRetryableError,
 } from "./errors";
+import { normalizeLmStudioJsonQuotes } from "./lmstudio-json-normalizer";
 
 const PromptTokenDetailsSchema = z.strictObject({
 	cached_tokens: z.int().nonnegative().optional(),
@@ -259,7 +260,10 @@ export function createOpenAiCompatibleModelProvider(
 			}
 			const usage = parsed.data.usage;
 			return {
-				text: parsed.data.choices[0].message.content,
+				text:
+					input.execution === "local_inference"
+						? normalizeLmStudioJsonQuotes(parsed.data.choices[0].message.content)
+						: parsed.data.choices[0].message.content,
 				provider: input.execution === "hosted_inference" ? input.provider : "lmstudio",
 				model: parsed.data.model,
 				execution: input.execution,
