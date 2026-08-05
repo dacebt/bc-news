@@ -5,3 +5,4 @@ dist/
 # wsd local config
 .wsd/
 .worktrees/
+.playwright-mcp
