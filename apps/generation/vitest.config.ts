@@ -2,13 +2,28 @@ import path from "node:path";
 import { cloudflareTest, readD1Migrations } from "@cloudflare/vitest-pool-workers";
 import { defineConfig } from "vitest/config";
 
+const RECORDED_MODEL_CONFIG = JSON.stringify({
+	main_story: { adapter: "recorded" },
+	announcements: { adapter: "recorded" },
+	packaging: { adapter: "recorded" },
+});
+
 export default defineConfig(async () => {
 	const migrations = await readD1Migrations(path.join(import.meta.dirname, "migrations"));
 	return {
 		plugins: [
 			cloudflareTest({
 				wrangler: { configPath: "./wrangler.jsonc" },
-				miniflare: { bindings: { TEST_MIGRATIONS: migrations } },
+				miniflare: {
+					bindings: {
+						EVIDENCE_INPUT: "d1_chat",
+						MODEL_CONFIG: RECORDED_MODEL_CONFIG,
+						LMSTUDIO_BASE_URL: "",
+						HOSTED_MODEL_BASE_URL: "",
+						HOSTED_MODEL_API_KEY: "",
+						TEST_MIGRATIONS: migrations,
+					},
+				},
 			}),
 		],
 		test: { setupFiles: ["./tests/apply-migrations.ts"] },
