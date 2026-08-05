@@ -50,6 +50,36 @@ const CompletionSchema = z.strictObject({
 	system_fingerprint: z.string().nullable().optional(),
 });
 
+const LmStudioCompletionSchema = z.strictObject({
+	id: z.string().trim().min(1).optional(),
+	object: z.literal("chat.completion").optional(),
+	created: z.int().nonnegative().optional(),
+	model: z.string().trim().min(1),
+	choices: z.tuple([
+		z.strictObject({
+			index: z.int().nonnegative().optional(),
+			message: z
+				.strictObject({
+					role: z.literal("assistant").optional(),
+					content: z.string().trim().min(1),
+					refusal: z.string().nullable().optional(),
+					reasoning: z.string().optional(),
+					reasoning_content: z.string().optional(),
+					tool_calls: z.tuple([]).optional(),
+				})
+				.refine(
+					(message) => message.reasoning === undefined || message.reasoning_content === undefined,
+				),
+			finish_reason: z.string().nullable().optional(),
+			logprobs: z.null().optional(),
+		}),
+	]),
+	usage: UsageSchema.optional(),
+	service_tier: z.string().nullable().optional(),
+	system_fingerprint: z.string().nullable().optional(),
+	stats: z.strictObject({}).optional(),
+});
+
 interface LocalProviderInput {
 	readonly execution: "local_inference";
 	readonly baseUrl: string;
@@ -218,7 +248,9 @@ export function createOpenAiCompatibleModelProvider(
 					{ cause },
 				);
 			}
-			const parsed = CompletionSchema.safeParse(candidate);
+			const parsed = input.execution === "local_inference"
+				? LmStudioCompletionSchema.safeParse(candidate)
+				: CompletionSchema.safeParse(candidate);
 			if (!parsed.success || (input.execution === "hosted_inference" && parsed.data.usage === undefined)) {
 				throw new OpenAiCompatibleDeterministicError(
 					"openai_compatible_response_contract_rejected",

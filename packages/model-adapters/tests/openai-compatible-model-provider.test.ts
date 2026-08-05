@@ -46,6 +46,14 @@ function hostedProvider() {
 	});
 }
 
+function localProvider() {
+	return createOpenAiCompatibleModelProvider({
+		execution: "local_inference",
+		baseUrl: "http://127.0.0.1:1234/v1",
+		requestedModel: "requested-local-model",
+	});
+}
+
 it("maps strict hosted provenance, usage, and calculated billing", async () => {
 	vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({
 		model: "returned-model",
@@ -100,6 +108,86 @@ it("accepts an ordinary OpenAI-compatible completion envelope", async () => {
 		system: "system",
 		user: "prompt",
 	})).resolves.toMatchObject({ text: "completion", model: "returned-model" });
+});
+
+it.each([
+	{ variant: "reasoning", reasoningMetadata: { reasoning: "private reasoning" } },
+	{ variant: "reasoning_content", reasoningMetadata: { reasoning_content: "private reasoning" } },
+])("accepts observed LM Studio $variant local metadata", async ({ reasoningMetadata }) => {
+	vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({
+		id: "chatcmpl-local",
+		object: "chat.completion",
+		created: 1_785_882_800,
+		model: "returned-local-model",
+		choices: [{
+			index: 0,
+			message: {
+				role: "assistant",
+				content: "local completion",
+				...reasoningMetadata,
+				tool_calls: [],
+			},
+			finish_reason: "stop",
+			logprobs: null,
+		}],
+		usage: { prompt_tokens: 100, completion_tokens: 25, total_tokens: 125 },
+		system_fingerprint: "local-fingerprint",
+		stats: {},
+	}));
+
+	await expect(localProvider().complete({
+		editorialCapability: "main_story",
+		system: "system",
+		user: "prompt",
+	})).resolves.toEqual({
+		text: "local completion",
+		provider: "lmstudio",
+		model: "returned-local-model",
+		execution: "local_inference",
+		token_usage: { measurement: "reported", input_tokens: 100, output_tokens: 25, total_tokens: 125 },
+		external_billing: { classification: "none", amount_usd: 0, reason: "local_inference" },
+	});
+});
+
+it.each([
+	{
+		model: "m",
+		choices: [{ message: { content: "x", tool_calls: [{ id: "call-1" }] } }],
+	},
+	{
+		model: "m",
+		choices: [{ message: { content: "x" } }],
+		stats: { tokens_per_second: 10 },
+	},
+	{
+		model: "m",
+		choices: [{ message: { content: "x" } }],
+		invented: true,
+	},
+	{
+		model: "m",
+		choices: [{ message: { content: "x", invented: true } }],
+	},
+	{
+		model: "m",
+		choices: [{ message: { content: "x", reasoning: "one", reasoning_content: "two" } }],
+	},
+])("rejects unsupported LM Studio local metadata %#", async (candidate) => {
+	vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json(candidate));
+	await expect(localProvider().complete({ editorialCapability: "main_story", system: "s", user: "u" }))
+		.rejects.toMatchObject({ code: "openai_compatible_response_contract_rejected" });
+});
+
+it("keeps LM Studio response metadata outside the hosted contract", async () => {
+	vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({
+		model: "m",
+		choices: [{ message: { content: "x", reasoning_content: "private", tool_calls: [] } }],
+		usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+		stats: {},
+	}));
+
+	await expect(hostedProvider().complete({ editorialCapability: "main_story", system: "s", user: "u" }))
+		.rejects.toMatchObject({ code: "openai_compatible_response_contract_rejected" });
 });
 
 it.each([
