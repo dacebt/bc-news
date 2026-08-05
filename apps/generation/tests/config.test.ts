@@ -51,6 +51,36 @@ it("rejects model config with an unknown adapter id", () => {
 	expect(() => resolveGenerationPorts(invalidEnv)).toThrow(GenerationConfigError);
 });
 
+it("resolves a hosted provider only when endpoint and API key are environment bindings", () => {
+	const hosted = {
+		adapter: "openai_compatible_hosted",
+		provider: "verify-hosted",
+		model: "requested-model",
+		billing: {
+			method: "calculated",
+			input_usd_per_million_tokens: 2,
+			output_usd_per_million_tokens: 8,
+			pricing_reference: "verify-prices",
+		},
+	};
+	const hostedEnv = envWith({
+		HOSTED_MODEL_BASE_URL: "http://127.0.0.1:7777/v1",
+		HOSTED_MODEL_API_KEY: "sentinel",
+		MODEL_CONFIG: JSON.stringify({
+			main_story: hosted,
+			announcements: { adapter: "recorded" },
+			packaging: { adapter: "recorded" },
+		}),
+	});
+
+	expect(resolveGenerationPorts(hostedEnv).modelProviders.main_story).toBeDefined();
+	const missingKeyEnv = envWith({
+		HOSTED_MODEL_BASE_URL: "http://127.0.0.1:7777/v1",
+		MODEL_CONFIG: hostedEnv.MODEL_CONFIG,
+	});
+	expect(() => resolveGenerationPorts(missingKeyEnv)).toThrow(GenerationConfigError);
+});
+
 it("requires LM Studio base URL when any capability selects the adapter", () => {
 	const invalidEnv = envWith({
 		MODEL_CONFIG: JSON.stringify({

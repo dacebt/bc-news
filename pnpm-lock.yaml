@@ -93,6 +93,9 @@ importers:
       '@bc-news/generation-core':
         specifier: workspace:*
         version: link:../../packages/generation-core
+      '@bc-news/model-adapters':
+        specifier: workspace:*
+        version: link:../../packages/model-adapters
       zod:
         specifier: ^4.4.3
         version: 4.4.3
@@ -118,6 +121,9 @@ importers:
       '@bc-news/generation-core':
         specifier: workspace:*
         version: link:../../packages/generation-core
+      '@bc-news/model-adapters':
+        specifier: workspace:*
+        version: link:../../packages/model-adapters
       zod:
         specifier: ^4.4.3
         version: 4.4.3
@@ -187,6 +193,19 @@ importers:
       '@bc-news/contracts':
         specifier: workspace:*
         version: link:../contracts
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+    devDependencies:
+      vitest:
+        specifier: ^4.1.10
+        version: 4.1.10(@types/node@26.1.2)(jsdom@30.0.1)(vite@8.2.0(@types/node@26.1.2)(esbuild@0.28.1)(tsx@4.23.5))
+
+  packages/model-adapters:
+    dependencies:
+      '@bc-news/generation-core':
+        specifier: workspace:*
+        version: link:../generation-core
       zod:
         specifier: ^4.4.3
         version: 4.4.3

@@ -5,6 +5,7 @@ import { join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { z } from "zod";
+import type { EvalConfig } from "./config";
 
 const execFileAsync = promisify(execFile);
 
@@ -15,6 +16,7 @@ const CHECKS_DIRECTORY = join(SRC_DIRECTORY, "checks");
 const CONTRACTS_SRC_DIRECTORY = join(WORKSPACE_ROOT, "packages", "contracts", "src");
 const GENERATION_CORE_SRC_DIRECTORY = join(WORKSPACE_ROOT, "packages", "generation-core", "src");
 const PROVIDERS_PATH = join(SRC_DIRECTORY, "model-adapters.ts");
+const SHARED_PROVIDER_DIRECTORY = join(WORKSPACE_ROOT, "packages", "model-adapters", "src");
 const RECORDED_MODEL_PROVIDER_PATH = join(
 	WORKSPACE_ROOT,
 	"packages",
@@ -177,27 +179,58 @@ export async function resolveCodeVersion(cwd: string): Promise<string | null> {
  */
 export async function collectRunFingerprint(
 	fixtureBytes: Uint8Array,
+	config: EvalConfig,
 	usesJudge: boolean,
 ): Promise<RunFingerprintContent> {
-	const [checkFilePaths, contractsFilePaths, generationCoreFilePaths] = await Promise.all([
+	const [checkFilePaths, contractsFilePaths, generationCoreFilePaths, sharedProviderFilePaths] = await Promise.all([
 		listDirectoryTypeScriptFiles(CHECKS_DIRECTORY),
 		listDirectoryTypeScriptFiles(CONTRACTS_SRC_DIRECTORY),
 		listDirectoryTypeScriptFiles(GENERATION_CORE_SRC_DIRECTORY),
+		listDirectoryTypeScriptFiles(SHARED_PROVIDER_DIRECTORY),
 	]);
-	const responseEntries = await readdir(RECORDED_MODEL_RESPONSE_DIRECTORY, { withFileTypes: true, recursive: true });
-	const recordedResponsePaths = responseEntries
-		.filter((entry) => entry.isFile() && entry.name.endsWith(".json"))
-		.map((entry) => join(entry.parentPath, entry.name))
-		.filter((path) => usesJudge || !path.includes(`${join("model-responses", "judge")}`));
+	const selectedConfigs = [
+		...Object.entries(config.capabilities),
+		...(usesJudge && config.judge !== null ? [["judge", config.judge] as const] : []),
+	];
+	const recordedCapabilities = selectedConfigs
+		.filter(([, adapter]) => adapter.adapter === "recorded")
+		.map(([capability]) => capability);
+	const recordedResponsePaths = recordedCapabilities.map((capability) =>
+		capability === "judge"
+			? join(RECORDED_MODEL_RESPONSE_DIRECTORY, "judge", "main_story.json")
+			: join(RECORDED_MODEL_RESPONSE_DIRECTORY, `${capability}.json`),
+	);
+	if (usesJudge && config.judge?.adapter === "recorded") {
+		recordedResponsePaths.splice(
+			recordedResponsePaths.indexOf(join(RECORDED_MODEL_RESPONSE_DIRECTORY, "judge", "main_story.json")),
+			1,
+			...(["main_story", "announcements", "packaging"] as const).map((capability) =>
+				join(RECORDED_MODEL_RESPONSE_DIRECTORY, "judge", `${capability}.json`),
+			),
+		);
+	}
+	const usesRecordedCapability = Object.values(config.capabilities).some((adapter) => adapter.adapter === "recorded");
+	const usesRecordedJudge = usesJudge && config.judge?.adapter === "recorded";
+	const usesOpenAiCompatible = selectedConfigs.some(([, adapter]) => adapter.adapter !== "recorded");
+	const providerFiles = [
+		PROVIDERS_PATH,
+		...(usesOpenAiCompatible ? sharedProviderFilePaths : []),
+		...(usesRecordedCapability || usesRecordedJudge ? [RECORDED_RESPONSE_PATH] : []),
+		...(usesRecordedCapability ? [RECORDED_MODEL_PROVIDER_PATH] : []),
+		...(usesRecordedJudge ? [RECORDED_JUDGE_MODEL_PROVIDER_PATH] : []),
+		...recordedResponsePaths,
+	];
+	const providerFilesHash = await hashSortedFileConcatenation(providerFiles);
+	const nonsecretConfig = JSON.stringify({
+		capabilities: config.capabilities,
+		judge: usesJudge ? config.judge : null,
+	});
+	const selectedProvidersSha256 = createHash("sha256")
+		.update(`${providerFilesHash}\n${nonsecretConfig}`)
+		.digest("hex");
 	const [checksSha256, providersSha256, rubricsSha256, schemasSha256, codeVersion] = await Promise.all([
 		hashSortedFileConcatenation(checkFilePaths),
-		hashSortedFileConcatenation([
-			PROVIDERS_PATH,
-			RECORDED_RESPONSE_PATH,
-			RECORDED_MODEL_PROVIDER_PATH,
-			...recordedResponsePaths,
-			...(usesJudge ? [RECORDED_JUDGE_MODEL_PROVIDER_PATH] : []),
-		]),
+		Promise.resolve(selectedProvidersSha256),
 		hashSortedFileConcatenation(usesJudge ? [RUBRICS_PATH, JUDGE_PATH] : []),
 		hashSortedFileConcatenation([...contractsFilePaths, ...generationCoreFilePaths]),
 		resolveCodeVersion(PACKAGE_DIRECTORY),

@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { GenerationRunParamsSchema, type GenerationRunParams } from "@bc-news/contracts";
-import type { EditorialCapability, ModelUsageRecord } from "@bc-news/generation-core";
+import {
+	ModelUsageRecordSchema,
+	type EditorialCapability,
+	type ModelUsageRecord,
+} from "@bc-news/generation-core";
 
 export const GENERATION_STEPS = [
 	"prepare-evidence",
@@ -14,48 +18,6 @@ export const GENERATION_STEPS = [
 export type GenerationStep = (typeof GENERATION_STEPS)[number];
 
 const GenerationStepSchema = z.enum(GENERATION_STEPS);
-const EditorialCapabilitySchema = z.enum(["main_story", "announcements", "packaging"]);
-const TokenUsageSchema = z.discriminatedUnion("measurement", [
-	z.strictObject({
-		measurement: z.literal("reported"),
-		input_tokens: z.int().nonnegative(),
-		output_tokens: z.int().nonnegative(),
-		total_tokens: z.int().nonnegative(),
-	}).refine(
-		(value) => value.total_tokens === value.input_tokens + value.output_tokens,
-		"total_tokens must equal input_tokens plus output_tokens",
-	),
-	z.strictObject({ measurement: z.literal("unavailable") }),
-]);
-const ExternalBillingSchema = z.discriminatedUnion("classification", [
-	z.strictObject({
-		classification: z.literal("none"),
-		amount_usd: z.literal(0),
-		reason: z.enum(["recorded_replay", "local_inference"]),
-	}),
-	z.strictObject({
-		classification: z.literal("provider_reported"),
-		amount_usd: z.number().nonnegative(),
-	}),
-	z.strictObject({
-		classification: z.literal("calculated"),
-		amount_usd: z.number().nonnegative(),
-		pricing_reference: z.string().min(1),
-	}),
-	z.strictObject({
-		classification: z.literal("unavailable"),
-		reason: z.literal("provider_did_not_report_cost"),
-	}),
-]);
-export const ModelUsageRecordSchema = z.strictObject({
-	editorial_capability: EditorialCapabilitySchema,
-	provider: z.string().min(1),
-	model: z.string().min(1),
-	execution: z.enum(["recorded_replay", "local_inference", "hosted_inference"]),
-	token_usage: TokenUsageSchema,
-	external_billing: ExternalBillingSchema,
-});
-
 const FailureSchema = z.strictObject({
 	step: z.union([GenerationStepSchema, z.enum(["configure-generation-run", "launch-generation-run"])]),
 	code: z.string().min(1),

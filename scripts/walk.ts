@@ -9,6 +9,10 @@ import type { WalkContext } from "./walk/phase";
 import { walkPhases } from "./walk/phases/index";
 import { POLL_INTERVAL_MS, sleep } from "./walk/timing";
 import { readSingleWranglerCron } from "./walk/wrangler-cron";
+import {
+	walkGenerationWranglerDevArguments,
+	wranglerDevArguments,
+} from "./walk/wrangler-dev-command";
 
 const ACTIVE_REGION_ID = "7";
 const PUBLICATION_DATE = "2026-01-25";
@@ -110,28 +114,12 @@ async function assertPortSilent(checkUrl: string, port: number): Promise<void> {
 
 function startWranglerDev(
 	cwd: string,
-	persistDir: string,
 	port: number,
-	vars: Record<string, string> = {},
+	args: readonly string[],
 ): WranglerDev {
-	const varArgs = Object.entries(vars).flatMap(([key, value]) => ["--var", `${key}:${value}`]);
 	const child = spawn(
 		"pnpm",
-		[
-			"exec",
-			"wrangler",
-			"dev",
-			"--port",
-			String(port),
-			"--persist-to",
-			persistDir,
-			// Both wrangler dev instances otherwise default to the same inspector
-			// port (9229); whichever binds second aborts fatally. 0 asks the OS
-			// for a distinct ephemeral port each time, so the two never collide.
-			"--inspector-port",
-			"0",
-			...varArgs,
-		],
+		args,
 		{ cwd, stdio: ["ignore", "pipe", "pipe"], detached: true },
 	);
 	const listening = new Promise<void>((resolve, reject) => {
@@ -323,10 +311,20 @@ async function main(): Promise<void> {
 		console.log("walk: starting bitjita stub server");
 		const stubServer = await startBitJitaStubServer();
 
-		const wranglerDev = startWranglerDev(generationDir, persistDir, port);
-		const ingestWranglerDev = startWranglerDev(ingestDir, persistDir, ingestPort, {
-			BITJITA_API_BASE: stubServer.baseUrl,
-		});
+		const wranglerDev = startWranglerDev(
+			generationDir,
+			port,
+			walkGenerationWranglerDevArguments({ port, persistDir }),
+		);
+		const ingestWranglerDev = startWranglerDev(
+			ingestDir,
+			ingestPort,
+			wranglerDevArguments({
+				port: ingestPort,
+				persistDir,
+				vars: { BITJITA_API_BASE: stubServer.baseUrl },
+			}),
+		);
 		const running: RunningProcesses = { wranglerDev, ingestWranglerDev, stubServer };
 		process.on("SIGINT", () => {
 			if (interactiveHoldRelease === undefined) {

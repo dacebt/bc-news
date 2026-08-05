@@ -35,9 +35,9 @@ function stubProvider(text: string): ModelProviderPort {
 			text,
 			provider: "stub",
 			model: "stub-v1",
-			execution: "recorded_replay",
+			execution: "local_inference",
 			token_usage: { measurement: "unavailable" },
-			external_billing: { classification: "none", amount_usd: 0, reason: "recorded_replay" },
+			external_billing: { classification: "none", amount_usd: 0, reason: "local_inference" },
 		}),
 	};
 }
@@ -91,9 +91,9 @@ test("neutralizes judge data delimiters in source evidence and capability output
 				text: JSON.stringify({ scores: { grounding: 3, voice: 3, structure: 3 }, reasoning: "captured" }),
 				provider: "stub",
 				model: "capture",
-				execution: "recorded_replay",
+				execution: "local_inference",
 				token_usage: { measurement: "unavailable" },
-				external_billing: { classification: "none", amount_usd: 0, reason: "recorded_replay" },
+				external_billing: { classification: "none", amount_usd: 0, reason: "local_inference" },
 			});
 		},
 	};
@@ -243,7 +243,8 @@ test("aborts with a typed error carrying code and context on unparseable JSON", 
 
 	expect(error.name).toBe("JudgeError");
 	expect(error.code).toBe("invalid_json");
-	expect(error.context).toMatchObject({ capability: "main_story" });
+	expect(error.context).toMatchObject({ capability: "main_story", category: "invalid_json" });
+	expect(error.context.response_sha256).toMatch(/^[0-9a-f]{64}$/);
 });
 
 test("aborts on a missing rubric dimension", async () => {
@@ -252,7 +253,7 @@ test("aborts on a missing rubric dimension", async () => {
 	const error = await judgeError(text);
 
 	expect(error.code).toBe("dimension_mismatch");
-	expect(error.context).toMatchObject({ missing: ["structure"] });
+	expect(error.context).toMatchObject({ capability: "main_story", category: "dimension_mismatch" });
 });
 
 test("aborts on an unexpected rubric dimension", async () => {
@@ -264,5 +265,28 @@ test("aborts on an unexpected rubric dimension", async () => {
 	const error = await judgeError(text);
 
 	expect(error.code).toBe("dimension_mismatch");
-	expect(error.context).toMatchObject({ unexpected: ["tone"] });
+	expect(error.context).toMatchObject({ capability: "main_story", category: "dimension_mismatch" });
+});
+
+test("sanitizes raw judge output from every error surface", async () => {
+	const sentinel = "SENTINEL_RAW_JUDGE_PAYLOAD_MUST_NOT_ESCAPE";
+	const error = await judgeError(JSON.stringify({
+		scores: { grounding: 5, voice: 4, structure: 4 },
+		reasoning: "valid",
+		[sentinel]: sentinel,
+	}));
+	const ownProperties = Object.fromEntries(
+		Object.getOwnPropertyNames(error).map((name) => [name, error[name as keyof JudgeError]]),
+	);
+	const surfaces = [
+		error.message,
+		String(error),
+		String(error.cause),
+		JSON.stringify(error.context),
+		JSON.stringify(error),
+		JSON.stringify(ownProperties),
+	];
+
+	expect(error.code).toBe("invalid_output");
+	for (const surface of surfaces) expect(surface).not.toContain(sentinel);
 });

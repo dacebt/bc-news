@@ -9,6 +9,17 @@ function hash(value: string): string {
 	return createHash("sha256").update(value).digest("hex");
 }
 
+function usage(capability: "main_story" | "announcements" | "packaging") {
+	return {
+		editorial_capability: capability,
+		provider: "recorded",
+		model: "recorded-fixture",
+		execution: "recorded_replay" as const,
+		token_usage: { measurement: "unavailable" as const },
+		external_billing: { classification: "none" as const, amount_usd: 0 as const, reason: "recorded_replay" as const },
+	};
+}
+
 function sampleRun(id: string): RunFile {
 	return {
 		id,
@@ -28,6 +39,7 @@ function sampleRun(id: string): RunFile {
 				output: { main_story: { headline: "h", lede: "l", body: "b" } },
 				schema_valid: true,
 				checks: [{ name: "injection", passed: true, detail: "no injection markers" }],
+				model_usage: usage("main_story"),
 				judge: null,
 			},
 			{
@@ -36,6 +48,7 @@ function sampleRun(id: string): RunFile {
 				output: { announcements: [] },
 				schema_valid: true,
 				checks: [],
+				model_usage: usage("announcements"),
 				judge: null,
 			},
 			{
@@ -44,6 +57,7 @@ function sampleRun(id: string): RunFile {
 				output: { title: "t", subtitle: "s" },
 				schema_valid: true,
 				checks: [],
+				model_usage: usage("packaging"),
 				judge: null,
 			},
 		],
@@ -159,6 +173,7 @@ test("round-trips a judged run carrying strict per-dimension scores and the weig
 					prompt_sha256: hash(`judge prompt ${step.capability}`),
 					response_sha256: hash(`judge response ${step.capability}`),
 				},
+				model_usage: usage(step.capability),
 			},
 		})),
 	};

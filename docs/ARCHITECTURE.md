@@ -113,13 +113,44 @@ This operational evidence does not replace or mutate the immutable edition.
 
 The model provider port returns content and provenance plus truthful execution,
 token-usage, and external-billing classifications. Recorded adapters report
-recorded replay, unavailable token measurement, and zero external billing;
-LM Studio reports local inference, validates complete provider token counts
-when present, marks wholly absent counts unavailable, and reports zero external
-billing for local execution. Counts and USD amounts are never estimated. A
-future hosted adapter fits this existing port, but routine hosted use without
-provider-reported or pricing-reference-calculated cost cannot satisfy production
-readiness.
+recorded replay, unavailable token measurement, and zero external billing. The
+shared OpenAI-compatible infrastructure adapter implements that existing port
+for LM Studio and hosted inference. LM Studio reports local inference, validates
+complete provider token counts when present, marks wholly absent counts
+unavailable, and reports zero external billing. Hosted responses must carry
+exactly one nonblank completion, the returned model, and complete internally
+consistent provider-reported token counts. Hosted cost is calculated only from
+those counts and operator-supplied per-million-token rates, retaining the
+pricing reference; rates and counts are never guessed. Hosted provider
+provenance is the configured provider id and model provenance is the response
+model.
+
+`MODEL_CONFIG` and eval configuration contain only non-secret adapter identity,
+requested model, provider id, and pricing inputs. `LMSTUDIO_BASE_URL`,
+`HOSTED_MODEL_BASE_URL`, and `HOSTED_MODEL_API_KEY` are environment-only, and a
+base URL containing credentials rejects. Timeout, network/body-read failure,
+and HTTP 408/409/425/429/5xx are retryable within the existing three-attempt
+Workflow/re-record ceiling. Invalid configuration, ordinary 4xx, invalid JSON,
+response/usage rejection, and impossible cost are deterministic. Errors and
+retained evidence never contain authorization values, prompts, raw response
+bodies, or response-validation detail that could echo payloads.
+
+For local development, copy `apps/generation/.dev.vars.example` to the ignored
+`apps/generation/.dev.vars`. Wrangler loads that file for the generation Worker;
+the generation re-record command and eval CLI also load the same file through
+Node's environment-file option. The example's active block is a complete local
+three-capability `MODEL_CONFIG`; replace its model ids, start LM Studio, and run
+`pnpm --filter @bc-news/generation re-record-model-responses`. Its commented
+hosted alternative is complete but must replace the local block rather than be
+enabled beside it. Eval gets endpoints and credentials from the same file while
+adapter selection remains in the JSON passed through its `--config` option; copy
+the relevant adapter objects from the example into that JSON. The committed
+example contains placeholders only. Automated tests, the verifier, and the
+canonical walk keep recorded or repository-owned loopback providers and never
+call configured endpoints. In particular, the walk passes its recorded
+three-capability `MODEL_CONFIG` as an explicit Wrangler `--var`, which takes
+precedence over any local/hosted assignment in the developer's `.dev.vars`;
+ordinary `pnpm --filter @bc-news/generation dev` does not add that override.
 
 Settled — edition identity enforcement, three layers with the SQL layer
 authoritative: (1) the trigger derives a deterministic Workflow instance

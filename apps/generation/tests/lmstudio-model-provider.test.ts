@@ -31,7 +31,7 @@ it("sends OpenAI-compatible auth, model, and messages", async () => {
 	const timeoutSignal = new AbortController().signal;
 	const timeout = vi.spyOn(AbortSignal, "timeout").mockReturnValue(timeoutSignal);
 	const fetchCall = vi.spyOn(globalThis, "fetch").mockResolvedValue(
-		Response.json({ choices: [{ message: { content: "model output" } }] }),
+		Response.json({ model: "local-model", choices: [{ message: { content: "model output" } }] }),
 	);
 	const provider = createLmStudioModelProvider({
 		baseUrl: "http://127.0.0.1:1234/v1",
@@ -92,8 +92,8 @@ it.each([
 });
 
 it.each([
-	[new TypeError("connection refused"), "lmstudio_network_failure"],
-	[new DOMException("timed out", "TimeoutError"), "lmstudio_timeout"],
+	[new TypeError("connection refused"), "openai_compatible_network_failure"],
+	[new DOMException("timed out", "TimeoutError"), "openai_compatible_timeout"],
 ])("classifies transport failure as retryable", async (failure, code) => {
 	vi.spyOn(globalThis, "fetch").mockRejectedValue(failure);
 	const provider = createLmStudioModelProvider({ baseUrl: "http://localhost/v1", model: "local" });
@@ -117,7 +117,7 @@ it.each([
 
 	await expect(
 		provider.complete({ editorialCapability: "main_story", system: "system", user: "user" }),
-	).rejects.toMatchObject({ code: "lmstudio_network_failure" });
+	).rejects.toMatchObject({ code: "openai_compatible_network_failure" });
 });
 
 it("classifies other HTTP rejections as deterministic", async () => {
@@ -143,8 +143,8 @@ it("rejects malformed JSON non-retryably", async () => {
 });
 
 it.each([
-	Response.json({ choices: [] }),
-	Response.json({ choices: [{ message: { content: "" } }] }),
+	Response.json({ model: "local", choices: [] }),
+	Response.json({ model: "local", choices: [{ message: { content: "" } }] }),
 ])("rejects malformed completion responses non-retryably", async (response) => {
 	vi.spyOn(globalThis, "fetch").mockResolvedValue(response);
 	const provider = createLmStudioModelProvider({ baseUrl: "http://localhost/v1", model: "local" });
@@ -159,6 +159,7 @@ it.each([
 it("maps complete internally consistent token usage", async () => {
 	vi.spyOn(globalThis, "fetch").mockResolvedValue(
 		Response.json({
+			model: "local",
 			choices: [{ message: { content: "model output" } }],
 			usage: { prompt_tokens: 3, completion_tokens: 2, total_tokens: 5 },
 		}),
@@ -181,7 +182,7 @@ it.each([
 	{ prompt_tokens: 1, completion_tokens: 2, total_tokens: 4 },
 ])("rejects malformed supplied token usage %# non-retryably", async (usage) => {
 	vi.spyOn(globalThis, "fetch").mockResolvedValue(
-		Response.json({ choices: [{ message: { content: "model output" } }], usage }),
+		Response.json({ model: "local", choices: [{ message: { content: "model output" } }], usage }),
 	);
 	const provider = createLmStudioModelProvider({ baseUrl: "http://localhost/v1", model: "local" });
 
