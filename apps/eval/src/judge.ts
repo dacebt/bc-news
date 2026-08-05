@@ -1,6 +1,12 @@
 import { createHash } from "node:crypto";
 import { z } from "zod";
-import type { EditorialCapability, ModelProviderPort, PreparedEvidence } from "@bc-news/generation-core";
+import type {
+	EditorialCapability,
+	ModelProviderPort,
+	ModelUsageRecord,
+	PreparedEvidence,
+} from "@bc-news/generation-core";
+import { modelUsageRecord } from "@bc-news/generation-core";
 import { modelRequestSha256 } from "@bc-news/fixtures";
 import type { ProviderParamEntry } from "./fingerprint";
 import { RUBRICS, rubricDimensionMismatch, rubricDimensionNames, rubricWeightedAggregate } from "./rubrics";
@@ -9,18 +15,22 @@ type JudgeErrorCode = "invalid_json" | "invalid_output" | "dimension_mismatch";
 
 export class JudgeError extends Error {
 	readonly code: JudgeErrorCode;
-	readonly context: Readonly<Record<string, unknown>>;
+	readonly context: Readonly<{
+		capability: EditorialCapability;
+		category: JudgeErrorCode;
+		response_sha256: string;
+	}>;
 
 	constructor(
 		code: JudgeErrorCode,
-		context: Readonly<Record<string, unknown>>,
+		capability: EditorialCapability,
+		responseSha256: string,
 		message: string,
-		options?: ErrorOptions,
 	) {
-		super(message, options);
+		super(message);
 		this.name = "JudgeError";
 		this.code = code;
-		this.context = context;
+		this.context = { capability, category: code, response_sha256: responseSha256 };
 	}
 }
 
@@ -45,6 +55,7 @@ export interface JudgeStepResult {
 	readonly weighting: typeof WEIGHTING;
 	readonly provenance: JudgeProvenance;
 	readonly providerParam: ProviderParamEntry;
+	readonly modelUsage: ModelUsageRecord;
 }
 
 const JUDGE_DATA_DELIMITERS = [
@@ -113,37 +124,38 @@ ${serializeUntrustedJudgeData(request.outputText)}
 function parseJudgeOutput(
 	capability: EditorialCapability,
 	rawText: string,
-): { scores: Readonly<Record<string, number>>; reasoning: string } {
+): { scores: Readonly<Record<string, number>>; reasoning: string; responseSha256: string } {
+	const responseSha256 = createHash("sha256").update(rawText).digest("hex");
 	let candidate: unknown;
 	try {
 		candidate = JSON.parse(rawText);
-	} catch (cause) {
+	} catch {
 		throw new JudgeError(
 			"invalid_json",
-			{ capability, rawText },
-			`Judge output for ${capability} is not valid JSON`,
-			{ cause },
+			capability,
+			responseSha256,
+			`Judge output for ${capability} failed the invalid_json category`,
 		);
 	}
 	const parsed = JudgeOutputSchema.safeParse(candidate);
 	if (!parsed.success) {
 		throw new JudgeError(
 			"invalid_output",
-			{ capability, issues: parsed.error.issues },
-			`Judge output for ${capability} does not match the strict-integer 1-5 score contract: ${parsed.error.message}`,
+			capability,
+			responseSha256,
+			`Judge output for ${capability} failed the invalid_output category`,
 		);
 	}
 	const mismatch = rubricDimensionMismatch(capability, parsed.data.scores);
 	if (mismatch.missing.length > 0 || mismatch.unexpected.length > 0) {
 		throw new JudgeError(
 			"dimension_mismatch",
-			{ capability, missing: mismatch.missing, unexpected: mismatch.unexpected },
-			`Judge output for ${capability} scored dimensions that don't match the rubric; missing: ${
-				mismatch.missing.join(", ") || "none"
-			}; unexpected: ${mismatch.unexpected.join(", ") || "none"}`,
+			capability,
+			responseSha256,
+			`Judge output for ${capability} failed the dimension_mismatch category`,
 		);
 	}
-	return { scores: parsed.data.scores, reasoning: parsed.data.reasoning };
+	return { scores: parsed.data.scores, reasoning: parsed.data.reasoning, responseSha256 };
 }
 
 export async function runJudge(request: {
@@ -160,17 +172,18 @@ export async function runJudge(request: {
 		system,
 		user,
 	});
-	const { scores, reasoning } = parseJudgeOutput(request.capability, completion.text);
+	const { scores, reasoning, responseSha256 } = parseJudgeOutput(request.capability, completion.text);
 	return {
 		scores,
 		reasoning,
 		aggregate: rubricWeightedAggregate(request.capability, scores),
 		weighting: WEIGHTING,
 		provenance: {
-			source: completion.provider === "recorded" ? "recorded_replay" : "model_completion",
+			source: completion.execution === "recorded_replay" ? "recorded_replay" : "model_completion",
 			promptSha256,
-			responseSha256: createHash("sha256").update(completion.text).digest("hex"),
+			responseSha256,
 		},
 		providerParam: { provider: completion.provider, model: completion.model },
+		modelUsage: modelUsageRecord(request.capability, completion),
 	};
 }

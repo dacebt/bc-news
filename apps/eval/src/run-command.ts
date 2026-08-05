@@ -5,7 +5,9 @@ import type {
 	EditorialCapability,
 	MainStoryOutput,
 	PreparedEvidence,
+	ModelUsageRecord,
 } from "@bc-news/generation-core";
+import { modelUsageRecord } from "@bc-news/generation-core";
 import {
 	CAPABILITY_ROSTER,
 	independentCapabilityRunners,
@@ -21,7 +23,7 @@ import { loadConfig, type EvalConfig } from "./config";
 import { loadFixture } from "./evidence-fixture";
 import { collectRunFingerprint, WORKSPACE_ROOT, type ProviderParamEntry, type ProviderParams } from "./fingerprint";
 import { runJudge, type JudgeStepResult } from "./judge";
-import { resolveModelProvider } from "./model-adapters";
+import { resolveModelProvider, type ModelProviderEnvironment } from "./model-adapters";
 import { generateRunId, saveRunFile, type RunFile } from "./run-file";
 import { prepareEvidence } from "@bc-news/generation-core";
 
@@ -30,6 +32,7 @@ export interface RunCommandOptions {
 	readonly configPath: string;
 	readonly resultsDirectory: string;
 	readonly noJudge: boolean;
+	readonly environment?: ModelProviderEnvironment;
 }
 
 interface CapabilityStepResult {
@@ -39,6 +42,7 @@ interface CapabilityStepResult {
 	readonly checks: readonly CheckResult[];
 	readonly judge: JudgeStepResult | null;
 	readonly providerParam: ProviderParamEntry;
+	readonly modelUsage: ModelUsageRecord;
 }
 
 async function judgeOutput(
@@ -46,13 +50,14 @@ async function judgeOutput(
 	output: RetainedCapabilityOutput,
 	config: EvalConfig,
 	preparedEvidence: PreparedEvidence,
+	environment: ModelProviderEnvironment,
 ): Promise<JudgeStepResult> {
 	if (config.judge === null) throw new Error("judgeOutput requires a configured judge adapter");
 	return runJudge({
 		capability,
 		outputText: JSON.stringify(output),
 		preparedEvidence,
-		provider: resolveModelProvider(capability, config.judge, "judge"),
+		provider: resolveModelProvider(capability, config.judge, "judge", environment),
 	});
 }
 
@@ -60,11 +65,12 @@ async function runIndependentCapability(
 	capability: "main_story" | "announcements",
 	config: EvalConfig,
 	preparedEvidence: PreparedEvidence,
+	environment: ModelProviderEnvironment,
 ): Promise<CapabilityStepResult> {
 	const runner = independentCapabilityRunners[capability];
 	const prompt = runner.buildPrompt(preparedEvidence);
 	const promptSha256 = createHash("sha256").update(prompt).digest("hex");
-	const completion = await resolveModelProvider(capability, config.capabilities[capability], "capability").complete({
+	const completion = await resolveModelProvider(capability, config.capabilities[capability], "capability", environment).complete({
 		editorialCapability: capability,
 		system: runner.system,
 		user: prompt,
@@ -77,6 +83,7 @@ async function runIndependentCapability(
 		checks: runEvalChecks({ editorialCapability: capability, rawText: completion.text, output, preparedEvidence }),
 		judge: null,
 		providerParam: { provider: completion.provider, model: completion.model },
+		modelUsage: modelUsageRecord(capability, completion),
 	};
 }
 
@@ -85,11 +92,12 @@ async function runPackagingCapability(
 	preparedEvidence: PreparedEvidence,
 	mainStoryOutput: MainStoryOutput,
 	announcementsOutput: AnnouncementsOutput,
+	environment: ModelProviderEnvironment,
 ): Promise<CapabilityStepResult> {
 	const capability = "packaging" as const;
 	const prompt = packagingCapabilityRunner.buildPrompt(preparedEvidence, mainStoryOutput, announcementsOutput);
 	const promptSha256 = createHash("sha256").update(prompt).digest("hex");
-	const completion = await resolveModelProvider(capability, config.capabilities.packaging, "capability").complete({
+	const completion = await resolveModelProvider(capability, config.capabilities.packaging, "capability", environment).complete({
 		editorialCapability: capability,
 		system: packagingCapabilityRunner.system,
 		user: prompt,
@@ -117,6 +125,7 @@ async function runPackagingCapability(
 		}),
 		judge: null,
 		providerParam: { provider: completion.provider, model: completion.model },
+		modelUsage: modelUsageRecord(capability, completion),
 	};
 }
 
@@ -125,6 +134,7 @@ async function applyJudgments(
 	config: EvalConfig,
 	preparedEvidence: PreparedEvidence,
 	noJudge: boolean,
+	environment: ModelProviderEnvironment,
 ): Promise<CapabilityStepResult[]> {
 	if (config.judge === null || noJudge) return [...generatedResults];
 	const judgedResults: CapabilityStepResult[] = [];
@@ -133,7 +143,7 @@ async function applyJudgments(
 		if (generated === undefined) throw new Error(`${capability} produced no generated result`);
 		judgedResults.push({
 			...generated,
-			judge: await judgeOutput(capability, generated.output, config, preparedEvidence),
+			judge: await judgeOutput(capability, generated.output, config, preparedEvidence, environment),
 		});
 	}
 	return judgedResults;
@@ -152,9 +162,10 @@ function assembleProviderParams(results: readonly CapabilityStepResult[]): Provi
 
 export async function runCommand(options: RunCommandOptions): Promise<{ path: string; run: RunFile }> {
 	const config = await loadConfig(options.configPath);
+	const environment = options.environment ?? process.env;
 	const loadedFixture = await loadFixture(options.fixturePath);
 	const usesJudge = config.judge !== null && !options.noJudge;
-	const fingerprintContent = await collectRunFingerprint(loadedFixture.bytes, usesJudge);
+	const fingerprintContent = await collectRunFingerprint(loadedFixture.bytes, config, usesJudge);
 	const startedAt = new Date().toISOString();
 	const preparedEvidence = prepareEvidence({
 		activeRegionId: loadedFixture.fixture.active_region_id,
@@ -162,19 +173,21 @@ export async function runCommand(options: RunCommandOptions): Promise<{ path: st
 		messages: loadedFixture.fixture.messages,
 	});
 
-	const mainStory = await runIndependentCapability("main_story", config, preparedEvidence);
-	const announcements = await runIndependentCapability("announcements", config, preparedEvidence);
+	const mainStory = await runIndependentCapability("main_story", config, preparedEvidence, environment);
+	const announcements = await runIndependentCapability("announcements", config, preparedEvidence, environment);
 	const packaging = await runPackagingCapability(
 		config,
 		preparedEvidence,
 		mainStory.output as MainStoryOutput,
 		announcements.output as AnnouncementsOutput,
+		environment,
 	);
 	const results = await applyJudgments(
 		[mainStory, announcements, packaging],
 		config,
 		preparedEvidence,
 		options.noJudge,
+		environment,
 	);
 	const completedAt = new Date().toISOString();
 	const run: RunFile = {
@@ -189,6 +202,7 @@ export async function runCommand(options: RunCommandOptions): Promise<{ path: st
 				output: result.output as unknown as Record<string, unknown>,
 				schema_valid: true,
 				checks: [...result.checks],
+				model_usage: result.modelUsage,
 				judge: result.judge === null ? null : {
 					scores: result.judge.scores,
 					reasoning: result.judge.reasoning,
@@ -199,6 +213,7 @@ export async function runCommand(options: RunCommandOptions): Promise<{ path: st
 						prompt_sha256: result.judge.provenance.promptSha256,
 						response_sha256: result.judge.provenance.responseSha256,
 					},
+					model_usage: result.judge.modelUsage,
 				},
 			};
 		}),

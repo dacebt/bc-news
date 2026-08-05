@@ -37,6 +37,13 @@ export {
 	type PackagingOutput,
 } from "./packaging";
 export { assembleEdition } from "./assemble-edition";
+export {
+	EditorialCapabilitySchema,
+	ExternalBillingSchema,
+	ModelUsageRecordSchema,
+	TokenUsageSchema,
+	modelUsageRecord,
+} from "./model-usage";
 export type {
 	EditorialCapability,
 	EvidenceInputPort,

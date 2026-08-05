@@ -1,5 +1,6 @@
 import type { RunComparison } from "./compare";
-import { JudgeStepSchema, type JudgeStep, type RunFile, type RunFileRead } from "./run-file";
+import { ModelUsageRecordSchema, type ModelUsageRecord } from "@bc-news/generation-core";
+import { JudgeStepReadSchema, type JudgeStep, type RunFile, type RunFileRead } from "./run-file";
 
 function displayHash(value: string | null): string {
 	return value ?? "missing";
@@ -9,7 +10,7 @@ function displayNumber(value: number | null): string {
 	return value === null ? "missing" : String(value);
 }
 
-function formatJudgeSummary(judge: JudgeStep | null): string {
+function formatJudgeSummary(judge: Omit<JudgeStep, "model_usage"> | null): string {
 	if (judge === null) return "judge: skipped";
 	const scores = Object.entries(judge.scores)
 		.map(([name, score]) => `${name}=${score}`)
@@ -18,13 +19,40 @@ function formatJudgeSummary(judge: JudgeStep | null): string {
 	return `${source} (${judge.weighting}): ${judge.aggregate.toFixed(2)} [${scores}]`;
 }
 
+function usageCost(usage: ModelUsageRecord): number | null {
+	return "amount_usd" in usage.external_billing ? usage.external_billing.amount_usd : null;
+}
+
+function totalExternalCost(usages: readonly ModelUsageRecord[]): string {
+	const costs = usages.map(usageCost);
+	if (costs.some((cost) => cost === null)) return "unavailable";
+	return String(costs.reduce<number>((sum, cost) => sum + (cost ?? 0), 0));
+}
+
+function formatUsage(usage: ModelUsageRecord): string {
+	const tokens = usage.token_usage.measurement === "reported"
+		? `${usage.token_usage.input_tokens}+${usage.token_usage.output_tokens}=${usage.token_usage.total_tokens} tokens`
+		: "tokens unavailable";
+	const billing = usage.external_billing;
+	const external = billing.classification === "calculated"
+		? `calculated external USD ${billing.amount_usd} (${billing.pricing_reference})`
+		: billing.classification === "provider_reported"
+			? `provider-reported external USD ${billing.amount_usd}`
+			: billing.classification === "none"
+				? `no external billing (${billing.reason})`
+				: `external billing unavailable (${billing.reason})`;
+	return `${usage.provider}/${usage.model} ${usage.execution}; ${tokens}; ${external}`;
+}
+
 export function formatRunSummary(run: RunFile, outputPath: string): string {
 	const lines = [`Saved: ${outputPath}`];
 	for (const step of run.steps) {
 		const checks = step.checks ?? [];
 		const passed = checks.filter((check) => check.passed).length;
-		lines.push(`${step.capability}: ${passed}/${checks.length} checks passed; ${formatJudgeSummary(step.judge)}`);
+		lines.push(`${step.capability}: ${passed}/${checks.length} checks passed; capability ${formatUsage(step.model_usage)}; ${formatJudgeSummary(step.judge)}${step.judge === null ? "" : `; judge ${formatUsage(step.judge.model_usage)}`}`);
 	}
+	const usages = run.steps.flatMap((step) => [step.model_usage, ...(step.judge === null ? [] : [step.judge.model_usage])]);
+	lines.push(`Total external USD: ${totalExternalCost(usages)}`);
 	return lines.join("\n");
 }
 
@@ -46,6 +74,8 @@ export function formatRunDetail(run: RunFileRead): string {
 		`Fixture: ${run.fixture?.path ?? "unknown"} (${displayHash(run.fixture?.fixture_sha256 ?? null)})`,
 		`Code version: ${run.fingerprint?.code_version ?? "unresolved (degraded identity)"}`,
 	];
+	let totalExternalUsd = 0;
+	let externalCostUnavailable = false;
 	for (const step of run.steps) {
 		const checks = step.checks ?? [];
 		const passed = checks.filter((check) => check.passed).length;
@@ -53,10 +83,28 @@ export function formatRunDetail(run: RunFileRead): string {
 		for (const check of checks) {
 			lines.push(`- ${check.name}: ${check.passed ? "pass" : "fail"}${check.detail === undefined ? "" : `; ${check.detail}`}`);
 		}
-		const judge = JudgeStepSchema.nullable().safeParse(step.judge);
+		const capabilityUsage = ModelUsageRecordSchema.safeParse(step.model_usage);
+		if (capabilityUsage.success) {
+			const cost = usageCost(capabilityUsage.data);
+			externalCostUnavailable ||= cost === null;
+			totalExternalUsd += cost ?? 0;
+			lines.push(`Capability usage: ${formatUsage(capabilityUsage.data)}`);
+		} else {
+			externalCostUnavailable = true;
+		}
+		const judge = JudgeStepReadSchema.nullable().safeParse(step.judge);
 		lines.push(formatJudgeSummary(judge.success ? judge.data : null));
+		if (judge.success && judge.data?.model_usage !== undefined) {
+			const cost = usageCost(judge.data.model_usage);
+			externalCostUnavailable ||= cost === null;
+			totalExternalUsd += cost ?? 0;
+			lines.push(`Judge usage: ${formatUsage(judge.data.model_usage)}`);
+		} else if (step.judge !== null && step.judge !== undefined) {
+			externalCostUnavailable = true;
+		}
 		lines.push("Output:", JSON.stringify(step.output, null, 2));
 	}
+	lines.push("", `Total external USD: ${externalCostUnavailable ? "unavailable" : totalExternalUsd}`);
 	return lines.join("\n");
 }
 

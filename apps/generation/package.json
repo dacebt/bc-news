@@ -7,13 +7,14 @@
 		"typecheck": "tsc --noEmit && tsc --noEmit -p tests && tsc --noEmit -p scripts",
 		"test": "vitest run",
 		"dev": "wrangler dev",
-		"re-record-model-responses": "tsx scripts/re-record-model-responses.ts",
+		"re-record-model-responses": "node --env-file-if-exists=.dev.vars --import tsx scripts/re-record-model-responses.ts",
 		"re-record-model-responses:verify": "tsx scripts/verify-re-record-model-responses.ts"
 	},
 	"dependencies": {
 		"@bc-news/contracts": "workspace:*",
 		"@bc-news/fixtures": "workspace:*",
 		"@bc-news/generation-core": "workspace:*",
+		"@bc-news/model-adapters": "workspace:*",
 		"zod": "^4.4.3"
 	},
 	"devDependencies": {

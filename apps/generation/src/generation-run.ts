@@ -8,11 +8,11 @@ import {
 	buildMainStoryPrompt,
 	buildPackagingPrompt,
 	evidenceDateForPublicationDate,
+	modelUsageRecord,
 	parseAnnouncementsOutput,
 	parseMainStoryOutput,
 	parsePackagingOutput,
 	prepareEvidence,
-	type ModelCompletion,
 	type ModelUsageRecord,
 	type PreparedEvidence,
 } from "@bc-news/generation-core";
@@ -50,20 +50,6 @@ function assertWithinStepResultCap(preparedEvidence: PreparedEvidence): void {
 			"prepared_evidence_over_step_result_cap",
 		);
 	}
-}
-
-function modelUsageRecord(
-	editorialCapability: ModelUsageRecord["editorial_capability"],
-	completion: ModelCompletion,
-): ModelUsageRecord {
-	return {
-		editorial_capability: editorialCapability,
-		provider: completion.provider,
-		model: completion.model,
-		execution: completion.execution,
-		token_usage: completion.token_usage,
-		external_billing: completion.external_billing,
-	};
 }
 
 function failureCode(error: unknown): string {

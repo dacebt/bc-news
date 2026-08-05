@@ -7,7 +7,7 @@ import {
 } from "@bc-news/generation-core";
 import { FixtureEvidenceMismatchError, RecordedModelProviderError } from "@bc-news/fixtures";
 import { D1ChatEvidenceError } from "./adapters/d1-chat-evidence";
-import { LmStudioDeterministicError } from "./adapters/lmstudio-model-provider";
+import { OpenAiCompatibleDeterministicError } from "@bc-news/model-adapters";
 import { GenerationConfigError } from "./config-error";
 
 const DETERMINISTIC_FAILURES = [
@@ -17,7 +17,7 @@ const DETERMINISTIC_FAILURES = [
 	EvidenceContractError,
 	FixtureEvidenceMismatchError,
 	RecordedModelProviderError,
-	LmStudioDeterministicError,
+	OpenAiCompatibleDeterministicError,
 	GenerationConfigError,
 	D1ChatEvidenceError,
 ] as const;

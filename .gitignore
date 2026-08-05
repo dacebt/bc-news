@@ -6,3 +6,8 @@ dist/
 .wsd/
 .worktrees/
 .playwright-mcp
+
+# local model endpoints and credentials
+.env*
+.dev.vars*
+!apps/generation/.dev.vars.example

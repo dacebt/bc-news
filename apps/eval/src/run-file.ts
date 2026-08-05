@@ -1,6 +1,7 @@
 import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { z } from "zod";
+import { ModelUsageRecordSchema } from "@bc-news/generation-core";
 import { CAPABILITY_ROSTER } from "./capability-runners";
 import { EvalConfigSchema } from "./config";
 import { RunFingerprintSchema, Sha256HashSchema } from "./fingerprint";
@@ -32,8 +33,12 @@ export const JudgeStepSchema = z
 			prompt_sha256: Sha256HashSchema,
 			response_sha256: Sha256HashSchema,
 		}),
+		model_usage: ModelUsageRecordSchema,
 	});
 export type JudgeStep = z.infer<typeof JudgeStepSchema>;
+export const JudgeStepReadSchema = JudgeStepSchema.extend({
+	model_usage: ModelUsageRecordSchema.optional(),
+});
 
 export const RunStepSchema = z.strictObject({
 	capability: EditorialCapabilitySchema,
@@ -41,9 +46,16 @@ export const RunStepSchema = z.strictObject({
 	output: z.record(z.string(), z.unknown()),
 	schema_valid: z.boolean(),
 	checks: z.array(CheckResultSchema).optional(),
+	model_usage: ModelUsageRecordSchema,
 	judge: JudgeStepSchema.nullable(),
 }).superRefine((step, context) => {
+	if (step.model_usage.editorial_capability !== step.capability) {
+		context.addIssue({ code: "custom", path: ["model_usage", "editorial_capability"], message: "capability usage must match the step capability" });
+	}
 	if (step.judge === null) return;
+	if (step.judge.model_usage.editorial_capability !== step.capability) {
+		context.addIssue({ code: "custom", path: ["judge", "model_usage", "editorial_capability"], message: "judge usage must match the step capability" });
+	}
 	const mismatch = rubricDimensionMismatch(step.capability, step.judge.scores);
 	if (mismatch.missing.length > 0 || mismatch.unexpected.length > 0) {
 		context.addIssue({

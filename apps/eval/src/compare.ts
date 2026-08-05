@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import { CAPABILITY_ROSTER } from "./capability-runners";
-import { JudgeStepSchema, type RunFileRead } from "./run-file";
+import { JudgeStepReadSchema, type RunFileRead } from "./run-file";
 import { rubricDimensionNames } from "./rubrics";
 
 export interface CheckComparison {
@@ -99,7 +99,7 @@ function compareChecks(left: ComparableStep | undefined, right: ComparableStep |
  */
 function judgeFromStep(step: ComparableStep | undefined) {
 	if (step === undefined) return null;
-	const parsed = JudgeStepSchema.nullable().safeParse(step.judge);
+	const parsed = JudgeStepReadSchema.nullable().safeParse(step.judge);
 	return parsed.success ? parsed.data : null;
 }
 

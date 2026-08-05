@@ -19,7 +19,7 @@ import {
 	type EditorialCapability,
 	type ModelProviderPort,
 } from "@bc-news/generation-core";
-import { LmStudioRetryableError } from "../src/adapters/lmstudio-model-provider";
+import { OpenAiCompatibleRetryableError } from "@bc-news/model-adapters";
 import { resolveModelProvider, type ModelAdapterConfig } from "../src/adapters/model-adapters";
 import { ModelConfigSchema } from "../src/config";
 import { GenerationConfigError } from "../src/config-error";
@@ -36,7 +36,9 @@ const FIXTURE_PUBLICATION_DATE = "2026-01-25";
 const CAPABILITIES = ["announcements", "main_story", "packaging"] as const;
 
 interface ReRecordEnvironment {
-	LMSTUDIO_BASE_URL: string;
+	LMSTUDIO_BASE_URL?: string;
+	HOSTED_MODEL_BASE_URL?: string;
+	HOSTED_MODEL_API_KEY?: string;
 	MODEL_CONFIG: string;
 }
 
@@ -62,9 +64,9 @@ function parseModelConfig(raw: string): Record<EditorialCapability, ModelAdapter
 		throw new GenerationConfigError(`MODEL_CONFIG rejected: ${result.error.message}`);
 	}
 	for (const capability of CAPABILITIES) {
-		if (result.data[capability].adapter !== "lmstudio") {
+		if (result.data[capability].adapter === "recorded") {
 			throw new GenerationConfigError(
-				`Re-recording requires lmstudio for ${capability}; received ${result.data[capability].adapter}`,
+				`Re-recording requires a live adapter for ${capability}; received recorded`,
 			);
 		}
 	}
@@ -72,7 +74,7 @@ function parseModelConfig(raw: string): Record<EditorialCapability, ModelAdapter
 }
 
 async function completeWithThreeAttempts(input: CompletionInput): Promise<RecordedModelResponse> {
-	let lastFailure: LmStudioRetryableError | undefined;
+	let lastFailure: OpenAiCompatibleRetryableError | undefined;
 	for (let attempt = 1; attempt <= 3; attempt += 1) {
 		try {
 			const completion = await input.provider.complete({
@@ -88,12 +90,12 @@ async function completeWithThreeAttempts(input: CompletionInput): Promise<Record
 				text: completion.text,
 			});
 		} catch (error) {
-			if (!(error instanceof LmStudioRetryableError)) throw error;
+			if (!(error instanceof OpenAiCompatibleRetryableError)) throw error;
 			lastFailure = error;
 			if (attempt === 3) throw error;
 		}
 	}
-	throw lastFailure ?? new Error("LM Studio completion attempt loop exited without a result");
+	throw lastFailure ?? new Error("Model completion attempt loop exited without a result");
 }
 
 async function validateModelResponseDirectory(directory: string): Promise<void> {
@@ -119,7 +121,9 @@ export async function recordModelResponses(
 ): Promise<void> {
 	const modelConfig = parseModelConfig(environment.MODEL_CONFIG);
 	const providerEnvironment = {
-		LMSTUDIO_BASE_URL: environment.LMSTUDIO_BASE_URL,
+		...(environment.LMSTUDIO_BASE_URL === undefined ? {} : { LMSTUDIO_BASE_URL: environment.LMSTUDIO_BASE_URL }),
+		...(environment.HOSTED_MODEL_BASE_URL === undefined ? {} : { HOSTED_MODEL_BASE_URL: environment.HOSTED_MODEL_BASE_URL }),
+		...(environment.HOSTED_MODEL_API_KEY === undefined ? {} : { HOSTED_MODEL_API_KEY: environment.HOSTED_MODEL_API_KEY }),
 	};
 	const providers = {
 		announcements: resolveModelProvider(
@@ -198,18 +202,16 @@ function outputDirectoryFromArgs(args: string[]): string {
 }
 
 async function main(): Promise<void> {
-	const baseUrl = process.env.LMSTUDIO_BASE_URL;
 	const modelConfig = process.env.MODEL_CONFIG;
-	if (baseUrl === undefined || baseUrl === "") {
-		throw new GenerationConfigError("LMSTUDIO_BASE_URL is required for re-recording");
-	}
 	if (modelConfig === undefined || modelConfig === "") {
 		throw new GenerationConfigError("MODEL_CONFIG is required for re-recording");
 	}
 	const outputDirectory = outputDirectoryFromArgs(process.argv.slice(2));
 	await recordModelResponses(outputDirectory, {
-		LMSTUDIO_BASE_URL: baseUrl,
 		MODEL_CONFIG: modelConfig,
+		...(process.env.LMSTUDIO_BASE_URL === undefined ? {} : { LMSTUDIO_BASE_URL: process.env.LMSTUDIO_BASE_URL }),
+		...(process.env.HOSTED_MODEL_BASE_URL === undefined ? {} : { HOSTED_MODEL_BASE_URL: process.env.HOSTED_MODEL_BASE_URL }),
+		...(process.env.HOSTED_MODEL_API_KEY === undefined ? {} : { HOSTED_MODEL_API_KEY: process.env.HOSTED_MODEL_API_KEY }),
 	});
 	console.log(`Recorded announcements, main_story, and packaging responses in ${outputDirectory}`);
 }

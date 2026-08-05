@@ -20,7 +20,7 @@ generated:
 
 - Skeleton follow-ups from the review pass (markdown-security dedup, evidence tie-break, evidence-window enforcement in core, nullable author_name coverage).
 - The full three-stage editorial roster (announcements/achievements, main story, packaging) with v1's prompts carried near-verbatim; edition contract and client thicken accordingly.
-- Real model-provider adapters: config-dispatched port lookup, an OpenAI-compatible local adapter (LM Studio), recorded adapter retained for the walk.
+- Real model-provider adapters: config-dispatched port lookup for recorded replay, OpenAI-compatible local inference (LM Studio), and generic OpenAI-compatible hosted inference in both generation and evaluation; recorded adapters remain the automated default.
 - Ingest app: v1's proven engine carried forward into this monorepo (cursor, watermark, boundary rejection), storing validated chat in D1 and feeding generation through a production evidence adapter behind the same evidence port.
 - Scheduling: cron-driven end to end locally — one authoritative active-region home, one Workflow instance per (active region, publication date), operator-visible run status.
 - Client full UI/UX parity with deployed bc-newspaper v0.1.x (history/navigation, unavailable states, code-splitting) minus contract-forced deviations.
@@ -29,13 +29,13 @@ generated:
 ## Out of scope (deliberately)
 
 - Production Cloudflare setup of any kind — provisioning, deploys, secrets, real database_id. User-led, after this session.
-- Live BitJita network calls and paid model calls; LM Studio is the only live model and only when the user enables it and provides the URL.
+- Every live model call in this run, including LM Studio and hosted inference, plus live BitJita network calls and paid model calls. Model-provider behavior is proven with recorded responses and repository-owned loopback servers only.
 - Migrating v1 data or modifying the frozen v1 repos.
 - Paid evaluation services or any recurring paid infrastructure.
 
 ## Known risks
 
-- LM Studio is an external dependency the user must enable; slices needing fresh recorded responses can block on it — sequence so derived/hand-authored recordings unblock the walk first.
+- Live LM Studio and hosted endpoints are intentionally unobserved in this run; strict protocol, retry, usage, cost, and credential-containment behavior is proven against the repository-owned loopback server, while actual vendor availability and credential validity remain deployment-time observations.
 - Local emulation gaps (cron triggers, duplicate Workflow instance-id no-op per ADR-006) may make some production behavior observable only at deployment; those obligations are named, not silently absorbed.
 - Many parallel slices touch the shared contracts package; the edition-contract seam must be frozen early and owned by one slice at a time or reconciled at merge.
 
