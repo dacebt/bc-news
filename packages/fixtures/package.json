@@ -6,7 +6,8 @@
 	"exports": "./src/index.ts",
 	"scripts": {
 		"typecheck": "tsc --noEmit && tsc --noEmit -p scripts",
-		"derive-evidence-fixture": "tsx scripts/derive-evidence-fixture.ts"
+		"derive-evidence-fixture": "tsx scripts/derive-evidence-fixture.ts",
+		"verify-evidence-integrity": "tsx scripts/verify-evidence-integrity.ts"
 	},
 	"dependencies": {
 		"@bc-news/contracts": "workspace:*",

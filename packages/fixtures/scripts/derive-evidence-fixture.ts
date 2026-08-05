@@ -10,6 +10,13 @@ const PUBLICATION_DATE = "2026-01-25";
 const EVIDENCE_DATE = evidenceDateForPublicationDate(PUBLICATION_DATE);
 const { startMs: WINDOW_START_TS, endMs: WINDOW_END_TS } = evidenceWindowForPublicationDate(PUBLICATION_DATE);
 const MAX_OUTPUT_BYTES = 250 * 1024;
+const NULLABLE_AUTHOR_PROBE = {
+	id: "504403158437419536",
+	ts: 1769285267000,
+	authorId: "en/Aryn",
+	authorName: "Aryn",
+	text: "k",
+} as const;
 
 const SourceMessageSchema = z.looseObject({
 	entity_id: z.string().min(1),
@@ -35,6 +42,7 @@ const sourcePages = SourcePagesSchema.parse(
 	JSON.parse(readFileSync(sourcePath, "utf8")),
 );
 
+let nullableAuthorProbeCount = 0;
 const messages: EvidenceMessage[] = sourcePages
 	.flatMap((page) => page.results)
 	.filter(
@@ -43,14 +51,44 @@ const messages: EvidenceMessage[] = sourcePages
 			row.timestamp_ts >= WINDOW_START_TS &&
 			row.timestamp_ts < WINDOW_END_TS,
 	)
-	.map((row) => ({
-		id: row.entity_id,
-		ts: row.timestamp_ts,
-		author_id: row.username_raw,
-		author_name: row.username,
-		text: row.text,
-	}))
+	.map((row) => {
+		if (row.entity_id !== NULLABLE_AUTHOR_PROBE.id) {
+			return {
+				id: row.entity_id,
+				ts: row.timestamp_ts,
+				author_id: row.username_raw,
+				author_name: row.username,
+				text: row.text,
+			};
+		}
+
+		if (
+			row.timestamp_ts !== NULLABLE_AUTHOR_PROBE.ts ||
+			row.username_raw !== NULLABLE_AUTHOR_PROBE.authorId ||
+			row.username !== NULLABLE_AUTHOR_PROBE.authorName ||
+			row.text !== NULLABLE_AUTHOR_PROBE.text
+		) {
+			throw new Error(
+				`Nullable-author probe ${NULLABLE_AUTHOR_PROBE.id} no longer matches its timestamp, author id, original author, and text contract`,
+			);
+		}
+
+		nullableAuthorProbeCount += 1;
+		return {
+			id: row.entity_id,
+			ts: row.timestamp_ts,
+			author_id: row.username_raw,
+			author_name: null,
+			text: row.text,
+		};
+	})
 	.sort((a, b) => a.ts - b.ts || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+
+if (nullableAuthorProbeCount !== 1) {
+	throw new Error(
+		`Expected exactly one source row for nullable-author probe ${NULLABLE_AUTHOR_PROBE.id}; found ${nullableAuthorProbeCount}`,
+	);
+}
 
 const fixture = EvidenceFixtureSchema.parse({
 	active_region_id: ACTIVE_REGION_ID,

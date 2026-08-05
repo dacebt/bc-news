@@ -48,8 +48,8 @@ interface CompletionInput {
 	user: string;
 }
 
-export function promptSha256(system: string, user: string): string {
-	return createHash("sha256").update(JSON.stringify({ system, user }), "utf8").digest("hex");
+export function promptSha256(user: string): string {
+	return createHash("sha256").update(user, "utf8").digest("hex");
 }
 
 function parseModelConfig(raw: string): Record<EditorialCapability, ModelAdapterConfig> {
@@ -86,7 +86,7 @@ async function completeWithThreeAttempts(input: CompletionInput): Promise<Record
 				editorial_capability: input.editorialCapability,
 				provider: completion.provider,
 				model: completion.model,
-				prompt_sha256: promptSha256(SYSTEM_CONSTRAINTS, input.user),
+				prompt_sha256: promptSha256(input.user),
 				text: completion.text,
 			});
 		} catch (error) {
