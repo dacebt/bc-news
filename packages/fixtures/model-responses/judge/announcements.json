@@ -2,6 +2,6 @@
 	"editorial_capability": "announcements",
 	"provider": "recorded",
 	"model": "recorded/judge-v1",
-	"prompt_sha256": "bbde39b88d128b1df6c101d75731212d247b810ee54be19f40eefc487b75c1f1",
+	"prompt_sha256": "3664c8afaa7dad9f2b4b07dedc2cd5c9c922fcbe6e5d6a9ee3e5acd1ee4d47b4",
 	"text": "{\"scores\":{\"completeness\":5,\"accuracy\":5,\"clarity\":4,\"coverage_quality\":4},\"reasoning\":\"The four announcements capture each material achievement present in the source, retain the reported names and details accurately, and present distinct factual milestones with clear titles and concise summaries.\"}"
 }

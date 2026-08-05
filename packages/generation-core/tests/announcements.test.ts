@@ -65,7 +65,7 @@ test("built prompt contains the exact open and close fence markers exactly once"
 		after_filter_count: 1,
 		after_burst_count: 1,
 		final_count: 1,
-		drop_stats: { empty_after_trim: 0, too_short: 0, burst_merged: 0, sampling_dropped: 0 },
+		drop_stats: { empty_after_trim: 0, too_short: 0, burst_merged: 0 },
 		messages: [
 			{
 				id: "m1",

@@ -2,6 +2,6 @@
 	"editorial_capability": "announcements",
 	"provider": "recorded",
 	"model": "recorded/announcements-v1",
-	"prompt_sha256": "86dca26aad9ebf6906d25b8391a647e8e889759ef352f811b22683db1a04d203",
+	"prompt_sha256": "6baf4bd72f41e88084c6292521491345e1932205540a6679502b234c3d27ce34",
 	"text": "{\"announcements\":[{\"title\":\"Aryn Ramps Up Scholar Codex Production\",\"summary\":\"**Aryn** has been making codexes at the bungalow, working through 45k of tier 1 scholar output and preparing to move on to tier 2. The invitation went out to anyone chasing scholar xp: come help speed up OFG's upgrade for everyone's benefit.\"},{\"title\":\"KeyserSoze Hits Sailing Level 75\",\"summary\":\"**KeyserSoze** logged sailing at level 75, another quiet marker in the region's ongoing skill climb.\"},{\"title\":\"Sorata Uncovers the Secret World Formula\",\"summary\":\"**Sorata** returned from having travelled the world far and wide claiming to have discovered the secret world formula to life. The number, delivered without ceremony: 67.\"},{\"title\":\"Sinklar Rounds Out a Full Epic Toolset\",\"summary\":\"Asked how many Epic-tier tools regulars had on hand, **Sinklar** reported a full set with one legendary piece on top, a rare-gear benchmark for anyone still filling out their own kit.\"}]}"
 }

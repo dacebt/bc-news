@@ -25,7 +25,7 @@ const PROBE = {
 	author_name: null,
 	text: "k",
 } as const;
-const PREPARED_EVIDENCE_SHA256 = "3259e64fcf7b60b3bac4e24c8817f5edb85052cdd9ff712528f88c8ab2dace27";
+const PREPARED_EVIDENCE_SHA256 = "9a055ec813ed187e893e134411087ed217d33180e5780a570766a2be3650ec28";
 
 function assert(condition: unknown, message: string): asserts condition {
 	if (!condition) throw new Error(message);
@@ -59,11 +59,10 @@ const preparedEvidence = prepareEvidence({
 assert(preparedEvidence.raw_count === 630, `Expected raw count 630; found ${preparedEvidence.raw_count}`);
 assert(preparedEvidence.after_filter_count === 623, `Expected after-filter count 623; found ${preparedEvidence.after_filter_count}`);
 assert(preparedEvidence.after_burst_count === 553, `Expected after-burst count 553; found ${preparedEvidence.after_burst_count}`);
-assert(preparedEvidence.final_count === 208, `Expected final count 208; found ${preparedEvidence.final_count}`);
+assert(preparedEvidence.final_count === 553, `Expected final count 553; found ${preparedEvidence.final_count}`);
 assert(preparedEvidence.drop_stats.empty_after_trim === 0, "Expected zero empty-after-trim drops");
 assert(preparedEvidence.drop_stats.too_short === 7, "Expected seven too-short drops");
 assert(preparedEvidence.drop_stats.burst_merged === 70, "Expected seventy burst-merged drops");
-assert(preparedEvidence.drop_stats.sampling_dropped === 345, "Expected 345 sampling drops");
 assert(!preparedEvidence.messages.some((message) => message.id === PROBE.id), "Nullable-author probe survived the too-short filter");
 assert(sha256(JSON.stringify(preparedEvidence)) === PREPARED_EVIDENCE_SHA256, "Prepared evidence bytes changed");
 

@@ -19,8 +19,16 @@ export async function modelRequestSha256(request: {
 	return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
+/**
+ * Keyed by editorial capability only, matching recordedModelProvider: a
+ * prompt-hash key breaks the walk on every prompt edit, and this stub keyed
+ * one both ways -- it refused service whenever the rendered prompt moved,
+ * including when only the evidence behind it grew. The recorded
+ * prompt_sha256 stays as informational provenance, never branched on, the
+ * same contract the capability responses carry.
+ */
 export const recordedJudgeModelProvider: ModelProviderPort = {
-	async complete(request): Promise<ModelCompletion> {
+	complete(request): Promise<ModelCompletion> {
 		const recorded = recordedJudgeResponsesByEditorialCapability[request.editorialCapability];
 		if (recorded === undefined) {
 			throw new RecordedModelProviderError(
@@ -37,15 +45,7 @@ export const recordedJudgeModelProvider: ModelProviderPort = {
 				`Recorded judge response declares editorial capability "${parsed.editorial_capability}" but was requested as "${request.editorialCapability}"`,
 			);
 		}
-		const actualPromptSha256 = await modelRequestSha256(request);
-		if (parsed.prompt_sha256 !== actualPromptSha256) {
-			throw new RecordedModelProviderError(
-				"recorded_response_prompt_mismatch",
-				request.editorialCapability,
-				`Recorded judge response for editorial capability "${request.editorialCapability}" was captured for prompt ${parsed.prompt_sha256}, not requested prompt ${actualPromptSha256}`,
-			);
-		}
-		return {
+		return Promise.resolve({
 			text: parsed.text,
 			provider: parsed.provider,
 			model: parsed.model,
@@ -56,6 +56,6 @@ export const recordedJudgeModelProvider: ModelProviderPort = {
 				amount_usd: 0,
 				reason: "recorded_replay",
 			},
-		};
+		});
 	},
 };

@@ -6,8 +6,6 @@ import {
 	type PreparedMessage,
 } from "./prepared-evidence";
 
-const MAX_MESSAGES = 300;
-const PER_BUCKET_CAP = Math.ceil(MAX_MESSAGES / 24);
 const BURST_WINDOW_MS = 30 * 1000;
 
 type EvidenceContractErrorCode = "evidence_out_of_window" | "duplicate_evidence_id";
@@ -46,8 +44,6 @@ export class DuplicateEvidenceIdError extends EvidenceContractError {
 	}
 }
 
-type ScoredMessage = PreparedMessage & { score: number };
-
 function compareStrings(a: string, b: string): number {
 	if (a < b) return -1;
 	if (a > b) return 1;
@@ -59,20 +55,6 @@ function compareMessages(
 	b: Pick<PreparedMessage, "ts" | "id">,
 ): number {
 	return a.ts - b.ts || compareStrings(a.id, b.id);
-}
-
-function compareScoredMessages(a: ScoredMessage, b: ScoredMessage): number {
-	return a.score - b.score || compareMessages(a, b);
-}
-
-function fnv1a32(value: string): number {
-	let hash = 2166136261;
-	for (let index = 0; index < value.length; index++) {
-		hash ^= value.charCodeAt(index);
-		hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
-		hash = hash >>> 0;
-	}
-	return hash;
 }
 
 function normalizeText(text: string): string {
@@ -124,7 +106,6 @@ export function prepareEvidence(input: {
 		empty_after_trim: 0,
 		too_short: 0,
 		burst_merged: 0,
-		sampling_dropped: 0,
 	};
 
 	const normalized = parsedMessages
@@ -166,27 +147,15 @@ export function prepareEvidence(input: {
 		afterBurst.push(previous);
 	}
 
-	const scored = afterBurst
-		.map<ScoredMessage>((message) => ({
-			...message,
-			score: fnv1a32(`${activeRegionId}|${publicationDate}|${message.id}`),
-		}))
-		.sort(compareScoredMessages);
-
-	const selected: ScoredMessage[] = [];
-	const bucketCounts = new Map<number, number>();
-	for (const message of scored) {
-		const hour = new Date(message.ts).getUTCHours();
-		const count = bucketCounts.get(hour) ?? 0;
-		if (count < PER_BUCKET_CAP) {
-			selected.push(message);
-			bucketCounts.set(hour, count + 1);
-		}
-	}
-
-	const sampled = selected.length > MAX_MESSAGES ? selected.slice(0, MAX_MESSAGES) : selected;
-	dropStats.sampling_dropped = afterBurst.length - sampled.length;
-	const finalMessages = sampled.sort(compareMessages);
+	/*
+	 * Every message that survives hygiene reaches the editorial capabilities.
+	 * No volume cap, no per-hour quota, no sampling: which of the day's
+	 * messages are worth reporting is an editorial judgement, and preparation
+	 * is not where editorial judgement is made. afterBurst is already in
+	 * (ts, id) order because it is built in order from the sorted afterFilter,
+	 * so no re-sort is needed to satisfy the chronological contract.
+	 */
+	const finalMessages = afterBurst;
 
 	return PreparedEvidenceSchema.parse({
 		active_region_id: activeRegionId,

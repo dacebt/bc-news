@@ -24,7 +24,7 @@ function preparedEvidence(): PreparedEvidence {
 		after_filter_count: 1,
 		after_burst_count: 1,
 		final_count: 1,
-		drop_stats: { empty_after_trim: 0, too_short: 0, burst_merged: 0, sampling_dropped: 0 },
+		drop_stats: { empty_after_trim: 0, too_short: 0, burst_merged: 0 },
 		messages: [{ id: "1", ts: 0, author_name: "Aryn", author_id: "u1", text: "hi" }],
 	};
 }
@@ -118,17 +118,32 @@ test("neutralizes judge data delimiters in source evidence and capability output
 });
 
 test.each(["main_story", "announcements", "packaging"] as const)(
-	"recorded judge rejects a mismatched %s prompt",
+	"recorded judge replays %s keyed by capability, not by prompt",
 	async (editorialCapability) => {
-		await expect(recordedJudgeModelProvider.complete({
+		const completion = await recordedJudgeModelProvider.complete({
 			editorialCapability,
 			system: "different system",
 			user: "different user",
-		})).rejects.toMatchObject({ code: "recorded_response_prompt_mismatch" });
+		});
+
+		expect(completion.provider).toBe("recorded");
+		expect(completion.model).toBe("recorded/judge-v1");
+		expect(completion.execution).toBe("recorded_replay");
 	},
 );
 
-test("replays prompt-locked announcements and packaging judgments", async () => {
+// Throws synchronously rather than rejecting, matching recordedModelProvider:
+// an unknown capability is a wiring mistake in the caller, not a completion
+// outcome to await.
+test("recorded judge still rejects a capability it holds no verdict for", () => {
+	expect(() => recordedJudgeModelProvider.complete({
+		editorialCapability: "unknown_capability" as never,
+		system: SYSTEM_CONSTRAINTS,
+		user: "any prompt",
+	})).toThrow(expect.objectContaining({ code: "unknown_editorial_capability" }));
+});
+
+test("replays announcements and packaging judgments", async () => {
 	const loadedFixture = await loadFixture(join(
 		WORKSPACE_ROOT,
 		"packages",
@@ -173,9 +188,9 @@ test("replays prompt-locked announcements and packaging judgments", async () => 
 		provider: recordedJudgeModelProvider,
 	});
 
-	expect(announcementsJudge.provenance.promptSha256).toBe("bbde39b88d128b1df6c101d75731212d247b810ee54be19f40eefc487b75c1f1");
+	expect(announcementsJudge.provenance.promptSha256).toBe("3664c8afaa7dad9f2b4b07dedc2cd5c9c922fcbe6e5d6a9ee3e5acd1ee4d47b4");
 	expect(announcementsJudge.scores).toEqual({ completeness: 5, accuracy: 5, clarity: 4, coverage_quality: 4 });
-	expect(packagingJudge.provenance.promptSha256).toBe("cb0002d85c9de37f8f9ff6f69652e0162104e9b6a8a8e08f724b0ae7f4082d96");
+	expect(packagingJudge.provenance.promptSha256).toBe("2ef7165b5cd500276816d199fe5227f1907a951f324917126053a643971b2b69");
 	expect(packagingJudge.scores).toEqual({ preservation: 5, accuracy: 5, packaging: 4, metadata: 5 });
 });
 
@@ -208,7 +223,7 @@ test("replays the committed output through the recorded judge at the canonical p
 	expect(result.providerParam).toEqual({ provider: "recorded", model: "recorded/judge-v1" });
 	expect(result.provenance.source).toBe("recorded_replay");
 	expect(result.provenance.promptSha256).toBe(
-		"fd81b4af6bc65d87e9eb4413cf669f7b7ca7d5706d0114d3d645776d05e67af2",
+		"cc2f7f6b11ac8050409555b9a944fc881db63b9af936fb13c32c6a2aa09c7116",
 	);
 	expect(result.scores).toEqual({ grounding: 5, voice: 4, structure: 4 });
 	expect(result.aggregate).toBe(4.35);

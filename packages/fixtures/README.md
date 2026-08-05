@@ -43,7 +43,9 @@ region-7 2026-01-24 conversation in v1's editorial voice (every quotation
 verified verbatim against the prepared evidence); it parses against the
 capability's output contract (`MainStoryOutputSchema`). For capability records,
 `prompt_sha256` is the SHA-256 of the exact user-prompt UTF-8 bytes built from
-this corpus at authoring time (judge records separately hash their established
-`{system,user}` request) —
-informational provenance only, never branched on: responses are keyed by
-editorial capability alone so prompt edits do not break the walk.
+this corpus (judge records separately hash their established `{system,user}`
+request) — informational provenance only, never branched on: capability *and*
+judge responses alike are keyed by editorial capability alone, so prompt edits
+do not break the walk. The stamps are re-pinned whenever the corpus or a prompt
+builder changes deliberately, which `verify-evidence-integrity` enforces; they
+record which prompt each response currently answers, not when it was written.

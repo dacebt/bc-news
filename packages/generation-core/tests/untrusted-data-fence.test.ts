@@ -18,7 +18,7 @@ function preparedEvidenceFor(messages: PreparedMessage[]): PreparedEvidence {
 		after_filter_count: messages.length,
 		after_burst_count: messages.length,
 		final_count: messages.length,
-		drop_stats: { empty_after_trim: 0, too_short: 0, burst_merged: 0, sampling_dropped: 0 },
+		drop_stats: { empty_after_trim: 0, too_short: 0, burst_merged: 0 },
 		messages,
 	};
 }
