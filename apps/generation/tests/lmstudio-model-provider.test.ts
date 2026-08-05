@@ -11,6 +11,12 @@ afterEach(() => {
 	vi.restoreAllMocks();
 });
 
+const LOCAL_SAMPLING = { temperature: 1, top_p: 0.95, top_k: 20 } as const;
+
+function localProvider(baseUrl = "http://localhost/v1", model = "local") {
+	return createLmStudioModelProvider({ baseUrl, model, sampling: LOCAL_SAMPLING });
+}
+
 it("preserves URL path prefixes when composing the chat completions endpoint", () => {
 	expect(lmStudioChatCompletionsUrl("http://127.0.0.1:1234/v1/").href).toBe(
 		"http://127.0.0.1:1234/v1/chat/completions",
@@ -27,7 +33,7 @@ it.each([
 	expect(() => lmStudioChatCompletionsUrl(baseUrl)).toThrowError();
 });
 
-it("sends OpenAI-compatible auth, model, and messages", async () => {
+it("sends capability schema and explicit sampling only to LM Studio", async () => {
 	const timeoutSignal = new AbortController().signal;
 	const timeout = vi.spyOn(AbortSignal, "timeout").mockReturnValue(timeoutSignal);
 	const fetchCall = vi.spyOn(globalThis, "fetch").mockResolvedValue(
@@ -36,6 +42,7 @@ it("sends OpenAI-compatible auth, model, and messages", async () => {
 	const provider = createLmStudioModelProvider({
 		baseUrl: "http://127.0.0.1:1234/v1",
 		model: "local-model",
+		sampling: LOCAL_SAMPLING,
 	});
 
 	await expect(
@@ -68,13 +75,32 @@ it("sends OpenAI-compatible auth, model, and messages", async () => {
 	});
 	const requestBody = request?.[1]?.body;
 	if (typeof requestBody !== "string") throw new Error("Expected request body to be JSON text");
-	expect(JSON.parse(requestBody) as unknown).toEqual({
+	const parsedRequest = JSON.parse(requestBody) as Record<string, unknown>;
+	expect(parsedRequest).toMatchObject({
 		model: "local-model",
 		messages: [
 			{ role: "system", content: "system constraints" },
 			{ role: "user", content: "main story prompt" },
 		],
+		temperature: 1,
+		top_p: 0.95,
+		top_k: 20,
+		response_format: {
+			type: "json_schema",
+			json_schema: {
+				name: "main_story_output",
+				strict: true,
+				schema: {
+					type: "object",
+					additionalProperties: false,
+					properties: {
+						main_story: { type: "object", additionalProperties: false },
+					},
+				},
+			},
+		},
 	});
+	expect(JSON.stringify(parsedRequest)).not.toMatch(/\$(?:ref|defs)/u);
 	expect(request?.[1]?.signal).toBeInstanceOf(AbortSignal);
 	expect(timeout).toHaveBeenCalledWith(600_000);
 });
@@ -84,7 +110,7 @@ it.each([
 	[500, "server failure"],
 ])("classifies HTTP %i as retryable", async (status, statusText) => {
 	vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null, { status, statusText }));
-	const provider = createLmStudioModelProvider({ baseUrl: "http://localhost/v1", model: "local" });
+	const provider = localProvider();
 
 	await expect(
 		provider.complete({ editorialCapability: "announcements", system: "system", user: "user" }),
@@ -96,7 +122,7 @@ it.each([
 	[new DOMException("timed out", "TimeoutError"), "openai_compatible_timeout"],
 ])("classifies transport failure as retryable", async (failure, code) => {
 	vi.spyOn(globalThis, "fetch").mockRejectedValue(failure);
-	const provider = createLmStudioModelProvider({ baseUrl: "http://localhost/v1", model: "local" });
+	const provider = localProvider();
 
 	await expect(
 		provider.complete({ editorialCapability: "packaging", system: "system", user: "user" }),
@@ -113,7 +139,7 @@ it.each([
 		},
 	});
 	vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(failedBody, { status: 200 }));
-	const provider = createLmStudioModelProvider({ baseUrl: "http://localhost/v1", model: "local" });
+	const provider = localProvider();
 
 	await expect(
 		provider.complete({ editorialCapability: "main_story", system: "system", user: "user" }),
@@ -122,7 +148,7 @@ it.each([
 
 it("classifies other HTTP rejections as deterministic", async () => {
 	vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null, { status: 400 }));
-	const provider = createLmStudioModelProvider({ baseUrl: "http://localhost/v1", model: "local" });
+	const provider = localProvider();
 
 	await expect(
 		failNonRetryablyOnDeterministicErrors(() =>
@@ -133,7 +159,7 @@ it("classifies other HTTP rejections as deterministic", async () => {
 
 it("rejects malformed JSON non-retryably", async () => {
 	vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("not json", { status: 200 }));
-	const provider = createLmStudioModelProvider({ baseUrl: "http://localhost/v1", model: "local" });
+	const provider = localProvider();
 
 	await expect(
 		failNonRetryablyOnDeterministicErrors(() =>
@@ -147,7 +173,7 @@ it.each([
 	Response.json({ model: "local", choices: [{ message: { content: "" } }] }),
 ])("rejects malformed completion responses non-retryably", async (response) => {
 	vi.spyOn(globalThis, "fetch").mockResolvedValue(response);
-	const provider = createLmStudioModelProvider({ baseUrl: "http://localhost/v1", model: "local" });
+	const provider = localProvider();
 
 	await expect(
 		failNonRetryablyOnDeterministicErrors(() =>
@@ -164,7 +190,7 @@ it("maps complete internally consistent token usage", async () => {
 			usage: { prompt_tokens: 3, completion_tokens: 2, total_tokens: 5 },
 		}),
 	);
-	const provider = createLmStudioModelProvider({ baseUrl: "http://localhost/v1", model: "local" });
+	const provider = localProvider();
 
 	await expect(
 		provider.complete({ editorialCapability: "main_story", system: "system", user: "user" }),
@@ -184,7 +210,7 @@ it.each([
 	vi.spyOn(globalThis, "fetch").mockResolvedValue(
 		Response.json({ model: "local", choices: [{ message: { content: "model output" } }], usage }),
 	);
-	const provider = createLmStudioModelProvider({ baseUrl: "http://localhost/v1", model: "local" });
+	const provider = localProvider();
 
 	await expect(
 		failNonRetryablyOnDeterministicErrors(() =>

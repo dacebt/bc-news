@@ -35,7 +35,7 @@ export class JudgeError extends Error {
 }
 
 const JudgeScoreSchema = z.number().int().min(1).max(5);
-const JudgeOutputSchema = z.strictObject({
+export const JudgeOutputSchema = z.strictObject({
 	scores: z.record(z.string().min(1), JudgeScoreSchema),
 	reasoning: z.string().trim().min(1),
 });

@@ -3,10 +3,14 @@ import type { EditorialCapability, ModelProviderPort } from "@bc-news/generation
 import { recordedJudgeModelProvider, recordedModelProvider } from "@bc-news/fixtures";
 import {
 	HostedModelAdapterConfigSchema,
+	LM_STUDIO_CAPABILITY_OUTPUT_CONTRACTS,
 	LmStudioAdapterConfigSchema,
 	OpenAiCompatibleDeterministicError,
 	createOpenAiCompatibleModelProvider,
+	lmStudioStructuredOutputContract,
+	type LmStudioStructuredOutputContracts,
 } from "@bc-news/model-adapters";
+import { JudgeOutputSchema } from "./judge";
 
 export const ModelAdapterConfigSchema = z.discriminatedUnion("adapter", [
 	z.strictObject({ adapter: z.literal("recorded") }),
@@ -20,6 +24,13 @@ export interface ModelProviderEnvironment {
 	readonly HOSTED_MODEL_BASE_URL?: string;
 	readonly HOSTED_MODEL_API_KEY?: string;
 }
+
+const judgeOutputContract = lmStudioStructuredOutputContract("editorial_judge_output", JudgeOutputSchema);
+const LM_STUDIO_JUDGE_OUTPUT_CONTRACTS: LmStudioStructuredOutputContracts = {
+	main_story: judgeOutputContract,
+	announcements: judgeOutputContract,
+	packaging: judgeOutputContract,
+};
 
 /**
  * `role` distinguishes producing a capability's output from judging it: both
@@ -48,6 +59,11 @@ export function resolveModelProvider(
 				execution: "local_inference",
 				baseUrl,
 				requestedModel: config.model,
+				sampling: config.sampling,
+				structuredOutputContracts:
+					role === "judge"
+						? LM_STUDIO_JUDGE_OUTPUT_CONTRACTS
+						: LM_STUDIO_CAPABILITY_OUTPUT_CONTRACTS,
 			});
 		}
 		case "openai_compatible_hosted": {

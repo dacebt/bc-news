@@ -126,7 +126,7 @@ provenance is the configured provider id and model provenance is the response
 model.
 
 `MODEL_CONFIG` and eval configuration contain only non-secret adapter identity,
-requested model, provider id, and pricing inputs. `LMSTUDIO_BASE_URL`,
+requested model, explicit local sampling values, provider id, and pricing inputs. `LMSTUDIO_BASE_URL`,
 `HOSTED_MODEL_BASE_URL`, and `HOSTED_MODEL_API_KEY` are environment-only, and a
 base URL containing credentials rejects. Timeout, network/body-read failure,
 and HTTP 408/409/425/429/5xx are retryable within the existing three-attempt
@@ -144,8 +144,15 @@ three-capability `MODEL_CONFIG`; replace its model ids, start LM Studio, and run
 hosted alternative is complete but must replace the local block rather than be
 enabled beside it. Eval gets endpoints and credentials from the same file while
 adapter selection remains in the JSON passed through its `--config` option; copy
-the relevant adapter objects from the example into that JSON. The committed
-example contains placeholders only. Automated tests, the verifier, and the
+the relevant adapter objects from the example into that JSON. Every LM Studio
+adapter object requires a `sampling` object with explicit finite `temperature`,
+`top_p`, and integer `top_k` values. Local capability and judge requests send
+those values
+with LM Studio's strict `json_schema` response format, derived from the same Zod
+contract that validates the returned output; the schemas stay inline and reject
+unknown object properties. Recorded and hosted requests do not receive these
+local decoding controls. The committed example contains placeholders only.
+Automated tests, the verifier, and the
 canonical walk keep recorded or repository-owned loopback providers and never
 call configured endpoints. In particular, the walk passes its recorded
 three-capability `MODEL_CONFIG` as an explicit Wrangler `--var`, which takes
