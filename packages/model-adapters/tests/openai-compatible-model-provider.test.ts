@@ -1,13 +1,18 @@
 import { afterEach, expect, it, vi } from "vitest";
 import {
 	HostedModelAdapterConfigSchema,
+	LM_STUDIO_CAPABILITY_OUTPUT_CONTRACTS,
+	LmStudioAdapterConfigSchema,
 	OpenAiCompatibleDeterministicError,
 	OpenAiCompatibleRetryableError,
 	createOpenAiCompatibleModelProvider,
 	openAiCompatibleChatCompletionsUrl,
+	type LmStudioReasoningEffort,
 } from "../src/index";
 
 afterEach(() => vi.restoreAllMocks());
+
+const LOCAL_SAMPLING = { temperature: 1, top_p: 0.95, top_k: 20 } as const;
 
 it("accepts only complete non-secret hosted configuration", () => {
 	const candidate = hostedProviderConfig();
@@ -18,6 +23,49 @@ it("accepts only complete non-secret hosted configuration", () => {
 		...candidate,
 		billing: { ...candidate.billing, input_usd_per_million_tokens: -1 },
 	}).success).toBe(false);
+});
+
+it("requires finite in-range LM Studio sampling configuration", () => {
+	const candidate = {
+		adapter: "lmstudio",
+		model: "local-model",
+		sampling: LOCAL_SAMPLING,
+		reasoning_effort: "none",
+	};
+	expect(LmStudioAdapterConfigSchema.safeParse(candidate).success).toBe(true);
+	expect(LmStudioAdapterConfigSchema.safeParse({ ...candidate, sampling: undefined }).success).toBe(false);
+	expect(LmStudioAdapterConfigSchema.safeParse({ ...candidate, sampling: { ...LOCAL_SAMPLING, temperature: 2.1 } }).success).toBe(false);
+	expect(LmStudioAdapterConfigSchema.safeParse({ ...candidate, sampling: { ...LOCAL_SAMPLING, top_p: Number.NaN } }).success).toBe(false);
+	expect(LmStudioAdapterConfigSchema.safeParse({ ...candidate, sampling: { ...LOCAL_SAMPLING, top_k: -1 } }).success).toBe(false);
+	expect(LmStudioAdapterConfigSchema.safeParse({ ...candidate, sampling: { ...LOCAL_SAMPLING, top_k: 1.5 } }).success).toBe(false);
+});
+
+it.each([
+	"provider_default",
+	"none",
+	"minimal",
+	"low",
+	"medium",
+	"high",
+	"xhigh",
+] as const)("accepts LM Studio reasoning effort %s", (reasoningEffort) => {
+	const candidate = {
+		adapter: "lmstudio",
+		model: "local-model",
+		sampling: LOCAL_SAMPLING,
+		reasoning_effort: reasoningEffort,
+	};
+	expect(LmStudioAdapterConfigSchema.safeParse(candidate).success).toBe(true);
+});
+
+it("rejects missing or unsupported LM Studio reasoning effort", () => {
+	const candidate = {
+		adapter: "lmstudio",
+		model: "local-model",
+		sampling: LOCAL_SAMPLING,
+	};
+	expect(LmStudioAdapterConfigSchema.safeParse(candidate).success).toBe(false);
+	expect(LmStudioAdapterConfigSchema.safeParse({ ...candidate, reasoning_effort: "maximum" }).success).toBe(false);
 });
 
 function hostedProviderConfig() {
@@ -46,11 +94,14 @@ function hostedProvider() {
 	});
 }
 
-function localProvider() {
+function localProvider(reasoningEffort: LmStudioReasoningEffort = "none") {
 	return createOpenAiCompatibleModelProvider({
 		execution: "local_inference",
 		baseUrl: "http://127.0.0.1:1234/v1",
 		requestedModel: "requested-local-model",
+		sampling: LOCAL_SAMPLING,
+		reasoningEffort,
+		structuredOutputContracts: LM_STUDIO_CAPABILITY_OUTPUT_CONTRACTS,
 	});
 }
 
@@ -72,7 +123,7 @@ async function completeLocalText(content: string): Promise<string> {
 }
 
 it("maps strict hosted provenance, usage, and calculated billing", async () => {
-	vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({
+	const fetchCall = vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({
 		model: "returned-model",
 		choices: [{ message: { content: "completion" } }],
 		usage: { prompt_tokens: 100, completion_tokens: 25, total_tokens: 125 },
@@ -90,6 +141,38 @@ it("maps strict hosted provenance, usage, and calculated billing", async () => {
 		token_usage: { measurement: "reported", input_tokens: 100, output_tokens: 25, total_tokens: 125 },
 		external_billing: { classification: "calculated", amount_usd: 0.0004, pricing_reference: "verify-prices" },
 	});
+	const body = fetchCall.mock.calls[0]?.[1]?.body;
+	if (typeof body !== "string") throw new Error("Expected request body to be JSON text");
+	expect(JSON.parse(body) as unknown).toEqual({
+		model: "requested-model",
+		messages: [
+			{ role: "system", content: "system" },
+			{ role: "user", content: "prompt" },
+		],
+	});
+});
+
+it.each([
+	["none", "none"],
+	["provider_default", undefined],
+] as const)("maps LM Studio reasoning effort %s to the local request", async (reasoningEffort, expected) => {
+	const fetchCall = vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({
+		model: "returned-local-model",
+		choices: [{ message: { content: "completion" } }],
+	}));
+	await localProvider(reasoningEffort).complete({
+		editorialCapability: "main_story",
+		system: "system",
+		user: "prompt",
+	});
+	const body = fetchCall.mock.calls[0]?.[1]?.body;
+	if (typeof body !== "string") throw new Error("Expected request body to be JSON text");
+	const parsed = JSON.parse(body) as Record<string, unknown>;
+	if (expected === undefined) {
+		expect(parsed).not.toHaveProperty("reasoning_effort");
+	} else {
+		expect(parsed.reasoning_effort).toBe(expected);
+	}
 });
 
 it("accepts an ordinary OpenAI-compatible completion envelope", async () => {

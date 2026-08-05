@@ -1,7 +1,7 @@
 # Copy to apps/generation/.dev.vars and replace each local model id with one
 # installed in LM Studio. This active block is the only default strategy.
 LMSTUDIO_BASE_URL="http://127.0.0.1:1234/v1"
-MODEL_CONFIG='{"main_story":{"adapter":"lmstudio","model":"replace-with-local-model-id"},"announcements":{"adapter":"lmstudio","model":"replace-with-local-model-id"},"packaging":{"adapter":"lmstudio","model":"replace-with-local-model-id"}}'
+MODEL_CONFIG='{"main_story":{"adapter":"lmstudio","model":"replace-with-local-model-id","sampling":{"temperature":1,"top_p":0.95,"top_k":20},"reasoning_effort":"none"},"announcements":{"adapter":"lmstudio","model":"replace-with-local-model-id","sampling":{"temperature":1,"top_p":0.95,"top_k":20},"reasoning_effort":"none"},"packaging":{"adapter":"lmstudio","model":"replace-with-local-model-id","sampling":{"temperature":1,"top_p":0.95,"top_k":20},"reasoning_effort":"none"}}'
 
 # Hosted alternative: first comment every assignment in the local block above,
 # then uncomment every assignment below. Replace both zero rate placeholders

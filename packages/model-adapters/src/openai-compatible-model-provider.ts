@@ -1,11 +1,16 @@
 import { z } from "zod";
 import type { ExternalBilling, ModelProviderPort } from "@bc-news/generation-core";
-import type { CalculatedBillingConfig } from "./config";
+import type {
+	CalculatedBillingConfig,
+	LmStudioReasoningEffort,
+	LmStudioSamplingConfig,
+} from "./config";
 import {
 	OpenAiCompatibleDeterministicError,
 	OpenAiCompatibleRetryableError,
 } from "./errors";
 import { normalizeLmStudioJsonQuotes } from "./lmstudio-json-normalizer";
+import type { LmStudioStructuredOutputContracts } from "./lmstudio-structured-output";
 
 const PromptTokenDetailsSchema = z.strictObject({
 	cached_tokens: z.int().nonnegative().optional(),
@@ -85,6 +90,9 @@ interface LocalProviderInput {
 	readonly execution: "local_inference";
 	readonly baseUrl: string;
 	readonly requestedModel: string;
+	readonly sampling: LmStudioSamplingConfig;
+	readonly reasoningEffort: LmStudioReasoningEffort;
+	readonly structuredOutputContracts: LmStudioStructuredOutputContracts;
 }
 
 interface HostedProviderInput {
@@ -197,6 +205,24 @@ export function createOpenAiCompatibleModelProvider(
 	}
 	return {
 		async complete(request) {
+			const localRequest = input.execution === "local_inference"
+				? {
+						temperature: input.sampling.temperature,
+						top_p: input.sampling.top_p,
+						top_k: input.sampling.top_k,
+						...(input.reasoningEffort === "provider_default"
+							? {}
+							: { reasoning_effort: input.reasoningEffort }),
+						response_format: {
+							type: "json_schema",
+							json_schema: {
+								name: input.structuredOutputContracts[request.editorialCapability].name,
+								strict: true,
+								schema: input.structuredOutputContracts[request.editorialCapability].schema,
+							},
+						},
+					}
+				: {};
 			let response: Response;
 			try {
 				response = await fetch(endpoint, {
@@ -211,6 +237,7 @@ export function createOpenAiCompatibleModelProvider(
 							{ role: "system", content: request.system },
 							{ role: "user", content: request.user },
 						],
+						...localRequest,
 					}),
 					signal: AbortSignal.timeout(600_000),
 				});

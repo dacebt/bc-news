@@ -7,8 +7,8 @@ import { loadConfig } from "./config";
 import { runCommand } from "./run-command";
 import { RunFileSchema, type RunFile } from "./run-file";
 
-export const CANONICAL_BASELINE_ID = "2026-08-05T02-34-42-437Z";
-export const CANONICAL_BASELINE_SHA256 = "c700ff9f04100c8315a71d239bb914ad50da7ca4be49f22e2f84aa7a2194baa1";
+export const CANONICAL_BASELINE_ID = "2026-08-05T14-36-42-254Z";
+export const CANONICAL_BASELINE_SHA256 = "b72817cf5386d847a79722b9884845c48021d3e1cccdcf4a1f0c9ec5053283c0";
 
 const APP_DIRECTORY = join(dirname(fileURLToPath(import.meta.url)), "..");
 const WORKSPACE_ROOT = join(APP_DIRECTORY, "..", "..");

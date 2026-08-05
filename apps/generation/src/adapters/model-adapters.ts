@@ -49,6 +49,8 @@ export function resolveModelProvider(
 			return construct(() => createLmStudioModelProvider({
 				baseUrl,
 				model: config.model,
+				sampling: config.sampling,
+				reasoningEffort: config.reasoning_effort,
 			}));
 		}
 		case "openai_compatible_hosted": {
