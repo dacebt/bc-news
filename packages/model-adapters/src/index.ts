@@ -2,10 +2,12 @@ export {
 	CalculatedBillingConfigSchema,
 	HostedModelAdapterConfigSchema,
 	LmStudioAdapterConfigSchema,
+	LmStudioReasoningEffortSchema,
 	LmStudioSamplingConfigSchema,
 	type CalculatedBillingConfig,
 	type HostedModelAdapterConfig,
 	type LmStudioAdapterConfig,
+	type LmStudioReasoningEffort,
 	type LmStudioSamplingConfig,
 } from "./config";
 export {

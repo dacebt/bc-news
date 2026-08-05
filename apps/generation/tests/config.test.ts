@@ -4,6 +4,7 @@ import { fixtureEvidenceInput, recordedModelProvider } from "@bc-news/fixtures";
 import { GenerationConfigError, resolveGenerationPorts } from "../src/config";
 
 const LOCAL_SAMPLING = { temperature: 1, top_p: 0.95, top_k: 20 };
+const LOCAL_REASONING_EFFORT = "none";
 
 // worker-configuration.d.ts types EVIDENCE_INPUT/MODEL_CONFIG as literals, so
 // rejection tests must deliberately construct invalid env shapes the compiled
@@ -86,7 +87,7 @@ it("resolves a hosted provider only when endpoint and API key are environment bi
 it("requires LM Studio base URL when any capability selects the adapter", () => {
 	const invalidEnv = envWith({
 		MODEL_CONFIG: JSON.stringify({
-			main_story: { adapter: "lmstudio", model: "local-main", sampling: LOCAL_SAMPLING },
+			main_story: { adapter: "lmstudio", model: "local-main", sampling: LOCAL_SAMPLING, reasoning_effort: LOCAL_REASONING_EFFORT },
 			announcements: { adapter: "recorded" },
 			packaging: { adapter: "recorded" },
 		}),
@@ -99,7 +100,7 @@ it("rejects LM Studio config without a model", () => {
 	const invalidEnv = envWith({
 		LMSTUDIO_BASE_URL: "http://127.0.0.1:1234/v1",
 		MODEL_CONFIG: JSON.stringify({
-			main_story: { adapter: "lmstudio", sampling: LOCAL_SAMPLING },
+			main_story: { adapter: "lmstudio", sampling: LOCAL_SAMPLING, reasoning_effort: LOCAL_REASONING_EFFORT },
 			announcements: { adapter: "recorded" },
 			packaging: { adapter: "recorded" },
 		}),
@@ -112,7 +113,7 @@ it("rejects LM Studio config with a whitespace-only model", () => {
 	const invalidEnv = envWith({
 		LMSTUDIO_BASE_URL: "http://127.0.0.1:1234/v1",
 		MODEL_CONFIG: JSON.stringify({
-			main_story: { adapter: "lmstudio", model: " \t ", sampling: LOCAL_SAMPLING },
+			main_story: { adapter: "lmstudio", model: " \t ", sampling: LOCAL_SAMPLING, reasoning_effort: LOCAL_REASONING_EFFORT },
 			announcements: { adapter: "recorded" },
 			packaging: { adapter: "recorded" },
 		}),
@@ -125,7 +126,7 @@ it("rejects invalid LM Studio base URL", () => {
 	const invalidEnv = envWith({
 		LMSTUDIO_BASE_URL: "file:///tmp/lmstudio",
 		MODEL_CONFIG: JSON.stringify({
-			main_story: { adapter: "lmstudio", model: "local-main", sampling: LOCAL_SAMPLING },
+			main_story: { adapter: "lmstudio", model: "local-main", sampling: LOCAL_SAMPLING, reasoning_effort: LOCAL_REASONING_EFFORT },
 			announcements: { adapter: "recorded" },
 			packaging: { adapter: "recorded" },
 		}),
@@ -145,7 +146,25 @@ it.each([
 	const invalidEnv = envWith({
 		LMSTUDIO_BASE_URL: "http://127.0.0.1:1234/v1",
 		MODEL_CONFIG: JSON.stringify({
-			main_story: { adapter: "lmstudio", model: "local-main", sampling },
+			main_story: { adapter: "lmstudio", model: "local-main", sampling, reasoning_effort: LOCAL_REASONING_EFFORT },
+			announcements: { adapter: "recorded" },
+			packaging: { adapter: "recorded" },
+		}),
+	});
+
+	expect(() => resolveGenerationPorts(invalidEnv)).toThrow(GenerationConfigError);
+});
+
+it.each([undefined, "maximum"])("rejects missing or invalid LM Studio reasoning effort %s", (reasoningEffort) => {
+	const invalidEnv = envWith({
+		LMSTUDIO_BASE_URL: "http://127.0.0.1:1234/v1",
+		MODEL_CONFIG: JSON.stringify({
+			main_story: {
+				adapter: "lmstudio",
+				model: "local-main",
+				sampling: LOCAL_SAMPLING,
+				reasoning_effort: reasoningEffort,
+			},
 			announcements: { adapter: "recorded" },
 			packaging: { adapter: "recorded" },
 		}),

@@ -14,7 +14,12 @@ afterEach(() => {
 const LOCAL_SAMPLING = { temperature: 1, top_p: 0.95, top_k: 20 } as const;
 
 function localProvider(baseUrl = "http://localhost/v1", model = "local") {
-	return createLmStudioModelProvider({ baseUrl, model, sampling: LOCAL_SAMPLING });
+	return createLmStudioModelProvider({
+		baseUrl,
+		model,
+		sampling: LOCAL_SAMPLING,
+		reasoningEffort: "none",
+	});
 }
 
 it("preserves URL path prefixes when composing the chat completions endpoint", () => {
@@ -33,7 +38,7 @@ it.each([
 	expect(() => lmStudioChatCompletionsUrl(baseUrl)).toThrowError();
 });
 
-it("sends capability schema and explicit sampling only to LM Studio", async () => {
+it("sends capability schema and explicit decoding controls only to LM Studio", async () => {
 	const timeoutSignal = new AbortController().signal;
 	const timeout = vi.spyOn(AbortSignal, "timeout").mockReturnValue(timeoutSignal);
 	const fetchCall = vi.spyOn(globalThis, "fetch").mockResolvedValue(
@@ -43,6 +48,7 @@ it("sends capability schema and explicit sampling only to LM Studio", async () =
 		baseUrl: "http://127.0.0.1:1234/v1",
 		model: "local-model",
 		sampling: LOCAL_SAMPLING,
+		reasoningEffort: "none",
 	});
 
 	await expect(
@@ -85,6 +91,7 @@ it("sends capability schema and explicit sampling only to LM Studio", async () =
 		temperature: 1,
 		top_p: 0.95,
 		top_k: 20,
+		reasoning_effort: "none",
 		response_format: {
 			type: "json_schema",
 			json_schema: {

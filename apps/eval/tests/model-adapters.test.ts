@@ -9,6 +9,7 @@ const localConfig = {
 	adapter: "lmstudio" as const,
 	model: "local-model",
 	sampling: { temperature: 0.7, top_p: 0.95, top_k: 20 },
+	reasoning_effort: "none" as const,
 };
 const environment = { LMSTUDIO_BASE_URL: "http://127.0.0.1:1234/v1" };
 
@@ -54,7 +55,12 @@ it.each([
 		json_schema: { name: string; strict: boolean; schema: Record<string, unknown> };
 	};
 
-	expect(body).toMatchObject({ temperature: 0.7, top_p: 0.95, top_k: 20 });
+	expect(body).toMatchObject({
+		temperature: 0.7,
+		top_p: 0.95,
+		top_k: 20,
+		reasoning_effort: "none",
+	});
 	expect(responseFormat.type).toBe("json_schema");
 	expect(responseFormat.json_schema).toMatchObject({ name, strict: true });
 	expect(responseFormat.json_schema.schema.properties).toHaveProperty(rootProperty);

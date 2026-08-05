@@ -4,6 +4,7 @@ import {
 	LM_STUDIO_CAPABILITY_OUTPUT_CONTRACTS,
 	createOpenAiCompatibleModelProvider,
 	openAiCompatibleChatCompletionsUrl,
+	type LmStudioReasoningEffort,
 	type LmStudioSamplingConfig,
 } from "@bc-news/model-adapters";
 
@@ -18,12 +19,14 @@ export function createLmStudioModelProvider(input: {
 	baseUrl: string;
 	model: string;
 	sampling: LmStudioSamplingConfig;
+	reasoningEffort: LmStudioReasoningEffort;
 }) {
 	return createOpenAiCompatibleModelProvider({
 		execution: "local_inference",
 		baseUrl: input.baseUrl,
 		requestedModel: input.model,
 		sampling: input.sampling,
+		reasoningEffort: input.reasoningEffort,
 		structuredOutputContracts: LM_STUDIO_CAPABILITY_OUTPUT_CONTRACTS,
 	});
 }

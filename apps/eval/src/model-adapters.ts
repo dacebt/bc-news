@@ -62,6 +62,7 @@ export function resolveModelProvider(
 				baseUrl,
 				requestedModel: config.model,
 				sampling: config.sampling,
+				reasoningEffort: config.reasoning_effort,
 				structuredOutputContracts:
 					role === "judge"
 						? LM_STUDIO_JUDGE_OUTPUT_CONTRACTS

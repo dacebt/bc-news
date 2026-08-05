@@ -7,8 +7,8 @@ import {
 it("forces recorded generation adapters ahead of live developer configuration", () => {
 	const developerModelConfig = JSON.stringify({
 		main_story: { adapter: "openai_compatible_hosted", provider: "live", model: "paid" },
-		announcements: { adapter: "lmstudio", model: "local", sampling: { temperature: 1, top_p: 0.95, top_k: 20 } },
-		packaging: { adapter: "lmstudio", model: "local", sampling: { temperature: 1, top_p: 0.95, top_k: 20 } },
+		announcements: { adapter: "lmstudio", model: "local", sampling: { temperature: 1, top_p: 0.95, top_k: 20 }, reasoning_effort: "none" },
+		packaging: { adapter: "lmstudio", model: "local", sampling: { temperature: 1, top_p: 0.95, top_k: 20 }, reasoning_effort: "none" },
 	});
 	const args = walkGenerationWranglerDevArguments({
 		port: 8787,

@@ -1,6 +1,10 @@
 import { z } from "zod";
 import type { ExternalBilling, ModelProviderPort } from "@bc-news/generation-core";
-import type { CalculatedBillingConfig, LmStudioSamplingConfig } from "./config";
+import type {
+	CalculatedBillingConfig,
+	LmStudioReasoningEffort,
+	LmStudioSamplingConfig,
+} from "./config";
 import {
 	OpenAiCompatibleDeterministicError,
 	OpenAiCompatibleRetryableError,
@@ -87,6 +91,7 @@ interface LocalProviderInput {
 	readonly baseUrl: string;
 	readonly requestedModel: string;
 	readonly sampling: LmStudioSamplingConfig;
+	readonly reasoningEffort: LmStudioReasoningEffort;
 	readonly structuredOutputContracts: LmStudioStructuredOutputContracts;
 }
 
@@ -205,6 +210,9 @@ export function createOpenAiCompatibleModelProvider(
 						temperature: input.sampling.temperature,
 						top_p: input.sampling.top_p,
 						top_k: input.sampling.top_k,
+						...(input.reasoningEffort === "provider_default"
+							? {}
+							: { reasoning_effort: input.reasoningEffort }),
 						response_format: {
 							type: "json_schema",
 							json_schema: {

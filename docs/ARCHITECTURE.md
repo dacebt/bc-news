@@ -126,7 +126,8 @@ provenance is the configured provider id and model provenance is the response
 model.
 
 `MODEL_CONFIG` and eval configuration contain only non-secret adapter identity,
-requested model, explicit local sampling values, provider id, and pricing inputs. `LMSTUDIO_BASE_URL`,
+requested model, explicit local sampling and reasoning values, provider id, and
+pricing inputs. `LMSTUDIO_BASE_URL`,
 `HOSTED_MODEL_BASE_URL`, and `HOSTED_MODEL_API_KEY` are environment-only, and a
 base URL containing credentials rejects. Timeout, network/body-read failure,
 and HTTP 408/409/425/429/5xx are retryable within the existing three-attempt
@@ -146,12 +147,15 @@ enabled beside it. Eval gets endpoints and credentials from the same file while
 adapter selection remains in the JSON passed through its `--config` option; copy
 the relevant adapter objects from the example into that JSON. Every LM Studio
 adapter object requires a `sampling` object with explicit finite `temperature`,
-`top_p`, and integer `top_k` values. Local capability and judge requests send
-those values
-with LM Studio's strict `json_schema` response format, derived from the same Zod
-contract that validates the returned output; the schemas stay inline and reject
-unknown object properties. Recorded and hosted requests do not receive these
-local decoding controls. The committed example contains placeholders only.
+`top_p`, and integer `top_k` values, plus an explicit `reasoning_effort` selected
+from `provider_default`, `none`, `minimal`, `low`, `medium`, `high`, or `xhigh`.
+`provider_default` omits the request field so LM Studio owns the model-specific
+default; every other value is sent unchanged. Local capability and judge
+requests send those controls with LM Studio's strict `json_schema` response
+format, derived from the same Zod contract that validates the returned output;
+the schemas stay inline and reject unknown object properties. Recorded and
+hosted requests do not receive these local decoding controls. The committed
+example contains placeholders only.
 Automated tests, the verifier, and the
 canonical walk keep recorded or repository-owned loopback providers and never
 call configured endpoints. In particular, the walk passes its recorded
