@@ -23,10 +23,16 @@ binds how that discipline's evidence hierarchy applies to *this* project, so
 ## Evidence tiers, strongest first
 
 1. **The skeleton walk.** A fixed local conversation runs the whole pipeline
-   — evidence in, edition generated, client renders it — with no production
-   data. This is the [PRD](PRD.md)'s first success signal and the primary
-   proof for any generation or contract change. A passing test suite over a
-   pipeline that cannot complete this walk proves nothing.
+   — evidence in, edition generated, strict fully judged recorded eval replay,
+   and the published/unavailable/Back reader experience in installed Chrome —
+   with no production data or external origin. The eval candidate lives only
+   in walk-owned temporary storage and must exactly match the pinned strict
+   baseline apart from run identity, timestamps, and code-version provenance.
+   Browser traffic is same-origin-only and exactly two pair-addressed edition
+   404s are allowed. This is the [PRD](PRD.md)'s first success signal and the
+   primary proof for any generation, contract, eval, or client change. A
+   passing test suite over a pipeline that cannot complete this walk proves
+   nothing.
 2. **The eval harness.** This project's distinctive tier: repo-owned
    representative conversation fixtures replayed deterministically through
    the [evidence input port](ARCHITECTURE.md), producing comparable outputs
@@ -55,6 +61,9 @@ Write one only when it earns its place:
   model money or duplicates an edition.
 - **Reproduced bugs** — any failure observed in the running system gets a
   regression test when it is fixed.
+- **Acceptance classification** — exact eval-field drift and browser
+  request/response/error classification, where one permissive branch could
+  certify a different product or an external call.
 
 Never written: tests restating what the type system or a zod schema already
 proves, tests of glue and framework wiring, tests to satisfy coverage.
@@ -67,6 +76,10 @@ proves, tests of glue and framework wiring, tests to satisfy coverage.
   harness and tests — one evidence corpus, not parallel ones.
 - No live network or paid model calls inside tests; recorded responses or
   local models only.
+- Canonical eval comparison parses both candidate and baseline with the strict
+  run schema and pins the baseline path, run id, and byte SHA-256. The
+  permissive historical loader and human comparison report are not acceptance
+  gates.
 - Completion claims cite the tier that proved them. "Done" without evidence
   from tier 1–3 is not done.
 

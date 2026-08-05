@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { GenerationRunParams } from "@bc-news/contracts";
+import type { Browser } from "playwright-core";
 import { startBitJitaStubServer, type BitJitaStubServer } from "./walk/bitjita-stub-server";
 import type { WalkContext } from "./walk/phase";
 import { walkPhases } from "./walk/phases/index";
@@ -225,10 +226,12 @@ async function waitForReadiness(
 	throw new WalkFailure(`wrangler dev not ready within ${READINESS_TIMEOUT_MS} ms`);
 }
 
-interface RunningProcesses {
-	wranglerDev: WranglerDev;
-	ingestWranglerDev: WranglerDev;
-	stubServer: BitJitaStubServer;
+interface RunningResources {
+	persistDir: string;
+	wranglerDev?: WranglerDev;
+	ingestWranglerDev?: WranglerDev;
+	stubServer?: BitJitaStubServer;
+	browser?: Browser;
 }
 
 /**
@@ -238,16 +241,22 @@ interface RunningProcesses {
  * never thrown — so a shutdown problem here can never replace the walk's
  * real success or failure.
  */
-async function shutdownAll(running: RunningProcesses): Promise<void> {
-	const results = await Promise.allSettled([
-		stopWranglerDev(running.wranglerDev.child),
-		stopWranglerDev(running.ingestWranglerDev.child),
-		running.stubServer.close(),
-	]);
+async function cleanupResources(resources: RunningResources): Promise<void> {
+	const cleanupTasks: Promise<unknown>[] = [];
+	if (resources.browser !== undefined) cleanupTasks.push(resources.browser.close());
+	if (resources.wranglerDev !== undefined) cleanupTasks.push(stopWranglerDev(resources.wranglerDev.child));
+	if (resources.ingestWranglerDev !== undefined) cleanupTasks.push(stopWranglerDev(resources.ingestWranglerDev.child));
+	if (resources.stubServer !== undefined) cleanupTasks.push(resources.stubServer.close());
+	const results = await Promise.allSettled(cleanupTasks);
 	for (const result of results) {
 		if (result.status === "rejected") {
 			logShutdownWarning(result.reason);
 		}
+	}
+	try {
+		await rm(resources.persistDir, { recursive: true, force: true });
+	} catch (error) {
+		logShutdownWarning(error);
 	}
 }
 
@@ -268,7 +277,6 @@ async function holdForHumanObservation(): Promise<void> {
 	console.log("walk: holding wrangler dev for browser observation — Ctrl-C to stop");
 	await new Promise<void>((resolve) => {
 		interactiveHoldRelease = resolve;
-		process.once("SIGINT", resolve);
 	});
 	interactiveHoldRelease = undefined;
 }
@@ -300,6 +308,21 @@ async function main(): Promise<void> {
 	// below, so every throw from this point on — migrations, spawn,
 	// readiness, phases — reaches the removal; no path can leak the dir.
 	const persistDir = await mkdtemp(join(tmpdir(), "bc-news-walk-"));
+	const resources: RunningResources = { persistDir };
+	let cleanupPromise: Promise<void> | undefined;
+	let onSigint = (): void => {};
+	const cleanup = (): Promise<void> => {
+		cleanupPromise ??= cleanupResources(resources).finally(() => process.removeListener("SIGINT", onSigint));
+		return cleanupPromise;
+	};
+	onSigint = () => {
+		if (interactiveHoldRelease !== undefined) {
+			interactiveHoldRelease();
+			return;
+		}
+		void cleanup().finally(() => process.exit(130));
+	};
+	process.once("SIGINT", onSigint);
 	try {
 		console.log(`walk: applying local D1 migrations (persist dir ${persistDir})`);
 		await runCommand(
@@ -310,6 +333,7 @@ async function main(): Promise<void> {
 
 		console.log("walk: starting bitjita stub server");
 		const stubServer = await startBitJitaStubServer();
+		resources.stubServer = stubServer;
 
 		const wranglerDev = startWranglerDev(
 			generationDir,
@@ -325,14 +349,8 @@ async function main(): Promise<void> {
 				vars: { BITJITA_API_BASE: stubServer.baseUrl },
 			}),
 		);
-		const running: RunningProcesses = { wranglerDev, ingestWranglerDev, stubServer };
-		process.on("SIGINT", () => {
-			if (interactiveHoldRelease === undefined) {
-				void shutdownAll(running)
-					.then(() => rm(persistDir, { recursive: true, force: true }))
-					.finally(() => process.exit(130));
-			}
-		});
+		resources.wranglerDev = wranglerDev;
+		resources.ingestWranglerDev = ingestWranglerDev;
 		try {
 			await waitForReadiness(wranglerDev, `${baseUrl}/api/edition`, 400);
 			await waitForReadiness(ingestWranglerDev, `${ingestBaseUrl}/poll`, 404);
@@ -355,6 +373,9 @@ async function main(): Promise<void> {
 				pair,
 				unpublishedPair,
 				state: {},
+				registerBrowser: (browser) => {
+					resources.browser = browser;
+				},
 			};
 			await runPhases(ctx);
 			console.log("WALK PASS");
@@ -363,12 +384,10 @@ async function main(): Promise<void> {
 				await holdForHumanObservation();
 			}
 		} finally {
-			// Shutdown problems are reported, never thrown: a kill-related
-			// error here must not replace the walk's real success or failure.
-			await shutdownAll(running);
+			await cleanup();
 		}
 	} finally {
-		await rm(persistDir, { recursive: true, force: true });
+		await cleanup();
 	}
 }
 

@@ -7,7 +7,7 @@
 		"re-record-model-responses:verify": "pnpm --filter @bc-news/generation re-record-model-responses:verify",
 		"typecheck": "tsc --noEmit -p scripts && pnpm -r typecheck",
 		"lint": "eslint .",
-		"test": "pnpm -r test"
+		"test": "tsx --test scripts/tests/*.test.ts && pnpm -r test"
 	},
 	"pnpm": {
 		"onlyBuiltDependencies": [
@@ -21,6 +21,7 @@
 		"@types/node": "^26.1.2",
 		"eslint": "^10.8.0",
 		"eslint-plugin-react-hooks": "^7.1.1",
+		"playwright-core": "1.62.0",
 		"tsx": "^4.23.5",
 		"typescript": "^6.0.3",
 		"typescript-eslint": "^8.66.0"

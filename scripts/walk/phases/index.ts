@@ -1,5 +1,7 @@
 import type { WalkPhase } from "../phase";
 import { walkPhase as announcements } from "./announcements";
+import { walkPhase as browserParity } from "./browser-parity";
+import { walkPhase as canonicalEval } from "./canonical-eval";
 import { walkPhase as clientHtml } from "./client-html";
 import { walkPhase as idempotency } from "./idempotency";
 import { walkPhase as packaging } from "./packaging";
@@ -19,4 +21,6 @@ export const walkPhases: readonly WalkPhase[] = [
 	idempotency,
 	unknownPair,
 	clientHtml,
+	canonicalEval,
+	browserParity,
 ];
