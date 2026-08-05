@@ -105,7 +105,7 @@ export function runEvalChecks(request: EvalCheckRequest): readonly CheckResult[]
 			? announcementsStageSpecificCheck(request.output as AnnouncementsOutput)
 			: packagingStageSpecificCheck(request);
 	return [
-		injectionCheck(request.rawText),
+		injectionCheck(request.rawText, textFields(request.output).join("\n")),
 		grounding,
 		{ name: "schema", passed: true, detail: "Schema validation passed prior to check dispatch" },
 		formatting,

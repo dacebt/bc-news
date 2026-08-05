@@ -233,7 +233,27 @@ model usage, and proves region 7 reaches complete with all six ordered
 generation steps and exactly one recorded-replay usage record for main story,
 announcements, and packaging, each with unavailable token measurement and zero
 external billing. Repeated scheduled delivery must leave both edition bytes and
-retained usage unchanged. The JSON response keeps the durable D1 projection
+retained usage unchanged. Before success, the walk invokes the eval harness
+directly with an empty provider environment and a strictly preflighted all-
+recorded configuration. The fully judged candidate is written only below the
+walk's temporary directory, reloaded through the strict run schema, and
+compared field-for-field with a repository-pinned baseline; only run identity,
+timestamps, and code-version provenance may vary.
+
+The final reader check launches installed Google Chrome through
+`playwright-core`, blocks service workers, and installs a request-aborting
+same-origin route before the first navigation. It derives expected paper
+content from the strict-parsed served edition and proves the published paper,
+two unavailable selections, normalized controls and query, and browser Back
+restoration. The region-8 and prior-date edition 404s are the only permitted
+non-2xx responses. Chrome's exact 404 console message and aborted-request event
+are ignored only when their exact URL was already observed and strictly
+classified as one of those two allowed responses; every uncorrelated external
+origin, failed request, page error, or console error rejects. Chrome is a local prerequisite and is never downloaded by the
+walk. One idempotent cleanup owner closes Chrome, both Wrangler process groups,
+and the BitJita stub, removes the walk directory (including D1 and eval output),
+and unregisters SIGINT handling on every path. Cleanup failures are reported
+without replacing the primary result. The JSON response keeps the durable D1 projection
 separate from a strictly parsed, explicitly available or unavailable current
 Workflow observation; the id-addressed route remains a low-level diagnostic.
 

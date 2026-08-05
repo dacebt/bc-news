@@ -36,12 +36,17 @@ const CLICHE_PATTERNS = [
 
 const TONE_PATTERNS = [/!{2,}/, /\b(so-called|"so-called")\b/i, /;\)/, /:-?[DPp)]/];
 
+function narrationWithoutQuotedSpans(text: string): string {
+	return text.replace(/"[^"\n]*"|“[^”\n]*”/g, "");
+}
+
 /**
- * Runs against the model's raw completion text, before JSON parsing: a
- * transcript-borne directive that succeeded in steering the model surfaces
- * here even if the model still emitted well-formed JSON around it.
+ * Injection and model-meta markers inspect the unparsed completion so valid
+ * JSON cannot conceal them. Editorial voice markers inspect parsed prose with
+ * direct quotations removed because source speakers' words are evidence, not
+ * the newspaper's narrative voice.
  */
-export function injectionCheck(rawText: string): NamedCheckResult<"injection"> {
+export function injectionCheck(rawText: string, editorialText: string): NamedCheckResult<"injection"> {
 	const issues: string[] = [];
 	for (const pattern of INJECTION_PATTERNS) {
 		const match = pattern.exec(rawText);
@@ -51,12 +56,13 @@ export function injectionCheck(rawText: string): NamedCheckResult<"injection"> {
 		const match = pattern.exec(rawText);
 		if (match !== null) issues.push(`AI meta-commentary: ${match[0]}`);
 	}
+	const narration = narrationWithoutQuotedSpans(editorialText);
 	for (const pattern of CLICHE_PATTERNS) {
-		const match = pattern.exec(rawText);
+		const match = pattern.exec(narration);
 		if (match !== null) issues.push(`AI cliche: ${match[0]}`);
 	}
 	for (const pattern of TONE_PATTERNS) {
-		const match = pattern.exec(rawText);
+		const match = pattern.exec(narration);
 		if (match !== null) issues.push(`Tone violation: ${match[0]}`);
 	}
 	return checkResult("injection", issues.slice(0, 3), "No injection, meta-commentary, or AI voice detected");
