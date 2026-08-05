@@ -1,5 +1,5 @@
 {
-  "id": "2026-08-05T02-34-42-437Z",
+  "id": "2026-08-05T14-36-42-254Z",
   "config": {
     "capabilities": {
       "main_story": {
@@ -305,8 +305,8 @@
       }
     }
   ],
-  "started_at": "2026-08-05T02:34:42.425Z",
-  "completed_at": "2026-08-05T02:34:42.437Z",
+  "started_at": "2026-08-05T14:36:42.242Z",
+  "completed_at": "2026-08-05T14:36:42.254Z",
   "fingerprint": {
     "provider_params": {
       "main_story": {
@@ -328,9 +328,9 @@
     },
     "fixture_sha256": "04197fe24c3291141706dcebc2cebc6086dd3793452c5f879be5e34ce1c91825",
     "checks_sha256": "25453556b282e0abec6562be5fdabbb7af6a1df36f7050bc5c3e4120248efa7a",
-    "providers_sha256": "d2a1dad627a4a2ba829aea004e09e3a6fd0fb26df2fbf699910a31b6ea891618",
-    "rubrics_sha256": "6dfe93604fd541644a0bb57bf5b97acfd7eae740bbe6764d3d91ae3c3ca9143f",
+    "providers_sha256": "6350321421153fa87cffe34b5e1176250c24a085bb9323692f97c8786572e2a3",
+    "rubrics_sha256": "2fa15f18f2ff2dc80809bacb062493eaeb5bd749b82c196cf697bd9cc6e6f315",
     "schemas_sha256": "2a3ec205cc0356571ae282235f4fed96ea977e82005294bf8cc2c8d1527df07e",
-    "code_version": "9edc8c3c1705c738afb9f3a8e835ef93f1b20e8b-dirty-0e997f2d592e"
+    "code_version": "2d8369e5a181935a4d4321a76e1dd00942d79140-dirty-bd4105941f91"
   }
 }
