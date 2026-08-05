@@ -184,7 +184,7 @@ async function main(): Promise<void> {
 		for (const capability of Object.keys(records) as Array<keyof typeof records>) {
 			const request = observed.find((entry) => entry.body.model === MODEL_BY_CAPABILITY[capability]);
 			assert(request !== undefined, `Missing ${capability} request`);
-			const expected = createHash("sha256").update(JSON.stringify({ system: request.body.messages[0].content, user: request.body.messages[1].content })).digest("hex");
+			const expected = createHash("sha256").update(request.body.messages[1].content, "utf8").digest("hex");
 			assert(records[capability].prompt_sha256 === expected, `Prompt hash mismatch for ${capability}`);
 		}
 

@@ -21,7 +21,10 @@ provider remains deterministic.
   `[2026-01-24T00:00:00Z, 2026-01-25T00:00:00Z)` (end-exclusive).
 - **Mapping**: `id ← entity_id`, `ts ← timestamp_ts`,
   `author_id ← username_raw`, `author_name ← username`, `text ← text`;
-  sorted by `(ts, id)`.
+  sorted by `(ts, id)`. One deliberate boundary-contract probe changes only
+  message `504403158437419536` (`en/Aryn`, `k`, timestamp `1769285267000`)
+  from source author name `Aryn` to `null`; the derivation fails if that exact
+  source row drifts and preserves any ordinary source nulls unchanged.
 - **Derivation**: `scripts/derive-evidence-fixture.ts`, run once via
   `pnpm --filter @bc-news/fixtures derive-evidence-fixture <source-file>`.
   The script validates the envelope against `EvidenceFixtureSchema` and
@@ -38,7 +41,9 @@ downstream of this corpus.
 capability response. The story text was authored by hand from the actual
 region-7 2026-01-24 conversation in v1's editorial voice (every quotation
 verified verbatim against the prepared evidence); it parses against the
-capability's output contract (`MainStoryOutputSchema`). `prompt_sha256` is
-the SHA-256 of the prompt built from this corpus at authoring time —
+capability's output contract (`MainStoryOutputSchema`). For capability records,
+`prompt_sha256` is the SHA-256 of the exact user-prompt UTF-8 bytes built from
+this corpus at authoring time (judge records separately hash their established
+`{system,user}` request) —
 informational provenance only, never branched on: responses are keyed by
 editorial capability alone so prompt edits do not break the walk.
