@@ -1,4 +1,5 @@
 import { parseArgs } from "node:util";
+import { EvaluationIdSchema } from "./evaluation-artifact-schemas";
 import { validateRunId } from "./run-file";
 
 /**
@@ -14,7 +15,11 @@ export type EvalCliCommand =
 	| { command: "context"; fixturePath: string; resultsDirectory?: string }
 	| { command: "list"; resultsDirectory?: string }
 	| { command: "show"; runId: string; resultsDirectory?: string }
-	| { command: "compare"; leftRunId: string; rightRunId: string; resultsDirectory?: string };
+	| { command: "compare"; leftRunId: string; rightRunId: string; resultsDirectory?: string }
+	| { command: "benchmark-list"; resultsDirectory?: string }
+	| { command: "benchmark-show"; runId: string; resultsDirectory?: string }
+	| { command: "benchmark-summary"; runId: string; resultsDirectory?: string }
+	| { command: "benchmark-compare"; leftRunId: string; rightRunId: string; resultsDirectory?: string };
 
 const ALL_OPTIONS = ["fixture", "config", "results-dir", "response-dir"] as const;
 
@@ -56,6 +61,12 @@ function runParseArgs(argv: readonly string[]) {
 			"response-dir": { type: "string" },
 		},
 	});
+}
+
+function benchmarkId(value: string): string {
+	const parsed = EvaluationIdSchema.safeParse(value);
+	if (!parsed.success) throw new CliOptionsError(`Invalid Benchmark Run id: ${value}`);
+	return parsed.data;
 }
 
 export function parseEvalCliCommand(argv: readonly string[]): EvalCliCommand {
@@ -116,6 +127,35 @@ export function parseEvalCliCommand(argv: readonly string[]): EvalCliCommand {
 			...(values["results-dir"] === undefined ? {} : { resultsDirectory: values["results-dir"] }),
 		};
 	}
+	if (command === "benchmark") {
+		rejectUnknownOptions(values, ["results-dir"], command);
+		const route = positionals[1];
+		if (route === "list") {
+			exactPositionals(positionals, 2, `${command} ${route}`);
+			return {
+				command: "benchmark-list",
+				...(values["results-dir"] === undefined ? {} : { resultsDirectory: values["results-dir"] }),
+			};
+		}
+		if (route === "show" || route === "summary") {
+			exactPositionals(positionals, 3, `${command} ${route}`);
+			return {
+				command: route === "show" ? "benchmark-show" : "benchmark-summary",
+				runId: benchmarkId(positionals[2] ?? ""),
+				...(values["results-dir"] === undefined ? {} : { resultsDirectory: values["results-dir"] }),
+			};
+		}
+		if (route === "compare") {
+			exactPositionals(positionals, 4, `${command} ${route}`);
+			return {
+				command: "benchmark-compare",
+				leftRunId: benchmarkId(positionals[2] ?? ""),
+				rightRunId: benchmarkId(positionals[3] ?? ""),
+				...(values["results-dir"] === undefined ? {} : { resultsDirectory: values["results-dir"] }),
+			};
+		}
+		throw new CliOptionsError("Expected benchmark list, show, summary, or compare");
+	}
 	if (command === "list") {
 		exactPositionals(positionals, 1, command);
 		rejectUnknownOptions(values, ["results-dir"], command);
@@ -143,5 +183,5 @@ export function parseEvalCliCommand(argv: readonly string[]): EvalCliCommand {
 			...(values["results-dir"] === undefined ? {} : { resultsDirectory: values["results-dir"] }),
 		};
 	}
-	throw new CliOptionsError("Expected the evaluate, run, record, context, list, show, or compare command");
+	throw new CliOptionsError("Expected the evaluate, run, record, context, benchmark, list, show, or compare command");
 }

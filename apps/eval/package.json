@@ -14,7 +14,8 @@
 		"test": "vitest run",
 		"eval": "node --env-file-if-exists=../generation/.dev.vars --import tsx src/cli.ts",
 		"verify:evaluation-trial-retention": "tsx src/evaluation-trial-verifier.ts",
-		"verify:evaluation-benchmark-continuation": "tsx src/evaluation-benchmark-verifier.ts"
+		"verify:evaluation-benchmark-continuation": "tsx src/evaluation-benchmark-verifier.ts",
+		"verify:evaluation-browse": "tsx src/evaluation-browse-verifier.ts"
 	},
 	"dependencies": {
 		"@bc-news/contracts": "workspace:*",

@@ -39,8 +39,11 @@ outcome or silently substitutes for it.
    only the declared bounded retries, with each attempt retained and linked.
    Provider exhaustion or model rejection closes its dependent track without
    suppressing the independent editorial track or later declared trials.
-   Historical successful run files and context results keep their existing
-   meanings.
+   `benchmark list`, `benchmark show`, `benchmark summary`, and `benchmark
+   compare` strictly browse this retained evidence. Comparison separates
+   fixture, configuration, and provenance context from behavior and reports no
+   score, judge result, recommendation, or acceptance decision. Historical
+   successful run files and context results keep their existing meanings.
 3. **Recorded-replay acceptance.** The canonical recorded run executes the
    four dependent production steps twice. Results must be identical apart from
    run identity and timestamps, carry the exact ordered roster and usage, match
@@ -150,6 +153,14 @@ proves, tests of glue and framework wiring, tests to satisfy coverage.
   observer snapshot must parse before the verifier prints
   `walk: serial evaluation benchmark retained linked retries and continued
   later trials`.
+- The repository-owned benchmark-browse verifier creates strict retained
+  evidence through the loopback provider and invokes the exported eval CLI
+  application boundary for all four `benchmark` routes. It proves both the
+  app-owned default directory and invocation-relative `--results-dir`, rejects
+  malformed and filename-mismatched artifacts, excludes volatile identity and
+  timestamp noise, keeps commit-only drift in context, and observes completion
+  evidence drift in behavior before printing `walk: evaluation evidence listed
+  summarized and compared without verdicts`.
 - V1 code provenance is the clean repository commit itself: repository name,
   validated 40-character commit SHA, and `dirty: false`. Strict validation
   rejects missing, malformed, or extra provenance fields rather than retaining

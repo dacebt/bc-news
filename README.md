@@ -70,5 +70,21 @@ provider exhaustion does not suppress an independent editorial track or a later
 declared trial. This is independent of recorded-replay acceptance, context
 measurement, and `pnpm walk`.
 
+Browse retained Benchmark Runs without changing the historical unqualified
+`list`, `show`, or `compare` commands:
+
+```sh
+pnpm --filter @bc-news/eval eval -- benchmark list
+pnpm --filter @bc-news/eval eval -- benchmark show <benchmark-run-id>
+pnpm --filter @bc-news/eval eval -- benchmark summary <benchmark-run-id>
+pnpm --filter @bc-news/eval eval -- benchmark compare <left-id> <right-id>
+```
+
+Each route accepts `--results-dir`; otherwise it reads
+`apps/eval/evaluation-results`. Loading is strict and rejects malformed,
+schema-invalid, or filename-mismatched evidence. Comparison reports input and
+provenance context separately from behavioral differences and produces no
+score, judge result, or acceptance decision.
+
 The frozen v1 (`bc-news-worker` and siblings, in the parent directory) is
 reference material only — see the [v1 reference map](docs/v1-reference.md).

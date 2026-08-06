@@ -237,6 +237,24 @@ infrastructure-incomplete trial does not suppress later roster members. A
 benchmark becomes retained only after every declared trial is terminal.
 Invalid artifact state or persistence stops coordination.
 
+Retained Benchmark Runs are browsed through the distinct `benchmark list`,
+`benchmark show`, `benchmark summary`, and `benchmark compare` eval routes.
+Their application boundary reads only `evaluation-results/<id>.json`, validates
+every loaded file through the version-dispatched Benchmark Run contract, binds
+the filename to the artifact id, and rejects corrupt evidence rather than
+skipping it. Historical unqualified `list`, `show`, and `compare` remain owned
+by successful Run Files in `apps/eval/results`.
+
+Benchmark comparison projects context and behavior independently. Context owns
+the exact fixture and prepared evidence, configuration and retry/repetition
+policy, and code/output-contract provenance. Behavior owns lifecycle and
+harness outcome, ordered trial and track outcomes, findings, products,
+requests, completions or failures, usage, billing, duration, and stable
+retry/selection relationships. Run, trial, and invocation ids plus absolute
+timestamps do not create behavioral differences. This observation boundary
+reports exhaustive paths only; it owns no score, judge, recommendation, or
+acceptance decision.
+
 Main-story and announcements evaluation tracks execute independently. A
 rejection in one does not suppress the other. Final-product findings are pure
 deterministic checks attributed to each track's terminal copyedit step;

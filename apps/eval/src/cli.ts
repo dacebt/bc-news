@@ -1,11 +1,19 @@
 import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { compareRuns } from "./compare";
 import { parseEvalCliCommand } from "./cli-options";
 import { runContextBenchmark } from "./context-benchmark-command";
 import { formatContextBenchmarkReport } from "./context-benchmark-report";
 import { recordCommand } from "./record-command";
 import { evaluateBenchmarkCommand } from "./evaluation-benchmark-command";
+import {
+	formatBenchmarkComparison,
+	formatBenchmarkDetail,
+	formatBenchmarkListing,
+	formatBenchmarkSummary,
+} from "./evaluation-browse-report";
+import { compareBenchmarkRuns } from "./evaluation-comparison";
+import { listBenchmarkRuns, loadBenchmarkRun } from "./evaluation-artifact-reader";
 import { formatEvaluationTrialReport } from "./evaluation-report";
 import {
 	formatRecordSummary,
@@ -24,7 +32,11 @@ const USAGE = `Usage:
   pnpm --filter @bc-news/eval eval -- context --fixture <path> [--results-dir <path>]
   pnpm --filter eval run eval -- list [--results-dir <path>]
   pnpm --filter eval run eval -- show <run-id> [--results-dir <path>]
-  pnpm --filter eval run eval -- compare <left-run-id> <right-run-id> [--results-dir <path>]`;
+  pnpm --filter eval run eval -- compare <left-run-id> <right-run-id> [--results-dir <path>]
+  pnpm --filter @bc-news/eval eval -- benchmark list [--results-dir <path>]
+  pnpm --filter @bc-news/eval eval -- benchmark show <run-id> [--results-dir <path>]
+  pnpm --filter @bc-news/eval eval -- benchmark summary <run-id> [--results-dir <path>]
+  pnpm --filter @bc-news/eval eval -- benchmark compare <left-run-id> <right-run-id> [--results-dir <path>]`;
 
 /**
  * `pnpm --filter eval run eval` executes with cwd rewritten to apps/eval, not
@@ -33,23 +45,28 @@ const USAGE = `Usage:
  * on the command line resolve the way the user typed them, not against the
  * package directory.
  */
-function invocationCwd(): string {
-	return process.env.INIT_CWD ?? process.cwd();
+export interface EvalCliApplicationOptions {
+	readonly argv: readonly string[];
+	readonly currentDirectory: string;
+	readonly appDirectory: string;
+	readonly environment: NodeJS.ProcessEnv;
+	readonly writeOutput: (text: string) => void;
 }
 
-async function main(): Promise<void> {
+export async function runEvalCliApplication(options: EvalCliApplicationOptions): Promise<void> {
 	// `pnpm run eval -- run ...` forwards the literal `--` separator into argv
 	// (pnpm does not strip it); a leading one is a pass-through marker, never a
 	// command name, so it is dropped before dispatch.
-	const argv = process.argv.slice(2);
+	const argv = [...options.argv];
 	if (argv[0] === "--") argv.shift();
 	if (argv.length === 0 || argv[0] === "--help") {
-		process.stdout.write(`${USAGE}\n`);
+		options.writeOutput(`${USAGE}\n`);
 		return;
 	}
 	const command = parseEvalCliCommand(argv);
-	const cwd = invocationCwd();
-	const appDirectory = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+	const cwd = options.environment.INIT_CWD ?? options.currentDirectory;
+	const appDirectory = options.appDirectory;
+	const writeLine = (value: string): void => options.writeOutput(`${value}\n`);
 
 	/*
 	 * The committed apps/eval/results directory is the default results
@@ -64,15 +81,20 @@ async function main(): Promise<void> {
 			: resolve(cwd, resultsDirectory);
 	}
 
+	function evaluationResultsDirectoryFor(resultsDirectory: string | undefined): string {
+		return resultsDirectory === undefined
+			? resolve(appDirectory, "evaluation-results")
+			: resolve(cwd, resultsDirectory);
+	}
+
 	if (command.command === "evaluate") {
 		const result = await evaluateBenchmarkCommand({
 			fixturePath: resolve(cwd, command.fixturePath),
 			configPath: resolve(cwd, command.configPath),
-			resultsDirectory: command.resultsDirectory === undefined
-				? resolve(appDirectory, "evaluation-results")
-				: resolve(cwd, command.resultsDirectory),
+			resultsDirectory: evaluationResultsDirectoryFor(command.resultsDirectory),
+			environment: options.environment,
 		});
-		process.stdout.write(`${formatEvaluationTrialReport(result.benchmark, result.path)}\n`);
+		writeLine(formatEvaluationTrialReport(result.benchmark, result.path));
 		return;
 	}
 
@@ -90,7 +112,7 @@ async function main(): Promise<void> {
 				command.configPath === undefined ? defaultConfigPath : resolve(cwd, command.configPath),
 			resultsDirectory: resultsDirectoryFor(command.resultsDirectory),
 		});
-		process.stdout.write(`${formatRunSummary(saved.run, saved.path)}\n`);
+		writeLine(formatRunSummary(saved.run, saved.path));
 		return;
 	}
 	if (command.command === "record") {
@@ -106,9 +128,9 @@ async function main(): Promise<void> {
 			responseDirectory: command.responseDirectory === undefined
 				? defaultResponseDirectory
 				: resolve(cwd, command.responseDirectory),
-			environment: process.env,
+			environment: options.environment,
 		});
-		process.stdout.write(`${formatRecordSummary(result)}\n`);
+		writeLine(formatRecordSummary(result));
 		return;
 	}
 	if (command.command === "context") {
@@ -120,27 +142,61 @@ async function main(): Promise<void> {
 			fixturePath: resolve(cwd, command.fixturePath),
 			resultsDirectory,
 		});
-		process.stdout.write(`${formatContextBenchmarkReport(saved.report, saved.path)}\n`);
+		writeLine(formatContextBenchmarkReport(saved.report, saved.path));
+		return;
+	}
+	if (command.command === "benchmark-list") {
+		const runs = await listBenchmarkRuns(evaluationResultsDirectoryFor(command.resultsDirectory));
+		writeLine(formatBenchmarkListing(runs));
+		return;
+	}
+	if (command.command === "benchmark-show") {
+		const run = await loadBenchmarkRun(command.runId, evaluationResultsDirectoryFor(command.resultsDirectory));
+		writeLine(formatBenchmarkDetail(run));
+		return;
+	}
+	if (command.command === "benchmark-summary") {
+		const run = await loadBenchmarkRun(command.runId, evaluationResultsDirectoryFor(command.resultsDirectory));
+		writeLine(formatBenchmarkSummary(run));
+		return;
+	}
+	if (command.command === "benchmark-compare") {
+		const directory = evaluationResultsDirectoryFor(command.resultsDirectory);
+		const left = await loadBenchmarkRun(command.leftRunId, directory);
+		const right = await loadBenchmarkRun(command.rightRunId, directory);
+		writeLine(formatBenchmarkComparison(compareBenchmarkRuns(left, right)));
 		return;
 	}
 	if (command.command === "list") {
 		const runs = await listRunFiles(resultsDirectoryFor(command.resultsDirectory));
-		process.stdout.write(`${formatRunListing(runs)}\n`);
+		writeLine(formatRunListing(runs));
 		return;
 	}
 	if (command.command === "show") {
 		const run = await loadRunFile(command.runId, resultsDirectoryFor(command.resultsDirectory));
-		process.stdout.write(`${formatRunDetail(run)}\n`);
+		writeLine(formatRunDetail(run));
 		return;
 	}
 	const directory = resultsDirectoryFor(command.resultsDirectory);
 	const left = await loadRunFile(command.leftRunId, directory);
 	const right = await loadRunFile(command.rightRunId, directory);
-	process.stdout.write(`${formatRunComparison(compareRuns(left, right))}\n`);
+	writeLine(formatRunComparison(compareRuns(left, right)));
 }
 
-main().catch((error: unknown) => {
-	const message = error instanceof Error ? error.message : String(error);
-	process.stderr.write(`eval failed: ${message}\n`);
-	process.exitCode = 1;
-});
+async function main(): Promise<void> {
+	await runEvalCliApplication({
+		argv: process.argv.slice(2),
+		currentDirectory: process.cwd(),
+		appDirectory: resolve(dirname(fileURLToPath(import.meta.url)), ".."),
+		environment: process.env,
+		writeOutput: (text) => process.stdout.write(text),
+	});
+}
+
+if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href) {
+	main().catch((error: unknown) => {
+		const message = error instanceof Error ? error.message : String(error);
+		process.stderr.write(`eval failed: ${message}\n`);
+		process.exitCode = 1;
+	});
+}
