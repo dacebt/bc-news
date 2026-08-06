@@ -60,7 +60,7 @@ export const V1BenchmarkRunSchema = BenchmarkRunBaseSchema.extend({
 	if (declaration.identity !== evaluationConfigIdentity(declaration.config)) context.addIssue({ code: "custom", path: ["declaration", "configurations", 0, "identity"], message: "configuration identity must derive from its exact config" });
 	if (roster.config_identity !== declaration.identity || trial.config_identity !== declaration.identity || roster.trial_id !== trial.id) context.addIssue({ code: "custom", path: ["trial_roster"], message: "declaration, roster, and trial identities must agree" });
 	if (Date.parse(trial.started_at) < Date.parse(run.started_at)) context.addIssue({ code: "custom", path: ["trials", 0, "started_at"], message: "trial cannot start before its benchmark" });
-	refineTrial(trial, run.prepared_evidence.snapshot, run.started_at, context);
+	refineTrial(trial, run.prepared_evidence.snapshot, run.started_at, context, 0);
 	const evidence = run.prepared_evidence;
 	if (evidence.identity_sha256 !== sha256Json(evidence.snapshot) || evidence.active_region_id !== evidence.snapshot.active_region_id || evidence.publication_date !== evidence.snapshot.publication_date || evidence.original_count !== evidence.snapshot.raw_count || evidence.final_count !== evidence.snapshot.final_count) context.addIssue({ code: "custom", path: ["prepared_evidence"], message: "prepared-evidence identity and summary must bind the exact frozen version 1 snapshot" });
 	if (!canonicallyEqual(run.provenance.output_contracts, v1OutputContractProvenance())) context.addIssue({ code: "custom", path: ["provenance", "output_contracts"], message: "artifact version 1 requires the exact ordered frozen output-contract representations and hashes" });

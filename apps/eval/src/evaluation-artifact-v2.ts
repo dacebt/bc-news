@@ -116,7 +116,7 @@ export const V2BenchmarkRunSchema = V2BenchmarkRunBaseSchema.superRefine((run, c
 			&& Date.parse(trial.started_at) < Date.parse(previousTrial.completed_at)) {
 			context.addIssue({ code: "custom", path: ["trials", trialIndex, "started_at"], message: "serial trial cannot start before its predecessor completed" });
 		}
-		refineTrial(trial, run.prepared_evidence.snapshot, run.started_at, context);
+		refineTrial(trial, run.prepared_evidence.snapshot, run.started_at, context, trialIndex);
 		for (const productionStep of V1_PRODUCTION_MODEL_STEPS) {
 			if (trial.invocations.filter(({ production_step }) => production_step === productionStep).length > run.declaration.transport_retry_limit + 1) {
 				context.addIssue({ code: "custom", path: ["trials", trialIndex, "invocations"], message: "production-step invocation count cannot exceed the declared transport retry limit" });

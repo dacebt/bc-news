@@ -86,19 +86,34 @@ function refineTrack(trial: EvaluationTrial, trackName: "main_story" | "announce
 	}
 }
 
-export function refineTrial(trial: EvaluationTrial, evidence: V1PreparedEvidence, benchmarkStartedAt: string, context: z.RefinementCtx): void {
-	refineInvocationRoster(trial, benchmarkStartedAt, context);
-	refineSelections(trial, context);
-	for (const trackName of ["main_story", "announcements"] as const) refineTrack(trial, trackName, evidence, context);
-	refineVersion1ParserPromptAndProductRelations(trial, evidence, context);
-	if (trial.lifecycle === "running" && (trial.completed_at !== null || trial.subject_outcome !== null)) context.addIssue({ code: "custom", path: ["lifecycle"], message: "running trial cannot be terminal" });
+export function refineTrial(
+	trial: EvaluationTrial,
+	evidence: V1PreparedEvidence,
+	benchmarkStartedAt: string,
+	context: z.RefinementCtx,
+	trialIndex: number,
+): void {
+	const trialPath = ["trials", trialIndex] as const;
+	const trialContext: z.RefinementCtx = {
+		value: context.value,
+		issues: context.issues,
+		addIssue(issue) {
+			if (typeof issue === "string") context.addIssue({ code: "custom", path: [...trialPath], message: issue });
+			else context.addIssue({ ...issue, path: [...trialPath, ...(issue.path ?? [])] });
+		},
+	};
+	refineInvocationRoster(trial, benchmarkStartedAt, trialContext);
+	refineSelections(trial, trialContext);
+	for (const trackName of ["main_story", "announcements"] as const) refineTrack(trial, trackName, evidence, trialContext);
+	refineVersion1ParserPromptAndProductRelations(trial, evidence, trialContext);
+	if (trial.lifecycle === "running" && (trial.completed_at !== null || trial.subject_outcome !== null)) trialContext.addIssue({ code: "custom", path: ["lifecycle"], message: "running trial cannot be terminal" });
 	if (trial.lifecycle !== "complete") return;
-	if (trial.completed_at === null || trial.subject_outcome === null || Object.values(trial.tracks).some(({ lifecycle }) => lifecycle !== "completed" && lifecycle !== "rejected")) context.addIssue({ code: "custom", path: ["lifecycle"], message: "complete trial requires terminal tracks, time, and outcome" });
-	if (trial.invocations.some((invocation) => invocation.transport === "in_flight" || (invocation.transport === "failed" && invocation.retry_classification.state === "pending") || (invocation.transport === "succeeded" && invocation.parse.state === "pending"))) context.addIssue({ code: "custom", path: ["invocations"], message: "complete trial cannot retain pending invocation work" });
-	if (trial.subject_outcome !== deriveEvaluationTrialOutcome(trial)) context.addIssue({ code: "custom", path: ["subject_outcome"], message: "trial outcome must match its terminal tracks" });
+	if (trial.completed_at === null || trial.subject_outcome === null || Object.values(trial.tracks).some(({ lifecycle }) => lifecycle !== "completed" && lifecycle !== "rejected")) trialContext.addIssue({ code: "custom", path: ["lifecycle"], message: "complete trial requires terminal tracks, time, and outcome" });
+	if (trial.invocations.some((invocation) => invocation.transport === "in_flight" || (invocation.transport === "failed" && invocation.retry_classification.state === "pending") || (invocation.transport === "succeeded" && invocation.parse.state === "pending"))) trialContext.addIssue({ code: "custom", path: ["invocations"], message: "complete trial cannot retain pending invocation work" });
+	if (trial.subject_outcome !== deriveEvaluationTrialOutcome(trial)) trialContext.addIssue({ code: "custom", path: ["subject_outcome"], message: "trial outcome must match its terminal tracks" });
 	if (trial.completed_at !== null) {
 		const completedAt = Date.parse(trial.completed_at);
 		const latestReached = Math.max(Date.parse(trial.started_at), ...trial.invocations.flatMap((invocation) => invocation.transport === "in_flight" ? [Date.parse(invocation.started_at)] : [Date.parse(invocation.started_at), Date.parse(invocation.ended_at)]));
-		if (completedAt < latestReached) context.addIssue({ code: "custom", path: ["completed_at"], message: "trial completion cannot precede reached invocation timing or trial start" });
+		if (completedAt < latestReached) trialContext.addIssue({ code: "custom", path: ["completed_at"], message: "trial completion cannot precede reached invocation timing or trial start" });
 	}
 }

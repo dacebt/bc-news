@@ -38,6 +38,14 @@ test("retains retries and continues independent tracks and later trials", async 
 	const impossibleChronology = clone(benchmark);
 	impossibleChronology.trials[0]!.started_at = new Date(Date.parse(impossibleChronology.started_at) - 1_000).toISOString();
 	expect(BenchmarkRunSchema.safeParse(impossibleChronology).success).toBe(false);
+
+	const wrongTrialInvocationIdentity = clone(benchmark);
+	wrongTrialInvocationIdentity.trials[2]!.invocations[0]!.config_identity = wrongTrialInvocationIdentity.trials[3]!.config_identity;
+	const identityResult = BenchmarkRunSchema.safeParse(wrongTrialInvocationIdentity);
+	expect(identityResult.success).toBe(false);
+	if (!identityResult.success) {
+		expect(identityResult.error.issues.some(({ path }) => path.join(".") === "trials.2.invocations.0.config_identity")).toBe(true);
+	}
 });
 
 test("rejects ambiguous or unbounded benchmark declarations", () => {
