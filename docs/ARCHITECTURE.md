@@ -8,7 +8,7 @@ tags: [documentation, architecture, ports, typescript]
 status: stable
 generated:
   by: ebt-skills/okf-v0.2
-  at: "2026-08-04T18:01:01Z"
+  at: "2026-08-06T19:06:47Z"
 authority: binding
 ---
 
@@ -195,6 +195,58 @@ directory level; it does not promise continuous visibility to concurrent
 readers. A failed call, validation, staged replay, or comparison leaves the
 previous committed set in place. Recording has no judge, score, threshold,
 byte pin, or source-digest acceptance gate.
+
+The model-evaluation command is a separate surface:
+`evaluate --fixture <path> --config <path> [--results-dir <path>]`. Its strict
+four-step configuration is one declared configuration and repetition in a new
+versioned Benchmark Run under its own `evaluation-results` default; historical
+run files keep their existing directory, schema, and meaning. The eval
+application owns this artifact boundary directly, adding no third domain port.
+
+The artifact is exclusively created in `running` state before any provider
+call. Before transport, it atomically retains the exact assembled
+`{production_step, system, user}` request, request hash, configuration identity,
+ordinal, predecessor link, timestamp, `transport: in_flight`, and
+`parse: pending`. A successful application-facing completion is retained while
+parse remains pending before editorial parsing. A transport failure is retained
+with classification pending and then classified in a separate write; this first
+slice records but performs no retry. Every replacement validates and reparses
+before becoming authoritative. A failed pre-rename replacement always attempts
+to remove its unique temporary file without changing the authoritative bytes.
+Cleanup is best-effort: a cleanup failure remains an explicit harness-failure
+detail with the temporary path while the primary error stays classified as
+`write_rejected`. Evidence-write failure
+stops the harness and never claims retention; interruption leaves the last
+strict running artifact inspectable. Ended invocation durations equal their
+retained timestamp endpoints exactly, and trial and benchmark completions
+cannot precede any lifecycle event they contain.
+
+Main-story and announcements evaluation tracks execute independently. A
+rejection in one does not suppress the other. Final-product findings are pure
+deterministic checks attributed to each track's terminal copyedit step;
+production retains its aggregate throwing wrapper and hard-failure behavior.
+Subject outcome describes model behavior, while harness outcome states only
+whether trustworthy evidence was retained.
+
+Artifact version 1 is a historical-validation boundary, not an alias for the
+current production implementation. Eval-local frozen schemas, parsers, writer
+prompts and transcript fencing derived from retained prepared evidence,
+copyedit prompt/fencing relations, preservation rules, announcement-ID
+attachment, and deterministic final-product checks exclusively validate v1
+artifacts. Its retained output-contract tuple must exactly equal the ordered
+representations and hashes derived from those frozen schemas. The artifact also
+retains the complete prepared-evidence snapshot; its identity hash and summary
+fields bind that snapshot. A completed track requires its selected copyedit
+product with zero derived findings; a final-product rejection requires that
+same selected product with the exact nonempty derived finding set; every other
+rejection retains neither a product nor track-level findings. Production execution continues to use
+the current shared generation implementation. A production behavior change
+therefore requires a new artifact version rather than silently changing the
+meaning of retained v1 evidence.
+
+V1 code provenance is exactly `repository: bc-news`, a validated 40-character
+commit SHA, and `dirty: false`. Evaluation starts only from that clean commit;
+no second unbound workspace digest competes with the commit identity.
 
 Settled — edition identity enforcement, three layers with the SQL layer
 authoritative: (1) the trigger derives a deterministic Workflow instance

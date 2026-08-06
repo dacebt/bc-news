@@ -14,3 +14,4 @@ dist/
 
 # generated local benchmark output
 apps/eval/context-results/
+apps/eval/evaluation-results/

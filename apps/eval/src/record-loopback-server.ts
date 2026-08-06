@@ -61,6 +61,7 @@ async function handleRequest(input: {
 	readonly response: ServerResponse;
 	readonly outputByModel: Readonly<Record<string, string>>;
 	readonly observedRequests: ObservedModelRequest[];
+	readonly retryableFailureModels: ReadonlySet<string>;
 }): Promise<void> {
 	const url = new URL(input.request.url ?? "/", "http://127.0.0.1");
 	if (
@@ -90,6 +91,9 @@ async function handleRequest(input: {
 		system: parsed.data.messages[0].content,
 		user: parsed.data.messages[1].content,
 	});
+	if (input.retryableFailureModels.has(parsed.data.model)) {
+		throw new LoopbackRequestError(503, "controlled_retryable_failure", "Controlled retryable evaluation transport failure");
+	}
 	respondJson(input.response, 200, {
 		model: parsed.data.model,
 		choices: [{ message: { role: "assistant", content: output } }],
@@ -105,11 +109,12 @@ function closeServer(server: Server): Promise<void> {
 
 export function startRecordLoopbackServer(
 	outputByModel: Readonly<Record<string, string>>,
+	options: { readonly retryableFailureModels?: ReadonlySet<string> } = {},
 ): Promise<RecordLoopbackServer> {
 	const observedRequests: ObservedModelRequest[] = [];
 	return new Promise((resolve, reject) => {
 		const server = createServer((request, response) => {
-			void handleRequest({ request, response, outputByModel, observedRequests }).catch((cause: unknown) => {
+			void handleRequest({ request, response, outputByModel, observedRequests, retryableFailureModels: options.retryableFailureModels ?? new Set() }).catch((cause: unknown) => {
 				const error = cause instanceof LoopbackRequestError
 					? cause
 					: new LoopbackRequestError(500, "unexpected_failure", "Loopback request failed unexpectedly", { cause });

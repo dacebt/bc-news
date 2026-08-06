@@ -8,6 +8,7 @@ import { validateRunId } from "./run-file";
  * directory -- this module resolves flags, not paths.
  */
 export type EvalCliCommand =
+	| { command: "evaluate"; fixturePath: string; configPath: string; resultsDirectory?: string }
 	| { command: "run"; fixturePath: string; configPath?: string; resultsDirectory?: string }
 	| { command: "record"; fixturePath: string; configPath: string; responseDirectory?: string }
 	| { command: "context"; fixturePath: string; resultsDirectory?: string }
@@ -68,6 +69,18 @@ export function parseEvalCliCommand(argv: readonly string[]): EvalCliCommand {
 	const { positionals, values } = parsed;
 
 	const command = positionals[0];
+	if (command === "evaluate") {
+		exactPositionals(positionals, 1, command);
+		rejectUnknownOptions(values, ["fixture", "config", "results-dir"], command);
+		if (values.fixture === undefined) throw new CliOptionsError("--fixture is required");
+		if (values.config === undefined) throw new CliOptionsError("--config is required");
+		return {
+			command,
+			fixturePath: values.fixture,
+			configPath: values.config,
+			...(values["results-dir"] === undefined ? {} : { resultsDirectory: values["results-dir"] }),
+		};
+	}
 	if (command === "run") {
 		exactPositionals(positionals, 1, command);
 		rejectUnknownOptions(values, ["fixture", "config", "results-dir"], command);
@@ -130,5 +143,5 @@ export function parseEvalCliCommand(argv: readonly string[]): EvalCliCommand {
 			...(values["results-dir"] === undefined ? {} : { resultsDirectory: values["results-dir"] }),
 		};
 	}
-	throw new CliOptionsError("Expected the run, record, context, list, show, or compare command");
+	throw new CliOptionsError("Expected the evaluate, run, record, context, list, show, or compare command");
 }

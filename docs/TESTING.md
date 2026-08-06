@@ -8,7 +8,7 @@ tags: [documentation, testing, verification, evaluation]
 status: stable
 generated:
   by: ebt-skills/okf-v0.2
-  at: "2026-08-03T03:50:18Z"
+  at: "2026-08-06T19:06:47Z"
 authority: binding
 ---
 
@@ -17,12 +17,37 @@ authority: binding
 If implementation and this document disagree, the implementation is wrong
 unless this document is deliberately amended in the same unit of work. Build
 agents in this repo operate under the WSD standards discipline; this document
-binds how that discipline's evidence hierarchy applies to *this* project, so
+binds how that discipline's evidence domains apply to *this* project, so
 "write a test" means one thing across every session.
 
-## Evidence tiers, strongest first
+## Separate verification domains
 
-1. **The skeleton walk.** A fixed local conversation runs the whole pipeline:
+These surfaces answer different questions. None inherits another surface's
+outcome or silently substitutes for it.
+
+1. **Tests.** Deterministic isolated assertions protect warranted invariants,
+   reproduced defects, and high-risk state transitions. A failing test is a
+   hard failed test; it is not a retained model-evaluation attempt.
+2. **Model evaluation.** `evaluate --fixture <path> --config <path>
+   [--results-dir <path>]` observes one declared configuration and repetition.
+   Its strict Benchmark Run retains every reached Step Invocation before
+   transport and before parsing. Model rejection is a typed subject outcome
+   and can coexist with `harness_outcome: retained`; invalid configuration or
+   an untrustworthy create, write, or reparse is a harness failure and stops.
+   Evaluation reports behavior, provenance, and deterministic findings without
+   a judge, score, or acceptance verdict. Historical successful run files and
+   context results keep their existing meanings.
+3. **Recorded-replay acceptance.** The canonical recorded run executes the
+   four dependent production steps twice. Results must be identical apart from
+   run identity and timestamps, carry the exact ordered roster and usage, match
+   parsed recorded responses, recompute request relations from the requests
+   actually built, and assemble the final edition from the two copyedited
+   products. This is an explicit acceptance gate over controlled evidence, not
+   a live model evaluation. The composed recording probe uses a repository-owned
+   loopback provider, validates request order and dependent copyedit inputs,
+   stages and replays the exact four response files, and never contacts a
+   configured endpoint or overwrites committed fixtures.
+4. **The skeleton walk.** A fixed local conversation runs the whole pipeline:
    ingest into a fresh isolated D1 database; the real scheduled generation
    Workflow; `main_story_write`, `main_story_copyedit`,
    `announcements_write`, and `announcements_copyedit`; deterministic
@@ -37,34 +62,12 @@ binds how that discipline's evidence hierarchy applies to *this* project, so
    delivery must preserve edition bytes and usage, and an unknown pair must
    remain absent. Browser traffic is same-origin-only and exactly two
    pair-addressed edition 404s are allowed. This is the [PRD](PRD.md)'s first
-   success signal and the primary proof for any generation, contract, eval, or
-   client change. A passing test suite over a pipeline that cannot complete
-   this walk proves nothing.
-2. **The eval harness.** This project's distinctive tier: repo-owned
-   representative conversation fixtures replayed deterministically through
-   the [evidence input port](ARCHITECTURE.md), producing comparable outputs
-   with retained evidence. The canonical recorded run executes the four
-   dependent production steps twice. Results must be identical apart from run
-   identity and timestamps, carry the exact ordered roster and usage, match the
-   parsed recorded responses, recompute request relations from the requests
-   actually built, and assemble the final edition from the two copyedited
-   products. This proves contract, orchestration, provenance, and replay
-   determinism. It does not judge prose quality, factual equivalence, or whether
-   a model is good enough for production. The composed recording probe adds a
-   repository-owned loopback provider: it observes exactly four dependent live
-   requests in production-step order, proves both copyedit requests contain
-   their writer-produced drafts and stable announcement identities, recomputes
-   every retained `(production_step, prompt_sha256)` linkage from the observed
-   requests, replays the staged four-file set, and compares only the final
-   main-story and announcements products. Its config and response directory
-   live under walk-temporary storage and it never contacts configured endpoints
-   or overwrites committed fixtures.
-3. **Static guarantees.** Strict TypeScript, lint, and zod contracts that
-   parse-and-reject at every boundary (see the
-   [structural discipline](ARCHITECTURE.md)). These catch classes of defect
-   by construction; they do not prove runtime behavior.
-4. **Isolated tests.** A proof surface for specific risks — never the
-   default output of work, never coverage for its own sake.
+   success signal and proves the composed deployable product. A passing test,
+   retained Evaluation Trial, or acceptance gate cannot replace it.
+
+**Static guarantees** support every domain. Strict TypeScript, lint, and zod
+contracts parse-and-reject at every boundary; they do not prove runtime
+behavior.
 
 ## What isolated tests defend here
 
@@ -120,6 +123,22 @@ proves, tests of glue and framework wiring, tests to satisfy coverage.
 - Canonical eval verification parses every run it produces with the strict run
   schema. The permissive historical loader and the human comparison report are
   not acceptance gates.
+- Versioned model-evaluation artifacts validate against their own frozen
+  semantics. Version 1 rejects changed contract representations or hashes,
+  prepared-evidence snapshots that no longer match their identity and summary,
+  writer requests that do not exactly match the v1-local prompt and transcript
+  derived from that snapshot, impossible timestamp or duration relations, and
+  fabricated, missing, extra, or drifted final-product findings. Tests also
+  force a failure after temporary-file write but before rename and require
+  unchanged authoritative bytes. They separately prove successful cleanup and
+  prove that an OS cleanup failure stays an explicit harness failure carrying
+  the temporary path while preserving the primary `write_rejected` cause. V1
+  validation does not call mutable production parsers, prompt builders,
+  fencing, or product checks when re-validating historical evidence.
+- V1 code provenance is the clean repository commit itself: repository name,
+  validated 40-character commit SHA, and `dirty: false`. Strict validation
+  rejects missing, malformed, or extra provenance fields rather than retaining
+  a redundant workspace hash.
 - The active generator and canonical acceptance have no automatic model judge,
   score, verdict, quality floor, threshold, or byte-pinned baseline.
 - Copyedit preservation checks can prove only their mechanical invariants:

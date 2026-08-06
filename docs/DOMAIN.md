@@ -8,7 +8,7 @@ tags: [documentation, domain, vocabulary, editions]
 status: stable
 generated:
   by: ebt-skills/okf-v0.2
-  at: "2026-08-04T17:17:28Z"
+  at: "2026-08-06T19:06:47Z"
 authority: binding
 ---
 
@@ -62,6 +62,25 @@ verbatim in code, schema, tests, and APIs — no synonyms.
   model-template input, evidence or draft marginal, runtime delta, completion,
   total, and remaining context at fixed prepared-message loads. It is evidence
   for later design choices, never an evidence-policy change itself.
+- **model evaluation** — observation and retention of model behavior on
+  declared inputs, including behavior that production rejects. It is not an
+  acceptance decision or a skeleton walk.
+- **benchmark run** — one declared model-evaluation experiment: fixture,
+  prepared evidence, exact configuration matrix, repetitions, evaluation
+  trials, provenance, and harness outcome.
+- **evaluation trial** — one declared configuration and repetition evaluated
+  against one fixture across the independent `main_story` and `announcements`
+  tracks.
+- **step invocation** — one actual provider request for one production model
+  step, including its exact request, completion or transport failure, timing,
+  parse state, findings, and retry linkage.
+- **subject outcome** — the typed model behavior observed by an evaluation
+  trial: completed, a named rejection, or infrastructure-incomplete.
+- **harness outcome** — whether evaluation retained trustworthy evidence. A
+  subject rejection can coexist with a retained harness outcome.
+- **evaluation finding** — a structured, step-attributable invalid-JSON,
+  contract, preservation, or final-product observation; never a quality score
+  or judge verdict.
 - **ingest** — the process that collects regional chat messages from BitJita
   and validates them before they become edition evidence.
 - **Actors**: the **reader** (a BitCraft player), the **operator** (who

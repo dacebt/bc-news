@@ -49,5 +49,22 @@ Where authority lives:
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — binding structural discipline.
 - [docs/TESTING.md](docs/TESTING.md) — binding evidence discipline.
 
+## Model evaluation
+
+Run one declared live Evaluation Trial with an explicit strict four-step
+configuration:
+
+```sh
+pnpm --filter @bc-news/eval eval -- evaluate \
+  --fixture packages/fixtures \
+  --config path/to/eval.config.json \
+  --results-dir path/to/evaluation-results
+```
+
+The command incrementally retains a versioned Benchmark Run. Its report names
+the model's subject outcome separately from whether the harness retained
+trustworthy evidence. This is independent of recorded-replay acceptance,
+context measurement, and `pnpm walk`.
+
 The frozen v1 (`bc-news-worker` and siblings, in the parent directory) is
 reference material only — see the [v1 reference map](docs/v1-reference.md).

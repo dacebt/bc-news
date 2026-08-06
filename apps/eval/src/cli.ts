@@ -5,6 +5,8 @@ import { parseEvalCliCommand } from "./cli-options";
 import { runContextBenchmark } from "./context-benchmark-command";
 import { formatContextBenchmarkReport } from "./context-benchmark-report";
 import { recordCommand } from "./record-command";
+import { evaluateTrialCommand } from "./evaluation-trial-command";
+import { formatEvaluationTrialReport } from "./evaluation-report";
 import {
 	formatRecordSummary,
 	formatRunComparison,
@@ -16,6 +18,7 @@ import { listRunFiles, loadRunFile } from "./run-file";
 import { runCommand } from "./run-command";
 
 const USAGE = `Usage:
+  pnpm --filter @bc-news/eval eval -- evaluate --fixture <path> --config <path> [--results-dir <path>]
   pnpm --filter @bc-news/eval eval -- run --fixture <path> [--config <path>] [--results-dir <path>]
   pnpm --filter @bc-news/eval eval -- record --fixture <path> --config <path> [--response-dir <path>]
   pnpm --filter @bc-news/eval eval -- context --fixture <path> [--results-dir <path>]
@@ -59,6 +62,18 @@ async function main(): Promise<void> {
 		return resultsDirectory === undefined
 			? resolve(appDirectory, "results")
 			: resolve(cwd, resultsDirectory);
+	}
+
+	if (command.command === "evaluate") {
+		const result = await evaluateTrialCommand({
+			fixturePath: resolve(cwd, command.fixturePath),
+			configPath: resolve(cwd, command.configPath),
+			resultsDirectory: command.resultsDirectory === undefined
+				? resolve(appDirectory, "evaluation-results")
+				: resolve(cwd, command.resultsDirectory),
+		});
+		process.stdout.write(`${formatEvaluationTrialReport(result.benchmark, result.path)}\n`);
+		return;
 	}
 
 	if (command.command === "run") {

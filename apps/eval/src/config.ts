@@ -16,6 +16,14 @@ export const EvalConfigSchema = z.strictObject({
 
 export type EvalConfig = z.infer<typeof EvalConfigSchema>;
 
+export class LiveEvaluationConfigError extends Error {
+	readonly code = "recorded_adapter_rejected_for_live_evaluation";
+	constructor(path: string) {
+		super(`Live evaluation config at ${path} cannot use the recorded adapter`);
+		this.name = "LiveEvaluationConfigError";
+	}
+}
+
 export class EvalConfigError extends Error {
 	readonly code: "invalid_json" | "config_rejected";
 	readonly path: string;
@@ -45,4 +53,12 @@ export async function loadConfig(path: string): Promise<EvalConfig> {
 		);
 	}
 	return result.data;
+}
+
+export async function loadLiveEvaluationConfig(path: string): Promise<EvalConfig> {
+	const config = await loadConfig(path);
+	if (Object.values(config.production_steps).some(({ adapter }) => adapter === "recorded")) {
+		throw new LiveEvaluationConfigError(path);
+	}
+	return config;
 }
