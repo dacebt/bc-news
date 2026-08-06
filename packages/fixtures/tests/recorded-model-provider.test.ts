@@ -13,11 +13,23 @@ import {
 } from "@bc-news/generation-core";
 import {
 	RecordedModelResponseSchema,
+	createRecordedModelProvider,
 	fixtureEvidenceInput,
 	modelRequestSha256,
 	recordedModelProvider,
+	type RecordedModelResponseRoster,
 } from "../src";
+import announcementsCopyeditResponseJson from "../model-responses/announcements_copyedit.json";
+import announcementsWriteResponseJson from "../model-responses/announcements_write.json";
+import mainStoryCopyeditResponseJson from "../model-responses/main_story_copyedit.json";
 import mainStoryWriteResponseJson from "../model-responses/main_story_write.json";
+
+const committedRoster: RecordedModelResponseRoster = {
+	main_story_write: RecordedModelResponseSchema.parse(mainStoryWriteResponseJson),
+	main_story_copyedit: RecordedModelResponseSchema.parse(mainStoryCopyeditResponseJson),
+	announcements_write: RecordedModelResponseSchema.parse(announcementsWriteResponseJson),
+	announcements_copyedit: RecordedModelResponseSchema.parse(announcementsCopyeditResponseJson),
+};
 
 async function canonicalPreparedEvidence() {
 	const messages = await fixtureEvidenceInput.loadEvidence({
@@ -96,13 +108,38 @@ test.each(["system", "user"] as const)("rejects a replay when the real %s prompt
 	);
 });
 
-test("the retained response contract rejects extra keys", () => {
-	expect(RecordedModelResponseSchema.safeParse({
-		production_step: "main_story_write",
-		provider: "fixture",
-		model: "fixture",
-		prompt_sha256: "0".repeat(64),
-		text: "{}",
+test("a replay factory rejects a response assigned to a different production step", async () => {
+	const preparedEvidence = await canonicalPreparedEvidence();
+	const provider = createRecordedModelProvider({
+		...committedRoster,
+		main_story_write: committedRoster.announcements_write,
+	});
+
+	await expect(provider.complete({
+		productionStep: "main_story_write",
+		system: WRITER_SYSTEM_CONSTRAINTS,
+		user: buildMainStoryWriterPrompt(preparedEvidence),
+	})).rejects.toEqual(expect.objectContaining({
+		name: "RecordedModelProviderError",
+		code: "recorded_response_step_mismatch",
+		productionStep: "main_story_write",
+	}));
+});
+
+test("a replay factory validates the selected retained response", async () => {
+	const preparedEvidence = await canonicalPreparedEvidence();
+	const retainedResponseWithExtraKey = {
+		...committedRoster.main_story_write,
 		judge: null,
-	}).success).toBe(false);
+	};
+	const provider = createRecordedModelProvider({
+		...committedRoster,
+		main_story_write: retainedResponseWithExtraKey,
+	});
+
+	await expect(provider.complete({
+		productionStep: "main_story_write",
+		system: WRITER_SYSTEM_CONSTRAINTS,
+		user: buildMainStoryWriterPrompt(preparedEvidence),
+	})).rejects.toEqual(expect.objectContaining({ name: "ZodError" }));
 });

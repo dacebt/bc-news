@@ -67,6 +67,7 @@ export type {
 	ExternalBilling,
 	ModelCompletion,
 	ModelProviderPort,
+	ModelProviderRequest,
 	ModelUsageRecord,
 	ProductionModelStep,
 	TokenUsage,

@@ -15,7 +15,9 @@ import {
 	parseMainStoryWriterOutput,
 	type AnnouncementsProduct,
 	type MainStoryProduct,
+	type ModelCompletion,
 	type ModelProviderPort,
+	type ModelProviderRequest,
 	type ModelUsageRecord,
 	type PreparedEvidence,
 	type ProductionModelStep,
@@ -33,22 +35,39 @@ export interface EvalProducts {
 	readonly announcements: AnnouncementsProduct;
 }
 
+export interface ProductionStepObservation {
+	readonly request: ModelProviderRequest;
+	readonly completion: ModelCompletion;
+}
+
+export interface ProductionStepsExecution {
+	readonly steps: readonly EvalStep[];
+	readonly products: EvalProducts;
+	readonly observations: readonly ProductionStepObservation[];
+}
+
 async function completeStep(input: {
 	readonly productionStep: ProductionModelStep;
 	readonly provider: ModelProviderPort;
 	readonly system: string;
 	readonly user: string;
-}): Promise<{ readonly text: string; readonly step: EvalStep }> {
-	const completion = await input.provider.complete({
+}): Promise<{
+	readonly request: ModelProviderRequest;
+	readonly completion: ModelCompletion;
+	readonly step: EvalStep;
+}> {
+	const request: ModelProviderRequest = {
 		productionStep: input.productionStep,
 		system: input.system,
 		user: input.user,
-	});
+	};
+	const completion = await input.provider.complete(request);
 	return {
-		text: completion.text,
+		request,
+		completion,
 		step: {
 			production_step: input.productionStep,
-			prompt_sha256: await modelRequestSha256({ system: input.system, user: input.user }),
+			prompt_sha256: await modelRequestSha256(request),
 			output: {},
 			model_usage: modelUsageRecord(input.productionStep, completion),
 		},
@@ -58,7 +77,7 @@ async function completeStep(input: {
 export async function executeProductionSteps(
 	preparedEvidence: PreparedEvidence,
 	providers: Readonly<Record<ProductionModelStep, ModelProviderPort>>,
-): Promise<{ readonly steps: readonly EvalStep[]; readonly products: EvalProducts }> {
+): Promise<ProductionStepsExecution> {
 	const mainStoryWriterUser = buildMainStoryWriterPrompt(preparedEvidence);
 	const mainStoryWriter = await completeStep({
 		productionStep: "main_story_write",
@@ -66,7 +85,7 @@ export async function executeProductionSteps(
 		system: WRITER_SYSTEM_CONSTRAINTS,
 		user: mainStoryWriterUser,
 	});
-	const mainStoryDraft = parseMainStoryWriterOutput(mainStoryWriter.text);
+	const mainStoryDraft = parseMainStoryWriterOutput(mainStoryWriter.completion.text);
 
 	const mainStoryCopyeditUser = buildMainStoryCopyeditPrompt(mainStoryDraft);
 	const mainStoryCopyedit = await completeStep({
@@ -75,7 +94,7 @@ export async function executeProductionSteps(
 		system: COPYEDIT_SYSTEM_CONSTRAINTS,
 		user: mainStoryCopyeditUser,
 	});
-	const mainStory = parseMainStoryCopyeditOutput(mainStoryCopyedit.text, mainStoryDraft);
+	const mainStory = parseMainStoryCopyeditOutput(mainStoryCopyedit.completion.text, mainStoryDraft);
 
 	const announcementsWriterUser = buildAnnouncementsWriterPrompt(preparedEvidence);
 	const announcementsWriter = await completeStep({
@@ -84,7 +103,7 @@ export async function executeProductionSteps(
 		system: WRITER_SYSTEM_CONSTRAINTS,
 		user: announcementsWriterUser,
 	});
-	const announcementsDraft = parseAnnouncementsWriterOutput(announcementsWriter.text);
+	const announcementsDraft = parseAnnouncementsWriterOutput(announcementsWriter.completion.text);
 	const identifiedAnnouncements = attachAnnouncementIds(announcementsDraft);
 
 	const announcementsCopyeditUser = buildAnnouncementsCopyeditPrompt(identifiedAnnouncements);
@@ -95,7 +114,7 @@ export async function executeProductionSteps(
 		user: announcementsCopyeditUser,
 	});
 	const announcements = parseAnnouncementsCopyeditOutput(
-		announcementsCopyedit.text,
+		announcementsCopyedit.completion.text,
 		identifiedAnnouncements,
 	);
 
@@ -105,17 +124,18 @@ export async function executeProductionSteps(
 		announcements_write: announcementsDraft,
 		announcements_copyedit: announcements,
 	};
-	const completed = [
-		mainStoryWriter.step,
-		mainStoryCopyedit.step,
-		announcementsWriter.step,
-		announcementsCopyedit.step,
+	const completedSteps = [
+		mainStoryWriter,
+		mainStoryCopyedit,
+		announcementsWriter,
+		announcementsCopyedit,
 	];
 	return {
 		steps: PRODUCTION_MODEL_STEPS.map((productionStep, index) => ({
-			...completed[index]!,
+			...completedSteps[index]!.step,
 			output: outputs[productionStep],
 		})),
 		products: { mainStory, announcements },
+		observations: completedSteps.map(({ request, completion }) => ({ request, completion })),
 	};
 }

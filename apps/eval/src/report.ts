@@ -1,4 +1,5 @@
 import type { RunComparison } from "./compare";
+import type { RecordCommandResult } from "./record-command";
 import type { RunFile, RunFileRead } from "./run-file";
 
 export function formatRunSummary(run: RunFile, outputPath: string): string {
@@ -20,7 +21,18 @@ export function formatRunDetail(run: RunFileRead): string {
 
 export function formatRunComparison(comparison: RunComparison): string {
 	const lines = [`Compare ${comparison.leftId} -> ${comparison.rightId}`];
-	if (comparison.differences.length === 0) lines.push("No differences beyond run identity and time.");
+	if (comparison.differences.length === 0) lines.push("Final editorial products: no differences");
 	else lines.push(...comparison.differences.map((path) => `- ${path}`));
+	return lines.join("\n");
+}
+
+export function formatRecordSummary(result: RecordCommandResult): string {
+	const lines = [`Recorded responses: ${result.responseDirectory}`];
+	if (result.comparison.differences.length === 0) {
+		lines.push("Final editorial products: no differences");
+	} else {
+		lines.push("Final editorial products: differences");
+		lines.push(...result.comparison.differences.map((path) => `- ${path}`));
+	}
 	return lines.join("\n");
 }

@@ -4,12 +4,20 @@ import { compareRuns } from "./compare";
 import { parseEvalCliCommand } from "./cli-options";
 import { runContextBenchmark } from "./context-benchmark-command";
 import { formatContextBenchmarkReport } from "./context-benchmark-report";
-import { formatRunComparison, formatRunDetail, formatRunListing, formatRunSummary } from "./report";
+import { recordCommand } from "./record-command";
+import {
+	formatRecordSummary,
+	formatRunComparison,
+	formatRunDetail,
+	formatRunListing,
+	formatRunSummary,
+} from "./report";
 import { listRunFiles, loadRunFile } from "./run-file";
 import { runCommand } from "./run-command";
 
 const USAGE = `Usage:
   pnpm --filter @bc-news/eval eval -- run --fixture <path> [--config <path>] [--results-dir <path>]
+  pnpm --filter @bc-news/eval eval -- record --fixture <path> --config <path> [--response-dir <path>]
   pnpm --filter @bc-news/eval eval -- context --fixture <path> [--results-dir <path>]
   pnpm --filter eval run eval -- list [--results-dir <path>]
   pnpm --filter eval run eval -- show <run-id> [--results-dir <path>]
@@ -68,6 +76,24 @@ async function main(): Promise<void> {
 			resultsDirectory: resultsDirectoryFor(command.resultsDirectory),
 		});
 		process.stdout.write(`${formatRunSummary(saved.run, saved.path)}\n`);
+		return;
+	}
+	if (command.command === "record") {
+		/*
+		 * The retained response set lives at the workspace level, so its default
+		 * resolves from the app's fixed repository location. A user-typed
+		 * --response-dir still resolves from the directory that invoked pnpm.
+		 */
+		const defaultResponseDirectory = resolve(appDirectory, "../../packages/fixtures/model-responses");
+		const result = await recordCommand({
+			fixturePath: resolve(cwd, command.fixturePath),
+			configPath: resolve(cwd, command.configPath),
+			responseDirectory: command.responseDirectory === undefined
+				? defaultResponseDirectory
+				: resolve(cwd, command.responseDirectory),
+			environment: process.env,
+		});
+		process.stdout.write(`${formatRecordSummary(result)}\n`);
 		return;
 	}
 	if (command.command === "context") {

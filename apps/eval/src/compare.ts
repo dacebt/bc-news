@@ -1,5 +1,6 @@
-import { allDifferences } from "./run-difference";
-import { normalizeRunComparisonTimes } from "./comparison-time";
+import {
+	compareRetainedFinalEditorialProducts,
+} from "./final-product-comparison";
 import type { RunFileRead } from "./run-file";
 
 export interface RunComparison {
@@ -12,10 +13,6 @@ export function compareRuns(left: RunFileRead, right: RunFileRead): RunCompariso
 	return {
 		leftId: left.id,
 		rightId: right.id,
-		differences: allDifferences(
-			normalizeRunComparisonTimes(left),
-			normalizeRunComparisonTimes(right),
-			["id", "started_at", "completed_at"],
-		),
+		differences: compareRetainedFinalEditorialProducts(left, right).differences,
 	};
 }

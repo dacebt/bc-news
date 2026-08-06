@@ -36,6 +36,12 @@ export interface ModelCompletion {
 	external_billing: ExternalBilling;
 }
 
+export interface ModelProviderRequest {
+	readonly productionStep: ProductionModelStep;
+	readonly system: string;
+	readonly user: string;
+}
+
 export type ModelUsageRecord = Omit<ModelCompletion, "text"> & {
 	production_step: ProductionModelStep;
 };
@@ -48,9 +54,5 @@ export interface EvidenceInputPort {
 }
 
 export interface ModelProviderPort {
-	complete(request: {
-		productionStep: ProductionModelStep;
-		system: string;
-		user: string;
-	}): Promise<ModelCompletion>;
+	complete(request: ModelProviderRequest): Promise<ModelCompletion>;
 }

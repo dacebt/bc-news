@@ -179,10 +179,22 @@ The committed recorded-response set has exactly four files:
 the artifact, but does not prove model authorship. Automated tests and the
 canonical walk use recorded or repository-owned loopback providers and never
 call configured endpoints. The walk supplies an explicit four-step recorded
-`MODEL_CONFIG`, overriding any developer `.dev.vars` model assignment. A live
-four-response recorder is a later mapped capability, after exact context-budget
-measurement; this walking skeleton does not claim it exists or call a live
-model.
+`MODEL_CONFIG`, overriding any developer `.dev.vars` model assignment.
+
+The developer-facing recorder requires an explicit eval configuration with one
+live hosted or local adapter for each production step; the committed recorded
+configuration is not a recording default. It executes exactly four dependent
+calls in production-step order, so each copyeditor receives the draft produced
+by its writer. Every retained response carries the exact
+`(production_step, prompt_sha256)` linkage computed from the `{system, user}`
+request actually sent. The recorder stages the exact four-file directory on the
+same filesystem, validates every record, replays that staged set through the
+shared runner, and compares only the final main-story and announcements
+products before promotion. Promotion is recoverable and all-or-none at the
+directory level; it does not promise continuous visibility to concurrent
+readers. A failed call, validation, staged replay, or comparison leaves the
+previous committed set in place. Recording has no judge, score, threshold,
+byte pin, or source-digest acceptance gate.
 
 Settled — edition identity enforcement, three layers with the SQL layer
 authoritative: (1) the trigger derives a deterministic Workflow instance
@@ -268,7 +280,13 @@ external billing. It proves deterministic assembly serves the two recorded
 copyedited products. Repeated scheduled delivery must leave both edition bytes and
 retained usage unchanged. Before success, the walk invokes the eval harness
 directly with an empty provider environment and a strictly preflighted all-
-recorded configuration.
+recorded configuration. It also runs the recorder against a repository-owned
+OpenAI-compatible server bound to an ephemeral loopback port, with four
+distinct requested models and walk-temporary response storage. That composed
+probe observes the four dependent requests, validates their request stamps,
+replays the staged set before promotion, and compares the two final editorial
+products without touching the committed response directory or a configured
+external endpoint.
 
 The canonical run executes the four dependent production steps twice, writes
 only below the walk's temporary directory, and reloads through the strict run

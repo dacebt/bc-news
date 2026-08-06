@@ -9,12 +9,13 @@ import { validateRunId } from "./run-file";
  */
 export type EvalCliCommand =
 	| { command: "run"; fixturePath: string; configPath?: string; resultsDirectory?: string }
+	| { command: "record"; fixturePath: string; configPath: string; responseDirectory?: string }
 	| { command: "context"; fixturePath: string; resultsDirectory?: string }
 	| { command: "list"; resultsDirectory?: string }
 	| { command: "show"; runId: string; resultsDirectory?: string }
 	| { command: "compare"; leftRunId: string; rightRunId: string; resultsDirectory?: string };
 
-const ALL_OPTIONS = ["fixture", "config", "results-dir"] as const;
+const ALL_OPTIONS = ["fixture", "config", "results-dir", "response-dir"] as const;
 
 export class CliOptionsError extends Error {
 	readonly code = "invalid_cli_options";
@@ -51,6 +52,7 @@ function runParseArgs(argv: readonly string[]) {
 			fixture: { type: "string" },
 			config: { type: "string" },
 			"results-dir": { type: "string" },
+			"response-dir": { type: "string" },
 		},
 	});
 }
@@ -75,6 +77,20 @@ export function parseEvalCliCommand(argv: readonly string[]): EvalCliCommand {
 			fixturePath: values.fixture,
 			...(values.config === undefined ? {} : { configPath: values.config }),
 			...(values["results-dir"] === undefined ? {} : { resultsDirectory: values["results-dir"] }),
+		};
+	}
+	if (command === "record") {
+		exactPositionals(positionals, 1, command);
+		rejectUnknownOptions(values, ["fixture", "config", "response-dir"], command);
+		if (values.fixture === undefined) throw new CliOptionsError("--fixture is required");
+		if (values.config === undefined) throw new CliOptionsError("--config is required");
+		return {
+			command,
+			fixturePath: values.fixture,
+			configPath: values.config,
+			...(values["response-dir"] === undefined
+				? {}
+				: { responseDirectory: values["response-dir"] }),
 		};
 	}
 	if (command === "context") {
@@ -114,5 +130,5 @@ export function parseEvalCliCommand(argv: readonly string[]): EvalCliCommand {
 			...(values["results-dir"] === undefined ? {} : { resultsDirectory: values["results-dir"] }),
 		};
 	}
-	throw new CliOptionsError("Expected the run, context, list, show, or compare command");
+	throw new CliOptionsError("Expected the run, record, context, list, show, or compare command");
 }

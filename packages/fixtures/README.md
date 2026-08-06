@@ -53,6 +53,21 @@ from current builders and dependent upstream output. Replay selection remains
 keyed by `production_step`; canonical verification recomputes every stamp.
 The hash is request provenance, not proof that a named model authored text.
 
+The eval recorder requires an explicit live four-step configuration. It makes
+the four dependent production calls, writes each exact
+`(production_step, prompt_sha256)` association into a same-filesystem staging
+directory, validates and replays the complete staged roster, and compares only
+the final main-story and announcements products before recoverable all-or-none
+directory promotion. Promotion does not promise continuous visibility to
+concurrent readers. There is no judge, threshold, byte pin, or source-digest
+acceptance gate.
+
+Committed files in `model-responses/` are overwritten only when a developer
+explicitly runs the `record` command with that directory as the target. The
+canonical walk records into its own temporary directory through a
+repository-owned loopback provider; it never changes the committed fixtures or
+contacts a configured external endpoint.
+
 Retained historical eval run files remain human-readable provenance only.
 Canonical replay instead recomputes relationships from current evidence,
 prompt builders, the four records, and the run being checked. Recorded replay

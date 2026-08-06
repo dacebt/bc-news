@@ -50,7 +50,15 @@ binds how that discipline's evidence hierarchy applies to *this* project, so
    actually built, and assemble the final edition from the two copyedited
    products. This proves contract, orchestration, provenance, and replay
    determinism. It does not judge prose quality, factual equivalence, or whether
-   a model is good enough for production.
+   a model is good enough for production. The composed recording probe adds a
+   repository-owned loopback provider: it observes exactly four dependent live
+   requests in production-step order, proves both copyedit requests contain
+   their writer-produced drafts and stable announcement identities, recomputes
+   every retained `(production_step, prompt_sha256)` linkage from the observed
+   requests, replays the staged four-file set, and compares only the final
+   main-story and announcements products. Its config and response directory
+   live under walk-temporary storage and it never contacts configured endpoints
+   or overwrites committed fixtures.
 3. **Static guarantees.** Strict TypeScript, lint, and zod contracts that
    parse-and-reject at every boundary (see the
    [structural discipline](ARCHITECTURE.md)). These catch classes of defect
@@ -94,9 +102,9 @@ proves, tests of glue and framework wiring, tests to satisfy coverage.
   and produced are the right shape for the run's *own* fields.
 - **Recorded artifacts are inputs, not byte-level expectations.** Canonical
   acceptance recomputes relations from the current evidence, the exported
-  prompt builders, the recorded responses, and the run being checked. A future
-  recorder writes `prompt_sha256` from the request it actually sends,
-  binding that recorded response to that request. The current committed writer
+  prompt builders, the recorded responses, and the run being checked. The
+  recorder writes `prompt_sha256` from the request it actually sends, binding
+  that recorded response to that request. The current committed writer
   responses are migrated fixtures and the copyedit responses are synthetic
   fixtures; their stamps are reconstructed request associations, not
   recorder-authored provenance. No stamp is durable proof that a particular
@@ -138,8 +146,15 @@ proves, tests of glue and framework wiring, tests to satisfy coverage.
   input and completion usage, total, and remaining headroom. Component sums and
   model identity are rejecting contracts; unsupported attribution is never
   estimated.
-- A live four-response recorder is also a later mapped capability. The current
-  walk replays the committed four-file set; it does not claim to record it.
+- The live recorder requires an explicit four-step live eval configuration and
+  performs four dependent calls. It stages and validates the exact four-file
+  set on the target filesystem, replays the staged records through the shared
+  runner, compares only the final editorial products, and promotes the response
+  directory all-or-none with recoverable backup handling. It does not promise
+  continuous visibility to concurrent readers and has no judge, threshold,
+  byte pin, or source-digest acceptance gate. The walk exercises this contract
+  against its own loopback provider and temporary output; overwriting committed
+  response fixtures remains an explicit developer `record` operation.
 - Completion claims cite the tier that proved them. "Done" without evidence
   from tier 1–3 is not done.
 
