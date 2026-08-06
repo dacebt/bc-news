@@ -21,10 +21,10 @@ export function transportErrorIdentity(error: unknown): { code: string; message:
 	if (error instanceof Error) return { code: "code" in error && typeof error.code === "string" ? error.code : error.name, message: error.message };
 	return { code: "unknown_transport_failure", message: String(error) };
 }
-export function parseFinding(error: unknown, productionStep: ProductionModelStep): EvaluationFinding | undefined {
+export function parseFinding(error: unknown): EvaluationFinding | undefined {
 	if (error instanceof EditorialOutputContractError) return { kind: error.code, production_step: error.productionStep, code: error.code, message: error.message };
 	if (error instanceof CopyeditPreservationError) return { kind: "preservation", production_step: error.productionStep, code: error.code, message: error.message };
-	void productionStep; return undefined;
+	return undefined;
 }
 function findingOutcome(finding: EvaluationFinding): SubjectOutcome {
 	if (finding.kind === "invalid_json") return "parse_rejected";

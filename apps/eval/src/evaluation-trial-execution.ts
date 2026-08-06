@@ -64,7 +64,7 @@ export async function executeEvaluationTrial(input: {
 			} : candidate), selected_invocation_ids: { ...trial().selected_invocation_ids, [stepInput.productionStep]: invocationId } });
 			return output;
 		} catch (error: unknown) {
-			const finding = parseFinding(error, stepInput.productionStep);
+			const finding = parseFinding(error);
 			if (finding === undefined) throw error;
 			await updateTrial({ ...trial(), invocations: trial().invocations.map((candidate) => candidate.id === invocationId && candidate.transport === "succeeded" ? {
 				...candidate, parse: { state: "rejected" as const, findings: [finding] },

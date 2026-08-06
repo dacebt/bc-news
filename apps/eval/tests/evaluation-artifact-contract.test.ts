@@ -2,7 +2,9 @@ import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { PRODUCTION_MODEL_STEPS } from "@bc-news/generation-core";
 import { expect, test } from "vitest";
-import { BenchmarkRunSchema, evaluationOutputContractProvenance } from "../src/evaluation-artifact";
+import {
+	BenchmarkRunSchema, evaluationConfigIdentity, evaluationOutputContractProvenance,
+} from "../src/evaluation-artifact";
 import { EvaluationArtifactStore } from "../src/evaluation-artifact-store";
 import { CANONICAL_FIXTURE_PATH } from "../src/canonical-walk-verifier";
 import { evaluateTrialCommand } from "../src/evaluation-trial-command";
@@ -149,6 +151,49 @@ test("accepts truthful resolved model provenance distinct from the requested mod
 	invocation.completion.model = "canonical/resolved-main-story-model";
 	expect(invocation.completion.model).not.toBe(requested.model);
 	expect(BenchmarkRunSchema.safeParse(resolved).success).toBe(true);
+});
+
+test("binds usage and billing evidence to the declared adapter", async () => {
+	const { result } = await controlledEvaluation();
+	const hostedUsage = clone(result.benchmark);
+	const hostedInvocation = hostedUsage.trials[0]!.invocations[0]!;
+	if (hostedInvocation.transport !== "succeeded") throw new Error("expected hosted completion");
+	hostedInvocation.completion.token_usage = { measurement: "unavailable" };
+	expect(BenchmarkRunSchema.safeParse(hostedUsage).success).toBe(false);
+
+	const hostedBilling = clone(result.benchmark);
+	const billedInvocation = hostedBilling.trials[0]!.invocations[0]!;
+	if (billedInvocation.transport !== "succeeded") throw new Error("expected hosted completion");
+	if (billedInvocation.completion.external_billing.classification !== "calculated") throw new Error("expected calculated hosted billing");
+	billedInvocation.completion.external_billing = {
+		classification: "calculated",
+		amount_usd: billedInvocation.completion.external_billing.amount_usd + 1,
+		pricing_reference: "unrelated pricing",
+	};
+	expect(BenchmarkRunSchema.safeParse(hostedBilling).success).toBe(false);
+
+	const local = clone(result.benchmark);
+	local.declaration.configurations[0].config.production_steps.main_story_write = {
+		adapter: "lmstudio",
+		model: "local/requested-model",
+		sampling: { temperature: 0.2, top_p: 0.95, top_k: 40 },
+		reasoning_effort: "medium",
+	};
+	const localIdentity = evaluationConfigIdentity(local.declaration.configurations[0].config);
+	local.declaration.configurations[0].identity = localIdentity;
+	local.trial_roster[0].config_identity = localIdentity;
+	local.trials[0]!.config_identity = localIdentity;
+	for (const invocation of local.trials[0]!.invocations) invocation.config_identity = localIdentity;
+	const localInvocation = local.trials[0]!.invocations[0]!;
+	if (localInvocation.transport !== "succeeded") throw new Error("expected local completion");
+	localInvocation.completion.execution = "local_inference";
+	localInvocation.completion.provider = "lmstudio";
+	localInvocation.completion.external_billing = {
+		classification: "none", amount_usd: 0, reason: "local_inference",
+	};
+	expect(BenchmarkRunSchema.safeParse(local).success).toBe(true);
+	localInvocation.completion.external_billing = { classification: "provider_reported", amount_usd: 0 };
+	expect(BenchmarkRunSchema.safeParse(local).success).toBe(false);
 });
 
 test("generated results do not change injected code provenance across runs", async () => {
