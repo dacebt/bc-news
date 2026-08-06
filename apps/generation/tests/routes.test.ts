@@ -28,6 +28,20 @@ function pairRequest(publicationDate: string): URL {
 	);
 }
 
+const COMPLETE_MODEL_USAGE = [
+	"main_story_write",
+	"main_story_copyedit",
+	"announcements_write",
+	"announcements_copyedit",
+].map((production_step) => ({
+	production_step,
+	provider: "r",
+	model: "m",
+	execution: "recorded_replay",
+	token_usage: { measurement: "unavailable" },
+	external_billing: { classification: "none", amount_usd: 0, reason: "recorded_replay" },
+}));
+
 it("manual generation launch returns 202 for a new deterministic instance", async () => {
 	const response = await createGenerationRun(
 		request(),
@@ -85,17 +99,14 @@ it.each([
 		null,
 		JSON.stringify([
 			"prepare-evidence",
-			"compose-main-story",
-			"compose-announcements",
-			"compose-packaging",
+			"main_story_write",
+			"main_story_copyedit",
+			"announcements_write",
+			"announcements_copyedit",
 			"validate-edition",
 			"publish-edition",
 		]),
-		JSON.stringify([
-			{ editorial_capability: "main_story", provider: "r", model: "m", execution: "recorded_replay", token_usage: { measurement: "unavailable" }, external_billing: { classification: "none", amount_usd: 0, reason: "recorded_replay" } },
-			{ editorial_capability: "announcements", provider: "r", model: "m", execution: "recorded_replay", token_usage: { measurement: "unavailable" }, external_billing: { classification: "none", amount_usd: 0, reason: "recorded_replay" } },
-			{ editorial_capability: "packaging", provider: "r", model: "m", execution: "recorded_replay", token_usage: { measurement: "unavailable" }, external_billing: { classification: "none", amount_usd: 0, reason: "recorded_replay" } },
-		]),
+		JSON.stringify(COMPLETE_MODEL_USAGE),
 		null,
 	],
 	[

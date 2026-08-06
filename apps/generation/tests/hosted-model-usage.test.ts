@@ -26,15 +26,15 @@ it("retains hosted completion usage and calculated billing in the D1 operator pr
 			pricing_reference: "verify-prices-2026-08-04",
 		},
 	};
-	const usage = modelUsageRecord("main_story", completion);
+	const usage = modelUsageRecord("main_story_write", completion);
 
 	await queueGenerationRunStatus(env.DB, params, "2026-08-05T00:00:00.000Z");
 	await recordGenerationRunProgress(
 		env.DB,
 		params,
 		{
-			currentStep: "compose-announcements",
-			completedSteps: ["prepare-evidence", "compose-main-story"],
+			currentStep: "main_story_copyedit",
+			completedSteps: ["prepare-evidence", "main_story_write"],
 			modelUsage: [usage],
 		},
 		"2026-08-05T00:00:01.000Z",

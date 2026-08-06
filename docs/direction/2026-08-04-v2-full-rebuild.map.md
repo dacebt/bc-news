@@ -5,10 +5,10 @@ title: >-
 description: >-
   The carve of the bc-news v2 rebuild into ordered vertical capabilities — from the completed walking skeleton to the full pre-deployment product — plus the conventions the rebuild introduces.
 tags: [wsd, direction, capability-map]
-status: stable
+status: deprecated
 generated:
   by: ebt-wsd/okf-v0.2
-  at: "2026-08-04T12:44:48Z"
+  at: "2026-08-06T01:22:13Z"
 ---
 # Capability map: v2 full rebuild
 

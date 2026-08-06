@@ -17,39 +17,57 @@ export {
 	prepareEvidence,
 } from "./prepare-evidence";
 export {
+	COPYEDIT_SYSTEM_CONSTRAINTS,
 	EditorialOutputContractError,
-	MainStoryOutputSchema,
-	SYSTEM_CONSTRAINTS,
-	buildMainStoryPrompt,
-	parseMainStoryOutput,
-	type MainStoryOutput,
+	MainStoryCopyeditOutputSchema,
+	MainStoryDraftSchema,
+	MainStoryProductSchema,
+	WRITER_SYSTEM_CONSTRAINTS,
+	buildMainStoryCopyeditPrompt,
+	buildMainStoryWriterPrompt,
+	parseMainStoryCopyeditOutput,
+	parseMainStoryWriterOutput,
+	type MainStoryDraft,
+	type MainStoryProduct,
 } from "./main-story";
 export {
-	AnnouncementsOutputSchema,
-	buildAnnouncementsPrompt,
-	parseAnnouncementsOutput,
-	type AnnouncementsOutput,
+	AnnouncementsCopyeditOutputSchema,
+	AnnouncementsDraftSchema,
+	AnnouncementsProductSchema,
+	AnnouncementsWriterOutputSchema,
+	IdentifiedAnnouncementSchema,
+	IdentifiedAnnouncementsDraftSchema,
+	attachAnnouncementIds,
+	buildAnnouncementsCopyeditPrompt,
+	buildAnnouncementsWriterPrompt,
+	parseAnnouncementsCopyeditOutput,
+	parseAnnouncementsWriterOutput,
+	type AnnouncementsDraft,
+	type AnnouncementsProduct,
+	type IdentifiedAnnouncementsDraft,
 } from "./announcements";
 export {
-	PackagingOutputSchema,
-	buildPackagingPrompt,
-	parsePackagingOutput,
-	type PackagingOutput,
-} from "./packaging";
+	CopyeditPreservationError,
+	assertCopyeditPreservesTextFields,
+} from "./copyedit-preservation";
 export { assembleEdition } from "./assemble-edition";
 export {
-	EditorialCapabilitySchema,
+	EditorialProductSchema,
 	ExternalBillingSchema,
 	ModelUsageRecordSchema,
+	PRODUCTION_MODEL_STEPS,
+	ProductionModelUsageRosterSchema,
+	ProductionModelStepSchema,
 	TokenUsageSchema,
 	modelUsageRecord,
 } from "./model-usage";
 export type {
-	EditorialCapability,
+	EditorialProduct,
 	EvidenceInputPort,
 	ExternalBilling,
 	ModelCompletion,
 	ModelProviderPort,
 	ModelUsageRecord,
+	ProductionModelStep,
 	TokenUsage,
 } from "./ports";

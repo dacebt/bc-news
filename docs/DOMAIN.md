@@ -3,7 +3,7 @@ type: doc
 title: >-
   bc-news domain model
 description: >-
-  The binding domain vocabulary and identity rules for bc-news v2 — what an edition is, what identifies a generation run, and which domain questions remain deliberately open for planning.
+  The binding domain vocabulary and identity rules for bc-news v2, including the two editorial products and four production model steps.
 tags: [documentation, domain, vocabulary, editions]
 status: stable
 generated:
@@ -43,10 +43,20 @@ verbatim in code, schema, tests, and APIs — no synonyms.
 - **generation run** — the work that produces one edition: one instance of
   the single Cloudflare Workflow definition, invoked for one active region
   and one publication date.
-- **editorial capability** — a distinct unit of editorial work inside a
-  generation run whose model assignment is independently replaceable. The
-  capability roster and each capability's degree of autonomy are open
-  decisions.
+- **editorial product** — one reader-facing part of an edition. The two
+  products are `main_story` (title, subtitle, and main story) and
+  `announcements` (the ordered announcement list).
+- **production model step** — one independently configured model call inside
+  a generation run. The exact ordered roster is `main_story_write`,
+  `main_story_copyedit`, `announcements_write`, and
+  `announcements_copyedit`.
+- **writer** — the evidence-reading step for one editorial product.
+- **copyeditor** — the single narrow cleanup step for its own typed draft. It
+  receives no source transcript or other editorial product and may correct
+  grammar, spelling, punctuation, and phrasing without changing facts,
+  quotations, numbers, coverage, order, structure, or meaning. Mechanical
+  preservation checks narrow this authority but do not prove semantic
+  equivalence.
 - **ingest** — the process that collects regional chat messages from BitJita
   and validates them before they become edition evidence.
 - **Actors**: the **reader** (a BitCraft player), the **operator** (who
@@ -79,30 +89,23 @@ and each deviation amends this document in the same unit of work.
 
 Inherited defaults until deliberately changed:
 
-- The editorial roster starts as v1's three stages (announcements and
-  achievements; main story; packaging).
 - The edition contract starts from v1's published edition shape.
 - The active regions are v1's nine, with the list's authoritative home a
   structural choice, not a product one.
 - A publication date covers the prior day's chat (edition date minus one
   day). The covered day is the *evidence date*.
 - Missing-data and availability behavior follow what v1 observably did.
-- The edition contract carries v1's published shape with these settled
-  deviations (ADR-010): identity fields use the domain terms (`active_region_id`,
-  `publication_date`); `meta.editorial_capabilities` records provider and
-  model per editorial capability, replacing v1's single provider enum and
-  stage-keyed model list; provider is an open string so local and recorded
-  models are representable; `meta` is required at both publish and read;
-  identity fields and `meta` are never part of any model's output contract.
-- The roster now runs all three of v1's stages — `announcements` (stage 1),
-  `main_story` (stage 2), and `packaging` (stage 3) — retiring the
-  single-capability skeleton default from ADR-011. `packaging` authors ONLY
-  the edition's `title` and `subtitle`, grounded solely in the announcements
-  and main story outputs (no chat transcript reaches it); every other
-  edition field is composed deterministically in code. v1's stage 3
-  round-tripped the whole edition through the model with preservation
-  unenforced; v2 deliberately rejects that and narrows the model's
-  authority to the two presentation fields.
+- The edition contract carries v1's reader-facing shape with these settled
+  deviations: identity fields use the domain terms (`active_region_id`,
+  `publication_date`); `meta.editorial_products` records writer and copyeditor
+  provider/model provenance under each editorial product; provider is an open
+  string so local and recorded models are representable; `meta` is required at
+  publish and read; identity, provenance, counts, and generation time are
+  never model-authored.
+- The main-story writer authors the edition title, subtitle, and main story.
+  The announcements writer authors the announcement list. Their respective
+  copyeditors return final products, and code deterministically assembles all
+  remaining edition fields. There is no packaging or judging model step.
 
 ## Links
 

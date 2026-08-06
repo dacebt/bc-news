@@ -1,7 +1,0 @@
-{
-	"editorial_capability": "packaging",
-	"provider": "recorded",
-	"model": "recorded/judge-v1",
-	"prompt_sha256": "2ef7165b5cd500276816d199fe5227f1907a951f324917126053a643971b2b69",
-	"text": "{\"scores\":{\"preservation\":5,\"accuracy\":5,\"packaging\":4,\"metadata\":5},\"reasoning\":\"The composed edition preserves the parsed announcements and main story exactly, carries the requested region and publication date without runtime metadata, and adds a coherent masthead and date subtitle grounded in that identity.\"}"
-}

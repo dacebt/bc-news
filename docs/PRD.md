@@ -38,7 +38,7 @@ The prototype proved that regional chat can become a useful newspaper, but its g
 2. Support all active regions — nine today per the verified v1 list — and up to 24 as BitCraft expands.
 3. Preserve the proven ingest behavior while allowing contract and efficiency improvements required by the new generator.
 4. Rebuild generation around one durable, inspectable Workflow definition that is invoked separately for each active region and publication date, so no server process must remain alive across the entire newspaper build.
-5. Allow the model used by each editorial capability to be changed without redesigning the whole generation process.
+5. Allow the model used by each production model step to be changed without redesigning the whole generation process.
 6. Support low-cost hosted models, occasional frontier-model trials, and local LLMs during development.
 7. Preserve the useful client experience while allowing its contracts and presentation to evolve with the generated edition.
 8. Make evaluation part of development: representative conversations, comparable outputs, and retained evidence should guide prompt, model, and orchestration changes.
@@ -49,11 +49,15 @@ The prototype proved that regional chat can become a useful newspaper, but its g
 1. Ingest collects and validates regional chat messages from BitJita.
 2. The system identifies each active region that needs an edition.
 3. One instance of the generation Workflow builds one region's edition for one publication date.
-4. That generation run turns regional evidence into a publishable newspaper through editorial capabilities defined during build planning.
-5. The completed edition becomes available to the client.
-6. The client presents published regional newspapers to readers.
+4. Two writer-to-copyedit tracks produce the main-story and announcements editorial products.
+5. Code validates those products and assembles the edition without another model call.
+6. The completed edition becomes available to the client.
+7. The client presents published regional newspapers to readers.
 
-The exact editorial roles, their degree of autonomy, and their model assignments are design decisions for the rebuild rather than requirements fixed here.
+The settled production model steps are `main_story_write`,
+`main_story_copyedit`, `announcements_write`, and
+`announcements_copyedit`. Each copyeditor is a narrow cleanup pass over its
+own track's typed draft, not a story judge or another evidence-reading editor.
 
 ## Required behavior
 
@@ -71,7 +75,7 @@ The exact editorial roles, their degree of autonomy, and their model assignments
 
 ### Model flexibility
 
-- Models must be replaceable independently across editorial capabilities.
+- Models must be replaceable independently across the four production model steps.
 - Both hosted and local LLMs must be usable during development and evaluation.
 - Routine inference cost must remain understandable.
 - Model access protocols, integration layers, and detailed telemetry are design decisions for build planning.
@@ -129,7 +133,7 @@ The exact editorial roles, their degree of autonomy, and their model assignments
 - Every active region's edition — nine today, later up to 24 — runs through the same Workflow definition as a separate instance without requiring one long-lived server invocation.
 - An interrupted generation resumes from durable completed work.
 - Replaying the same evaluation inputs makes prompt and model changes meaningfully comparable.
-- Models can be changed per editorial capability without rewriting the workflow.
+- Models can be changed per production model step without rewriting the workflow.
 - Routine production cost remains close to the predecessor unless measured quality gains justify a deliberate increase.
 - Readers continue receiving a useful regional newspaper throughout regional growth.
 
@@ -139,7 +143,7 @@ For every product-behavior item below, the prototype's observed behavior is
 the default answer; kickoff decides structure and deliberate deviations, not
 product from scratch.
 
-- The editorial capability roster and whether any capability needs bounded agent autonomy.
+- Whether a later evidence-research capability needs bounded agent autonomy. It is not part of the current four-step editorial workflow.
 - The first production model configuration and fallback policy.
 - The canonical edition contract. (Client parity is settled: full UI/UX parity minus contract-forced changes.)
 - The authoritative source for active regions and edition scheduling policy.

@@ -1,7 +1,7 @@
 import {
 	OpenAiCompatibleDeterministicError,
 	OpenAiCompatibleRetryableError,
-	LM_STUDIO_CAPABILITY_OUTPUT_CONTRACTS,
+	LM_STUDIO_PRODUCTION_STEP_OUTPUT_CONTRACTS,
 	createOpenAiCompatibleModelProvider,
 	openAiCompatibleChatCompletionsUrl,
 	type LmStudioReasoningEffort,
@@ -27,6 +27,6 @@ export function createLmStudioModelProvider(input: {
 		requestedModel: input.model,
 		sampling: input.sampling,
 		reasoningEffort: input.reasoningEffort,
-		structuredOutputContracts: LM_STUDIO_CAPABILITY_OUTPUT_CONTRACTS,
+		structuredOutputContracts: LM_STUDIO_PRODUCTION_STEP_OUTPUT_CONTRACTS,
 	});
 }

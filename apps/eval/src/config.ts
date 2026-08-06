@@ -2,16 +2,16 @@ import { readFile } from "node:fs/promises";
 import { z } from "zod";
 import { ModelAdapterConfigSchema } from "./model-adapters";
 
-/** One required adapter configuration for every capability in the production roster. */
-export const CapabilitiesConfigSchema = z.strictObject({
-	main_story: ModelAdapterConfigSchema,
-	announcements: ModelAdapterConfigSchema,
-	packaging: ModelAdapterConfigSchema,
+/** One required adapter configuration for every production model step. */
+export const ProductionStepsConfigSchema = z.strictObject({
+	main_story_write: ModelAdapterConfigSchema,
+	main_story_copyedit: ModelAdapterConfigSchema,
+	announcements_write: ModelAdapterConfigSchema,
+	announcements_copyedit: ModelAdapterConfigSchema,
 });
 
 export const EvalConfigSchema = z.strictObject({
-	capabilities: CapabilitiesConfigSchema,
-	judge: ModelAdapterConfigSchema.nullable(),
+	production_steps: ProductionStepsConfigSchema,
 });
 
 export type EvalConfig = z.infer<typeof EvalConfigSchema>;
@@ -41,7 +41,7 @@ export async function loadConfig(path: string): Promise<EvalConfig> {
 		throw new EvalConfigError(
 			"config_rejected",
 			path,
-			`Config at ${path} does not match the eval config contract: ${result.error.message}`,
+			`Config at ${path} must configure exactly the four production steps: ${result.error.message}`,
 		);
 	}
 	return result.data;

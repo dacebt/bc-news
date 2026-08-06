@@ -2,16 +2,20 @@ import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from "cloud
 import { NonRetryableError } from "cloudflare:workflows";
 import { GenerationRunParamsSchema, type GenerationRunParams } from "@bc-news/contracts";
 import {
-	SYSTEM_CONSTRAINTS,
+	COPYEDIT_SYSTEM_CONSTRAINTS,
+	WRITER_SYSTEM_CONSTRAINTS,
 	assembleEdition,
-	buildAnnouncementsPrompt,
-	buildMainStoryPrompt,
-	buildPackagingPrompt,
+	attachAnnouncementIds,
+	buildAnnouncementsCopyeditPrompt,
+	buildAnnouncementsWriterPrompt,
+	buildMainStoryCopyeditPrompt,
+	buildMainStoryWriterPrompt,
 	evidenceDateForPublicationDate,
 	modelUsageRecord,
-	parseAnnouncementsOutput,
-	parseMainStoryOutput,
-	parsePackagingOutput,
+	parseAnnouncementsCopyeditOutput,
+	parseAnnouncementsWriterOutput,
+	parseMainStoryCopyeditOutput,
+	parseMainStoryWriterOutput,
 	prepareEvidence,
 	type ModelUsageRecord,
 	type PreparedEvidence,
@@ -53,14 +57,6 @@ function assertWithinStepResultCap(preparedEvidence: PreparedEvidence): void {
 }
 
 function failureCode(error: unknown): string {
-	if (error instanceof Error && error.name !== "Error") return error.name;
-	if (
-		error instanceof Error &&
-		error.name === "Error" &&
-		error.message.startsWith("no_evidence_for_publication_date: ")
-	) {
-		return "no_evidence_for_publication_date";
-	}
 	if (
 		typeof error === "object" &&
 		error !== null &&
@@ -70,6 +66,11 @@ function failureCode(error: unknown): string {
 	) {
 		return error.code;
 	}
+	if (error instanceof Error && error.name === "Error") {
+		const serializedCode = error.message.match(/^([a-z][a-z0-9_]*): /)?.[1];
+		if (serializedCode !== undefined) return serializedCode;
+	}
+	if (error instanceof Error && error.name !== "Error") return error.name;
 	return "generation_run_failed";
 }
 
@@ -89,6 +90,7 @@ export class GenerationRun extends WorkflowEntrypoint<Env, GenerationRunParams> 
 		let failureStep: GenerationRunFailure["step"] = "configure-generation-run";
 		let completedSteps: GenerationStep[] = [];
 		let modelUsage: ModelUsageRecord[] = [];
+
 		try {
 			const ports = await failNonRetryablyOnDeterministicErrors(() =>
 				resolveGenerationPorts(this.env),
@@ -126,108 +128,122 @@ export class GenerationRun extends WorkflowEntrypoint<Env, GenerationRunParams> 
 				}),
 			);
 			completedSteps = ["prepare-evidence"];
-			failureStep = "compose-main-story";
+			failureStep = "main_story_write";
 			await step.do("record-prepare-evidence-status", BOUNDED_RETRIES, () =>
 				recordGenerationRunProgress(this.env.DB, params, {
-					currentStep: "compose-main-story", completedSteps, modelUsage,
+					currentStep: "main_story_write",
+					completedSteps,
+					modelUsage,
 				}, new Date().toISOString()),
 			);
 
-			const mainStory = await step.do("compose-main-story", MODEL_STEP_CONFIG, () =>
+			const mainStoryDraft = await step.do("main_story_write", MODEL_STEP_CONFIG, () =>
 				failNonRetryablyOnDeterministicErrors(async () => {
-					const completion = await ports.modelProviders.main_story.complete({
-						editorialCapability: "main_story",
-						system: SYSTEM_CONSTRAINTS,
-						user: buildMainStoryPrompt(preparedEvidence),
+					const completion = await ports.modelProviders.main_story_write.complete({
+						productionStep: "main_story_write",
+						system: WRITER_SYSTEM_CONSTRAINTS,
+						user: buildMainStoryWriterPrompt(preparedEvidence),
 					});
-					const output = parseMainStoryOutput(completion.text);
-					return { main_story: output.main_story, completion };
+					return { product: parseMainStoryWriterOutput(completion.text), completion };
 				}),
 			);
-			completedSteps = ["prepare-evidence", "compose-main-story"];
-			modelUsage = [modelUsageRecord("main_story", mainStory.completion)];
-			failureStep = "compose-announcements";
-			await step.do("record-main-story-status", BOUNDED_RETRIES, () =>
+			completedSteps = [...completedSteps, "main_story_write"];
+			modelUsage = [...modelUsage, modelUsageRecord("main_story_write", mainStoryDraft.completion)];
+			failureStep = "main_story_copyedit";
+			await step.do("record-main-story-write-status", BOUNDED_RETRIES, () =>
 				recordGenerationRunProgress(this.env.DB, params, {
-					currentStep: "compose-announcements", completedSteps, modelUsage,
+					currentStep: "main_story_copyedit",
+					completedSteps,
+					modelUsage,
 				}, new Date().toISOString()),
 			);
 
-			const announcements = await step.do("compose-announcements", MODEL_STEP_CONFIG, () =>
+			const mainStory = await step.do("main_story_copyedit", MODEL_STEP_CONFIG, () =>
 				failNonRetryablyOnDeterministicErrors(async () => {
-					const completion = await ports.modelProviders.announcements.complete({
-						editorialCapability: "announcements",
-						system: SYSTEM_CONSTRAINTS,
-						user: buildAnnouncementsPrompt(preparedEvidence),
+					const completion = await ports.modelProviders.main_story_copyedit.complete({
+						productionStep: "main_story_copyedit",
+						system: COPYEDIT_SYSTEM_CONSTRAINTS,
+						user: buildMainStoryCopyeditPrompt(mainStoryDraft.product),
 					});
-					const output = parseAnnouncementsOutput(completion.text);
-					return { announcements: output.announcements, completion };
+					return {
+						product: parseMainStoryCopyeditOutput(completion.text, mainStoryDraft.product),
+						completion,
+					};
 				}),
 			);
-			completedSteps = [...completedSteps, "compose-announcements"];
-			modelUsage = [...modelUsage, modelUsageRecord("announcements", announcements.completion)];
-			failureStep = "compose-packaging";
-			await step.do("record-announcements-status", BOUNDED_RETRIES, () =>
+			completedSteps = [...completedSteps, "main_story_copyedit"];
+			modelUsage = [...modelUsage, modelUsageRecord("main_story_copyedit", mainStory.completion)];
+			failureStep = "announcements_write";
+			await step.do("record-main-story-copyedit-status", BOUNDED_RETRIES, () =>
 				recordGenerationRunProgress(this.env.DB, params, {
-					currentStep: "compose-packaging", completedSteps, modelUsage,
+					currentStep: "announcements_write",
+					completedSteps,
+					modelUsage,
 				}, new Date().toISOString()),
 			);
 
-			const packaging = await step.do("compose-packaging", MODEL_STEP_CONFIG, () =>
+			const announcementsDraft = await step.do("announcements_write", MODEL_STEP_CONFIG, () =>
 				failNonRetryablyOnDeterministicErrors(async () => {
-					const completion = await ports.modelProviders.packaging.complete({
-						editorialCapability: "packaging",
-						system: SYSTEM_CONSTRAINTS,
-						user: buildPackagingPrompt(
-							{ main_story: mainStory.main_story },
-							{ announcements: announcements.announcements },
-							{ activeRegionId: params.active_region_id, publicationDate: params.publication_date },
-						),
+					const completion = await ports.modelProviders.announcements_write.complete({
+						productionStep: "announcements_write",
+						system: WRITER_SYSTEM_CONSTRAINTS,
+						user: buildAnnouncementsWriterPrompt(preparedEvidence),
 					});
-					const output = parsePackagingOutput(completion.text);
-					return { title: output.title, subtitle: output.subtitle, completion };
+					return { product: parseAnnouncementsWriterOutput(completion.text), completion };
 				}),
 			);
-			completedSteps = [...completedSteps, "compose-packaging"];
-			modelUsage = [...modelUsage, modelUsageRecord("packaging", packaging.completion)];
+			completedSteps = [...completedSteps, "announcements_write"];
+			modelUsage = [...modelUsage, modelUsageRecord("announcements_write", announcementsDraft.completion)];
+			failureStep = "announcements_copyedit";
+			await step.do("record-announcements-write-status", BOUNDED_RETRIES, () =>
+				recordGenerationRunProgress(this.env.DB, params, {
+					currentStep: "announcements_copyedit",
+					completedSteps,
+					modelUsage,
+				}, new Date().toISOString()),
+			);
+
+			const identifiedAnnouncements = attachAnnouncementIds(announcementsDraft.product);
+			const announcements = await step.do("announcements_copyedit", MODEL_STEP_CONFIG, () =>
+				failNonRetryablyOnDeterministicErrors(async () => {
+					const completion = await ports.modelProviders.announcements_copyedit.complete({
+						productionStep: "announcements_copyedit",
+						system: COPYEDIT_SYSTEM_CONSTRAINTS,
+						user: buildAnnouncementsCopyeditPrompt(identifiedAnnouncements),
+					});
+					return {
+						product: parseAnnouncementsCopyeditOutput(completion.text, identifiedAnnouncements),
+						completion,
+					};
+				}),
+			);
+			completedSteps = [...completedSteps, "announcements_copyedit"];
+			modelUsage = [...modelUsage, modelUsageRecord("announcements_copyedit", announcements.completion)];
 			failureStep = "validate-edition";
-			await step.do("record-packaging-status", BOUNDED_RETRIES, () =>
+			await step.do("record-announcements-copyedit-status", BOUNDED_RETRIES, () =>
 				recordGenerationRunProgress(this.env.DB, params, {
-					currentStep: "validate-edition", completedSteps, modelUsage,
+					currentStep: "validate-edition",
+					completedSteps,
+					modelUsage,
 				}, new Date().toISOString()),
 			);
 
 			const edition = await step.do("validate-edition", () =>
-				failNonRetryablyOnDeterministicErrors(() =>
-					assembleEdition({
-						activeRegionId: params.active_region_id,
-						publicationDate: params.publication_date,
-						title: packaging.title,
-						subtitle: packaging.subtitle,
-						mainStory: mainStory.main_story,
-						announcements: announcements.announcements,
-						preparedEvidence,
-						mainStoryProvenance: {
-							provider: mainStory.completion.provider,
-							model: mainStory.completion.model,
-						},
-						announcementsProvenance: {
-							provider: announcements.completion.provider,
-							model: announcements.completion.model,
-						},
-						packagingProvenance: {
-							provider: packaging.completion.provider,
-							model: packaging.completion.model,
-						},
-						generatedAtUtc: new Date().toISOString(),
-					}),
-				),
+				failNonRetryablyOnDeterministicErrors(() => assembleEdition({
+					mainStory: mainStory.product,
+					announcements: announcements.product,
+					preparedEvidence,
+					generatedAtUtc: new Date().toISOString(),
+					modelUsages: modelUsage,
+				})),
 			);
 			completedSteps = [...completedSteps, "validate-edition"];
 			failureStep = "publish-edition";
 			await step.do("record-validated-status", BOUNDED_RETRIES, () =>
 				recordGenerationRunProgress(this.env.DB, params, {
-					currentStep: "publish-edition", completedSteps, modelUsage,
+					currentStep: "publish-edition",
+					completedSteps,
+					modelUsage,
 				}, new Date().toISOString()),
 			);
 

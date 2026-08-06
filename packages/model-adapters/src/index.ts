@@ -22,7 +22,7 @@ export {
 	type OpenAiCompatibleProviderInput,
 } from "./openai-compatible-model-provider";
 export {
-	LM_STUDIO_CAPABILITY_OUTPUT_CONTRACTS,
+	LM_STUDIO_PRODUCTION_STEP_OUTPUT_CONTRACTS,
 	lmStudioStructuredOutputContract,
 	type LmStudioStructuredOutputContract,
 	type LmStudioStructuredOutputContracts,

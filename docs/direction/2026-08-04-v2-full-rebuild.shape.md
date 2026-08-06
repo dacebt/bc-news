@@ -5,10 +5,10 @@ title: >-
 description: >-
   Session boundaries, cadence, and success signal for growing the walking skeleton into the complete bc-news v2 product, stopping deliberately before production Cloudflare deployment.
 tags: [wsd, direction, shape]
-status: stable
+status: deprecated
 generated:
   by: ebt-wsd/okf-v0.2
-  at: "2026-08-04T12:44:48Z"
+  at: "2026-08-06T00:29:41Z"
 ---
 # Shape: v2 full rebuild — skeleton to finished product, pre-deployment
 

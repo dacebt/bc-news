@@ -1,0 +1,86 @@
+import { expect, test } from "vitest";
+import {
+	PRODUCTION_MODEL_STEPS,
+	assembleEdition,
+	type ModelUsageRecord,
+} from "../src/index";
+
+const PREPARED_EVIDENCE = {
+	active_region_id: "7",
+	publication_date: "2026-01-25",
+	raw_count: 1,
+	after_filter_count: 1,
+	after_burst_count: 1,
+	final_count: 1,
+	drop_stats: { empty_after_trim: 0, too_short: 0, burst_merged: 0, sampling_dropped: 0 },
+	messages: [{
+		id: "m1",
+		ts: Date.UTC(2026, 0, 24, 12),
+		author_id: "author-1",
+		author_name: "Reporter",
+		text: "The bridge opened.",
+	}],
+};
+
+function modelUsages(): ModelUsageRecord[] {
+	return PRODUCTION_MODEL_STEPS.map((productionStep, index) => ({
+		production_step: productionStep,
+		provider: `provider-${index + 1}`,
+		model: `model-${index + 1}`,
+		execution: "recorded_replay",
+		token_usage: { measurement: "unavailable" },
+		external_billing: {
+			classification: "none",
+			amount_usd: 0,
+			reason: "recorded_replay",
+		},
+	}));
+}
+
+function assemble(modelUsagesInput: readonly ModelUsageRecord[]) {
+	return assembleEdition({
+		mainStory: {
+			title: "The Region Seven Gazette",
+			subtitle: "A bridge opens",
+			main_story: {
+				headline: "Builders Finish the Crossing",
+				lede: "The region can cross the river again.",
+				body: "**Reporter** confirmed that the bridge opened.",
+			},
+		},
+		announcements: {
+			announcements: [{
+				title: "Bridge Crew Completes Work",
+				summary: "**Reporter** marked the crossing complete.",
+			}],
+		},
+		preparedEvidence: PREPARED_EVIDENCE,
+		generatedAtUtc: "2026-01-25T09:00:00.000Z",
+		modelUsages: modelUsagesInput,
+	});
+}
+
+test("derives edition identity and grouped provenance from the four-step usage roster", () => {
+	const edition = assemble(modelUsages());
+
+	expect(edition.active_region_id).toBe(PREPARED_EVIDENCE.active_region_id);
+	expect(edition.publication_date).toBe(PREPARED_EVIDENCE.publication_date);
+	expect(edition.meta.editorial_products).toEqual({
+		main_story: {
+			write: { provider: "provider-1", model: "model-1" },
+			copyedit: { provider: "provider-2", model: "model-2" },
+		},
+		announcements: {
+			write: { provider: "provider-3", model: "model-3" },
+			copyedit: { provider: "provider-4", model: "model-4" },
+		},
+	});
+});
+
+test("rejects an incomplete, duplicated, or reordered production usage roster", () => {
+	const usages = modelUsages();
+
+	expect(() => assemble(usages.slice(0, 3))).toThrow();
+	expect(() => assemble([usages[0]!, usages[0]!, usages[2]!, usages[3]!])).toThrow();
+	expect(() => assemble([usages[1]!, usages[0]!, usages[2]!, usages[3]!])).toThrow();
+});

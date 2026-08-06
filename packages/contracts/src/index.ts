@@ -14,11 +14,15 @@ export {
 } from "./timestamp";
 export {
 	AnnouncementSchema,
+	EditorialProductProvenanceSchema,
 	EditionSchema,
 	MainStorySchema,
+	ModelProvenanceSchema,
 	type Announcement,
+	type EditorialProductProvenance,
 	type Edition,
 	type MainStory,
+	type ModelProvenance,
 } from "./edition";
 export {
 	EvidenceFixtureSchema,

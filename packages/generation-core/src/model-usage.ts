@@ -1,7 +1,16 @@
 import { z } from "zod";
-import type { EditorialCapability, ModelCompletion, ModelUsageRecord } from "./ports";
+import type { ModelCompletion, ModelUsageRecord, ProductionModelStep } from "./ports";
 
-export const EditorialCapabilitySchema = z.enum(["main_story", "announcements", "packaging"]);
+export const EditorialProductSchema = z.enum(["main_story", "announcements"]);
+
+export const PRODUCTION_MODEL_STEPS = [
+	"main_story_write",
+	"main_story_copyedit",
+	"announcements_write",
+	"announcements_copyedit",
+] as const satisfies readonly ProductionModelStep[];
+
+export const ProductionModelStepSchema = z.enum(PRODUCTION_MODEL_STEPS);
 
 export const TokenUsageSchema = z.discriminatedUnion("measurement", [
 	z
@@ -39,7 +48,7 @@ export const ExternalBillingSchema = z.discriminatedUnion("classification", [
 ]);
 
 export const ModelUsageRecordSchema = z.strictObject({
-	editorial_capability: EditorialCapabilitySchema,
+	production_step: ProductionModelStepSchema,
 	provider: z.string().trim().min(1),
 	model: z.string().trim().min(1),
 	execution: z.enum(["recorded_replay", "local_inference", "hosted_inference"]),
@@ -47,12 +56,27 @@ export const ModelUsageRecordSchema = z.strictObject({
 	external_billing: ExternalBillingSchema,
 });
 
+export const ProductionModelUsageRosterSchema = z
+	.array(ModelUsageRecordSchema)
+	.length(PRODUCTION_MODEL_STEPS.length)
+	.superRefine((usages, context) => {
+		for (const [index, productionStep] of PRODUCTION_MODEL_STEPS.entries()) {
+			if (usages[index]?.production_step !== productionStep) {
+				context.addIssue({
+					code: "custom",
+					path: [index, "production_step"],
+					message: `Expected ${productionStep} at production usage index ${index}`,
+				});
+			}
+		}
+	});
+
 export function modelUsageRecord(
-	editorialCapability: EditorialCapability,
+	productionStep: ProductionModelStep,
 	completion: ModelCompletion,
 ): ModelUsageRecord {
 	return {
-		editorial_capability: editorialCapability,
+		production_step: productionStep,
 		provider: completion.provider,
 		model: completion.model,
 		execution: completion.execution,

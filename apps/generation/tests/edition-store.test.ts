@@ -13,10 +13,15 @@ function editionWithHeadline(headline: string): Edition {
 		main_story: { headline, lede: "A lede.", body: "A body." },
 		meta: {
 			generated_at_utc: "2026-02-14T00:00:00.000Z",
-			editorial_capabilities: {
-				main_story: { provider: "recorded", model: "recorded/main-story-v1" },
-				announcements: { provider: "recorded", model: "recorded/announcements-v1" },
-				packaging: { provider: "recorded", model: "recorded/packaging-v1" },
+			editorial_products: {
+				main_story: {
+					write: { provider: "recorded", model: "recorded/main-story-write-v1" },
+					copyedit: { provider: "recorded", model: "recorded/main-story-copyedit-v1" },
+				},
+				announcements: {
+					write: { provider: "recorded", model: "recorded/announcements-write-v1" },
+					copyedit: { provider: "recorded", model: "recorded/announcements-copyedit-v1" },
+				},
 			},
 			counts: { raw_count: 1, after_filter_count: 1, after_burst_count: 1, final_count: 1 },
 		},

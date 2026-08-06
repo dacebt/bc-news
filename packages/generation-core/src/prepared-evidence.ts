@@ -26,6 +26,7 @@ export const PreparedEvidenceSchema = z.strictObject({
 		empty_after_trim: z.int().nonnegative(),
 		too_short: z.int().nonnegative(),
 		burst_merged: z.int().nonnegative(),
+		sampling_dropped: z.int().nonnegative(),
 	}),
 	messages: z.array(PreparedMessageSchema),
 }).superRefine((output, context) => {
@@ -43,17 +44,11 @@ export const PreparedEvidenceSchema = z.strictObject({
 			message: "after_burst_count cannot exceed after_filter_count",
 		});
 	}
-	/*
-	 * Equality, not an upper bound: preparation performs hygiene only, so
-	 * every message surviving burst-merge reaches the editorial capabilities.
-	 * A future volume cap, per-hour quota, or sampling pass would fail here
-	 * rather than quietly shrinking what the newspaper is written from.
-	 */
-	if (output.final_count !== output.after_burst_count) {
+	if (output.final_count > output.after_burst_count) {
 		context.addIssue({
 			code: "custom",
 			path: ["final_count"],
-			message: "final_count must equal after_burst_count: preparation never drops messages after burst-merge",
+			message: "final_count cannot exceed after_burst_count",
 		});
 	}
 	if (output.final_count !== output.messages.length) {
@@ -77,6 +72,13 @@ export const PreparedEvidenceSchema = z.strictObject({
 			code: "custom",
 			path: ["drop_stats", "burst_merged"],
 			message: "burst_merged must equal after_filter_count minus after_burst_count",
+		});
+	}
+	if (output.after_burst_count - output.final_count !== output.drop_stats.sampling_dropped) {
+		context.addIssue({
+			code: "custom",
+			path: ["drop_stats", "sampling_dropped"],
+			message: "sampling_dropped must equal after_burst_count minus final_count",
 		});
 	}
 });

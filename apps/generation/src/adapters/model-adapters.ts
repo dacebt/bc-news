@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { EditorialCapability, ModelProviderPort } from "@bc-news/generation-core";
+import type { ModelProviderPort, ProductionModelStep } from "@bc-news/generation-core";
 import { recordedModelProvider } from "@bc-news/fixtures";
 import {
 	HostedModelAdapterConfigSchema,
@@ -18,7 +18,7 @@ export const ModelAdapterConfigSchema = z.discriminatedUnion("adapter", [
 export type ModelAdapterConfig = z.infer<typeof ModelAdapterConfigSchema>;
 
 export function resolveModelProvider(
-	editorialCapability: EditorialCapability,
+	productionStep: ProductionModelStep,
 	config: ModelAdapterConfig,
 	env: object,
 ): ModelProviderPort {
@@ -43,7 +43,7 @@ export function resolveModelProvider(
 			const baseUrl = readEnv("LMSTUDIO_BASE_URL");
 			if (baseUrl === undefined) {
 				throw new GenerationConfigError(
-					`LMSTUDIO_BASE_URL is required for ${editorialCapability} when adapter is lmstudio`,
+					`LMSTUDIO_BASE_URL is required for ${productionStep} when adapter is lmstudio`,
 				);
 			}
 			return construct(() => createLmStudioModelProvider({
@@ -58,7 +58,7 @@ export function resolveModelProvider(
 			const apiKey = readEnv("HOSTED_MODEL_API_KEY");
 			if (baseUrl === undefined || apiKey === undefined) {
 				throw new GenerationConfigError(
-					`HOSTED_MODEL_BASE_URL and HOSTED_MODEL_API_KEY are required for ${editorialCapability} when adapter is openai_compatible_hosted`,
+					`HOSTED_MODEL_BASE_URL and HOSTED_MODEL_API_KEY are required for ${productionStep} when adapter is openai_compatible_hosted`,
 				);
 			}
 			return construct(() => createOpenAiCompatibleModelProvider({

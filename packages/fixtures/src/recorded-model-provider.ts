@@ -1,41 +1,45 @@
 import type { ModelCompletion, ModelProviderPort } from "@bc-news/generation-core";
-import announcementsResponseJson from "../model-responses/announcements.json";
-import mainStoryResponseJson from "../model-responses/main_story.json";
-import packagingResponseJson from "../model-responses/packaging.json";
+import announcementsCopyeditResponseJson from "../model-responses/announcements_copyedit.json";
+import announcementsWriteResponseJson from "../model-responses/announcements_write.json";
+import mainStoryCopyeditResponseJson from "../model-responses/main_story_copyedit.json";
+import mainStoryWriteResponseJson from "../model-responses/main_story_write.json";
+import { modelRequestSha256 } from "./model-request-sha256";
 import { RecordedModelProviderError, RecordedModelResponseSchema } from "./recorded-response";
 
-const recordedResponsesByEditorialCapability: Readonly<Record<string, unknown>> = {
-	main_story: mainStoryResponseJson,
-	announcements: announcementsResponseJson,
-	packaging: packagingResponseJson,
+const recordedResponsesByProductionStep: Readonly<Record<string, unknown>> = {
+	main_story_write: mainStoryWriteResponseJson,
+	main_story_copyedit: mainStoryCopyeditResponseJson,
+	announcements_write: announcementsWriteResponseJson,
+	announcements_copyedit: announcementsCopyeditResponseJson,
 };
 
-/**
- * Keyed by editorial capability only, deliberately: a prompt-hash key would
- * break the walk on every prompt edit, and warning-and-continuing on a hash
- * mismatch would be a silent fallback. The recorded prompt_sha256 is
- * informational provenance, never branched on.
- */
 export const recordedModelProvider: ModelProviderPort = {
-	complete(request): Promise<ModelCompletion> {
-		const recorded =
-			recordedResponsesByEditorialCapability[request.editorialCapability];
+	async complete(request): Promise<ModelCompletion> {
+		const recorded = recordedResponsesByProductionStep[request.productionStep];
 		if (recorded === undefined) {
 			throw new RecordedModelProviderError(
-				"unknown_editorial_capability",
-				request.editorialCapability,
-				`No recorded response exists for editorial capability "${request.editorialCapability}"`,
+				"unknown_production_step",
+				request.productionStep,
+				`No recorded response exists for production step "${request.productionStep}"`,
 			);
 		}
 		const parsed = RecordedModelResponseSchema.parse(recorded);
-		if (parsed.editorial_capability !== request.editorialCapability) {
+		if (parsed.production_step !== request.productionStep) {
 			throw new RecordedModelProviderError(
-				"recorded_response_capability_mismatch",
-				request.editorialCapability,
-				`Recorded response declares editorial capability "${parsed.editorial_capability}" but was requested as "${request.editorialCapability}"`,
+				"recorded_response_step_mismatch",
+				request.productionStep,
+				`Recorded response declares production step "${parsed.production_step}" but was requested as "${request.productionStep}"`,
 			);
 		}
-		return Promise.resolve({
+		const requestSha256 = await modelRequestSha256(request);
+		if (parsed.prompt_sha256 !== requestSha256) {
+			throw new RecordedModelProviderError(
+				"recorded_response_prompt_mismatch",
+				request.productionStep,
+				`Recorded response prompt_sha256 "${parsed.prompt_sha256}" does not match request sha256 "${requestSha256}" for production step "${request.productionStep}"`,
+			);
+		}
+		return {
 			text: parsed.text,
 			provider: parsed.provider,
 			model: parsed.model,
@@ -46,6 +50,6 @@ export const recordedModelProvider: ModelProviderPort = {
 				amount_usd: 0,
 				reason: "recorded_replay",
 			},
-		});
+		};
 	},
 };

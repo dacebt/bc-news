@@ -3,6 +3,11 @@
 	"version": "0.0.0",
 	"private": true,
 	"type": "module",
+	"exports": {
+		"./canonical-walk-verifier": "./src/canonical-walk-verifier.ts",
+		"./model-adapters": "./src/model-adapters.ts",
+		"./run-file": "./src/run-file.ts"
+	},
 	"scripts": {
 		"typecheck": "tsc --noEmit",
 		"test": "vitest run",

@@ -5,9 +5,10 @@ CREATE TABLE generation_run_status (
 	current_step         TEXT CHECK (
 		current_step IS NULL OR current_step IN (
 			'prepare-evidence',
-			'compose-main-story',
-			'compose-announcements',
-			'compose-packaging',
+			'main_story_write',
+			'main_story_copyedit',
+			'announcements_write',
+			'announcements_copyedit',
 			'validate-edition',
 			'publish-edition'
 		)

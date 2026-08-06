@@ -7,7 +7,7 @@ import { listRunFiles, loadRunFile } from "./run-file";
 import { runCommand } from "./run-command";
 
 const USAGE = `Usage:
-  pnpm --filter eval run eval -- run --fixture <path> [--config <path>] [--results-dir <path>] [--no-judge]
+  pnpm --filter @bc-news/eval eval -- run --fixture <path> [--config <path>] [--results-dir <path>]
   pnpm --filter eval run eval -- list [--results-dir <path>]
   pnpm --filter eval run eval -- show <run-id> [--results-dir <path>]
   pnpm --filter eval run eval -- compare <left-run-id> <right-run-id> [--results-dir <path>]`;
@@ -63,7 +63,6 @@ async function main(): Promise<void> {
 			configPath:
 				command.configPath === undefined ? defaultConfigPath : resolve(cwd, command.configPath),
 			resultsDirectory: resultsDirectoryFor(command.resultsDirectory),
-			noJudge: command.noJudge,
 		});
 		process.stdout.write(`${formatRunSummary(saved.run, saved.path)}\n`);
 		return;

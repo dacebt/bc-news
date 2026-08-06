@@ -216,9 +216,9 @@ export function createOpenAiCompatibleModelProvider(
 						response_format: {
 							type: "json_schema",
 							json_schema: {
-								name: input.structuredOutputContracts[request.editorialCapability].name,
+								name: input.structuredOutputContracts[request.productionStep].name,
 								strict: true,
-								schema: input.structuredOutputContracts[request.editorialCapability].schema,
+								schema: input.structuredOutputContracts[request.productionStep].schema,
 							},
 						},
 					}

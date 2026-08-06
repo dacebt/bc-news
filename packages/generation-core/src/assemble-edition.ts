@@ -1,32 +1,49 @@
-import { EditionSchema, type Announcement, type Edition, type MainStory } from "@bc-news/contracts";
+import {
+	EditionSchema,
+	type Edition,
+} from "@bc-news/contracts";
+import type { AnnouncementsProduct } from "./announcements";
+import type { MainStoryProduct } from "./main-story";
+import {
+	PRODUCTION_MODEL_STEPS,
+	ProductionModelUsageRosterSchema,
+} from "./model-usage";
+import type { ModelUsageRecord } from "./ports";
 import type { PreparedEvidence } from "./prepared-evidence";
 
 export function assembleEdition(input: {
-	activeRegionId: string;
-	publicationDate: string;
-	title: string;
-	subtitle: string;
-	mainStory: MainStory;
-	announcements: Announcement[];
+	mainStory: MainStoryProduct;
+	announcements: AnnouncementsProduct;
 	preparedEvidence: PreparedEvidence;
-	mainStoryProvenance: { provider: string; model: string };
-	announcementsProvenance: { provider: string; model: string };
-	packagingProvenance: { provider: string; model: string };
 	generatedAtUtc: string;
+	modelUsages: readonly ModelUsageRecord[];
 }): Edition {
+	const modelUsages = ProductionModelUsageRosterSchema.parse(input.modelUsages);
+	const provenance = Object.fromEntries(
+		PRODUCTION_MODEL_STEPS.map((productionStep, index) => {
+			const usage = modelUsages[index]!;
+			return [productionStep, { provider: usage.provider, model: usage.model }];
+		}),
+	) as Record<(typeof PRODUCTION_MODEL_STEPS)[number], { provider: string; model: string }>;
+
 	return EditionSchema.parse({
-		active_region_id: input.activeRegionId,
-		publication_date: input.publicationDate,
-		title: input.title,
-		subtitle: input.subtitle,
-		announcements: input.announcements,
-		main_story: input.mainStory,
+		active_region_id: input.preparedEvidence.active_region_id,
+		publication_date: input.preparedEvidence.publication_date,
+		title: input.mainStory.title,
+		subtitle: input.mainStory.subtitle,
+		announcements: input.announcements.announcements,
+		main_story: input.mainStory.main_story,
 		meta: {
 			generated_at_utc: input.generatedAtUtc,
-			editorial_capabilities: {
-				main_story: input.mainStoryProvenance,
-				announcements: input.announcementsProvenance,
-				packaging: input.packagingProvenance,
+			editorial_products: {
+				main_story: {
+					write: provenance.main_story_write,
+					copyedit: provenance.main_story_copyedit,
+				},
+				announcements: {
+					write: provenance.announcements_write,
+					copyedit: provenance.announcements_copyedit,
+				},
 			},
 			counts: {
 				raw_count: input.preparedEvidence.raw_count,

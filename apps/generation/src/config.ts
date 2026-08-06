@@ -1,17 +1,18 @@
 import { z } from "zod";
 import type {
-	EditorialCapability,
 	EvidenceInputPort,
 	ModelProviderPort,
+	ProductionModelStep,
 } from "@bc-news/generation-core";
 import { EvidenceAdapterIdSchema, evidenceAdapterFactories } from "./adapters/evidence-adapters";
 import { ModelAdapterConfigSchema, resolveModelProvider } from "./adapters/model-adapters";
 import { GenerationConfigError } from "./config-error";
 
 export const ModelConfigSchema = z.strictObject({
-	main_story: ModelAdapterConfigSchema,
-	announcements: ModelAdapterConfigSchema,
-	packaging: ModelAdapterConfigSchema,
+	main_story_write: ModelAdapterConfigSchema,
+	main_story_copyedit: ModelAdapterConfigSchema,
+	announcements_write: ModelAdapterConfigSchema,
+	announcements_copyedit: ModelAdapterConfigSchema,
 });
 
 const GenerationConfigVarsSchema = z.object({
@@ -33,7 +34,7 @@ export { GenerationConfigError } from "./config-error";
 
 export interface GenerationPorts {
 	evidenceInput: EvidenceInputPort;
-	modelProviders: Record<EditorialCapability, ModelProviderPort>;
+	modelProviders: Record<ProductionModelStep, ModelProviderPort>;
 }
 
 export function resolveGenerationPorts(env: Env): GenerationPorts {
@@ -47,9 +48,10 @@ export function resolveGenerationPorts(env: Env): GenerationPorts {
 	return {
 		evidenceInput: evidenceAdapterFactories[EVIDENCE_INPUT](env),
 		modelProviders: {
-			main_story: resolveModelProvider("main_story", MODEL_CONFIG.main_story, env),
-			announcements: resolveModelProvider("announcements", MODEL_CONFIG.announcements, env),
-			packaging: resolveModelProvider("packaging", MODEL_CONFIG.packaging, env),
+			main_story_write: resolveModelProvider("main_story_write", MODEL_CONFIG.main_story_write, env),
+			main_story_copyedit: resolveModelProvider("main_story_copyedit", MODEL_CONFIG.main_story_copyedit, env),
+			announcements_write: resolveModelProvider("announcements_write", MODEL_CONFIG.announcements_write, env),
+			announcements_copyedit: resolveModelProvider("announcements_copyedit", MODEL_CONFIG.announcements_copyedit, env),
 		},
 	};
 }

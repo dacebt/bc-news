@@ -1,9 +1,10 @@
 import { z } from "zod";
 import {
-	AnnouncementsOutputSchema,
-	MainStoryOutputSchema,
-	PackagingOutputSchema,
-	type EditorialCapability,
+	AnnouncementsCopyeditOutputSchema,
+	AnnouncementsWriterOutputSchema,
+	MainStoryCopyeditOutputSchema,
+	MainStoryDraftSchema,
+	type ProductionModelStep,
 } from "@bc-news/generation-core";
 import { OpenAiCompatibleDeterministicError } from "./errors";
 
@@ -15,7 +16,7 @@ export interface LmStudioStructuredOutputContract {
 }
 
 export type LmStudioStructuredOutputContracts = Readonly<
-	Record<EditorialCapability, LmStudioStructuredOutputContract>
+	Record<ProductionModelStep, LmStudioStructuredOutputContract>
 >;
 
 function assertInlineStrictJsonSchema(schema: JsonSchema): void {
@@ -59,8 +60,18 @@ export function lmStudioStructuredOutputContract(
 	return { name, schema: inlineSchema };
 }
 
-export const LM_STUDIO_CAPABILITY_OUTPUT_CONTRACTS: LmStudioStructuredOutputContracts = {
-	main_story: lmStudioStructuredOutputContract("main_story_output", MainStoryOutputSchema),
-	announcements: lmStudioStructuredOutputContract("announcements_output", AnnouncementsOutputSchema),
-	packaging: lmStudioStructuredOutputContract("packaging_output", PackagingOutputSchema),
+export const LM_STUDIO_PRODUCTION_STEP_OUTPUT_CONTRACTS: LmStudioStructuredOutputContracts = {
+	main_story_write: lmStudioStructuredOutputContract("main_story_write_output", MainStoryDraftSchema),
+	main_story_copyedit: lmStudioStructuredOutputContract(
+		"main_story_copyedit_output",
+		MainStoryCopyeditOutputSchema,
+	),
+	announcements_write: lmStudioStructuredOutputContract(
+		"announcements_write_output",
+		AnnouncementsWriterOutputSchema,
+	),
+	announcements_copyedit: lmStudioStructuredOutputContract(
+		"announcements_copyedit_output",
+		AnnouncementsCopyeditOutputSchema,
+	),
 };

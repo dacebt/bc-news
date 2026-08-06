@@ -38,7 +38,7 @@ it.each([
 	expect(() => lmStudioChatCompletionsUrl(baseUrl)).toThrowError();
 });
 
-it("sends capability schema and explicit decoding controls only to LM Studio", async () => {
+it("sends the production-step schema and explicit decoding controls only to LM Studio", async () => {
 	const timeoutSignal = new AbortController().signal;
 	const timeout = vi.spyOn(AbortSignal, "timeout").mockReturnValue(timeoutSignal);
 	const fetchCall = vi.spyOn(globalThis, "fetch").mockResolvedValue(
@@ -53,7 +53,7 @@ it("sends capability schema and explicit decoding controls only to LM Studio", a
 
 	await expect(
 		provider.complete({
-			editorialCapability: "main_story",
+			productionStep: "main_story_write",
 			system: "system constraints",
 			user: "main story prompt",
 		}),
@@ -95,12 +95,14 @@ it("sends capability schema and explicit decoding controls only to LM Studio", a
 		response_format: {
 			type: "json_schema",
 			json_schema: {
-				name: "main_story_output",
+				name: "main_story_write_output",
 				strict: true,
 				schema: {
 					type: "object",
 					additionalProperties: false,
 					properties: {
+						title: { type: "string" },
+						subtitle: { type: "string" },
 						main_story: { type: "object", additionalProperties: false },
 					},
 				},
@@ -120,7 +122,7 @@ it.each([
 	const provider = localProvider();
 
 	await expect(
-		provider.complete({ editorialCapability: "announcements", system: "system", user: "user" }),
+		provider.complete({ productionStep: "announcements_write", system: "system", user: "user" }),
 	).rejects.toBeInstanceOf(LmStudioRetryableError);
 });
 
@@ -132,7 +134,7 @@ it.each([
 	const provider = localProvider();
 
 	await expect(
-		provider.complete({ editorialCapability: "packaging", system: "system", user: "user" }),
+		provider.complete({ productionStep: "announcements_copyedit", system: "system", user: "user" }),
 	).rejects.toMatchObject({ code });
 });
 
@@ -149,7 +151,7 @@ it.each([
 	const provider = localProvider();
 
 	await expect(
-		provider.complete({ editorialCapability: "main_story", system: "system", user: "user" }),
+		provider.complete({ productionStep: "main_story_write", system: "system", user: "user" }),
 	).rejects.toMatchObject({ code: "openai_compatible_network_failure" });
 });
 
@@ -159,7 +161,7 @@ it("classifies other HTTP rejections as deterministic", async () => {
 
 	await expect(
 		failNonRetryablyOnDeterministicErrors(() =>
-			provider.complete({ editorialCapability: "main_story", system: "system", user: "user" }),
+			provider.complete({ productionStep: "main_story_write", system: "system", user: "user" }),
 		),
 	).rejects.toBeInstanceOf(NonRetryableError);
 });
@@ -170,7 +172,7 @@ it("rejects malformed JSON non-retryably", async () => {
 
 	await expect(
 		failNonRetryablyOnDeterministicErrors(() =>
-			provider.complete({ editorialCapability: "main_story", system: "system", user: "user" }),
+			provider.complete({ productionStep: "main_story_write", system: "system", user: "user" }),
 		),
 	).rejects.toBeInstanceOf(NonRetryableError);
 });
@@ -184,7 +186,7 @@ it.each([
 
 	await expect(
 		failNonRetryablyOnDeterministicErrors(() =>
-			provider.complete({ editorialCapability: "main_story", system: "system", user: "user" }),
+			provider.complete({ productionStep: "main_story_write", system: "system", user: "user" }),
 		),
 	).rejects.toBeInstanceOf(NonRetryableError);
 });
@@ -200,7 +202,7 @@ it("maps complete internally consistent token usage", async () => {
 	const provider = localProvider();
 
 	await expect(
-		provider.complete({ editorialCapability: "main_story", system: "system", user: "user" }),
+		provider.complete({ productionStep: "main_story_write", system: "system", user: "user" }),
 	).resolves.toMatchObject({
 		execution: "local_inference",
 		token_usage: { measurement: "reported", input_tokens: 3, output_tokens: 2, total_tokens: 5 },
@@ -221,7 +223,7 @@ it.each([
 
 	await expect(
 		failNonRetryablyOnDeterministicErrors(() =>
-			provider.complete({ editorialCapability: "main_story", system: "system", user: "user" }),
+			provider.complete({ productionStep: "main_story_write", system: "system", user: "user" }),
 		),
 	).rejects.toBeInstanceOf(NonRetryableError);
 });

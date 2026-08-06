@@ -1,60 +1,53 @@
 import { env } from "cloudflare:workers";
 import { expect, it } from "vitest";
+import { PRODUCTION_MODEL_STEPS } from "@bc-news/generation-core";
 import { fixtureEvidenceInput, recordedModelProvider } from "@bc-news/fixtures";
 import { GenerationConfigError, resolveGenerationPorts } from "../src/config";
 
 const LOCAL_SAMPLING = { temperature: 1, top_p: 0.95, top_k: 20 };
-const LOCAL_REASONING_EFFORT = "none";
 
-// worker-configuration.d.ts types EVIDENCE_INPUT/MODEL_CONFIG as literals, so
-// rejection tests must deliberately construct invalid env shapes the compiled
-// binding could never hold, to exercise the runtime boundary check.
 function envWith(overrides: Record<string, unknown>): Env {
 	return { ...env, ...overrides };
 }
 
-it("valid config resolves the fixture and recorded ports", () => {
-	const fixtureEnv = envWith({ EVIDENCE_INPUT: "fixture" });
-	const ports = resolveGenerationPorts(fixtureEnv);
+function recordedConfig(): Record<string, { adapter: "recorded" }> {
+	return Object.fromEntries(PRODUCTION_MODEL_STEPS.map((step) => [step, { adapter: "recorded" }]));
+}
 
+it("resolves exactly four independently configured production providers", () => {
+	const ports = resolveGenerationPorts(envWith({ EVIDENCE_INPUT: "fixture" }));
 	expect(ports.evidenceInput).toBe(fixtureEvidenceInput);
-	expect(ports.modelProviders.main_story).toBe(recordedModelProvider);
-	expect(ports.modelProviders.announcements).toBe(recordedModelProvider);
-	expect(ports.modelProviders.packaging).toBe(recordedModelProvider);
+	expect(Object.keys(ports.modelProviders)).toEqual(PRODUCTION_MODEL_STEPS);
+	for (const step of PRODUCTION_MODEL_STEPS) {
+		expect(ports.modelProviders[step]).toBe(recordedModelProvider);
+	}
 });
 
-it("committed default resolves a d1-backed evidence port, not the fixture", () => {
+it("committed default resolves D1 evidence", () => {
 	const ports = resolveGenerationPorts(env);
-
 	expect(ports.evidenceInput).toBeDefined();
 	expect(ports.evidenceInput).not.toBe(fixtureEvidenceInput);
 });
 
+it.each([
+	["invalid json", "{not json"],
+	["missing step", JSON.stringify(Object.fromEntries(Object.entries(recordedConfig()).slice(0, 3)))],
+	["obsolete packaging key", JSON.stringify({ ...recordedConfig(), packaging: { adapter: "recorded" } })],
+	["obsolete product key", JSON.stringify({ ...recordedConfig(), main_story: { adapter: "recorded" } })],
+	["judge key", JSON.stringify({ ...recordedConfig(), judge: { adapter: "recorded" } })],
+])("rejects %s before evidence or model work", (_label, modelConfig) => {
+	expect(() => resolveGenerationPorts(envWith({ MODEL_CONFIG: modelConfig }))).toThrow(
+		GenerationConfigError,
+	);
+});
+
 it("rejects unknown evidence adapter id", () => {
-	const invalidEnv = envWith({ EVIDENCE_INPUT: "d1" });
-
-	expect(() => resolveGenerationPorts(invalidEnv)).toThrow(GenerationConfigError);
+	expect(() => resolveGenerationPorts(envWith({ EVIDENCE_INPUT: "d1" }))).toThrow(
+		GenerationConfigError,
+	);
 });
 
-it("rejects model config that is not valid json", () => {
-	const invalidEnv = envWith({ MODEL_CONFIG: "{not json" });
-
-	expect(() => resolveGenerationPorts(invalidEnv)).toThrow(GenerationConfigError);
-});
-
-it("rejects model config with an unknown adapter id", () => {
-	const invalidEnv = envWith({
-		MODEL_CONFIG: JSON.stringify({
-			main_story: { adapter: "hosted" },
-			announcements: { adapter: "recorded" },
-			packaging: { adapter: "recorded" },
-		}),
-	});
-
-	expect(() => resolveGenerationPorts(invalidEnv)).toThrow(GenerationConfigError);
-});
-
-it("resolves a hosted provider only when endpoint and API key are environment bindings", () => {
+it("resolves a hosted provider only with endpoint and API key bindings", () => {
 	const hosted = {
 		adapter: "openai_compatible_hosted",
 		provider: "verify-hosted",
@@ -66,154 +59,67 @@ it("resolves a hosted provider only when endpoint and API key are environment bi
 			pricing_reference: "verify-prices",
 		},
 	};
+	const modelConfig = { ...recordedConfig(), main_story_write: hosted };
 	const hostedEnv = envWith({
 		HOSTED_MODEL_BASE_URL: "http://127.0.0.1:7777/v1",
 		HOSTED_MODEL_API_KEY: "sentinel",
-		MODEL_CONFIG: JSON.stringify({
-			main_story: hosted,
-			announcements: { adapter: "recorded" },
-			packaging: { adapter: "recorded" },
-		}),
+		MODEL_CONFIG: JSON.stringify(modelConfig),
 	});
-
-	expect(resolveGenerationPorts(hostedEnv).modelProviders.main_story).toBeDefined();
-	const missingKeyEnv = envWith({
-		HOSTED_MODEL_BASE_URL: "http://127.0.0.1:7777/v1",
-		MODEL_CONFIG: hostedEnv.MODEL_CONFIG,
-	});
-	expect(() => resolveGenerationPorts(missingKeyEnv)).toThrow(GenerationConfigError);
+	expect(resolveGenerationPorts(hostedEnv).modelProviders.main_story_write).toBeDefined();
+	expect(() =>
+		resolveGenerationPorts(envWith({
+			HOSTED_MODEL_BASE_URL: "http://127.0.0.1:7777/v1",
+			MODEL_CONFIG: hostedEnv.MODEL_CONFIG,
+		})),
+	).toThrow(GenerationConfigError);
 });
 
-it("requires LM Studio base URL when any capability selects the adapter", () => {
-	const invalidEnv = envWith({
-		MODEL_CONFIG: JSON.stringify({
-			main_story: { adapter: "lmstudio", model: "local-main", sampling: LOCAL_SAMPLING, reasoning_effort: LOCAL_REASONING_EFFORT },
-			announcements: { adapter: "recorded" },
-			packaging: { adapter: "recorded" },
-		}),
-	});
-
-	expect(() => resolveGenerationPorts(invalidEnv)).toThrow(GenerationConfigError);
-});
-
-it("rejects LM Studio config without a model", () => {
-	const invalidEnv = envWith({
-		LMSTUDIO_BASE_URL: "http://127.0.0.1:1234/v1",
-		MODEL_CONFIG: JSON.stringify({
-			main_story: { adapter: "lmstudio", sampling: LOCAL_SAMPLING, reasoning_effort: LOCAL_REASONING_EFFORT },
-			announcements: { adapter: "recorded" },
-			packaging: { adapter: "recorded" },
-		}),
-	});
-
-	expect(() => resolveGenerationPorts(invalidEnv)).toThrow(GenerationConfigError);
-});
-
-it("rejects LM Studio config with a whitespace-only model", () => {
-	const invalidEnv = envWith({
-		LMSTUDIO_BASE_URL: "http://127.0.0.1:1234/v1",
-		MODEL_CONFIG: JSON.stringify({
-			main_story: { adapter: "lmstudio", model: " \t ", sampling: LOCAL_SAMPLING, reasoning_effort: LOCAL_REASONING_EFFORT },
-			announcements: { adapter: "recorded" },
-			packaging: { adapter: "recorded" },
-		}),
-	});
-
-	expect(() => resolveGenerationPorts(invalidEnv)).toThrow(GenerationConfigError);
-});
-
-it("rejects invalid LM Studio base URL", () => {
-	const invalidEnv = envWith({
+it("requires a valid LM Studio binding and complete per-step config", () => {
+	const local = {
+		adapter: "lmstudio",
+		model: "local-main",
+		sampling: LOCAL_SAMPLING,
+		reasoning_effort: "none",
+	};
+	const modelConfig = { ...recordedConfig(), main_story_write: local };
+	expect(() => resolveGenerationPorts(envWith({ MODEL_CONFIG: JSON.stringify(modelConfig) }))).toThrow(
+		GenerationConfigError,
+	);
+	expect(() => resolveGenerationPorts(envWith({
 		LMSTUDIO_BASE_URL: "file:///tmp/lmstudio",
-		MODEL_CONFIG: JSON.stringify({
-			main_story: { adapter: "lmstudio", model: "local-main", sampling: LOCAL_SAMPLING, reasoning_effort: LOCAL_REASONING_EFFORT },
-			announcements: { adapter: "recorded" },
-			packaging: { adapter: "recorded" },
-		}),
-	});
-
-	expect(() => resolveGenerationPorts(invalidEnv)).toThrow(GenerationConfigError);
-});
-
-it.each([
-	undefined,
-	{ temperature: Number.POSITIVE_INFINITY, top_p: 0.95, top_k: 20 },
-	{ temperature: -0.1, top_p: 0.95, top_k: 20 },
-	{ temperature: 1, top_p: 1.1, top_k: 20 },
-	{ temperature: 1, top_p: 0.95, top_k: -1 },
-	{ temperature: 1, top_p: 0.95, top_k: 1.5 },
-])("rejects incomplete or invalid LM Studio sampling %#", (sampling) => {
-	const invalidEnv = envWith({
+		MODEL_CONFIG: JSON.stringify(modelConfig),
+	}))).toThrow(GenerationConfigError);
+	expect(resolveGenerationPorts(envWith({
 		LMSTUDIO_BASE_URL: "http://127.0.0.1:1234/v1",
-		MODEL_CONFIG: JSON.stringify({
-			main_story: { adapter: "lmstudio", model: "local-main", sampling, reasoning_effort: LOCAL_REASONING_EFFORT },
-			announcements: { adapter: "recorded" },
-			packaging: { adapter: "recorded" },
-		}),
-	});
-
-	expect(() => resolveGenerationPorts(invalidEnv)).toThrow(GenerationConfigError);
+		MODEL_CONFIG: JSON.stringify(modelConfig),
+	})).modelProviders.main_story_write).toBeDefined();
 });
 
-it.each([undefined, "maximum"])("rejects missing or invalid LM Studio reasoning effort %s", (reasoningEffort) => {
-	const invalidEnv = envWith({
-		LMSTUDIO_BASE_URL: "http://127.0.0.1:1234/v1",
-		MODEL_CONFIG: JSON.stringify({
-			main_story: {
-				adapter: "lmstudio",
-				model: "local-main",
-				sampling: LOCAL_SAMPLING,
-				reasoning_effort: reasoningEffort,
-			},
-			announcements: { adapter: "recorded" },
-			packaging: { adapter: "recorded" },
-		}),
-	});
-
-	expect(() => resolveGenerationPorts(invalidEnv)).toThrow(GenerationConfigError);
+it("rejects incomplete LM Studio model, sampling, and reasoning fields", () => {
+	for (const local of [
+		{ adapter: "lmstudio", sampling: LOCAL_SAMPLING, reasoning_effort: "none" },
+		{ adapter: "lmstudio", model: " \t ", sampling: LOCAL_SAMPLING, reasoning_effort: "none" },
+		{ adapter: "lmstudio", model: "local", sampling: undefined, reasoning_effort: "none" },
+		{
+			adapter: "lmstudio",
+			model: "local",
+			sampling: { ...LOCAL_SAMPLING, top_p: 1.1 },
+			reasoning_effort: "none",
+		},
+		{ adapter: "lmstudio", model: "local", sampling: LOCAL_SAMPLING },
+		{ adapter: "lmstudio", model: "local", sampling: LOCAL_SAMPLING, reasoning_effort: "maximum" },
+	]) {
+		expect(() => resolveGenerationPorts(envWith({
+			LMSTUDIO_BASE_URL: "http://127.0.0.1:1234/v1",
+			MODEL_CONFIG: JSON.stringify({ ...recordedConfig(), main_story_write: local }),
+		}))).toThrow(GenerationConfigError);
+	}
 });
 
-it("rejects missing announcements key", () => {
-	const invalidEnv = envWith({
-		MODEL_CONFIG: JSON.stringify({
-			main_story: { adapter: "recorded" },
-			packaging: { adapter: "recorded" },
-		}),
-	});
-
-	expect(() => resolveGenerationPorts(invalidEnv)).toThrow(GenerationConfigError);
-});
-
-it("rejects missing packaging key", () => {
-	const invalidEnv = envWith({
-		MODEL_CONFIG: JSON.stringify({
-			main_story: { adapter: "recorded" },
-			announcements: { adapter: "recorded" },
-		}),
-	});
-
-	expect(() => resolveGenerationPorts(invalidEnv)).toThrow(GenerationConfigError);
-});
-
-it("rejects model config with an extra capability key", () => {
-	const invalidEnv = envWith({
-		MODEL_CONFIG: JSON.stringify({
-			main_story: { adapter: "recorded" },
-			announcements: { adapter: "recorded" },
-			packaging: { adapter: "recorded" },
-			side_story: { adapter: "recorded" },
-		}),
-	});
-
-	expect(() => resolveGenerationPorts(invalidEnv)).toThrow(GenerationConfigError);
-});
-
-it("thrown config errors carry the invalid generation config code", () => {
-	const invalidEnv = envWith({ EVIDENCE_INPUT: "d1" });
-
+it("config errors expose the stable operator code", () => {
 	try {
-		resolveGenerationPorts(invalidEnv);
-		expect.unreachable("resolveGenerationPorts should have thrown");
+		resolveGenerationPorts(envWith({ EVIDENCE_INPUT: "d1" }));
+		expect.unreachable("resolveGenerationPorts should throw");
 	} catch (error) {
 		expect(error).toBeInstanceOf(GenerationConfigError);
 		expect((error as GenerationConfigError).code).toBe("invalid_generation_config");

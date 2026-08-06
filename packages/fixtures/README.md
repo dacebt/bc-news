@@ -37,15 +37,23 @@ downstream of this corpus.
 
 ## Recorded model response provenance
 
-`model-responses/main_story.json` — the recorded `main_story` editorial
-capability response. The story text was authored by hand from the actual
-region-7 2026-01-24 conversation in v1's editorial voice (every quotation
-verified verbatim against the prepared evidence); it parses against the
-capability's output contract (`MainStoryOutputSchema`). For capability records,
-`prompt_sha256` is the SHA-256 of the exact user-prompt UTF-8 bytes built from
-this corpus (judge records separately hash their established `{system,user}`
-request) — informational provenance only, never branched on: capability *and*
-judge responses alike are keyed by editorial capability alone, so prompt edits
-do not break the walk. The stamps are re-pinned whenever the corpus or a prompt
-builder changes deliberately, which `verify-evidence-integrity` enforces; they
-record which prompt each response currently answers, not when it was written.
+The directory is one strict four-file unit, keyed by production step:
+`main_story_write.json`, `main_story_copyedit.json`,
+`announcements_write.json`, and `announcements_copyedit.json`. There is no
+packaging response and no judge directory.
+
+The writer records migrate retained v1 editorial content. The main-story
+record combines the old story with the old deterministic-packaging title and
+subtitle. The copyedit records are explicitly synthetic preservation copies,
+not newly generated Qwen output. Their provider and model labels make that
+provenance visible rather than implying a live re-record occurred.
+
+`prompt_sha256` binds a record to the exact `{system, user}` request rebuilt
+from current builders and dependent upstream output. Replay selection remains
+keyed by `production_step`; canonical verification recomputes every stamp.
+The hash is request provenance, not proof that a named model authored text.
+
+Retained historical eval run files remain human-readable provenance only.
+Canonical replay instead recomputes relationships from current evidence,
+prompt builders, the four records, and the run being checked. Recorded replay
+reports token measurement as unavailable and external billing as none.

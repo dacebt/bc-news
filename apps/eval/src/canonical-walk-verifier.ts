@@ -1,52 +1,24 @@
-import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { CAPABILITY_ROSTER } from "./capability-runners";
+import { assertCanonicalEvalDeterminism } from "./canonical-eval-determinism";
+import { assertCanonicalEvalGrounding } from "./canonical-eval-grounding";
+import { assertCanonicalEvalSemantics, assertRecordedConfig } from "./canonical-eval-semantics";
 import { loadConfig } from "./config";
 import { runCommand } from "./run-command";
 import { RunFileSchema, type RunFile } from "./run-file";
-
-export const CANONICAL_BASELINE_ID = "2026-08-05T21-16-25-731Z";
-export const CANONICAL_BASELINE_SHA256 = "e26b7416f5adb2d2121ea3da7b74a5cac9411318684a5e8aaffee8c53ed3bc0b";
+import type { Edition } from "@bc-news/contracts";
 
 const APP_DIRECTORY = join(dirname(fileURLToPath(import.meta.url)), "..");
 const WORKSPACE_ROOT = join(APP_DIRECTORY, "..", "..");
-export const CANONICAL_BASELINE_PATH = join(
-	APP_DIRECTORY,
-	"results",
-	`${CANONICAL_BASELINE_ID}.json`,
-);
-const CANONICAL_CONFIG_PATH = join(APP_DIRECTORY, "eval.config.json");
-const CANONICAL_FIXTURE_PATH = join(
+export const CANONICAL_CONFIG_PATH = join(APP_DIRECTORY, "eval.config.json");
+export const CANONICAL_FIXTURE_PATH = join(
 	WORKSPACE_ROOT,
 	"packages",
 	"fixtures",
 	"evidence",
 	"active-region-7_2026-01-24.json",
 );
-
-const RECORDED_CONFIG = {
-	capabilities: {
-		main_story: { adapter: "recorded" },
-		announcements: { adapter: "recorded" },
-		packaging: { adapter: "recorded" },
-	},
-	judge: { adapter: "recorded" },
-} as const;
-
-const REQUIRED_CHECKS = ["injection", "grounding", "schema", "formatting", "stage_specific"] as const;
-
-interface CanonicalComparableRun {
-	readonly config: RunFile["config"];
-	readonly fixture: RunFile["fixture"];
-	readonly steps: RunFile["steps"];
-	readonly fingerprint: Omit<RunFile["fingerprint"], "code_version">;
-}
-
-function hashBytes(bytes: Uint8Array): string {
-	return createHash("sha256").update(bytes).digest("hex");
-}
 
 function parseStrictRun(bytes: Uint8Array, source: string): RunFile {
 	let candidate: unknown;
@@ -62,132 +34,34 @@ function parseStrictRun(bytes: Uint8Array, source: string): RunFile {
 	return parsed.data;
 }
 
-function comparableRun(run: RunFile): CanonicalComparableRun {
-	return {
-		config: run.config,
-		fixture: run.fixture,
-		steps: run.steps,
-		fingerprint: {
-			provider_params: run.fingerprint.provider_params,
-			fixture_sha256: run.fingerprint.fixture_sha256,
-			checks_sha256: run.fingerprint.checks_sha256,
-			providers_sha256: run.fingerprint.providers_sha256,
-			rubrics_sha256: run.fingerprint.rubrics_sha256,
-			schemas_sha256: run.fingerprint.schemas_sha256,
-		},
-	};
-}
-
-function firstDifference(left: unknown, right: unknown, path = "run"): string | null {
-	if (Object.is(left, right)) return null;
-	if (Array.isArray(left) && Array.isArray(right)) {
-		if (left.length !== right.length) return `${path}.length`;
-		for (let index = 0; index < left.length; index++) {
-			const difference = firstDifference(left[index], right[index], `${path}[${String(index)}]`);
-			if (difference !== null) return difference;
-		}
-		return null;
-	}
-	if (
-		typeof left === "object" && left !== null && !Array.isArray(left)
-		&& typeof right === "object" && right !== null && !Array.isArray(right)
-	) {
-		const leftRecord = left as Record<string, unknown>;
-		const rightRecord = right as Record<string, unknown>;
-		const keys = [...new Set([...Object.keys(leftRecord), ...Object.keys(rightRecord)])].sort();
-		for (const key of keys) {
-			if (!Object.hasOwn(leftRecord, key) || !Object.hasOwn(rightRecord, key)) return `${path}.${key}`;
-			const difference = firstDifference(leftRecord[key], rightRecord[key], `${path}.${key}`);
-			if (difference !== null) return difference;
-		}
-		return null;
-	}
-	return path;
-}
-
-export function assertCanonicalEvalParity(baseline: RunFile, candidate: RunFile): void {
-	const difference = firstDifference(comparableRun(baseline), comparableRun(candidate));
-	if (difference !== null) {
-		throw new Error(`canonical eval replay drifted at ${difference}`);
-	}
-}
-
-function assertRecordedConfig(config: RunFile["config"]): void {
-	if (JSON.stringify(config) !== JSON.stringify(RECORDED_CONFIG)) {
-		throw new Error("canonical eval config must select recorded adapters for all three capabilities and judge");
-	}
-}
-
-export function assertCanonicalEvalSemantics(run: RunFile, source = "canonical eval run"): void {
-	assertRecordedConfig(run.config);
-	const roster = run.steps.map((step) => step.capability);
-	if (roster.length !== CAPABILITY_ROSTER.length || roster.some((capability, index) => capability !== CAPABILITY_ROSTER[index])) {
-		throw new Error(`${source} must contain the exact ordered capability roster`);
-	}
-
-	const usages: RunFile["steps"][number]["model_usage"][] = [];
-	for (const step of run.steps) {
-		if (!step.schema_valid) throw new Error(`${source} ${step.capability} schema result is not green`);
-		const checks = step.checks ?? [];
-		if (
-			checks.length !== REQUIRED_CHECKS.length
-			|| REQUIRED_CHECKS.some((name) => checks.filter((check) => check.name === name).length !== 1)
-		) {
-			throw new Error(`${source} ${step.capability} does not contain every required check exactly once`);
-		}
-		const redCheck = checks.find((check) => !check.passed);
-		if (redCheck !== undefined) {
-			throw new Error(`${source} ${step.capability} check ${redCheck.name} is red`);
-		}
-		if (step.judge === null) throw new Error(`${source} ${step.capability} has no judge result`);
-		usages.push(step.model_usage, step.judge.model_usage);
-	}
-
-	if (usages.length !== 6) throw new Error(`${source} must contain exactly six model usage records`);
-	for (const usage of usages) {
-		if (
-			usage.provider !== "recorded"
-			|| usage.execution !== "recorded_replay"
-			|| usage.token_usage.measurement !== "unavailable"
-			|| usage.external_billing.classification !== "none"
-			|| usage.external_billing.amount_usd !== 0
-			|| usage.external_billing.reason !== "recorded_replay"
-		) {
-			throw new Error(`${source} ${usage.editorial_capability} contains non-recorded usage semantics`);
-		}
-	}
-}
-
-export async function verifyCanonicalEvalReplay(resultsDirectory: string): Promise<void> {
-	const config = await loadConfig(CANONICAL_CONFIG_PATH);
-	assertRecordedConfig(config);
-
-	const baselineBytes = await readFile(CANONICAL_BASELINE_PATH);
-	const baselineHash = hashBytes(baselineBytes);
-	if (baselineHash !== CANONICAL_BASELINE_SHA256) {
-		throw new Error(
-			`canonical baseline hash mismatch: expected ${CANONICAL_BASELINE_SHA256}, got ${baselineHash}`,
-		);
-	}
-	const baseline = parseStrictRun(baselineBytes, CANONICAL_BASELINE_PATH);
-	if (baseline.id !== CANONICAL_BASELINE_ID) {
-		throw new Error(`canonical baseline id mismatch: expected ${CANONICAL_BASELINE_ID}, got ${baseline.id}`);
-	}
-	assertRecordedConfig(baseline.config);
-	assertCanonicalEvalSemantics(baseline, "canonical baseline");
-
+async function executeCanonicalRun(resultsDirectory: string): Promise<{ path: string; run: RunFile }> {
 	const saved = await runCommand({
 		fixturePath: CANONICAL_FIXTURE_PATH,
 		configPath: CANONICAL_CONFIG_PATH,
 		resultsDirectory,
-		noJudge: false,
 		environment: {},
 	});
-	const candidateBytes = await readFile(saved.path);
-	const candidate = parseStrictRun(candidateBytes, saved.path);
-	assertCanonicalEvalSemantics(candidate, "canonical candidate");
-	assertCanonicalEvalParity(baseline, candidate);
-	console.log(
-		`walk: canonical eval replay matches ${CANONICAL_BASELINE_ID} (${CANONICAL_BASELINE_SHA256})`,
-	);
+	return { path: saved.path, run: parseStrictRun(await readFile(saved.path), saved.path) };
+}
+
+/**
+ * Executes the canonical generation run twice into walk-owned storage: the two
+ * results must agree apart from run identity and timestamps, and the candidate
+ * must satisfy the canonical semantics and recomputed grounding relations.
+ * Recorded request stamps bind each response to the request current builders
+ * produce; they are inspectable provenance, not a pin over fixture bytes.
+ */
+export async function verifyCanonicalEvalReplay(resultsDirectory: string): Promise<Edition> {
+	const config = await loadConfig(CANONICAL_CONFIG_PATH);
+	assertRecordedConfig(config);
+
+	const candidate = await executeCanonicalRun(resultsDirectory);
+	const repeat = await executeCanonicalRun(resultsDirectory);
+
+	assertCanonicalEvalSemantics(candidate.run);
+	await assertCanonicalEvalGrounding(candidate.run, CANONICAL_FIXTURE_PATH);
+	assertCanonicalEvalDeterminism(candidate.run, repeat.run);
+
+	console.log(`walk: four recorded production steps replayed, request-linked, and deterministic at ${candidate.path}`);
+	return candidate.run.edition;
 }

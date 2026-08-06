@@ -8,12 +8,12 @@ import { validateRunId } from "./run-file";
  * directory -- this module resolves flags, not paths.
  */
 export type EvalCliCommand =
-	| { command: "run"; fixturePath: string; configPath?: string; resultsDirectory?: string; noJudge: boolean }
+	| { command: "run"; fixturePath: string; configPath?: string; resultsDirectory?: string }
 	| { command: "list"; resultsDirectory?: string }
 	| { command: "show"; runId: string; resultsDirectory?: string }
 	| { command: "compare"; leftRunId: string; rightRunId: string; resultsDirectory?: string };
 
-const ALL_OPTIONS = ["fixture", "config", "results-dir", "no-judge"] as const;
+const ALL_OPTIONS = ["fixture", "config", "results-dir"] as const;
 
 export class CliOptionsError extends Error {
 	readonly code = "invalid_cli_options";
@@ -50,7 +50,6 @@ function runParseArgs(argv: readonly string[]) {
 			fixture: { type: "string" },
 			config: { type: "string" },
 			"results-dir": { type: "string" },
-			"no-judge": { type: "boolean" },
 		},
 	});
 }
@@ -68,14 +67,13 @@ export function parseEvalCliCommand(argv: readonly string[]): EvalCliCommand {
 	const command = positionals[0];
 	if (command === "run") {
 		exactPositionals(positionals, 1, command);
-		rejectUnknownOptions(values, ["fixture", "config", "results-dir", "no-judge"], command);
+		rejectUnknownOptions(values, ["fixture", "config", "results-dir"], command);
 		if (values.fixture === undefined) throw new CliOptionsError("--fixture is required");
 		return {
 			command,
 			fixturePath: values.fixture,
 			...(values.config === undefined ? {} : { configPath: values.config }),
 			...(values["results-dir"] === undefined ? {} : { resultsDirectory: values["results-dir"] }),
-			noJudge: values["no-judge"] ?? false,
 		};
 	}
 	if (command === "list") {

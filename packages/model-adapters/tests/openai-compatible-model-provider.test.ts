@@ -1,7 +1,7 @@
 import { afterEach, expect, it, vi } from "vitest";
 import {
 	HostedModelAdapterConfigSchema,
-	LM_STUDIO_CAPABILITY_OUTPUT_CONTRACTS,
+	LM_STUDIO_PRODUCTION_STEP_OUTPUT_CONTRACTS,
 	LmStudioAdapterConfigSchema,
 	OpenAiCompatibleDeterministicError,
 	OpenAiCompatibleRetryableError,
@@ -101,7 +101,7 @@ function localProvider(reasoningEffort: LmStudioReasoningEffort = "none") {
 		requestedModel: "requested-local-model",
 		sampling: LOCAL_SAMPLING,
 		reasoningEffort,
-		structuredOutputContracts: LM_STUDIO_CAPABILITY_OUTPUT_CONTRACTS,
+		structuredOutputContracts: LM_STUDIO_PRODUCTION_STEP_OUTPUT_CONTRACTS,
 	});
 }
 
@@ -115,7 +115,7 @@ function mockLocalCompletion(content: string) {
 async function completeLocalText(content: string): Promise<string> {
 	mockLocalCompletion(content);
 	const completion = await localProvider().complete({
-		editorialCapability: "main_story",
+		productionStep: "main_story_write",
 		system: "system",
 		user: "prompt",
 	});
@@ -130,7 +130,7 @@ it("maps strict hosted provenance, usage, and calculated billing", async () => {
 	}));
 
 	await expect(hostedProvider().complete({
-		editorialCapability: "main_story",
+		productionStep: "main_story_write",
 		system: "system",
 		user: "prompt",
 	})).resolves.toEqual({
@@ -161,7 +161,7 @@ it.each([
 		choices: [{ message: { content: "completion" } }],
 	}));
 	await localProvider(reasoningEffort).complete({
-		editorialCapability: "main_story",
+		productionStep: "main_story_write",
 		system: "system",
 		user: "prompt",
 	});
@@ -173,6 +173,26 @@ it.each([
 	} else {
 		expect(parsed.reasoning_effort).toBe(expected);
 	}
+});
+
+it.each([
+	["main_story_write", "main_story_write_output"],
+	["main_story_copyedit", "main_story_copyedit_output"],
+	["announcements_write", "announcements_write_output"],
+	["announcements_copyedit", "announcements_copyedit_output"],
+] as const)("selects the %s structured-output contract by production step", async (productionStep, expectedName) => {
+	const fetchCall = vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({
+		model: "returned-local-model",
+		choices: [{ message: { content: "completion" } }],
+	}));
+
+	await localProvider().complete({ productionStep, system: "system", user: "prompt" });
+	const body = fetchCall.mock.calls[0]?.[1]?.body;
+	if (typeof body !== "string") throw new Error("Expected request body to be JSON text");
+	const parsed = JSON.parse(body) as {
+		response_format?: { json_schema?: { name?: string } };
+	};
+	expect(parsed.response_format?.json_schema?.name).toBe(expectedName);
 });
 
 it("accepts an ordinary OpenAI-compatible completion envelope", async () => {
@@ -204,7 +224,7 @@ it("accepts an ordinary OpenAI-compatible completion envelope", async () => {
 	}));
 
 	await expect(hostedProvider().complete({
-		editorialCapability: "main_story",
+		productionStep: "main_story_write",
 		system: "system",
 		user: "prompt",
 	})).resolves.toMatchObject({ text: "completion", model: "returned-model" });
@@ -236,7 +256,7 @@ it.each([
 	}));
 
 	await expect(localProvider().complete({
-		editorialCapability: "main_story",
+		productionStep: "main_story_write",
 		system: "system",
 		user: "prompt",
 	})).resolves.toEqual({
@@ -319,7 +339,7 @@ it("keeps hosted malformed completion text byte-for-byte", async () => {
 	}));
 
 	const completion = await hostedProvider().complete({
-		editorialCapability: "main_story",
+		productionStep: "main_story_write",
 		system: "system",
 		user: "prompt",
 	});
@@ -351,7 +371,7 @@ it.each([
 	},
 ])("rejects unsupported LM Studio local metadata %#", async (candidate) => {
 	vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json(candidate));
-	await expect(localProvider().complete({ editorialCapability: "main_story", system: "s", user: "u" }))
+	await expect(localProvider().complete({ productionStep: "main_story_write", system: "s", user: "u" }))
 		.rejects.toMatchObject({ code: "openai_compatible_response_contract_rejected" });
 });
 
@@ -363,7 +383,7 @@ it("keeps LM Studio response metadata outside the hosted contract", async () => 
 		stats: {},
 	}));
 
-	await expect(hostedProvider().complete({ editorialCapability: "main_story", system: "s", user: "u" }))
+	await expect(hostedProvider().complete({ productionStep: "main_story_write", system: "s", user: "u" }))
 		.rejects.toMatchObject({ code: "openai_compatible_response_contract_rejected" });
 });
 
@@ -374,19 +394,19 @@ it.each([
 	{ model: "m", choices: [{ message: { content: "x" } }], usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2, invented: true } },
 ])("rejects invented completion-envelope fields %#", async (candidate) => {
 	vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json(candidate));
-	await expect(hostedProvider().complete({ editorialCapability: "main_story", system: "s", user: "u" }))
+	await expect(hostedProvider().complete({ productionStep: "main_story_write", system: "s", user: "u" }))
 		.rejects.toMatchObject({ code: "openai_compatible_response_contract_rejected" });
 });
 
 it.each([408, 409, 425, 429, 500, 599])("classifies HTTP %i as retryable", async (status) => {
 	vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null, { status }));
-	await expect(hostedProvider().complete({ editorialCapability: "main_story", system: "s", user: "u" }))
+	await expect(hostedProvider().complete({ productionStep: "main_story_write", system: "s", user: "u" }))
 		.rejects.toBeInstanceOf(OpenAiCompatibleRetryableError);
 });
 
 it.each([400, 401, 403, 404, 422])("classifies HTTP %i as deterministic", async (status) => {
 	vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null, { status }));
-	await expect(hostedProvider().complete({ editorialCapability: "main_story", system: "s", user: "u" }))
+	await expect(hostedProvider().complete({ productionStep: "main_story_write", system: "s", user: "u" }))
 		.rejects.toBeInstanceOf(OpenAiCompatibleDeterministicError);
 });
 
@@ -398,7 +418,7 @@ it.each([
 	{ model: "m", choices: [{ message: { content: "x" } }], usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 3 } },
 ])("rejects malformed hosted response %# without echoing it", async (candidate) => {
 	vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json(candidate));
-	const error = await hostedProvider().complete({ editorialCapability: "main_story", system: "s", user: "u" })
+	const error = await hostedProvider().complete({ productionStep: "main_story_write", system: "s", user: "u" })
 		.catch((failure: unknown) => failure);
 	expect(error).toBeInstanceOf(OpenAiCompatibleDeterministicError);
 	expect(String(error)).not.toContain(JSON.stringify(candidate));

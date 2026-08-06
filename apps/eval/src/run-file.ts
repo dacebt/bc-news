@@ -1,198 +1,92 @@
 import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { EditionSchema } from "@bc-news/contracts";
+import {
+	ModelUsageRecordSchema,
+	PRODUCTION_MODEL_STEPS,
+	ProductionModelStepSchema,
+} from "@bc-news/generation-core";
 import { z } from "zod";
-import { ModelUsageRecordSchema } from "@bc-news/generation-core";
-import { CAPABILITY_ROSTER } from "./capability-runners";
 import { EvalConfigSchema } from "./config";
-import { RunFingerprintSchema, Sha256HashSchema } from "./fingerprint";
-import { rubricDimensionMismatch, rubricWeightedAggregate } from "./rubrics";
 
+export const Sha256HashSchema = z.string().regex(/^[0-9a-f]{64}$/);
 export const RunIdSchema = z.string().regex(
 	/^[A-Za-z0-9][A-Za-z0-9_-]{0,199}$/,
-	"Run id must be 1-200 characters, start with a letter or number, and contain only letters, numbers, underscores, and hyphens",
+	"Run id must be 1-200 safe filename characters",
 );
 
-export const CheckResultSchema = z.strictObject({
-	name: z.enum(["injection", "grounding", "schema", "formatting", "stage_specific"]),
-	passed: z.boolean(),
-	detail: z.string(),
-});
-
-const EditorialCapabilitySchema = z.enum(CAPABILITY_ROSTER);
-
-const JudgeScoreSchema = z.number().int().min(1).max(5);
-
-export const JudgeStepSchema = z
-	.strictObject({
-		scores: z.record(z.string().min(1), JudgeScoreSchema),
-		reasoning: z.string().trim().min(1),
-		aggregate: z.number(),
-		weighting: z.literal("v1_rubric_weighted_mean"),
-		provenance: z.strictObject({
-			source: z.enum(["recorded_replay", "model_completion"]),
-			prompt_sha256: Sha256HashSchema,
-			response_sha256: Sha256HashSchema,
-		}),
-		model_usage: ModelUsageRecordSchema,
-	});
-export type JudgeStep = z.infer<typeof JudgeStepSchema>;
-export const JudgeStepReadSchema = JudgeStepSchema.extend({
-	model_usage: ModelUsageRecordSchema.optional(),
-});
-
 export const RunStepSchema = z.strictObject({
-	capability: EditorialCapabilitySchema,
+	production_step: ProductionModelStepSchema,
 	prompt_sha256: Sha256HashSchema,
 	output: z.record(z.string(), z.unknown()),
-	schema_valid: z.boolean(),
-	checks: z.array(CheckResultSchema).optional(),
 	model_usage: ModelUsageRecordSchema,
-	judge: JudgeStepSchema.nullable(),
-}).superRefine((step, context) => {
-	if (step.model_usage.editorial_capability !== step.capability) {
-		context.addIssue({ code: "custom", path: ["model_usage", "editorial_capability"], message: "capability usage must match the step capability" });
-	}
-	if (step.judge === null) return;
-	if (step.judge.model_usage.editorial_capability !== step.capability) {
-		context.addIssue({ code: "custom", path: ["judge", "model_usage", "editorial_capability"], message: "judge usage must match the step capability" });
-	}
-	const mismatch = rubricDimensionMismatch(step.capability, step.judge.scores);
-	if (mismatch.missing.length > 0 || mismatch.unexpected.length > 0) {
+}).refine((step) => step.model_usage.production_step === step.production_step, {
+	message: "model usage must identify the same production step",
+	path: ["model_usage", "production_step"],
+});
+
+export const RunFileSchema = z.strictObject({
+	id: RunIdSchema,
+	config: EvalConfigSchema,
+	fixture: z.strictObject({ path: z.string().min(1), fixture_sha256: Sha256HashSchema }),
+	steps: z.array(RunStepSchema).length(PRODUCTION_MODEL_STEPS.length),
+	edition: EditionSchema,
+	started_at: z.iso.datetime({ offset: true }),
+	completed_at: z.iso.datetime({ offset: true }),
+}).superRefine((run, context) => {
+	const observed = run.steps.map((step) => step.production_step);
+	if (observed.some((step, index) => step !== PRODUCTION_MODEL_STEPS[index])) {
 		context.addIssue({
 			code: "custom",
-			path: ["judge", "scores"],
-			message: `judge dimensions mismatch; missing: ${mismatch.missing.join(", ") || "none"}; unexpected: ${mismatch.unexpected.join(", ") || "none"}`,
-		});
-	}
-	const expected = rubricWeightedAggregate(step.capability, step.judge.scores);
-	if (Math.abs(step.judge.aggregate - expected) > Number.EPSILON) {
-		context.addIssue({
-			code: "custom",
-			path: ["judge", "aggregate"],
-			message: `aggregate must equal the v1 rubric-weighted score ${expected}`,
+			path: ["steps"],
+			message: "steps must match the exact ordered production roster",
 		});
 	}
 });
-
-/**
- * Write-path schema: strict, rejects anything unexpected. The companion
- * read-path schema below is deliberately looser so runs saved by an earlier
- * shape of this file stay readable as the format grows.
- */
-export const RunFileSchema = z
-	.strictObject({
-		id: RunIdSchema,
-		config: EvalConfigSchema,
-		fixture: z.strictObject({ path: z.string().min(1), fixture_sha256: Sha256HashSchema }),
-		steps: z.array(RunStepSchema).min(1),
-		started_at: z.iso.datetime({ offset: true }),
-		completed_at: z.iso.datetime({ offset: true }),
-		fingerprint: RunFingerprintSchema,
-	})
-	// fixture.fixture_sha256 and fingerprint.fixture_sha256 encode the same
-	// fact (the fixture bytes the run consumed) in two places; a run file
-	// carrying two disagreeing copies is not a valid run file.
-	.refine((run) => run.fixture.fixture_sha256 === run.fingerprint.fixture_sha256, {
-		message: "fixture.fixture_sha256 and fingerprint.fixture_sha256 must match",
-		path: ["fixture", "fixture_sha256"],
-	})
-	.superRefine((run, context) => {
-		const capabilities = run.steps.map((step) => step.capability);
-		for (const capability of CAPABILITY_ROSTER) {
-			if (capabilities.filter((entry) => entry === capability).length !== 1) {
-				context.addIssue({ code: "custom", path: ["steps"], message: `run must contain exactly one ${capability} step` });
-			}
-		}
-		if (run.steps.length !== CAPABILITY_ROSTER.length) {
-			context.addIssue({ code: "custom", path: ["steps"], message: "run must contain exactly the capability roster" });
-		}
-		const judged = run.steps.filter((step) => step.judge !== null).length;
-		if (judged !== 0 && judged !== run.steps.length) {
-			context.addIssue({ code: "custom", path: ["steps"], message: "judge results must be present for all capabilities or none" });
-		}
-	});
 export type RunFile = z.infer<typeof RunFileSchema>;
 
-const ReadStepSchema = z.looseObject({
-	capability: z.string(),
-	prompt_sha256: z.string().optional(),
-	output: z.unknown().optional(),
-	schema_valid: z.boolean().optional(),
-	checks: z.array(z.looseObject({ name: z.string(), passed: z.boolean(), detail: z.string().optional() })).optional(),
-	judge: z.unknown().nullable().optional(),
+export const RunFileReadSchema = z.looseObject({
+	id: RunIdSchema,
+	fixture: z.looseObject({ path: z.string(), fixture_sha256: z.string() }).optional(),
+	steps: z.array(z.looseObject({
+		production_step: z.string().optional(),
+		prompt_sha256: z.string().optional(),
+		output: z.unknown().optional(),
+		model_usage: z.unknown().optional(),
+	})).default([]),
+	edition: z.unknown().optional(),
+	started_at: z.string().optional(),
+	completed_at: z.string().optional(),
 });
-
-export const RunFileReadSchema = z
-	.looseObject({
-		id: RunIdSchema,
-		config: z.unknown().optional(),
-		fixture: z.looseObject({ path: z.string(), fixture_sha256: z.string() }).optional(),
-		steps: z.array(ReadStepSchema).default([]),
-		started_at: z.string().optional(),
-		completed_at: z.string().optional(),
-		fingerprint: z
-			.looseObject({
-				provider_params: z.unknown().optional(),
-				fixture_sha256: z.string().optional(),
-				checks_sha256: z.string().optional(),
-				providers_sha256: z.string().optional(),
-				rubrics_sha256: z.string().optional(),
-				schemas_sha256: z.string().optional(),
-				code_version: z.string().nullable().optional(),
-			})
-			.optional(),
-	})
-	// Same reconciliation as the write path, relaxed for optionality: an older
-	// run missing one of the two copies stays readable, but a run carrying
-	// both must not disagree on which fixture it ran against.
-	.refine(
-		(run) =>
-			run.fixture?.fixture_sha256 === undefined ||
-			run.fingerprint?.fixture_sha256 === undefined ||
-			run.fixture.fixture_sha256 === run.fingerprint.fixture_sha256,
-		{
-			message: "fixture.fixture_sha256 and fingerprint.fixture_sha256 disagree",
-			path: ["fixture", "fixture_sha256"],
-		},
-	);
 export type RunFileRead = z.infer<typeof RunFileReadSchema>;
 
 export class InvalidRunIdError extends Error {
 	readonly code = "invalid_run_id";
-	readonly runId: string;
-
-	constructor(runId: string) {
+	constructor(readonly runId: string) {
 		super(`Invalid run id: ${runId}`);
 		this.name = "InvalidRunIdError";
-		this.runId = runId;
 	}
 }
 
 export class SavedRunNotFoundError extends Error {
 	readonly code = "saved_run_not_found";
-	readonly runId: string;
-
-	constructor(runId: string) {
+	constructor(readonly runId: string) {
 		super(`Saved run not found: ${runId}`);
 		this.name = "SavedRunNotFoundError";
-		this.runId = runId;
 	}
 }
 
 export class RunFileRejectedError extends Error {
 	readonly code: "write_rejected" | "read_rejected";
-	readonly source: string;
-
 	constructor(
 		code: "write_rejected" | "read_rejected",
-		source: string,
+		readonly source: string,
 		message: string,
 		options?: ErrorOptions,
 	) {
 		super(message, options);
 		this.name = "RunFileRejectedError";
 		this.code = code;
-		this.source = source;
 	}
 }
 
@@ -206,47 +100,27 @@ export function validateRunId(runId: string): string {
 	return parsed.data;
 }
 
-/** Sanitized ISO timestamp: colons and dots (illegal/awkward in filenames) become hyphens. */
 export function generateRunId(): string {
 	return new Date().toISOString().replace(/[:.]/g, "-");
 }
 
-const MAX_SAVE_ATTEMPTS = 10;
-
-/**
- * `wx` guarantees no run ever overwrites another, but generateRunId()'s
- * millisecond resolution means concurrent runs can collide on id before
- * either writes. A losing run has already paid for every provider call and
- * check by the time saveRunFile is reached, so collision retries with a
- * disambiguated id (base id + attempt suffix) rather than discarding that
- * work; only exhausting all attempts is a real, reported failure.
- */
 export async function saveRunFile(run: RunFile, resultsDirectory: string): Promise<string> {
 	const validated = RunFileSchema.safeParse(run);
 	if (!validated.success) {
-		throw new RunFileRejectedError("write_rejected", run.id, `Run file rejected: ${validated.error.message}`);
+		throw new RunFileRejectedError("write_rejected", run.id, validated.error.message);
 	}
 	await mkdir(resultsDirectory, { recursive: true });
-
-	let candidate = validated.data;
-	for (let attempt = 1; attempt <= MAX_SAVE_ATTEMPTS; attempt++) {
+	for (let attempt = 1; attempt <= 10; attempt += 1) {
+		const candidate = attempt === 1 ? validated.data : { ...validated.data, id: `${validated.data.id}-${attempt}` };
 		const outputPath = join(resultsDirectory, `${candidate.id}.json`);
 		try {
-			await writeFile(outputPath, `${JSON.stringify(candidate, null, 2)}\n`, {
-				encoding: "utf8",
-				flag: "wx",
-			});
+			await writeFile(outputPath, `${JSON.stringify(candidate, null, 2)}\n`, { encoding: "utf8", flag: "wx" });
 			return outputPath;
 		} catch (error: unknown) {
 			if (!hasErrorCode(error, "EEXIST")) throw error;
-			candidate = { ...candidate, id: `${validated.data.id}-${attempt + 1}` };
 		}
 	}
-	throw new RunFileRejectedError(
-		"write_rejected",
-		validated.data.id,
-		`Run file rejected: id ${validated.data.id} collided with an existing run ${MAX_SAVE_ATTEMPTS} times in a row`,
-	);
+	throw new RunFileRejectedError("write_rejected", validated.data.id, "run id collided ten times");
 }
 
 function parseRunFile(source: string, sourceName: string): RunFileRead {
@@ -254,17 +128,11 @@ function parseRunFile(source: string, sourceName: string): RunFileRead {
 	try {
 		candidate = JSON.parse(source);
 	} catch (cause) {
-		throw new RunFileRejectedError("read_rejected", sourceName, `Invalid saved run JSON in ${sourceName}`, {
-			cause,
-		});
+		throw new RunFileRejectedError("read_rejected", sourceName, "invalid saved run JSON", { cause });
 	}
 	const parsed = RunFileReadSchema.safeParse(candidate);
 	if (!parsed.success) {
-		throw new RunFileRejectedError(
-			"read_rejected",
-			sourceName,
-			`Invalid saved run in ${sourceName}: ${parsed.error.message}`,
-		);
+		throw new RunFileRejectedError("read_rejected", sourceName, parsed.error.message);
 	}
 	return parsed.data;
 }
@@ -280,27 +148,10 @@ export async function loadRunFile(runId: string, resultsDirectory: string): Prom
 		throw error;
 	}
 	const run = parseRunFile(source, path);
-	if (run.id !== validatedId) {
-		throw new RunFileRejectedError(
-			"read_rejected",
-			path,
-			`Saved run id ${run.id} does not match filename id ${validatedId}`,
-		);
-	}
+	if (run.id !== validatedId) throw new RunFileRejectedError("read_rejected", path, "run id differs from filename");
 	return run;
 }
 
-/**
- * The results directory is committed repo evidence a human will drop files
- * into (AppleDouble sidecars from macOS copies, an ad hoc summary.json,
- * anything else that ends in .json but isn't a run). Filtering candidates by
- * filename shape before reading them would also reject a run file saved
- * under an older id format -- exactly the case RunFileReadSchema's
- * permissiveness exists to keep readable. So every *.json file is a
- * candidate; each is parsed independently under the permissive read schema,
- * and a file that isn't a valid run is skipped (reported, not silently
- * dropped) rather than aborting the whole listing.
- */
 export async function listRunFiles(resultsDirectory: string): Promise<RunFileRead[]> {
 	let entries;
 	try {
@@ -309,22 +160,14 @@ export async function listRunFiles(resultsDirectory: string): Promise<RunFileRea
 		if (hasErrorCode(error, "ENOENT")) return [];
 		throw error;
 	}
-	const candidates = entries.filter((entry) => entry.isFile() && entry.name.endsWith(".json"));
 	const runs: RunFileRead[] = [];
-	for (const entry of candidates) {
+	for (const entry of entries.filter((candidate) => candidate.isFile() && candidate.name.endsWith(".json"))) {
 		const path = join(resultsDirectory, entry.name);
-		let source: string;
 		try {
-			source = await readFile(path, "utf8");
-		} catch (error: unknown) {
-			if (hasErrorCode(error, "ENOENT")) continue;
-			throw error;
-		}
-		try {
-			runs.push(parseRunFile(source, path));
+			runs.push(parseRunFile(await readFile(path, "utf8"), path));
 		} catch (error: unknown) {
 			if (!(error instanceof RunFileRejectedError)) throw error;
-			process.stderr.write(`eval: skipping ${path}, not a valid run file: ${error.message}\n`);
+			process.stderr.write(`Rejected saved run ${path}: ${error.message}\n`);
 		}
 	}
 	return runs.sort((left, right) => right.id.localeCompare(left.id));

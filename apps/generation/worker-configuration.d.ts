@@ -4,7 +4,7 @@
 interface __BaseEnv_Env {
 	DB: D1Database;
 	EVIDENCE_INPUT: "d1_chat";
-	MODEL_CONFIG: "{\"main_story\":{\"adapter\":\"recorded\"},\"announcements\":{\"adapter\":\"recorded\"},\"packaging\":{\"adapter\":\"recorded\"}}";
+	MODEL_CONFIG: "{\"main_story_write\":{\"adapter\":\"recorded\"},\"main_story_copyedit\":{\"adapter\":\"recorded\"},\"announcements_write\":{\"adapter\":\"recorded\"},\"announcements_copyedit\":{\"adapter\":\"recorded\"}}";
 	GENERATION_RUN: Workflow<Parameters<import("./src/index").GenerationRun['run']>[0]['payload']>;
 }
 declare namespace Cloudflare {

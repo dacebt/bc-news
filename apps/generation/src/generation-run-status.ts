@@ -2,15 +2,17 @@ import { z } from "zod";
 import { GenerationRunParamsSchema, type GenerationRunParams } from "@bc-news/contracts";
 import {
 	ModelUsageRecordSchema,
-	type EditorialCapability,
+	PRODUCTION_MODEL_STEPS,
 	type ModelUsageRecord,
+	type ProductionModelStep,
 } from "@bc-news/generation-core";
 
 export const GENERATION_STEPS = [
 	"prepare-evidence",
-	"compose-main-story",
-	"compose-announcements",
-	"compose-packaging",
+	"main_story_write",
+	"main_story_copyedit",
+	"announcements_write",
+	"announcements_copyedit",
 	"validate-edition",
 	"publish-edition",
 ] as const;
@@ -61,14 +63,14 @@ export const GenerationRunProjectionSchema = z
 		) {
 			context.addIssue({ code: "custom", message: "complete state requires all generation steps" });
 		}
-		const expectedCapabilities: EditorialCapability[] = [];
-		if (projection.completed_steps.includes("compose-main-story")) expectedCapabilities.push("main_story");
-		if (projection.completed_steps.includes("compose-announcements")) expectedCapabilities.push("announcements");
-		if (projection.completed_steps.includes("compose-packaging")) expectedCapabilities.push("packaging");
+		const expectedProductionSteps = projection.completed_steps.filter(
+			(step): step is ProductionModelStep =>
+				PRODUCTION_MODEL_STEPS.includes(step as ProductionModelStep),
+		);
 		if (
-			projection.model_usage.length !== expectedCapabilities.length ||
+			projection.model_usage.length !== expectedProductionSteps.length ||
 			projection.model_usage.some(
-				(record, index) => record.editorial_capability !== expectedCapabilities[index],
+				(record, index) => record.production_step !== expectedProductionSteps[index],
 			)
 		) {
 			context.addIssue({ code: "custom", message: "model usage must match completed model steps" });
@@ -189,6 +191,14 @@ async function replaceProjection(
 		current.completed_steps.some((step, index) => next.completed_steps[index] !== step)
 	) {
 		throw new Error("Generation run completed steps cannot regress");
+	}
+	if (
+		next.model_usage.length < current.model_usage.length ||
+		current.model_usage.some(
+			(record, index) => JSON.stringify(next.model_usage[index]) !== JSON.stringify(record),
+		)
+	) {
+		throw new Error("Generation run model usage cannot regress or replace completed records");
 	}
 	const result = await db
 		.prepare(

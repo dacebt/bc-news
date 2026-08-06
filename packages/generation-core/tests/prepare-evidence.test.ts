@@ -96,20 +96,42 @@ test("same evidence yields identical prepared evidence", () => {
 	expect(first.drop_stats.burst_merged).toBe(1);
 });
 
-test("every message surviving hygiene reaches the editorial capabilities", () => {
+test("deterministically caps each UTC-hour bucket and reports sampling drops", () => {
 	const prepared = prepareEvidence({
 		activeRegionId: "7",
 		publicationDate: "2026-01-25",
 		messages: sampleEvidence(),
 	});
 
-	// 15 crowd messages share the 14:00 hour, which the removed per-hour
-	// sampling quota would have cut to 13. Preparation caps nothing.
 	const crowdHourCount = prepared.messages.filter(
 		(message) => new Date(message.ts).getUTCHours() === 14,
 	).length;
-	expect(crowdHourCount).toBe(15);
-	expect(prepared.final_count).toBe(prepared.after_burst_count);
+	expect(crowdHourCount).toBe(13);
+	expect(prepared.drop_stats.sampling_dropped).toBe(2);
+	expect(prepared.final_count).toBe(prepared.after_burst_count - 2);
+});
+
+test("caps the final evidence roster at 300 messages after hourly sampling", () => {
+	const messages: EvidenceMessage[] = Array.from({ length: 24 * 13 }, (_, index) => {
+		const hour = Math.floor(index / 13);
+		const minute = index % 13;
+		return {
+			id: `message-${index}`,
+			ts: Date.UTC(2026, 0, 24, hour, minute),
+			author_id: `author-${index}`,
+			author_name: `Author ${index}`,
+			text: `Reportable message ${index}`,
+		};
+	});
+	const prepared = prepareEvidence({
+		activeRegionId: "7",
+		publicationDate: "2026-01-25",
+		messages,
+	});
+
+	expect(prepared.after_burst_count).toBe(312);
+	expect(prepared.final_count).toBe(300);
+	expect(prepared.drop_stats.sampling_dropped).toBe(12);
 });
 
 test("PreparedEvidenceSchema rejects prepared evidence that dropped messages after burst-merge", () => {
@@ -120,7 +142,7 @@ test("PreparedEvidenceSchema rejects prepared evidence that dropped messages aft
 		after_filter_count: 10,
 		after_burst_count: 10,
 		final_count: 9,
-		drop_stats: { empty_after_trim: 0, too_short: 0, burst_merged: 0 },
+		drop_stats: { empty_after_trim: 0, too_short: 0, burst_merged: 0, sampling_dropped: 0 },
 		messages: Array.from({ length: 9 }, (_, index) => ({
 			id: `m${String(index)}`,
 			ts: WINDOW_START + index,
@@ -306,7 +328,7 @@ test("PreparedEvidenceSchema rejects a region id carrying a newline and fence ma
 		after_filter_count: 0,
 		after_burst_count: 0,
 		final_count: 0,
-		drop_stats: { empty_after_trim: 0, too_short: 0, burst_merged: 0 },
+		drop_stats: { empty_after_trim: 0, too_short: 0, burst_merged: 0, sampling_dropped: 0 },
 		messages: [],
 	});
 
@@ -321,7 +343,7 @@ test("PreparedEvidenceSchema rejects a region id containing a bracket", () => {
 		after_filter_count: 0,
 		after_burst_count: 0,
 		final_count: 0,
-		drop_stats: { empty_after_trim: 0, too_short: 0, burst_merged: 0 },
+		drop_stats: { empty_after_trim: 0, too_short: 0, burst_merged: 0, sampling_dropped: 0 },
 		messages: [],
 	});
 

@@ -1,7 +1,0 @@
-{
-	"editorial_capability": "packaging",
-	"provider": "recorded",
-	"model": "recorded/packaging-v1",
-	"prompt_sha256": "4e4bd75275d27c5ba0bb58be48ca95cb33437ff9d5f935869d26a16f1c2eec05",
-	"text": "{\"title\":\"The Widmoria Muster\",\"subtitle\":\"January 25, 2026\"}"
-}

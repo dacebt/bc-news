@@ -4,7 +4,6 @@
 	"type": "module",
 	"scripts": {
 		"walk": "tsx scripts/walk.ts",
-		"re-record-model-responses:verify": "pnpm --filter @bc-news/generation re-record-model-responses:verify",
 		"typecheck": "tsc --noEmit -p scripts && pnpm -r typecheck",
 		"lint": "eslint .",
 		"test": "tsx --test scripts/tests/*.test.ts && pnpm -r test"

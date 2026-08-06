@@ -1,7 +1,0 @@
-{
-	"editorial_capability": "main_story",
-	"provider": "recorded",
-	"model": "recorded/judge-v1",
-	"prompt_sha256": "cc2f7f6b11ac8050409555b9a944fc881db63b9af936fb13c32c6a2aa09c7116",
-	"text": "{\"scores\":{\"grounding\":5,\"voice\":4,\"structure\":4},\"reasoning\":\"Quotes and names trace cleanly to the source chat, and the report stays in an in-world correspondent voice throughout with only mild repetition of sentence rhythm; paragraphs group related threads (the dungeon muster, the tier economy, the wayfinding requests) coherently, though a couple of transitions between topics feel more listed than woven.\"}"
-}

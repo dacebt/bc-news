@@ -17,7 +17,8 @@ authority: binding
 If implementation and this document disagree, the implementation is wrong
 unless this document is deliberately amended in the same unit of work. It
 binds the structural posture; the *why* is recorded in the project decision
-vault (ADR-001, ADR-002, ADR-005, ADR-006, ADR-007, ADR-008, ADR-009).
+vault (ADR-001, ADR-002, ADR-005, ADR-006, ADR-007, ADR-008, ADR-009,
+ADR-014, ADR-015).
 
 ## Language
 
@@ -35,9 +36,9 @@ Queues or the Workflow runtime, no dependency-injection framework.
 Exactly two ports exist, because the PRD demands substitution at exactly
 these seams:
 
-1. **Model provider port** — each *editorial capability* (see the
-   [domain model](DOMAIN.md)) calls models through one interface; hosted
-   and local providers are adapters behind it. Changing a capability's
+1. **Model provider port** — each *production model step* (see the
+   [domain model](DOMAIN.md)) calls models through one interface; hosted,
+   local, and recorded providers are adapters behind it. Changing a step's
    model touches configuration, never orchestration.
 2. **Evidence input port** — regional chat evidence enters generation
    through a single seam, so repository fixtures and production storage
@@ -82,6 +83,16 @@ day), end-exclusive. Adapters parse every row against the shared schema and
 reject before returning; ordering is unspecified at the port, and the pure
 core sorts deterministically.
 
+Prepared evidence retains the inherited pre-rewrite deterministic sampler
+unchanged. After the established hygiene and burst stages, it keeps at most
+`MAX_MESSAGES = 300`, caps each UTC hour at 13 messages, and chooses within
+those bounds by the stable FNV hash of
+`activeRegionId|publicationDate|message.id`. `sampling_dropped` reports
+the messages removed by that sampling stage. These are restored baseline
+values, not newly tuned quality thresholds. The next context-budget capability
+measures exact representative requests before any later selection rule or
+numeric limit is adjusted.
+
 Settled — one D1 database, four tables, one migration owner: alongside
 `edition` (publish target, primary key `(active_region_id,
 publication_date)`), the same database now holds `chat_messages` and
@@ -105,7 +116,7 @@ is never the edition's durable home (ADR-005).
 `generation_run_status` is direct D1 shell code, not a repository or a third
 port. It holds queued/running/complete/errored progress, ordered completed
 generation steps, structured terminal failure, and one usage record per
-completed editorial capability. Full-array replacement makes retried status
+completed production model step. Full-array replacement makes retried status
 writes idempotent; terminal rows cannot regress. Reads validate stored JSON and
 cross-field state strictly, and corruption surfaces as
 `generation_run_status_unreadable`, never absence or a partial projection.
@@ -126,42 +137,52 @@ provenance is the configured provider id and model provenance is the response
 model.
 
 `MODEL_CONFIG` and eval configuration contain only non-secret adapter identity,
-requested model, explicit local sampling and reasoning values, provider id, and
-pricing inputs. `LMSTUDIO_BASE_URL`,
+requested model, explicit local sampling and reasoning values, provider id,
+and pricing inputs. `LMSTUDIO_BASE_URL`,
 `HOSTED_MODEL_BASE_URL`, and `HOSTED_MODEL_API_KEY` are environment-only, and a
 base URL containing credentials rejects. Timeout, network/body-read failure,
-and HTTP 408/409/425/429/5xx are retryable within the existing three-attempt
-Workflow/re-record ceiling. Invalid configuration, ordinary 4xx, invalid JSON,
-response/usage rejection, and impossible cost are deterministic. Errors and
-retained evidence never contain authorization values, prompts, raw response
-bodies, or response-validation detail that could echo payloads.
+and HTTP 408/409/425/429/5xx are retryable within the Workflow's existing
+three-attempt model-call ceiling. Invalid configuration, ordinary 4xx, invalid
+JSON, response/usage rejection, and impossible cost are deterministic. Errors
+and retained evidence never contain authorization values, prompts, raw
+response bodies, or response-validation detail that could echo payloads.
+
+The production workflow has two editorial products and four model steps. The
+main-story writer receives prepared evidence and owns `title`, `subtitle`, and
+`main_story`; its copyeditor receives only that typed draft plus house rules.
+The announcements writer independently receives prepared evidence; its
+copyeditor receives only its typed draft plus stable internal announcement ids.
+Those ids prove count, correspondence, and order through copyediting and are
+stripped before publication. Copyedit preservation additionally observes
+paragraph count, quotes, numeric literals, and protected markdown spans.
+These mechanical checks narrow permissible mutation; they are not proof of
+semantic equivalence. Code validates both final products, adds identity,
+provenance, counts, and time, then assembles the edition deterministically.
+There is no packaging model, judge call, score, verdict, or automatic revision
+loop in production.
 
 For local development, copy `apps/generation/.dev.vars.example` to the ignored
-`apps/generation/.dev.vars`. Wrangler loads that file for the generation Worker;
-the generation re-record command and eval CLI also load the same file through
-Node's environment-file option. The example's active block is a complete local
-three-capability `MODEL_CONFIG`; replace its model ids, start LM Studio, and run
-`pnpm --filter @bc-news/generation re-record-model-responses`. Its commented
-hosted alternative is complete but must replace the local block rather than be
-enabled beside it. Eval gets endpoints and credentials from the same file while
-adapter selection remains in the JSON passed through its `--config` option; copy
-the relevant adapter objects from the example into that JSON. Every LM Studio
-adapter object requires a `sampling` object with explicit finite `temperature`,
-`top_p`, and integer `top_k` values, plus an explicit `reasoning_effort` selected
-from `provider_default`, `none`, `minimal`, `low`, `medium`, `high`, or `xhigh`.
-`provider_default` omits the request field so LM Studio owns the model-specific
-default; every other value is sent unchanged. Local capability and judge
-requests send those controls with LM Studio's strict `json_schema` response
-format, derived from the same Zod contract that validates the returned output;
-the schemas stay inline and reject unknown object properties. Recorded and
-hosted requests do not receive these local decoding controls. The committed
-example contains placeholders only.
-Automated tests, the verifier, and the
-canonical walk keep recorded or repository-owned loopback providers and never
-call configured endpoints. In particular, the walk passes its recorded
-three-capability `MODEL_CONFIG` as an explicit Wrangler `--var`, which takes
-precedence over any local/hosted assignment in the developer's `.dev.vars`;
-ordinary `pnpm --filter @bc-news/generation dev` does not add that override.
+`apps/generation/.dev.vars`. Wrangler loads that file for the generation Worker.
+`MODEL_CONFIG` is strict and contains exactly
+`main_story_write`, `main_story_copyedit`, `announcements_write`, and
+`announcements_copyedit`. Every LM Studio adapter requires explicit finite
+`temperature` and `top_p`, integer `top_k`, and a `reasoning_effort` value from
+the supported roster. Non-default reasoning is sent unchanged; provider default
+omits that request field. LM Studio requests use strict inline JSON schemas
+derived from the same Zod contracts that validate outputs. Recorded and hosted
+requests do not receive local decoding controls.
+
+The committed recorded-response set has exactly four files:
+`main_story_write.json`, `main_story_copyedit.json`,
+`announcements_write.json`, and `announcements_copyedit.json`. Each record's
+`prompt_sha256` binds it to the exact `{system, user}` request represented by
+the artifact, but does not prove model authorship. Automated tests and the
+canonical walk use recorded or repository-owned loopback providers and never
+call configured endpoints. The walk supplies an explicit four-step recorded
+`MODEL_CONFIG`, overriding any developer `.dev.vars` model assignment. A live
+four-response recorder is a later mapped capability, after exact context-budget
+measurement; this walking skeleton does not claim it exists or call a live
+model.
 
 Settled — edition identity enforcement, three layers with the SQL layer
 authoritative: (1) the trigger derives a deterministic Workflow instance
@@ -240,16 +261,35 @@ explicitly selectable for tests and evaluation, but it is not the local default.
 The same walk uses `GET /generation-run?active_region_id=...&publication_date=...`
 as the operator surface rather than requiring an opaque Workflow id. It proves
 the absent-evidence pair reaches a structured prepare-evidence failure with no
-model usage, and proves region 7 reaches complete with all six ordered
-generation steps and exactly one recorded-replay usage record for main story,
-announcements, and packaging, each with unavailable token measurement and zero
-external billing. Repeated scheduled delivery must leave both edition bytes and
+model usage, and proves region 7 reaches complete with all seven ordered
+generation steps and exactly one recorded-replay usage record for each of the
+four production model steps, each with unavailable token measurement and zero
+external billing. It proves deterministic assembly serves the two recorded
+copyedited products. Repeated scheduled delivery must leave both edition bytes and
 retained usage unchanged. Before success, the walk invokes the eval harness
 directly with an empty provider environment and a strictly preflighted all-
-recorded configuration. The fully judged candidate is written only below the
-walk's temporary directory, reloaded through the strict run schema, and
-compared field-for-field with a repository-pinned baseline; only run identity,
-timestamps, and code-version provenance may vary.
+recorded configuration.
+
+The canonical run executes the four dependent production steps twice, writes
+only below the walk's temporary directory, and reloads through the strict run
+schema. The two executions must be identical apart from run identity and the
+two timestamps, which proves recorded replay deterministic by re-execution
+rather than against a stored file, and every differing path is reported rather
+than the first.
+Canonical semantics require the exact ordered roster, four recorded-replay
+usages at zero external billing, outputs equal to the parsed recorded responses,
+request stamps recomputed from current builders and each step's actual input,
+and a final assembled edition equal to the two copyedited products. The evidence
+fixture remains identified by workspace-relative path and current bytes.
+Canonical acceptance has no model judge, quality threshold, byte pin, or source
+digest gate; retained output and source fingerprints remain human comparison
+evidence.
+
+Exact context-budget measurement for representative message loads is the next
+mapped capability. Until that measurement exists, the inherited deterministic
+sampler remains unchanged; this architecture introduces no new filtering,
+retrieval, or chunking policy and makes no claim about a model's usable context
+size.
 
 The final reader check launches installed Google Chrome through
 `playwright-core`, blocks service workers, and installs a request-aborting

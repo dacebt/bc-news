@@ -41,9 +41,9 @@ it("rejects a mismatched pair identity", () => {
 });
 
 it.each([
-	{ failure: { step: "compose-main-story", code: "no_evidence_for_publication_date", message: "wrong step" } },
+	{ failure: { step: "main_story_write", code: "no_evidence_for_publication_date", message: "wrong step" } },
 	{ failure: { step: "prepare-evidence", code: "different_failure", message: "wrong code" } },
-	{ model_usage: [{ editorial_capability: "main_story" }] },
+	{ model_usage: [{ production_step: "main_story_write" }] },
 ])("rejects an invalid absent-evidence operator projection %#", (override) => {
 	let response;
 	try {

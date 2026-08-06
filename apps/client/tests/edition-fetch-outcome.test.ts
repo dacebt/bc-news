@@ -14,10 +14,15 @@ function validEdition(): Edition {
 		main_story: { headline: "A headline", lede: "A lede.", body: "A body." },
 		meta: {
 			generated_at_utc: "2026-01-25T00:00:00.000Z",
-			editorial_capabilities: {
-				main_story: { provider: "recorded", model: "recorded/main-story-v1" },
-				announcements: { provider: "recorded", model: "recorded/announcements-v1" },
-				packaging: { provider: "recorded", model: "recorded/packaging-v1" },
+			editorial_products: {
+				main_story: {
+					write: { provider: "recorded", model: "recorded/main-story-write-v2" },
+					copyedit: { provider: "recorded", model: "recorded/main-story-copyedit-v2" },
+				},
+				announcements: {
+					write: { provider: "recorded", model: "recorded/announcements-write-v2" },
+					copyedit: { provider: "recorded", model: "recorded/announcements-copyedit-v2" },
+				},
 			},
 			counts: { raw_count: 1, after_filter_count: 1, after_burst_count: 1, final_count: 1 },
 		},

@@ -3,7 +3,7 @@ type: doc
 title: >-
   bc-news test and verification posture
 description: >-
-  The binding evidence discipline for bc-news v2 — what proves a change works, in which tier, what isolated tests defend and never defend, and how the eval harness fits as the editorial-quality tier.
+  The binding evidence discipline for bc-news v2 — what proves a change works, what the recorded replay proves, and what still requires representative model evaluation.
 tags: [documentation, testing, verification, evaluation]
 status: stable
 generated:
@@ -22,24 +22,35 @@ binds how that discipline's evidence hierarchy applies to *this* project, so
 
 ## Evidence tiers, strongest first
 
-1. **The skeleton walk.** A fixed local conversation runs the whole pipeline
-   — evidence in, edition generated, strict fully judged recorded eval replay,
-   and the published/unavailable/Back reader experience in installed Chrome —
-   with no production data or external origin. The eval candidate lives only
-   in walk-owned temporary storage and must exactly match the pinned strict
-   baseline apart from run identity, timestamps, and code-version provenance.
-   Browser traffic is same-origin-only and exactly two pair-addressed edition
-   404s are allowed. This is the [PRD](PRD.md)'s first success signal and the
-   primary proof for any generation, contract, eval, or client change. A
-   passing test suite over a pipeline that cannot complete this walk proves
-   nothing.
+1. **The skeleton walk.** A fixed local conversation runs the whole pipeline:
+   ingest into a fresh isolated D1 database; the real scheduled generation
+   Workflow; `main_story_write`, `main_story_copyedit`,
+   `announcements_write`, and `announcements_copyedit`; deterministic
+   validation, assembly, and publication; the operator status projection; API
+   read; and the published/unavailable/Back reader experience in installed
+   Chrome. It uses exactly four recorded responses and no production data,
+   live model, paid service, or external origin. The status proof requires all
+   seven generation steps in order and exactly four ordered recorded-replay
+   usage records at zero external billing. The served edition must equal the
+   two copyedited products, derive grouped writer/copyeditor provenance from
+   those four usages, and contain no internal announcement ids. Duplicate
+   delivery must preserve edition bytes and usage, and an unknown pair must
+   remain absent. Browser traffic is same-origin-only and exactly two
+   pair-addressed edition 404s are allowed. This is the [PRD](PRD.md)'s first
+   success signal and the primary proof for any generation, contract, eval, or
+   client change. A passing test suite over a pipeline that cannot complete
+   this walk proves nothing.
 2. **The eval harness.** This project's distinctive tier: repo-owned
    representative conversation fixtures replayed deterministically through
    the [evidence input port](ARCHITECTURE.md), producing comparable outputs
-   with retained evidence. Prompt, model, and orchestration changes are
-   judged here — same inputs, compared outputs — never by vibes on live
-   data. Local models, recorded responses, and free tiers are preferred for
-   routine runs; no recurring paid evaluation services.
+   with retained evidence. The canonical recorded run executes the four
+   dependent production steps twice. Results must be identical apart from run
+   identity and timestamps, carry the exact ordered roster and usage, match the
+   parsed recorded responses, recompute request relations from the requests
+   actually built, and assemble the final edition from the two copyedited
+   products. This proves contract, orchestration, provenance, and replay
+   determinism. It does not judge prose quality, factual equivalence, or whether
+   a model is good enough for production.
 3. **Static guarantees.** Strict TypeScript, lint, and zod contracts that
    parse-and-reject at every boundary (see the
    [structural discipline](ARCHITECTURE.md)). These catch classes of defect
@@ -76,10 +87,47 @@ proves, tests of glue and framework wiring, tests to satisfy coverage.
   harness and tests — one evidence corpus, not parallel ones.
 - No live network or paid model calls inside tests; recorded responses or
   local models only.
-- Canonical eval comparison parses both candidate and baseline with the strict
-  run schema and pins the baseline path, run id, and byte SHA-256. The
-  permissive historical loader and human comparison report are not acceptance
-  gates.
+- **A guard needs a reference independent of the thing it checks.** An
+  assertion that recomputes both sides from the same input is a tautology
+  however many layers separate them: it holds for every possible edit to that
+  input and proves nothing. Relations recomputed from what the run consumed
+  and produced are the right shape for the run's *own* fields.
+- **Recorded artifacts are inputs, not byte-level expectations.** Canonical
+  acceptance recomputes relations from the current evidence, the exported
+  prompt builders, the recorded responses, and the run being checked. A future
+  recorder writes `prompt_sha256` from the request it actually sends,
+  binding that recorded response to that request. The current committed writer
+  responses are migrated fixtures and the copyedit responses are synthetic
+  fixtures; their stamps are reconstructed request associations, not
+  recorder-authored provenance. No stamp is durable proof that a particular
+  model authored the response text. Editing a recorder-authored stamp by hand
+  asserts provenance that never happened and is never a fix for a red gate.
+- **Over-broad source digests are provenance, not gates.** Source fingerprints,
+  `code_version`, and retained run-file bytes may remain comparison evidence,
+  but never become acceptance pins. A guard that fires because unrelated source
+  text moved carries no useful product information.
+- Determinism is proved by re-executing the canonical run rather than against
+  a stored file. The canonical comparison reports every differing field except
+  `id`, `started_at`, and `completed_at`.
+- Canonical eval verification parses every run it produces with the strict run
+  schema. The permissive historical loader and the human comparison report are
+  not acceptance gates.
+- The active generator and canonical acceptance have no automatic model judge,
+  score, verdict, quality floor, threshold, or byte-pinned baseline.
+- Copyedit preservation checks can prove only their mechanical invariants:
+  announcement identity/order, paragraph count, quotes, numeric literals,
+  and protected markdown spans. They cannot prove semantic equivalence or prose
+  quality. Representative live-model evaluation remains required before model,
+  prompt, or evidence-policy decisions are treated as production-ready.
+- Exact context-budget benchmarks are a later mapped capability and must exist
+  before the inherited evidence sampler is adjusted. Until then, tests and the
+  recorded request relationship protect the restored baseline: at most 300
+  messages, at most 13 from each UTC hour, stable FNV selection from
+  `activeRegionId|publicationDate|message.id`, and truthful `sampling_dropped`
+  accounting. No new filtering, retrieval, or
+  chunking policy is selected here.
+- A live four-response recorder is also a later mapped capability. The current
+  walk replays the committed four-file set; it does not claim to record it.
 - Completion claims cite the tier that proved them. "Done" without evidence
   from tier 1–3 is not done.
 

@@ -22,10 +22,19 @@ export const MainStorySchema = z.strictObject({
 
 export type MainStory = z.infer<typeof MainStorySchema>;
 
-const EditorialCapabilityProvenanceSchema = z.strictObject({
+export const ModelProvenanceSchema = z.strictObject({
 	provider: z.string().min(1),
 	model: z.string().min(1),
 });
+
+export type ModelProvenance = z.infer<typeof ModelProvenanceSchema>;
+
+export const EditorialProductProvenanceSchema = z.strictObject({
+	write: ModelProvenanceSchema,
+	copyedit: ModelProvenanceSchema,
+});
+
+export type EditorialProductProvenance = z.infer<typeof EditorialProductProvenanceSchema>;
 
 export const EditionSchema = z.strictObject({
 	active_region_id: ActiveRegionIdSchema,
@@ -36,10 +45,9 @@ export const EditionSchema = z.strictObject({
 	main_story: MainStorySchema,
 	meta: z.strictObject({
 		generated_at_utc: z.iso.datetime({ offset: true }),
-		editorial_capabilities: z.strictObject({
-			main_story: EditorialCapabilityProvenanceSchema,
-			announcements: EditorialCapabilityProvenanceSchema,
-			packaging: EditorialCapabilityProvenanceSchema,
+		editorial_products: z.strictObject({
+			main_story: EditorialProductProvenanceSchema,
+			announcements: EditorialProductProvenanceSchema,
 		}),
 		counts: z.strictObject({
 			raw_count: z.int().nonnegative(),

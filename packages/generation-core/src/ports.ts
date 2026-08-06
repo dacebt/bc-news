@@ -1,6 +1,12 @@
 import type { EvidenceMessage } from "@bc-news/contracts";
 
-export type EditorialCapability = "main_story" | "announcements" | "packaging";
+export type EditorialProduct = "main_story" | "announcements";
+
+export type ProductionModelStep =
+	| "main_story_write"
+	| "main_story_copyedit"
+	| "announcements_write"
+	| "announcements_copyedit";
 
 export type TokenUsage =
 	| {
@@ -31,7 +37,7 @@ export interface ModelCompletion {
 }
 
 export type ModelUsageRecord = Omit<ModelCompletion, "text"> & {
-	editorial_capability: EditorialCapability;
+	production_step: ProductionModelStep;
 };
 
 export interface EvidenceInputPort {
@@ -43,7 +49,7 @@ export interface EvidenceInputPort {
 
 export interface ModelProviderPort {
 	complete(request: {
-		editorialCapability: EditorialCapability;
+		productionStep: ProductionModelStep;
 		system: string;
 		user: string;
 	}): Promise<ModelCompletion>;
