@@ -6,7 +6,7 @@ import {
 	BenchmarkRunSchema, evaluationConfigIdentity, evaluationOutputContractProvenance,
 } from "../src/evaluation-artifact";
 import { EvaluationArtifactStore } from "../src/evaluation-artifact-store";
-import { CANONICAL_FIXTURE_PATH } from "../src/canonical-walk-verifier";
+import { REPRESENTATIVE_FIXTURE_PATH } from "../src/representative-fixture";
 import { evaluateTrialCommand } from "../src/evaluation-trial-command";
 import {
 	TEST_SOURCE_PROVENANCE, clone, controlledEvaluation, rejectsWithoutChangingBytes, sha256Json, temporaryRoot,
@@ -207,6 +207,6 @@ test("live evaluation rejects recorded adapters before artifact creation", async
 	const root = await temporaryRoot("bc-news-recorded-rejection-");
 	const configPath = join(root, "config.json");
 	await writeFile(configPath, `${JSON.stringify({ production_steps: Object.fromEntries(PRODUCTION_MODEL_STEPS.map((step) => [step, { adapter: "recorded" }])) })}\n`, "utf8");
-	await expect(evaluateTrialCommand({ fixturePath: CANONICAL_FIXTURE_PATH, configPath, resultsDirectory: join(root, "results"), environment: {}, sourceProvenance: TEST_SOURCE_PROVENANCE })).rejects.toMatchObject({ code: "recorded_adapter_rejected_for_live_evaluation" });
+	await expect(evaluateTrialCommand({ fixturePath: REPRESENTATIVE_FIXTURE_PATH, configPath, resultsDirectory: join(root, "results"), environment: {}, sourceProvenance: TEST_SOURCE_PROVENANCE })).rejects.toMatchObject({ code: "recorded_adapter_rejected_for_live_evaluation" });
 	await expect(readFile(join(root, "results"))).rejects.toBeDefined();
 });

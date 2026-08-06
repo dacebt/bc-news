@@ -2,24 +2,18 @@ import { parseArgs } from "node:util";
 import { EvaluationIdSchema } from "./evaluation-artifact-schemas";
 import { validateRunId } from "./run-file";
 
-/**
- * `resultsDirectory` is `undefined` (not a string default) when `--results-dir`
- * is absent: the app-relative default lives in cli.ts, alongside the
- * app-relative `--config` default, because only the caller knows the app
- * directory -- this module resolves flags, not paths.
- */
 export type EvalCliCommand =
-	| { command: "evaluate"; fixturePath: string; configPath: string; resultsDirectory?: string }
-	| { command: "run"; fixturePath: string; configPath?: string; resultsDirectory?: string }
-	| { command: "record"; fixturePath: string; configPath: string; responseDirectory?: string }
-	| { command: "context"; fixturePath: string; resultsDirectory?: string }
-	| { command: "list"; resultsDirectory?: string }
-	| { command: "show"; runId: string; resultsDirectory?: string }
-	| { command: "compare"; leftRunId: string; rightRunId: string; resultsDirectory?: string }
+	| { command: "benchmark-run"; fixturePath: string; configPath: string; resultsDirectory?: string }
 	| { command: "benchmark-list"; resultsDirectory?: string }
 	| { command: "benchmark-show"; runId: string; resultsDirectory?: string }
 	| { command: "benchmark-summary"; runId: string; resultsDirectory?: string }
-	| { command: "benchmark-compare"; leftRunId: string; rightRunId: string; resultsDirectory?: string };
+	| { command: "benchmark-compare"; leftRunId: string; rightRunId: string; resultsDirectory?: string }
+	| { command: "acceptance-run"; fixturePath: string; configPath?: string; resultsDirectory?: string }
+	| { command: "acceptance-list"; resultsDirectory?: string }
+	| { command: "acceptance-show"; runId: string; resultsDirectory?: string }
+	| { command: "acceptance-compare"; leftRunId: string; rightRunId: string; resultsDirectory?: string }
+	| { command: "fixture-record-responses"; fixturePath: string; configPath: string; responseDirectory?: string }
+	| { command: "context-benchmark"; fixturePath: string; resultsDirectory?: string };
 
 const ALL_OPTIONS = ["fixture", "config", "results-dir", "response-dir"] as const;
 
@@ -63,10 +57,101 @@ function runParseArgs(argv: readonly string[]) {
 	});
 }
 
+type ParsedOptionValues = ReturnType<typeof runParseArgs>["values"];
+
+function requireStringOption(value: string | undefined, option: string): string {
+	if (value === undefined) throw new CliOptionsError(`--${option} is required`);
+	return value;
+}
+
 function benchmarkId(value: string): string {
 	const parsed = EvaluationIdSchema.safeParse(value);
 	if (!parsed.success) throw new CliOptionsError(`Invalid Benchmark Run id: ${value}`);
 	return parsed.data;
+}
+
+function optionalResultsDirectory(value: string | undefined): { resultsDirectory?: string } {
+	return value === undefined ? {} : { resultsDirectory: value };
+}
+
+function parseBenchmarkCommand(
+	positionals: readonly string[],
+	values: ParsedOptionValues,
+): EvalCliCommand {
+	const route = positionals[1];
+	if (route === "run") {
+		exactPositionals(positionals, 2, "benchmark run");
+		rejectUnknownOptions(values, ["fixture", "config", "results-dir"], "benchmark run");
+		return {
+			command: "benchmark-run",
+			fixturePath: requireStringOption(values.fixture, "fixture"),
+			configPath: requireStringOption(values.config, "config"),
+			...optionalResultsDirectory(values["results-dir"]),
+		};
+	}
+	rejectUnknownOptions(values, ["results-dir"], `benchmark ${route ?? ""}`.trim());
+	if (route === "list") {
+		exactPositionals(positionals, 2, "benchmark list");
+		return { command: "benchmark-list", ...optionalResultsDirectory(values["results-dir"]) };
+	}
+	if (route === "show" || route === "summary") {
+		exactPositionals(positionals, 3, `benchmark ${route}`);
+		return {
+			command: route === "show" ? "benchmark-show" : "benchmark-summary",
+			runId: benchmarkId(positionals[2] ?? ""),
+			...optionalResultsDirectory(values["results-dir"]),
+		};
+	}
+	if (route === "compare") {
+		exactPositionals(positionals, 4, "benchmark compare");
+		return {
+			command: "benchmark-compare",
+			leftRunId: benchmarkId(positionals[2] ?? ""),
+			rightRunId: benchmarkId(positionals[3] ?? ""),
+			...optionalResultsDirectory(values["results-dir"]),
+		};
+	}
+	throw new CliOptionsError("Expected benchmark run, list, show, summary, or compare");
+}
+
+function parseAcceptanceCommand(
+	positionals: readonly string[],
+	values: ParsedOptionValues,
+): EvalCliCommand {
+	const route = positionals[1];
+	if (route === "run") {
+		exactPositionals(positionals, 2, "acceptance run");
+		rejectUnknownOptions(values, ["fixture", "config", "results-dir"], "acceptance run");
+		return {
+			command: "acceptance-run",
+			fixturePath: requireStringOption(values.fixture, "fixture"),
+			...(values.config === undefined ? {} : { configPath: values.config }),
+			...optionalResultsDirectory(values["results-dir"]),
+		};
+	}
+	rejectUnknownOptions(values, ["results-dir"], `acceptance ${route ?? ""}`.trim());
+	if (route === "list") {
+		exactPositionals(positionals, 2, "acceptance list");
+		return { command: "acceptance-list", ...optionalResultsDirectory(values["results-dir"]) };
+	}
+	if (route === "show") {
+		exactPositionals(positionals, 3, "acceptance show");
+		return {
+			command: "acceptance-show",
+			runId: validateRunId(positionals[2] ?? ""),
+			...optionalResultsDirectory(values["results-dir"]),
+		};
+	}
+	if (route === "compare") {
+		exactPositionals(positionals, 4, "acceptance compare");
+		return {
+			command: "acceptance-compare",
+			leftRunId: validateRunId(positionals[2] ?? ""),
+			rightRunId: validateRunId(positionals[3] ?? ""),
+			...optionalResultsDirectory(values["results-dir"]),
+		};
+	}
+	throw new CliOptionsError("Expected acceptance run, list, show, or compare");
 }
 
 export function parseEvalCliCommand(argv: readonly string[]): EvalCliCommand {
@@ -78,110 +163,31 @@ export function parseEvalCliCommand(argv: readonly string[]): EvalCliCommand {
 		throw new CliOptionsError(`Unrecognized command-line arguments: ${detail}`);
 	}
 	const { positionals, values } = parsed;
-
-	const command = positionals[0];
-	if (command === "evaluate") {
-		exactPositionals(positionals, 1, command);
-		rejectUnknownOptions(values, ["fixture", "config", "results-dir"], command);
-		if (values.fixture === undefined) throw new CliOptionsError("--fixture is required");
-		if (values.config === undefined) throw new CliOptionsError("--config is required");
-		return {
-			command,
-			fixturePath: values.fixture,
-			configPath: values.config,
-			...(values["results-dir"] === undefined ? {} : { resultsDirectory: values["results-dir"] }),
-		};
-	}
-	if (command === "run") {
-		exactPositionals(positionals, 1, command);
-		rejectUnknownOptions(values, ["fixture", "config", "results-dir"], command);
-		if (values.fixture === undefined) throw new CliOptionsError("--fixture is required");
-		return {
-			command,
-			fixturePath: values.fixture,
-			...(values.config === undefined ? {} : { configPath: values.config }),
-			...(values["results-dir"] === undefined ? {} : { resultsDirectory: values["results-dir"] }),
-		};
-	}
-	if (command === "record") {
-		exactPositionals(positionals, 1, command);
-		rejectUnknownOptions(values, ["fixture", "config", "response-dir"], command);
-		if (values.fixture === undefined) throw new CliOptionsError("--fixture is required");
-		if (values.config === undefined) throw new CliOptionsError("--config is required");
-		return {
-			command,
-			fixturePath: values.fixture,
-			configPath: values.config,
-			...(values["response-dir"] === undefined
-				? {}
-				: { responseDirectory: values["response-dir"] }),
-		};
-	}
-	if (command === "context") {
-		exactPositionals(positionals, 1, command);
-		rejectUnknownOptions(values, ["fixture", "results-dir"], command);
-		if (values.fixture === undefined) throw new CliOptionsError("--fixture is required");
-		return {
-			command,
-			fixturePath: values.fixture,
-			...(values["results-dir"] === undefined ? {} : { resultsDirectory: values["results-dir"] }),
-		};
-	}
-	if (command === "benchmark") {
-		rejectUnknownOptions(values, ["results-dir"], command);
-		const route = positionals[1];
-		if (route === "list") {
-			exactPositionals(positionals, 2, `${command} ${route}`);
-			return {
-				command: "benchmark-list",
-				...(values["results-dir"] === undefined ? {} : { resultsDirectory: values["results-dir"] }),
-			};
+	const namespace = positionals[0];
+	if (namespace === "benchmark") return parseBenchmarkCommand(positionals, values);
+	if (namespace === "acceptance") return parseAcceptanceCommand(positionals, values);
+	if (namespace === "fixture") {
+		if (positionals[1] !== "record-responses") {
+			throw new CliOptionsError("Expected fixture record-responses");
 		}
-		if (route === "show" || route === "summary") {
-			exactPositionals(positionals, 3, `${command} ${route}`);
-			return {
-				command: route === "show" ? "benchmark-show" : "benchmark-summary",
-				runId: benchmarkId(positionals[2] ?? ""),
-				...(values["results-dir"] === undefined ? {} : { resultsDirectory: values["results-dir"] }),
-			};
-		}
-		if (route === "compare") {
-			exactPositionals(positionals, 4, `${command} ${route}`);
-			return {
-				command: "benchmark-compare",
-				leftRunId: benchmarkId(positionals[2] ?? ""),
-				rightRunId: benchmarkId(positionals[3] ?? ""),
-				...(values["results-dir"] === undefined ? {} : { resultsDirectory: values["results-dir"] }),
-			};
-		}
-		throw new CliOptionsError("Expected benchmark list, show, summary, or compare");
-	}
-	if (command === "list") {
-		exactPositionals(positionals, 1, command);
-		rejectUnknownOptions(values, ["results-dir"], command);
+		exactPositionals(positionals, 2, "fixture record-responses");
+		rejectUnknownOptions(values, ["fixture", "config", "response-dir"], "fixture record-responses");
 		return {
-			command,
-			...(values["results-dir"] === undefined ? {} : { resultsDirectory: values["results-dir"] }),
+			command: "fixture-record-responses",
+			fixturePath: requireStringOption(values.fixture, "fixture"),
+			configPath: requireStringOption(values.config, "config"),
+			...(values["response-dir"] === undefined ? {} : { responseDirectory: values["response-dir"] }),
 		};
 	}
-	if (command === "show") {
-		exactPositionals(positionals, 2, command);
-		rejectUnknownOptions(values, ["results-dir"], command);
+	if (namespace === "context") {
+		if (positionals[1] !== "benchmark") throw new CliOptionsError("Expected context benchmark");
+		exactPositionals(positionals, 2, "context benchmark");
+		rejectUnknownOptions(values, ["fixture", "results-dir"], "context benchmark");
 		return {
-			command,
-			runId: validateRunId(positionals[1] ?? ""),
-			...(values["results-dir"] === undefined ? {} : { resultsDirectory: values["results-dir"] }),
+			command: "context-benchmark",
+			fixturePath: requireStringOption(values.fixture, "fixture"),
+			...optionalResultsDirectory(values["results-dir"]),
 		};
 	}
-	if (command === "compare") {
-		exactPositionals(positionals, 3, command);
-		rejectUnknownOptions(values, ["results-dir"], command);
-		return {
-			command,
-			leftRunId: validateRunId(positionals[1] ?? ""),
-			rightRunId: validateRunId(positionals[2] ?? ""),
-			...(values["results-dir"] === undefined ? {} : { resultsDirectory: values["results-dir"] }),
-		};
-	}
-	throw new CliOptionsError("Expected the evaluate, run, record, context, benchmark, list, show, or compare command");
+	throw new CliOptionsError("Expected the benchmark, acceptance, fixture, or context namespace");
 }

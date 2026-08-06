@@ -7,7 +7,7 @@ import { RecordedModelResponseSchema } from "@bc-news/fixtures";
 import { afterEach, expect } from "vitest";
 import type { BenchmarkRun } from "../src/evaluation-artifact";
 import { EvaluationArtifactStore } from "../src/evaluation-artifact-store";
-import { CANONICAL_FIXTURE_PATH } from "../src/canonical-walk-verifier";
+import { REPRESENTATIVE_FIXTURE_PATH } from "../src/representative-fixture";
 import { evaluateTrialCommand } from "../src/evaluation-trial-command";
 import { startRecordLoopbackServer } from "../src/record-loopback-server";
 
@@ -53,7 +53,7 @@ export async function controlledEvaluation(
 		const results = [];
 		for (let index = 0; index < repetitions; index += 1) {
 			results.push(await evaluateTrialCommand({
-				fixturePath: CANONICAL_FIXTURE_PATH, configPath, resultsDirectory,
+				fixturePath: REPRESENTATIVE_FIXTURE_PATH, configPath, resultsDirectory,
 				environment: { HOSTED_MODEL_BASE_URL: server.baseUrl, HOSTED_MODEL_API_KEY: "record-loopback-proof" },
 				sourceProvenance: TEST_SOURCE_PROVENANCE,
 				...(observer === undefined ? {} : { artifactObserver: (artifact: BenchmarkRun) => observer(artifact, resultsDirectory) }),

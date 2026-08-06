@@ -1,5 +1,6 @@
 import { isDeepStrictEqual } from "node:util";
-import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { resolve, join } from "node:path";
 import {
 	PRODUCTION_MODEL_STEPS,
@@ -13,7 +14,7 @@ import {
 	modelRequestSha256,
 	type RecordedModelResponse,
 } from "@bc-news/fixtures";
-import { CANONICAL_FIXTURE_PATH } from "./canonical-walk-verifier";
+import { REPRESENTATIVE_FIXTURE_PATH } from "./representative-fixture";
 import { recordCommand } from "./record-command";
 import {
 	startRecordLoopbackServer,
@@ -67,18 +68,18 @@ const OUTPUT_BY_STEP = {
 
 const RESPONSE_FILENAMES = PRODUCTION_MODEL_STEPS.map((step) => `${step}.json`).sort();
 
-export class RecordLoopbackVerificationError extends Error {
+export class RecordedResponseFixtureAuthoringVerificationError extends Error {
 	readonly code: string;
 
 	constructor(code: string, message: string, options?: ErrorOptions) {
 		super(message, options);
-		this.name = "RecordLoopbackVerificationError";
+		this.name = "RecordedResponseFixtureAuthoringVerificationError";
 		this.code = code;
 	}
 }
 
 function assertProof(condition: boolean, code: string, message: string): asserts condition {
-	if (!condition) throw new RecordLoopbackVerificationError(code, message);
+	if (!condition) throw new RecordedResponseFixtureAuthoringVerificationError(code, message);
 }
 
 function liveConfig() {
@@ -124,11 +125,11 @@ async function parseResponse(path: string): Promise<RecordedModelResponse> {
 	try {
 		candidate = JSON.parse(await readFile(path, "utf8")) as unknown;
 	} catch (cause) {
-		throw new RecordLoopbackVerificationError("record_invalid_json", `Recorded response at ${path} is not valid JSON`, { cause });
+		throw new RecordedResponseFixtureAuthoringVerificationError("record_invalid_json", `Recorded response at ${path} is not valid JSON`, { cause });
 	}
 	const parsed = RecordedModelResponseSchema.safeParse(candidate);
 	if (!parsed.success) {
-		throw new RecordLoopbackVerificationError("record_contract_rejected", `Recorded response at ${path} does not match the strict contract`);
+		throw new RecordedResponseFixtureAuthoringVerificationError("record_contract_rejected", `Recorded response at ${path} does not match the strict contract`);
 	}
 	return parsed.data;
 }
@@ -154,7 +155,7 @@ async function assertNoPromotionArtifacts(temporaryRoot: string): Promise<void> 
 	assertProof(promotionArtifact === undefined, "promotion_artifact_remained", `Recording left a backup, staging directory, or lock at ${promotionArtifact ?? "unknown"}`);
 }
 
-export async function verifyRecordReplayCompare(temporaryRoot: string): Promise<void> {
+async function verifyRecordedResponseFixtureAuthoringAt(temporaryRoot: string): Promise<void> {
 	await mkdir(temporaryRoot, { recursive: true });
 	const configPath = join(temporaryRoot, "record-loopback.config.json");
 	const responseDirectory = join(temporaryRoot, "model-responses");
@@ -166,7 +167,7 @@ export async function verifyRecordReplayCompare(temporaryRoot: string): Promise<
 	const server = await startRecordLoopbackServer(outputByModel);
 	try {
 		const result = await recordCommand({
-			fixturePath: CANONICAL_FIXTURE_PATH,
+			fixturePath: REPRESENTATIVE_FIXTURE_PATH,
 			configPath,
 			responseDirectory,
 			environment: {
@@ -187,5 +188,26 @@ export async function verifyRecordReplayCompare(temporaryRoot: string): Promise<
 	} finally {
 		await server.close();
 	}
-	console.log("walk: four production responses recorded, replayed, and final editorial products compared");
+}
+
+export async function verifyRecordedResponseFixtureAuthoring(temporaryRoot?: string): Promise<void> {
+	if (temporaryRoot !== undefined) {
+		await verifyRecordedResponseFixtureAuthoringAt(temporaryRoot);
+		return;
+	}
+	const ownedRoot = await mkdtemp(join(tmpdir(), "bc-news-recorded-response-fixture-authoring-"));
+	try {
+		await verifyRecordedResponseFixtureAuthoringAt(ownedRoot);
+	} finally {
+		await rm(ownedRoot, { recursive: true, force: true });
+	}
+}
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+	verifyRecordedResponseFixtureAuthoring().then(() => {
+		console.log("fixture authoring: four production responses recorded replayed and compared");
+	}).catch((error: unknown) => {
+		process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
+		process.exitCode = 1;
+	});
 }

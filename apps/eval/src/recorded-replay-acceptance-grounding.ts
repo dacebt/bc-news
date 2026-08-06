@@ -46,11 +46,11 @@ async function readRecordedResponse(step: ProductionModelStep): Promise<Recorded
 	return parsed;
 }
 
-export async function assertCanonicalEvalGrounding(run: RunFile, fixturePath: string): Promise<void> {
+export async function assertRecordedReplayAcceptanceGrounding(run: RunFile, fixturePath: string): Promise<void> {
 	await assertResponseDirectoryLayout();
 	const loaded = await loadFixture(fixturePath);
 	if (run.fixture.fixture_sha256 !== loaded.fixtureSha256) {
-		throw new Error("canonical run fixture digest does not name the consumed evidence bytes");
+		throw new Error("recorded-replay acceptance fixture digest does not name the consumed evidence bytes");
 	}
 	const prepared = prepareEvidence({
 		activeRegionId: loaded.fixture.active_region_id,
@@ -125,6 +125,6 @@ export async function assertCanonicalEvalGrounding(run: RunFile, fixturePath: st
 	});
 	const editionDifferences = allDifferences(run.edition, expectedEdition);
 	if (editionDifferences.length > 0) {
-		throw new Error(`canonical edition was not deterministically assembled: ${editionDifferences.join(", ")}`);
+		throw new Error(`recorded-replay acceptance edition was not deterministically assembled: ${editionDifferences.join(", ")}`);
 	}
 }

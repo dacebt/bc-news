@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { PRODUCTION_MODEL_STEPS, type ProductionModelStep } from "@bc-news/generation-core";
 import { RecordedModelResponseSchema } from "@bc-news/fixtures";
-import { CANONICAL_FIXTURE_PATH } from "./canonical-walk-verifier";
+import { REPRESENTATIVE_FIXTURE_PATH } from "./representative-fixture";
 import { runEvalCliApplication } from "./cli";
 import { BenchmarkRunSchema, type BenchmarkRun } from "./evaluation-artifact";
 import { BenchmarkRunReadError } from "./evaluation-artifact-reader";
@@ -143,7 +143,7 @@ export async function verifyEvaluationBenchmarkBrowsing(temporaryRoot?: string):
 	const server = await startRecordLoopbackServer(await retainedOutputs());
 	try {
 		const result = await evaluateBenchmarkCommand({
-			fixturePath: CANONICAL_FIXTURE_PATH,
+			fixturePath: REPRESENTATIVE_FIXTURE_PATH,
 			configPath,
 			resultsDirectory: defaultDirectory,
 			environment: {
@@ -215,7 +215,7 @@ export async function verifyEvaluationBenchmarkBrowsing(temporaryRoot?: string):
 
 if (import.meta.url === `file://${process.argv[1]}`) {
 	verifyEvaluationBenchmarkBrowsing().then(() => {
-		console.log("walk: evaluation evidence listed summarized and compared without verdicts");
+		console.log("evaluation: evidence listed summarized and compared without verdicts");
 	}).catch((error: unknown) => {
 		process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
 		process.exitCode = 1;

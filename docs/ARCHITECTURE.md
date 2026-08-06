@@ -161,6 +161,22 @@ provenance, counts, and time, then assembles the edition deterministically.
 There is no packaging model, judge call, score, verdict, or automatic revision
 loop in production.
 
+### Verification ownership
+
+Verification has five independent owners. Their artifacts and terminal
+observations do not cross domain boundaries.
+
+| Owner | Command surface | Evidence | Outcome owner |
+|---|---|---|---|
+| Deterministic tests | `pnpm test` | Isolated invariants, reproduced defects, and high-risk state transitions | Test pass or hard test failure |
+| Model evaluation | `benchmark run/list/show/summary/compare` | Strict versioned Benchmark Runs under `apps/eval/evaluation-results` | Model subject outcome and evidence-retention harness outcome, reported as `evaluation:` observations |
+| Fixture and context tooling | `fixture record-responses` and `context benchmark` | Request-linked response files or strict context-result artifacts | Fixture-authoring or context-measurement tooling observations |
+| Recorded-replay acceptance | `acceptance run/list/show/compare` | Historical Run Files under `apps/eval/results` | `acceptance:` gate result over controlled recorded evidence |
+| Composed skeleton walk | `pnpm walk` | Running local ingest, generation, D1, API, status, and browser product | Walk-owned `walk:` observations and terminal `WALK PASS` |
+
+Strict TypeScript and lint are supporting static guarantees, not a sixth
+runtime result and not a substitute for any row.
+
 For local development, copy `apps/generation/.dev.vars.example` to the ignored
 `apps/generation/.dev.vars`. Wrangler loads that file for the generation Worker.
 `MODEL_CONFIG` is strict and contains exactly
@@ -177,11 +193,12 @@ The committed recorded-response set has exactly four files:
 `announcements_write.json`, and `announcements_copyedit.json`. Each record's
 `prompt_sha256` binds it to the exact `{system, user}` request represented by
 the artifact, but does not prove model authorship. Automated tests and the
-canonical walk use recorded or repository-owned loopback providers and never
+composed skeleton walk use recorded or repository-owned loopback providers and never
 call configured endpoints. The walk supplies an explicit four-step recorded
 `MODEL_CONFIG`, overriding any developer `.dev.vars` model assignment.
 
-The developer-facing recorder requires an explicit eval configuration with one
+The `fixture record-responses --fixture <path> --config <path>
+[--response-dir <path>]` tooling surface requires an explicit eval configuration with one
 live hosted or local adapter for each production step; the committed recorded
 configuration is not a recording default. It executes exactly four dependent
 calls in production-step order, so each copyeditor receives the draft produced
@@ -197,7 +214,7 @@ previous committed set in place. Recording has no judge, score, threshold,
 byte pin, or source-digest acceptance gate.
 
 The model-evaluation command is a separate surface:
-`evaluate --fixture <path> --config <path> [--results-dir <path>]`. Its strict
+`benchmark run --fixture <path> --config <path> [--results-dir <path>]`. Its strict
 benchmark declaration contains a nonempty ordered list of exact four-step live
 configurations, a positive repetition count, and an explicit transport retry
 limit from zero through three. Recorded adapters and duplicate configuration
@@ -237,13 +254,15 @@ infrastructure-incomplete trial does not suppress later roster members. A
 benchmark becomes retained only after every declared trial is terminal.
 Invalid artifact state or persistence stops coordination.
 
-Retained Benchmark Runs are browsed through the distinct `benchmark list`,
+Retained Benchmark Runs are browsed through the namespaced `benchmark list`,
 `benchmark show`, `benchmark summary`, and `benchmark compare` eval routes.
 Their application boundary reads only `evaluation-results/<id>.json`, validates
 every loaded file through the version-dispatched Benchmark Run contract, binds
 the filename to the artifact id, and rejects corrupt evidence rather than
-skipping it. Historical unqualified `list`, `show`, and `compare` remain owned
-by successful Run Files in `apps/eval/results`.
+skipping it. Historical Run Files retain their distinct schema and
+`apps/eval/results` directory and are owned only by `acceptance run`,
+`acceptance list`, `acceptance show`, and `acceptance compare`; they are never
+relabeled as Benchmark Runs.
 
 Benchmark comparison projects context and behavior independently. Context owns
 the exact fixture and prepared evidence, configuration and retry/repetition
@@ -287,6 +306,16 @@ boundary and retains its original transition semantics. Version 2 alone owns
 the serial roster, positive repetitions, linked retries, multi-trial outcome
 counts, and benchmark continuation. The version-dispatched store rejects a
 cross-version replacement.
+
+The representative local version-2 declaration contains exactly four
+configurations, in order: `qwen/qwen3.5-9b`, `openai/gpt-oss-20b`,
+`prism-ml/bonsai-27b`, and `google/gemma-4-e4b`. Each configuration assigns the
+same model to all four production steps with `temperature: 1`, `top_p: 0.95`,
+`top_k: 20`, and `reasoning_effort: none`; the declaration uses one repetition
+and a transport retry limit of one. It remains ignored local evidence, runs
+serially through `benchmark run`, and is inspected through `benchmark summary`.
+The summary must retain every actual trial outcome and exact configuration
+identity; it does not decide quality or acceptance.
 
 Settled — edition identity enforcement, three layers with the SQL layer
 authoritative: (1) the trigger derives a deterministic Workflow instance
@@ -370,32 +399,30 @@ generation steps and exactly one recorded-replay usage record for each of the
 four production model steps, each with unavailable token measurement and zero
 external billing. It proves deterministic assembly serves the two recorded
 copyedited products. Repeated scheduled delivery must leave both edition bytes and
-retained usage unchanged. Before success, the walk invokes the eval harness
-directly with an empty provider environment and a strictly preflighted all-
-recorded configuration. It also runs the recorder against a repository-owned
-OpenAI-compatible server bound to an ephemeral loopback port, with four
-distinct requested models and walk-temporary response storage. That composed
-probe observes the four dependent requests, validates their request stamps,
-replays the staged set before promotion, and compares the two final editorial
-products without touching the committed response directory or a configured
-external endpoint.
+retained usage unchanged. The walk does not invoke evaluation, fixture-authoring,
+context, or recorded-replay acceptance verifiers. It owns only its composed
+product observations and terminal `WALK PASS`; the exact successful observations
+from those direct verifiers must not appear in walk output.
 
-The canonical run executes the four dependent production steps twice, writes
-only below the walk's temporary directory, and reloads through the strict run
-schema. The two executions must be identical apart from run identity and the
-two timestamps, which proves recorded replay deterministic by re-execution
-rather than against a stored file, and every differing path is reported rather
-than the first.
-Canonical semantics require the exact ordered roster, four recorded-replay
+Recorded-replay acceptance executes the four dependent production steps twice,
+writes only below its owned temporary directory when no results directory is
+supplied, and reloads through the strict Run File schema. The two executions
+must be identical apart from run identity and the two timestamps, which proves
+recorded replay deterministic by re-execution rather than against a stored file,
+and every differing path is reported rather than the first. Recorded-replay
+semantics require the exact ordered roster, four recorded-replay
 usages at zero external billing, outputs equal to the parsed recorded responses,
 request stamps recomputed from current builders and each step's actual input,
 and a final assembled edition equal to the two copyedited products. The evidence
 fixture remains identified by workspace-relative path and current bytes.
-Canonical acceptance has no model judge, quality threshold, byte pin, or source
+Recorded-replay acceptance has no model judge, quality threshold, byte pin, or source
 digest gate; retained output and source fingerprints remain human comparison
-evidence.
+evidence. Its direct verifier prints
+`acceptance: four recorded production steps replayed request-linked and deterministic`
+only after success.
 
-Exact context-budget measurement is an eval concern, not a production port.
+Exact context-budget measurement is invoked as `context benchmark --fixture
+<path> [--results-dir <path>]`. It is eval tooling, not a production port.
 It reuses the production prompt builders, strict structured-output contracts,
 and pure LM Studio request builder, while an eval-local SDK runtime only lists
 the loaded LLM, applies its chat template, counts with its tokenizer, and reads
@@ -403,7 +430,7 @@ its configured context length. The live command requires exactly one loaded
 Qwen model and the same model id across all four production-step configs; it
 never loads, switches, unloads, or contacts a hosted model.
 
-The canonical evidence corpus produces 208 prepared messages under the
+The representative evidence corpus produces 208 prepared messages under the
 unchanged sampler, so its fixed measurement matrix is 1, 50, 100, 150, and 208.
 Each load preserves the retained message order and builds both copyedit requests
 from that load's actual writer drafts. Provider-reported usage is reconciled

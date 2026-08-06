@@ -1,6 +1,5 @@
 import type { WalkPhase } from "../phase";
 import { walkPhase as browserParity } from "./browser-parity";
-import { walkPhase as canonicalEval } from "./canonical-eval";
 import { walkPhase as clientHtml } from "./client-html";
 import { walkPhase as editorialProducts } from "./editorial-products";
 import { walkPhase as idempotency } from "./idempotency";
@@ -19,7 +18,6 @@ export const walkPhases: readonly WalkPhase[] = [
 	idempotency,
 	unknownPair,
 	clientHtml,
-	canonicalEval,
 	browserParity,
 	{
 		name: "four-step-editorial-workflow",

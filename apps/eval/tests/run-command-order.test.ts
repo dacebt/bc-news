@@ -10,7 +10,8 @@ import {
 	type ModelProviderPort,
 	type ModelProviderRequest,
 } from "@bc-news/generation-core";
-import { CANONICAL_CONFIG_PATH, CANONICAL_FIXTURE_PATH } from "../src/canonical-walk-verifier";
+import { RECORDED_REPLAY_CONFIG_PATH } from "../src/recorded-replay-acceptance-verifier";
+import { REPRESENTATIVE_FIXTURE_PATH } from "../src/representative-fixture";
 import { executeProductionSteps } from "../src/production-step-runners";
 import { runCommand } from "../src/run-command";
 
@@ -25,8 +26,8 @@ test("executes the exact dependent four-step production roster serially", async 
 	});
 
 	await runCommand({
-		fixturePath: CANONICAL_FIXTURE_PATH,
-		configPath: CANONICAL_CONFIG_PATH,
+		fixturePath: REPRESENTATIVE_FIXTURE_PATH,
+		configPath: RECORDED_REPLAY_CONFIG_PATH,
 		resultsDirectory: await mkdtemp(join(tmpdir(), "bc-news-eval-order-")),
 		environment: {},
 	});

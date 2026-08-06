@@ -2,18 +2,18 @@ import { PRODUCTION_MODEL_STEPS } from "@bc-news/generation-core";
 import type { EvalConfig } from "./config";
 import type { RunFile } from "./run-file";
 
-export function assertRecordedConfig(config: EvalConfig): void {
+export function assertRecordedReplayConfig(config: EvalConfig): void {
 	for (const step of PRODUCTION_MODEL_STEPS) {
 		if (config.production_steps[step].adapter !== "recorded") {
-			throw new Error(`canonical eval must use recorded replay for ${step}`);
+			throw new Error(`recorded-replay acceptance must use recorded replay for ${step}`);
 		}
 	}
 }
 
-export function assertCanonicalEvalSemantics(run: RunFile): void {
-	assertRecordedConfig(run.config);
+export function assertRecordedReplayAcceptanceSemantics(run: RunFile): void {
+	assertRecordedReplayConfig(run.config);
 	if (run.steps.some((step, index) => step.production_step !== PRODUCTION_MODEL_STEPS[index])) {
-		throw new Error("canonical eval does not contain the exact ordered four-step roster");
+		throw new Error("recorded-replay acceptance does not contain the exact ordered four-step roster");
 	}
 	for (const step of run.steps) {
 		const usage = step.model_usage;

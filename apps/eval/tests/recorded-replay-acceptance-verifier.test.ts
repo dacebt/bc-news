@@ -3,24 +3,25 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, test } from "vitest";
 import { PRODUCTION_MODEL_STEPS } from "@bc-news/generation-core";
-import { assertCanonicalEvalGrounding } from "../src/canonical-eval-grounding";
-import { assertCanonicalEvalSemantics } from "../src/canonical-eval-semantics";
-import { CANONICAL_CONFIG_PATH, CANONICAL_FIXTURE_PATH } from "../src/canonical-walk-verifier";
+import { assertRecordedReplayAcceptanceGrounding } from "../src/recorded-replay-acceptance-grounding";
+import { assertRecordedReplayAcceptanceSemantics } from "../src/recorded-replay-acceptance-semantics";
+import { RECORDED_REPLAY_CONFIG_PATH } from "../src/recorded-replay-acceptance-verifier";
+import { REPRESENTATIVE_FIXTURE_PATH } from "../src/representative-fixture";
 import { compareRuns } from "../src/compare";
 import { runCommand } from "../src/run-command";
 import { allDifferences } from "../src/run-difference";
 
-test("canonical replay retains the four outputs and recomputed request relations", async () => {
+test("recorded replay retains the four outputs and recomputed request relations", async () => {
 	const { run } = await runCommand({
-		fixturePath: CANONICAL_FIXTURE_PATH,
-		configPath: CANONICAL_CONFIG_PATH,
-		resultsDirectory: await mkdtemp(join(tmpdir(), "bc-news-canonical-")),
+		fixturePath: REPRESENTATIVE_FIXTURE_PATH,
+		configPath: RECORDED_REPLAY_CONFIG_PATH,
+		resultsDirectory: await mkdtemp(join(tmpdir(), "bc-news-recorded-replay-")),
 		environment: {},
 	});
 
 	expect(run.steps.map((step) => step.production_step)).toEqual(PRODUCTION_MODEL_STEPS);
-	expect(() => assertCanonicalEvalSemantics(run)).not.toThrow();
-	await expect(assertCanonicalEvalGrounding(run, CANONICAL_FIXTURE_PATH)).resolves.toBeUndefined();
+	expect(() => assertRecordedReplayAcceptanceSemantics(run)).not.toThrow();
+	await expect(assertRecordedReplayAcceptanceGrounding(run, REPRESENTATIVE_FIXTURE_PATH)).resolves.toBeUndefined();
 });
 
 test("difference reporting names every changed product path", () => {

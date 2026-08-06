@@ -2,15 +2,16 @@ import { mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, test, vi } from "vitest";
-import { CANONICAL_CONFIG_PATH, CANONICAL_FIXTURE_PATH } from "../src/canonical-walk-verifier";
+import { RECORDED_REPLAY_CONFIG_PATH } from "../src/recorded-replay-acceptance-verifier";
+import { REPRESENTATIVE_FIXTURE_PATH } from "../src/representative-fixture";
 import { runCommand } from "../src/run-command";
 import { listRunFiles, loadRunFile, saveRunFile } from "../src/run-file";
 
 test("round-trips a current strict four-step run", async () => {
 	const directory = await mkdtemp(join(tmpdir(), "bc-news-eval-roundtrip-"));
 	const { run } = await runCommand({
-		fixturePath: CANONICAL_FIXTURE_PATH,
-		configPath: CANONICAL_CONFIG_PATH,
+		fixturePath: REPRESENTATIVE_FIXTURE_PATH,
+		configPath: RECORDED_REPLAY_CONFIG_PATH,
 		resultsDirectory: directory,
 		environment: {},
 	});
@@ -25,8 +26,8 @@ test("round-trips a current strict four-step run", async () => {
 
 test("recorded replay reports no token measurement and no external billing", async () => {
 	const { run } = await runCommand({
-		fixturePath: CANONICAL_FIXTURE_PATH,
-		configPath: CANONICAL_CONFIG_PATH,
+		fixturePath: REPRESENTATIVE_FIXTURE_PATH,
+		configPath: RECORDED_REPLAY_CONFIG_PATH,
 		resultsDirectory: await mkdtemp(join(tmpdir(), "bc-news-eval-replay-usage-")),
 		environment: {},
 	});
@@ -44,8 +45,8 @@ test("recorded replay reports no token measurement and no external billing", asy
 test("listing reports a rejected run and preserves valid listings", async () => {
 	const directory = await mkdtemp(join(tmpdir(), "bc-news-eval-listing-"));
 	const { run } = await runCommand({
-		fixturePath: CANONICAL_FIXTURE_PATH,
-		configPath: CANONICAL_CONFIG_PATH,
+		fixturePath: REPRESENTATIVE_FIXTURE_PATH,
+		configPath: RECORDED_REPLAY_CONFIG_PATH,
 		resultsDirectory: directory,
 		environment: {},
 	});

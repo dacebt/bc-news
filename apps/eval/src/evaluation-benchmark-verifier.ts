@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { PRODUCTION_MODEL_STEPS, type ProductionModelStep } from "@bc-news/generation-core";
 import { RecordedModelResponseSchema } from "@bc-news/fixtures";
-import { CANONICAL_FIXTURE_PATH } from "./canonical-walk-verifier";
+import { REPRESENTATIVE_FIXTURE_PATH } from "./representative-fixture";
 import { evaluateBenchmarkCommand } from "./evaluation-benchmark-command";
 import { BenchmarkRunSchema, type BenchmarkRun, type V2BenchmarkRun } from "./evaluation-artifact";
 import { startRecordLoopbackServer } from "./record-loopback-server";
@@ -97,7 +97,7 @@ export async function verifyEvaluationBenchmarkContinuation(temporaryRoot?: stri
 	const snapshots: BenchmarkRun[] = [];
 	try {
 		const result = await evaluateBenchmarkCommand({
-			fixturePath: CANONICAL_FIXTURE_PATH,
+			fixturePath: REPRESENTATIVE_FIXTURE_PATH,
 			configPath,
 			resultsDirectory,
 			environment: { HOSTED_MODEL_BASE_URL: server.baseUrl, HOSTED_MODEL_API_KEY: "record-loopback-proof" },
@@ -112,7 +112,7 @@ export async function verifyEvaluationBenchmarkContinuation(temporaryRoot?: stri
 		await server.close();
 		if (temporaryRoot === undefined) await rm(root, { recursive: true, force: true });
 	}
-	console.log("walk: serial evaluation benchmark retained linked retries and continued later trials");
+	console.log("evaluation: serial benchmark retained linked retries and continued later trials");
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

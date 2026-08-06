@@ -25,56 +25,107 @@ binds how that discipline's evidence domains apply to *this* project, so
 These surfaces answer different questions. None inherits another surface's
 outcome or silently substitutes for it.
 
-1. **Tests.** Deterministic isolated assertions protect warranted invariants,
-   reproduced defects, and high-risk state transitions. A failing test is a
-   hard failed test; it is not a retained model-evaluation attempt.
-2. **Model evaluation.** `evaluate --fixture <path> --config <path>
-   [--results-dir <path>]` observes an ordered configuration and repetition
-   roster serially. Its strict Benchmark Run retains every reached Step
-   Invocation before transport and before parsing. Model rejection is a typed subject outcome
-   and can coexist with `harness_outcome: retained`; invalid configuration or
-   an untrustworthy create, write, or reparse is a harness failure and stops.
-   Evaluation reports behavior, provenance, and deterministic findings without
-   a judge, score, or acceptance verdict. Eligible transport failures receive
-   only the declared bounded retries, with each attempt retained and linked.
-   Provider exhaustion or model rejection closes its dependent track without
-   suppressing the independent editorial track or later declared trials.
-   `benchmark list`, `benchmark show`, `benchmark summary`, and `benchmark
-   compare` strictly browse this retained evidence. Comparison separates
-   fixture, configuration, and provenance context from behavior and reports no
-   score, judge result, recommendation, or acceptance decision. Historical
-   successful run files and context results keep their existing meanings.
-3. **Recorded-replay acceptance.** The canonical recorded run executes the
-   four dependent production steps twice. Results must be identical apart from
-   run identity and timestamps, carry the exact ordered roster and usage, match
-   parsed recorded responses, recompute request relations from the requests
-   actually built, and assemble the final edition from the two copyedited
-   products. This is an explicit acceptance gate over controlled evidence, not
-   a live model evaluation. The composed recording probe uses a repository-owned
-   loopback provider, validates request order and dependent copyedit inputs,
-   stages and replays the exact four response files, and never contacts a
-   configured endpoint or overwrites committed fixtures.
-4. **The skeleton walk.** A fixed local conversation runs the whole pipeline:
-   ingest into a fresh isolated D1 database; the real scheduled generation
-   Workflow; `main_story_write`, `main_story_copyedit`,
-   `announcements_write`, and `announcements_copyedit`; deterministic
-   validation, assembly, and publication; the operator status projection; API
-   read; and the published/unavailable/Back reader experience in installed
-   Chrome. It uses exactly four recorded responses and no production data,
-   live model, paid service, or external origin. The status proof requires all
-   seven generation steps in order and exactly four ordered recorded-replay
-   usage records at zero external billing. The served edition must equal the
-   two copyedited products, derive grouped writer/copyeditor provenance from
-   those four usages, and contain no internal announcement ids. Duplicate
-   delivery must preserve edition bytes and usage, and an unknown pair must
-   remain absent. Browser traffic is same-origin-only and exactly two
-   pair-addressed edition 404s are allowed. This is the [PRD](PRD.md)'s first
-   success signal and proves the composed deployable product. A passing test,
-   retained Evaluation Trial, or acceptance gate cannot replace it.
+| Domain | Command | Evidence | Outcome |
+|---|---|---|---|
+| Deterministic tests | `pnpm test` | Isolated warranted invariants, reproduced defects, and high-risk state transitions | Test pass or hard test failure; never a retained model attempt |
+| Model evaluation | `benchmark run/list/show/summary/compare` | Strict versioned Benchmark Runs under `apps/eval/evaluation-results` | Retained model subject and harness outcomes with `evaluation:` observations; never a score or acceptance verdict |
+| Fixture and context tooling | `fixture record-responses` and `context benchmark` | Four request-linked recorded responses, or strict context results | Fixture-authoring or context-measurement tooling result; never acceptance or a walk |
+| Recorded-replay acceptance | `acceptance run/list/show/compare` and its direct verifier | Historical Run Files under `apps/eval/results` | `acceptance:` result over controlled replay; never a Benchmark Run outcome |
+| Composed skeleton walk | `pnpm walk` | The running local ingest, generation, persistence, API, status, and browser product | Walk-owned `walk:` observations followed by independent terminal `WALK PASS` |
+
+**Deterministic tests** protect warranted invariants, reproduced defects, and
+high-risk state transitions. A failing test is a hard failed test; it is not a
+retained model-evaluation attempt.
+
+**Model evaluation** uses `benchmark run --fixture <path> --config <path>
+[--results-dir <path>]` to observe an ordered configuration and repetition
+roster serially. Its strict Benchmark Run retains every reached Step Invocation
+before transport and before parsing. Model rejection is a typed subject outcome
+and can coexist with `harness_outcome: retained`; invalid configuration or an
+untrustworthy create, write, or reparse is a harness failure and stops.
+Evaluation reports behavior, provenance, and deterministic findings without a
+judge, score, or acceptance verdict. Eligible transport failures receive only
+the declared bounded retries, with each attempt retained and linked. Provider
+exhaustion or model rejection closes its dependent track without suppressing
+the independent editorial track or later declared trials. `benchmark list`,
+`benchmark show`, `benchmark summary`, and `benchmark compare` strictly browse
+this retained evidence. Comparison separates fixture, configuration, and
+provenance context from behavior and reports no score, judge result,
+recommendation, or acceptance decision.
+
+**Fixture and context tooling** owns two different development artifacts.
+`fixture record-responses --fixture <path> --config <path> [--response-dir
+<path>]` writes the exact four request-linked response files only after staged
+replay and comparison. `context benchmark --fixture <path> [--results-dir
+<path>]` writes strict context-measurement results. Neither tool creates a
+Benchmark Run or Run File and neither confers acceptance.
+
+**Recorded-replay acceptance** uses `acceptance run --fixture <path> [--config
+<path>] [--results-dir <path>]` and `acceptance list/show/compare`. It executes
+the four dependent production steps twice. Results must be identical apart from
+run identity and timestamps, carry the exact ordered roster and usage, match
+parsed recorded responses, recompute request relations from the requests
+actually built, and assemble the final edition from the two copyedited
+products. This is an explicit acceptance gate over controlled evidence, not a
+live model evaluation. Its artifact is the historical Run File, not a
+Benchmark Run.
+
+**The composed skeleton walk** runs a fixed local conversation through the whole
+pipeline: ingest into a fresh isolated D1 database; the real scheduled
+generation Workflow; `main_story_write`, `main_story_copyedit`,
+`announcements_write`, and `announcements_copyedit`; deterministic validation,
+assembly, and publication; the operator status projection; API read; and the
+published/unavailable/Back reader experience in installed Chrome. It uses
+exactly four recorded responses and no production data, live model, paid
+service, or external origin. The status proof requires all seven generation
+steps in order and exactly four ordered recorded-replay usage records at zero
+external billing. The served edition must equal the two copyedited products,
+derive grouped writer/copyeditor provenance from those four usages, and contain
+no internal announcement ids. Duplicate delivery must preserve edition bytes
+and usage, and an unknown pair must remain absent. Browser traffic is
+same-origin-only and exactly two pair-addressed edition 404s are allowed. This
+is the [PRD](PRD.md)'s first success signal and proves the composed deployable
+product. It does not invoke the evaluation, fixture-authoring, context, or
+acceptance verifiers. A passing test, retained Evaluation Trial, tooling result,
+or acceptance gate cannot replace its own `WALK PASS`.
 
 **Static guarantees** support every domain. Strict TypeScript, lint, and zod
 contracts parse-and-reject at every boundary; they do not prove runtime
 behavior.
+
+## Direct verification sequence
+
+Run domain proofs independently, then the ordinary repository gates, then the
+composed walk:
+
+```sh
+pnpm --filter @bc-news/eval verify:evaluation-trial-retention
+pnpm --filter @bc-news/eval verify:evaluation-benchmark-continuation
+pnpm --filter @bc-news/eval verify:evaluation-browse
+pnpm --filter @bc-news/eval verify:recorded-response-fixture-authoring
+pnpm --filter @bc-news/eval verify:recorded-replay-acceptance
+pnpm test
+pnpm typecheck
+pnpm lint
+pnpm walk --non-interactive
+```
+
+The command-contract tests additionally exercise every namespaced CLI route,
+option ownership, namespace-specific failure prefix, and rejection of the old
+bare `evaluate`, `run`, `record`, `context`, `list`, `show`, and `compare`
+routes. After a namespace is recognized, failures begin with `benchmark
+failed:`, `acceptance failed:`, `fixture authoring failed:`, or `context
+benchmark failed:`. Failures before namespace recognition begin with `command
+failed:`; `eval failed:` is forbidden.
+
+The three evaluation verifiers print `evaluation:` observations. In
+particular, continuation ends with `evaluation: serial benchmark retained
+linked retries and continued later trials`, and browsing ends with `evaluation:
+evidence listed summarized and compared without verdicts`. Fixture
+proof ends with `fixture authoring: four production responses recorded replayed
+and compared`. Acceptance proof ends with `acceptance: four recorded production
+steps replayed request-linked and deterministic`. The composed walk prints none
+of those exact verifier observations; it ends with its independent `WALK PASS`.
 
 ## What isolated tests defend here
 
@@ -110,7 +161,7 @@ proves, tests of glue and framework wiring, tests to satisfy coverage.
   however many layers separate them: it holds for every possible edit to that
   input and proves nothing. Relations recomputed from what the run consumed
   and produced are the right shape for the run's *own* fields.
-- **Recorded artifacts are inputs, not byte-level expectations.** Canonical
+- **Recorded artifacts are inputs, not byte-level expectations.** Recorded-replay
   acceptance recomputes relations from the current evidence, the exported
   prompt builders, the recorded responses, and the run being checked. The
   recorder writes `prompt_sha256` from the request it actually sends, binding
@@ -124,12 +175,12 @@ proves, tests of glue and framework wiring, tests to satisfy coverage.
   `code_version`, and retained run-file bytes may remain comparison evidence,
   but never become acceptance pins. A guard that fires because unrelated source
   text moved carries no useful product information.
-- Determinism is proved by re-executing the canonical run rather than against
-  a stored file. The canonical comparison reports every differing field except
+- Determinism is proved by re-executing recorded-replay acceptance rather than
+  against a stored file. Its comparison reports every differing field except
   `id`, `started_at`, and `completed_at`.
-- Canonical eval verification parses every run it produces with the strict run
-  schema. The permissive historical loader and the human comparison report are
-  not acceptance gates.
+- Recorded-replay verification parses every Run File it produces with the
+  strict historical schema. A human comparison report is not an acceptance
+  gate.
 - Versioned model-evaluation artifacts validate against their own frozen
   semantics. Version 1 rejects changed contract representations or hashes,
   prepared-evidence snapshots that no longer match their identity and summary,
@@ -151,7 +202,7 @@ proves, tests of glue and framework wiring, tests to satisfy coverage.
   failure followed by success, provider exhaustion isolated from the other
   editorial track, model-level rejection, and a later completed trial. Every
   observer snapshot must parse before the verifier prints
-  `walk: serial evaluation benchmark retained linked retries and continued
+  `evaluation: serial benchmark retained linked retries and continued
   later trials`.
 - The repository-owned benchmark-browse verifier creates strict retained
   evidence through the loopback provider and invokes the exported eval CLI
@@ -159,13 +210,13 @@ proves, tests of glue and framework wiring, tests to satisfy coverage.
   app-owned default directory and invocation-relative `--results-dir`, rejects
   malformed and filename-mismatched artifacts, excludes volatile identity and
   timestamp noise, keeps commit-only drift in context, and observes completion
-  evidence drift in behavior before printing `walk: evaluation evidence listed
+  evidence drift in behavior before printing `evaluation: evidence listed
   summarized and compared without verdicts`.
 - V1 code provenance is the clean repository commit itself: repository name,
   validated 40-character commit SHA, and `dirty: false`. Strict validation
   rejects missing, malformed, or extra provenance fields rather than retaining
   a redundant workspace hash.
-- The active generator and canonical acceptance have no automatic model judge,
+- The active generator and recorded-replay acceptance have no automatic model judge,
   score, verdict, quality floor, threshold, or byte-pinned baseline.
 - Copyedit preservation checks can prove only their mechanical invariants:
   announcement identity/order, paragraph count, quotes, numeric literals,
@@ -173,12 +224,12 @@ proves, tests of glue and framework wiring, tests to satisfy coverage.
   quality. Representative live-model evaluation remains required before model,
   prompt, or evidence-policy decisions are treated as production-ready.
 - Exact context-budget measurement runs through
-  `pnpm --filter @bc-news/eval eval -- context --fixture packages/fixtures`.
+  `pnpm --filter @bc-news/eval eval -- context benchmark --fixture packages/fixtures`.
   Automated tests use a fake local runtime and fake completion endpoint; they
   never invoke LM Studio. The accepted representative run requires exactly one
   already-loaded local Qwen model, rejects any hosted or mixed-model config,
   and never loads, unloads, or switches model state.
-- The canonical corpus prepares to 208 messages under the unchanged production
+- The representative corpus prepares to 208 messages under the unchanged production
   sampler, so the truthful representative matrix is 1, 50, 100, 150, and 208.
   The benchmark records the corpus hash and ceiling; it does not pad or duplicate
   messages to manufacture a 300-message row. The production baseline remains at
@@ -197,16 +248,18 @@ proves, tests of glue and framework wiring, tests to satisfy coverage.
   runner, compares only the final editorial products, and promotes the response
   directory all-or-none with recoverable backup handling. It does not promise
   continuous visibility to concurrent readers and has no judge, threshold,
-  byte pin, or source-digest acceptance gate. The walk exercises this contract
-  against its own loopback provider and temporary output; overwriting committed
-  response fixtures remains an explicit developer `record` operation.
-- Completion claims cite the tier that proved them. "Done" without evidence
-  from tier 1–3 is not done.
+  byte pin, or source-digest acceptance gate. Its direct fixture-authoring
+  verifier exercises this contract against a repository-owned loopback provider
+  and temporary output; overwriting committed response fixtures remains an
+  explicit developer `fixture record-responses` operation.
+- Completion claims cite the domain that proved them. A test, evaluation,
+  tooling, acceptance, or walk result is named honestly and never promoted into
+  another domain's outcome.
 
 ## Links
 
 - [Product requirements](PRD.md) — binds evaluation-led development and the
   skeleton-walk success signal.
 - [Structural discipline](ARCHITECTURE.md) — the ports and boundary rules
-  the tiers exercise.
-- [Domain model](DOMAIN.md) — the invariants tier-4 tests defend.
+  the verification domains exercise.
+- [Domain model](DOMAIN.md) — the invariants deterministic tests defend.

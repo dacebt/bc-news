@@ -9,7 +9,7 @@ import {
 	parseAnnouncementsWriterOutput,
 	parseMainStoryWriterOutput,
 } from "@bc-news/generation-core";
-import { CANONICAL_FIXTURE_PATH } from "../src/canonical-walk-verifier";
+import { REPRESENTATIVE_FIXTURE_PATH } from "../src/representative-fixture";
 import { parseEvalCliCommand } from "../src/cli-options";
 import { runContextBenchmark } from "../src/context-benchmark-command";
 import { CONTEXT_BENCHMARK_LOADS } from "../src/context-benchmark-file";
@@ -161,7 +161,7 @@ test("benchmarks the exact dependent four-step roster at every canonical message
 	const resultsDirectory = await mkdtemp(join(tmpdir(), "bc-news-context-benchmark-"));
 	const times = [new Date("2026-08-06T12:00:00.000Z"), new Date("2026-08-06T12:01:00.000Z")];
 	const { path, report } = await runContextBenchmark({
-		fixturePath: CANONICAL_FIXTURE_PATH,
+		fixturePath: REPRESENTATIVE_FIXTURE_PATH,
 		resultsDirectory,
 		environment: benchmarkEnvironment(),
 		runtime,
@@ -241,7 +241,7 @@ test("rejects recorded and hosted adapters before opening the local runtime", as
 		const config = JSON.parse(MODEL_CONFIG) as Record<string, unknown>;
 		config.main_story_write = replacement;
 		await expect(runContextBenchmark({
-			fixturePath: CANONICAL_FIXTURE_PATH,
+			fixturePath: REPRESENTATIVE_FIXTURE_PATH,
 			resultsDirectory: await mkdtemp(join(tmpdir(), "bc-news-context-rejection-")),
 			environment: benchmarkEnvironment(JSON.stringify(config)),
 			runtime,
@@ -256,7 +256,7 @@ test("rejects mixed local model names before opening the local runtime", async (
 	config.announcements_copyedit = localStepConfig("another-qwen");
 
 	await expect(runContextBenchmark({
-		fixturePath: CANONICAL_FIXTURE_PATH,
+		fixturePath: REPRESENTATIVE_FIXTURE_PATH,
 		resultsDirectory: await mkdtemp(join(tmpdir(), "bc-news-context-mixed-")),
 		environment: benchmarkEnvironment(JSON.stringify(config)),
 		runtime,
@@ -269,7 +269,7 @@ test("rejects unavailable provider usage and closes the runtime", async () => {
 	installCompletionFetch({ omitUsage: true });
 
 	await expect(runContextBenchmark({
-		fixturePath: CANONICAL_FIXTURE_PATH,
+		fixturePath: REPRESENTATIVE_FIXTURE_PATH,
 		resultsDirectory: await mkdtemp(join(tmpdir(), "bc-news-context-usage-")),
 		environment: benchmarkEnvironment(),
 		runtime,
@@ -282,7 +282,7 @@ test("rejects a completion from a model other than the loaded Qwen and closes th
 	installCompletionFetch({ responseModel: "different-model" });
 
 	await expect(runContextBenchmark({
-		fixturePath: CANONICAL_FIXTURE_PATH,
+		fixturePath: REPRESENTATIVE_FIXTURE_PATH,
 		resultsDirectory: await mkdtemp(join(tmpdir(), "bc-news-context-model-")),
 		environment: benchmarkEnvironment(),
 		runtime,
@@ -293,20 +293,22 @@ test("rejects a completion from a model other than the loaded Qwen and closes th
 test("parses the context command without admitting run-only configuration", () => {
 	expect(parseEvalCliCommand([
 		"context",
+		"benchmark",
 		"--fixture",
 		"packages/fixtures",
 		"--results-dir",
 		"tmp/context",
 	])).toEqual({
-		command: "context",
+		command: "context-benchmark",
 		fixturePath: "packages/fixtures",
 		resultsDirectory: "tmp/context",
 	});
 	expect(() => parseEvalCliCommand([
 		"context",
+		"benchmark",
 		"--fixture",
 		"packages/fixtures",
 		"--config",
 		"hosted.json",
-	])).toThrow("--config is not valid for the context command");
+	])).toThrow("--config is not valid for the context benchmark command");
 });

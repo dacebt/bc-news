@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { PRODUCTION_MODEL_STEPS, type ProductionModelStep } from "@bc-news/generation-core";
 import { RecordedModelResponseSchema } from "@bc-news/fixtures";
 import { BenchmarkRunSchema, evaluationOutputContractProvenance, type BenchmarkRun } from "./evaluation-artifact";
-import { CANONICAL_FIXTURE_PATH } from "./canonical-walk-verifier";
+import { REPRESENTATIVE_FIXTURE_PATH } from "./representative-fixture";
 import { evaluateTrialCommand } from "./evaluation-trial-command";
 import { startRecordLoopbackServer } from "./record-loopback-server";
 
@@ -144,7 +144,7 @@ export async function verifyEvaluationTrialRetention(): Promise<void> {
 		};
 		const completeStates: BenchmarkRun[] = [];
 		const completed = await evaluateTrialCommand({
-			fixturePath: CANONICAL_FIXTURE_PATH,
+			fixturePath: REPRESENTATIVE_FIXTURE_PATH,
 			configPath: completeConfigPath,
 			resultsDirectory: completeResults,
 			environment,
@@ -153,7 +153,7 @@ export async function verifyEvaluationTrialRetention(): Promise<void> {
 		});
 		const rejectedStates: BenchmarkRun[] = [];
 		const rejected = await evaluateTrialCommand({
-			fixturePath: CANONICAL_FIXTURE_PATH,
+			fixturePath: REPRESENTATIVE_FIXTURE_PATH,
 			configPath: rejectedConfigPath,
 			resultsDirectory: rejectedResults,
 			environment,
@@ -162,7 +162,7 @@ export async function verifyEvaluationTrialRetention(): Promise<void> {
 		});
 		const failureStates: BenchmarkRun[] = [];
 		const failed = await evaluateTrialCommand({
-			fixturePath: CANONICAL_FIXTURE_PATH,
+			fixturePath: REPRESENTATIVE_FIXTURE_PATH,
 			configPath: failureConfigPath,
 			resultsDirectory: failureResults,
 			environment,
@@ -171,7 +171,7 @@ export async function verifyEvaluationTrialRetention(): Promise<void> {
 		});
 		const mixedStates: BenchmarkRun[] = [];
 		const mixed = await evaluateTrialCommand({
-			fixturePath: CANONICAL_FIXTURE_PATH,
+			fixturePath: REPRESENTATIVE_FIXTURE_PATH,
 			configPath: mixedConfigPath,
 			resultsDirectory: mixedResults,
 			environment,
@@ -223,7 +223,7 @@ export async function verifyEvaluationTrialRetention(): Promise<void> {
 			cause: cleanupErrors[0],
 		});
 	}
-	process.stdout.write("EVALUATION TRIAL RETENTION PASS\n");
+	process.stdout.write("evaluation: rejected, failed, and completed trials retained incrementally\n");
 }
 
 void verifyEvaluationTrialRetention().catch((error: unknown) => {

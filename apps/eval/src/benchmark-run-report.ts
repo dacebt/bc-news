@@ -1,6 +1,6 @@
 import type { BenchmarkRun } from "./evaluation-artifact";
 
-export function formatEvaluationTrialReport(benchmark: BenchmarkRun, path: string): string {
+export function formatBenchmarkRunReport(benchmark: BenchmarkRun, path: string): string {
 	return [
 		`Benchmark Run: ${benchmark.id}`,
 		`Evaluation Trials: ${String(benchmark.trials.length)}`,

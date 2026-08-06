@@ -22,7 +22,7 @@ static assets entirely in local emulation; evidence comes from the
 committed fixture and the model provider is a recorded response.
 
 The walk builds the workspace, migrates an isolated per-run local D1,
-starts `wrangler dev`, then proves the tier-1 skeleton sequence:
+starts `wrangler dev`, then proves the composed product sequence:
 
 - triggering a generation run for the fixture pair (active region 7,
   publication date 2026-01-25) is accepted, and `/api/edition` serves an
@@ -32,12 +32,16 @@ starts `wrangler dev`, then proves the tier-1 skeleton sequence:
 - an unknown pair answers 404, and the client HTML serves from the same
   origin.
 
-On success it prints `WALK PASS` plus the edition URL and holds
+On success it prints its own `walk:` observations followed by the independent
+terminal result `WALK PASS`, plus the edition URL, and holds
 `wrangler dev` so a browser can observe the rendered paper — Ctrl-C to
 stop. `pnpm walk --non-interactive` (or `WALK_NON_INTERACTIVE=1`) shuts
 down after the assertions instead; the exit code reflects the assertions
 either way. On timeout the walk prints the generation run's status.
 `WALK_PORT` overrides the port `wrangler dev` binds to (default `8787`).
+The walk does not run or inherit a result from model evaluation,
+recorded-response fixture authoring, context measurement, or recorded-replay
+acceptance.
 
 Where authority lives:
 
@@ -49,6 +53,22 @@ Where authority lives:
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — binding structural discipline.
 - [docs/TESTING.md](docs/TESTING.md) — binding evidence discipline.
 
+## Verification ownership
+
+Each surface answers a different question. A result in one row never becomes a
+result in another.
+
+| Surface | Command | Evidence | Successful outcome |
+|---|---|---|---|
+| Deterministic tests | `pnpm test` | Isolated invariants, reproduced defects, and high-risk state transitions | Test pass or hard test failure |
+| Model evaluation | `pnpm --filter @bc-news/eval eval -- benchmark run ...` and `benchmark list/show/summary/compare` | Strict versioned Benchmark Runs in `apps/eval/evaluation-results` | Retained model behavior and harness outcome; no score or acceptance verdict |
+| Fixture and context tooling | `fixture record-responses ...` and `context benchmark ...` | Four request-linked recorded responses, or strict context-measurement results | Fixture-authoring or context-measurement tooling result, never a walk or acceptance result |
+| Recorded-replay acceptance | `acceptance run/list/show/compare` and `verify:recorded-replay-acceptance` | Historical Run Files in `apps/eval/results` | `acceptance: four recorded production steps replayed request-linked and deterministic` |
+| Composed skeleton walk | `pnpm walk` | The deployed local ingest, generation, D1, API, status, and browser path using committed recorded adapters | Independent `walk:` observations and terminal `WALK PASS` |
+
+Static guarantees (`pnpm typecheck` and `pnpm lint`) support every row but do
+not replace its runtime evidence.
+
 ## Model evaluation
 
 Run a declared serial live benchmark with a strict configuration file containing
@@ -57,7 +77,7 @@ an ordered nonempty list of four-step configurations, a positive
 three:
 
 ```sh
-pnpm --filter @bc-news/eval eval -- evaluate \
+pnpm --filter @bc-news/eval eval -- benchmark run \
   --fixture packages/fixtures \
   --config path/to/eval.config.json \
   --results-dir path/to/evaluation-results
@@ -67,11 +87,10 @@ The command incrementally retains every Evaluation Trial and Step Invocation in
 a versioned Benchmark Run. Its report names model subject outcomes separately
 from whether the harness retained trustworthy evidence. Model rejection or
 provider exhaustion does not suppress an independent editorial track or a later
-declared trial. This is independent of recorded-replay acceptance, context
-measurement, and `pnpm walk`.
+declared trial. This is independent of recorded-replay acceptance, fixture
+authoring, context measurement, and `pnpm walk`.
 
-Browse retained Benchmark Runs without changing the historical unqualified
-`list`, `show`, or `compare` commands:
+Browse retained Benchmark Runs through the same explicit namespace:
 
 ```sh
 pnpm --filter @bc-news/eval eval -- benchmark list
@@ -85,6 +104,70 @@ Each route accepts `--results-dir`; otherwise it reads
 schema-invalid, or filename-mismatched evidence. Comparison reports input and
 provenance context separately from behavioral differences and produces no
 score, judge result, or acceptance decision.
+
+The historical artifact is a **Run File**, not a Benchmark Run. Recorded-replay
+acceptance alone owns it and its separate default directory:
+
+```sh
+pnpm --filter @bc-news/eval eval -- acceptance run \
+  --fixture packages/fixtures
+pnpm --filter @bc-news/eval eval -- acceptance list
+pnpm --filter @bc-news/eval eval -- acceptance show <run-file-id>
+pnpm --filter @bc-news/eval eval -- acceptance compare <left-id> <right-id>
+```
+
+The default acceptance configuration is
+`apps/eval/recorded-replay.config.json`; `acceptance run` also accepts an
+explicit `--config`, and all acceptance routes accept `--results-dir` where
+applicable. Run Files live in `apps/eval/results` by default.
+
+Fixture authoring and context measurement are tooling surfaces rather than
+evaluation or acceptance:
+
+```sh
+pnpm --filter @bc-news/eval eval -- fixture record-responses \
+  --fixture packages/fixtures \
+  --config path/to/live.config.json
+pnpm --filter @bc-news/eval eval -- context benchmark \
+  --fixture packages/fixtures
+```
+
+Fixture authoring defaults to `packages/fixtures/model-responses` and accepts
+`--response-dir`. Context measurement defaults to `apps/eval/context-results`
+and accepts `--results-dir`. Explicit paths are resolved relative to the
+invoking workspace. The old bare `evaluate`, `run`, `record`, `context`,
+`list`, `show`, and `compare` routes do not exist.
+
+Repository-owned runtime proofs are direct package commands:
+
+```sh
+pnpm --filter @bc-news/eval verify:evaluation-trial-retention
+pnpm --filter @bc-news/eval verify:evaluation-benchmark-continuation
+pnpm --filter @bc-news/eval verify:evaluation-browse
+pnpm --filter @bc-news/eval verify:recorded-response-fixture-authoring
+pnpm --filter @bc-news/eval verify:recorded-replay-acceptance
+```
+
+The evaluation proofs print `evaluation:` observations; the continuation and
+browse proofs respectively end with
+`evaluation: serial benchmark retained linked retries and continued later trials`
+and
+`evaluation: evidence listed summarized and compared without verdicts`.
+Fixture proof prints
+`fixture authoring: four production responses recorded replayed and compared`;
+recorded-replay proof prints
+`acceptance: four recorded production steps replayed request-linked and deterministic`.
+None of these commands prints or confers `WALK PASS`.
+
+The representative local benchmark uses one ignored declaration with exactly
+these four configurations, in order: `qwen/qwen3.5-9b`,
+`openai/gpt-oss-20b`, `prism-ml/bonsai-27b`, and `google/gemma-4-e4b`. Every
+configuration assigns its one model to all four production steps with
+`temperature: 1`, `top_p: 0.95`, `top_k: 20`, and `reasoning_effort: none`;
+the declaration uses one repetition and a transport retry limit of one. Run it
+serially through `benchmark run`, then inspect the returned id through
+`benchmark summary`. The retained actual trial outcomes are observations, not
+quality failures or acceptance verdicts.
 
 The frozen v1 (`bc-news-worker` and siblings, in the parent directory) is
 reference material only — see the [v1 reference map](docs/v1-reference.md).

@@ -14,7 +14,7 @@ import {
 } from "./evaluation-browse-report";
 import { compareBenchmarkRuns } from "./evaluation-comparison";
 import { listBenchmarkRuns, loadBenchmarkRun } from "./evaluation-artifact-reader";
-import { formatEvaluationTrialReport } from "./evaluation-report";
+import { formatBenchmarkRunReport } from "./benchmark-run-report";
 import {
 	formatRecordSummary,
 	formatRunComparison,
@@ -25,26 +25,19 @@ import {
 import { listRunFiles, loadRunFile } from "./run-file";
 import { runCommand } from "./run-command";
 
-const USAGE = `Usage:
-  pnpm --filter @bc-news/eval eval -- evaluate --fixture <path> --config <path> [--results-dir <path>]
-  pnpm --filter @bc-news/eval eval -- run --fixture <path> [--config <path>] [--results-dir <path>]
-  pnpm --filter @bc-news/eval eval -- record --fixture <path> --config <path> [--response-dir <path>]
-  pnpm --filter @bc-news/eval eval -- context --fixture <path> [--results-dir <path>]
-  pnpm --filter eval run eval -- list [--results-dir <path>]
-  pnpm --filter eval run eval -- show <run-id> [--results-dir <path>]
-  pnpm --filter eval run eval -- compare <left-run-id> <right-run-id> [--results-dir <path>]
+export const EVAL_CLI_USAGE = `Usage:
+  pnpm --filter @bc-news/eval eval -- benchmark run --fixture <path> --config <path> [--results-dir <path>]
   pnpm --filter @bc-news/eval eval -- benchmark list [--results-dir <path>]
-  pnpm --filter @bc-news/eval eval -- benchmark show <run-id> [--results-dir <path>]
-  pnpm --filter @bc-news/eval eval -- benchmark summary <run-id> [--results-dir <path>]
-  pnpm --filter @bc-news/eval eval -- benchmark compare <left-run-id> <right-run-id> [--results-dir <path>]`;
+  pnpm --filter @bc-news/eval eval -- benchmark show <benchmark-run-id> [--results-dir <path>]
+  pnpm --filter @bc-news/eval eval -- benchmark summary <benchmark-run-id> [--results-dir <path>]
+  pnpm --filter @bc-news/eval eval -- benchmark compare <left-id> <right-id> [--results-dir <path>]
+  pnpm --filter @bc-news/eval eval -- acceptance run --fixture <path> [--config <path>] [--results-dir <path>]
+  pnpm --filter @bc-news/eval eval -- acceptance list [--results-dir <path>]
+  pnpm --filter @bc-news/eval eval -- acceptance show <run-id> [--results-dir <path>]
+  pnpm --filter @bc-news/eval eval -- acceptance compare <left-id> <right-id> [--results-dir <path>]
+  pnpm --filter @bc-news/eval eval -- fixture record-responses --fixture <path> --config <path> [--response-dir <path>]
+  pnpm --filter @bc-news/eval eval -- context benchmark --fixture <path> [--results-dir <path>]`;
 
-/**
- * `pnpm --filter eval run eval` executes with cwd rewritten to apps/eval, not
- * the directory the user invoked pnpm from -- but pnpm sets INIT_CWD to that
- * original directory (a documented lifecycle convention), so relative paths
- * on the command line resolve the way the user typed them, not against the
- * package directory.
- */
 export interface EvalCliApplicationOptions {
 	readonly argv: readonly string[];
 	readonly currentDirectory: string;
@@ -53,14 +46,28 @@ export interface EvalCliApplicationOptions {
 	readonly writeOutput: (text: string) => void;
 }
 
+function commandArguments(argv: readonly string[]): readonly string[] {
+	return argv[0] === "--" ? argv.slice(1) : argv;
+}
+
+export function evalCliFailurePrefix(argv: readonly string[]): string {
+	const namespace = commandArguments(argv)[0];
+	if (namespace === "benchmark") return "benchmark failed:";
+	if (namespace === "acceptance") return "acceptance failed:";
+	if (namespace === "fixture") return "fixture authoring failed:";
+	if (namespace === "context") return "context benchmark failed:";
+	return "command failed:";
+}
+
+export function formatEvalCliFailure(argv: readonly string[], error: unknown): string {
+	const message = error instanceof Error ? error.message : String(error);
+	return `${evalCliFailurePrefix(argv)} ${message}`;
+}
+
 export async function runEvalCliApplication(options: EvalCliApplicationOptions): Promise<void> {
-	// `pnpm run eval -- run ...` forwards the literal `--` separator into argv
-	// (pnpm does not strip it); a leading one is a pass-through marker, never a
-	// command name, so it is dropped before dispatch.
-	const argv = [...options.argv];
-	if (argv[0] === "--") argv.shift();
+	const argv = commandArguments(options.argv);
 	if (argv.length === 0 || argv[0] === "--help") {
-		options.writeOutput(`${USAGE}\n`);
+		options.writeOutput(`${EVAL_CLI_USAGE}\n`);
 		return;
 	}
 	const command = parseEvalCliCommand(argv);
@@ -68,14 +75,7 @@ export async function runEvalCliApplication(options: EvalCliApplicationOptions):
 	const appDirectory = options.appDirectory;
 	const writeLine = (value: string): void => options.writeOutput(`${value}\n`);
 
-	/*
-	 * The committed apps/eval/results directory is the default results
-	 * directory (retained evidence lives with the app, not wherever pnpm was
-	 * invoked from) so it resolves against the app directory, not INIT_CWD --
-	 * mirroring the --config default. A user-typed --results-dir resolves
-	 * where the user typed it, same as --config.
-	 */
-	function resultsDirectoryFor(resultsDirectory: string | undefined): string {
+	function acceptanceResultsDirectoryFor(resultsDirectory: string | undefined): string {
 		return resultsDirectory === undefined
 			? resolve(appDirectory, "results")
 			: resolve(cwd, resultsDirectory);
@@ -87,62 +87,14 @@ export async function runEvalCliApplication(options: EvalCliApplicationOptions):
 			: resolve(cwd, resultsDirectory);
 	}
 
-	if (command.command === "evaluate") {
+	if (command.command === "benchmark-run") {
 		const result = await evaluateBenchmarkCommand({
 			fixturePath: resolve(cwd, command.fixturePath),
 			configPath: resolve(cwd, command.configPath),
 			resultsDirectory: evaluationResultsDirectoryFor(command.resultsDirectory),
 			environment: options.environment,
 		});
-		writeLine(formatEvaluationTrialReport(result.benchmark, result.path));
-		return;
-	}
-
-	if (command.command === "run") {
-		/*
-		 * The committed eval.config.json is the default so the retained-evidence
-		 * config is reachable without a flag; it resolves against the app
-		 * directory, not INIT_CWD, because its location is fixed by the repo
-		 * while user-typed --config paths resolve where the user typed them.
-		 */
-		const defaultConfigPath = resolve(appDirectory, "eval.config.json");
-		const saved = await runCommand({
-			fixturePath: resolve(cwd, command.fixturePath),
-			configPath:
-				command.configPath === undefined ? defaultConfigPath : resolve(cwd, command.configPath),
-			resultsDirectory: resultsDirectoryFor(command.resultsDirectory),
-		});
-		writeLine(formatRunSummary(saved.run, saved.path));
-		return;
-	}
-	if (command.command === "record") {
-		/*
-		 * The retained response set lives at the workspace level, so its default
-		 * resolves from the app's fixed repository location. A user-typed
-		 * --response-dir still resolves from the directory that invoked pnpm.
-		 */
-		const defaultResponseDirectory = resolve(appDirectory, "../../packages/fixtures/model-responses");
-		const result = await recordCommand({
-			fixturePath: resolve(cwd, command.fixturePath),
-			configPath: resolve(cwd, command.configPath),
-			responseDirectory: command.responseDirectory === undefined
-				? defaultResponseDirectory
-				: resolve(cwd, command.responseDirectory),
-			environment: options.environment,
-		});
-		writeLine(formatRecordSummary(result));
-		return;
-	}
-	if (command.command === "context") {
-		const defaultResultsDirectory = resolve(appDirectory, "context-results");
-		const resultsDirectory = command.resultsDirectory === undefined
-			? defaultResultsDirectory
-			: resolve(cwd, command.resultsDirectory);
-		const saved = await runContextBenchmark({
-			fixturePath: resolve(cwd, command.fixturePath),
-			resultsDirectory,
-		});
-		writeLine(formatContextBenchmarkReport(saved.report, saved.path));
+		writeLine(formatBenchmarkRunReport(result.benchmark, result.path));
 		return;
 	}
 	if (command.command === "benchmark-list") {
@@ -167,20 +119,57 @@ export async function runEvalCliApplication(options: EvalCliApplicationOptions):
 		writeLine(formatBenchmarkComparison(compareBenchmarkRuns(left, right)));
 		return;
 	}
-	if (command.command === "list") {
-		const runs = await listRunFiles(resultsDirectoryFor(command.resultsDirectory));
+
+	if (command.command === "acceptance-run") {
+		const defaultConfigPath = resolve(appDirectory, "recorded-replay.config.json");
+		const saved = await runCommand({
+			fixturePath: resolve(cwd, command.fixturePath),
+			configPath: command.configPath === undefined ? defaultConfigPath : resolve(cwd, command.configPath),
+			resultsDirectory: acceptanceResultsDirectoryFor(command.resultsDirectory),
+		});
+		writeLine(formatRunSummary(saved.run, saved.path));
+		return;
+	}
+	if (command.command === "acceptance-list") {
+		const runs = await listRunFiles(acceptanceResultsDirectoryFor(command.resultsDirectory));
 		writeLine(formatRunListing(runs));
 		return;
 	}
-	if (command.command === "show") {
-		const run = await loadRunFile(command.runId, resultsDirectoryFor(command.resultsDirectory));
+	if (command.command === "acceptance-show") {
+		const run = await loadRunFile(command.runId, acceptanceResultsDirectoryFor(command.resultsDirectory));
 		writeLine(formatRunDetail(run));
 		return;
 	}
-	const directory = resultsDirectoryFor(command.resultsDirectory);
-	const left = await loadRunFile(command.leftRunId, directory);
-	const right = await loadRunFile(command.rightRunId, directory);
-	writeLine(formatRunComparison(compareRuns(left, right)));
+	if (command.command === "acceptance-compare") {
+		const directory = acceptanceResultsDirectoryFor(command.resultsDirectory);
+		const left = await loadRunFile(command.leftRunId, directory);
+		const right = await loadRunFile(command.rightRunId, directory);
+		writeLine(formatRunComparison(compareRuns(left, right)));
+		return;
+	}
+
+	if (command.command === "fixture-record-responses") {
+		const defaultResponseDirectory = resolve(appDirectory, "../../packages/fixtures/model-responses");
+		const result = await recordCommand({
+			fixturePath: resolve(cwd, command.fixturePath),
+			configPath: resolve(cwd, command.configPath),
+			responseDirectory: command.responseDirectory === undefined
+				? defaultResponseDirectory
+				: resolve(cwd, command.responseDirectory),
+			environment: options.environment,
+		});
+		writeLine(formatRecordSummary(result));
+		return;
+	}
+
+	const resultsDirectory = command.resultsDirectory === undefined
+		? resolve(appDirectory, "context-results")
+		: resolve(cwd, command.resultsDirectory);
+	const saved = await runContextBenchmark({
+		fixturePath: resolve(cwd, command.fixturePath),
+		resultsDirectory,
+	});
+	writeLine(formatContextBenchmarkReport(saved.report, saved.path));
 }
 
 async function main(): Promise<void> {
@@ -195,8 +184,7 @@ async function main(): Promise<void> {
 
 if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href) {
 	main().catch((error: unknown) => {
-		const message = error instanceof Error ? error.message : String(error);
-		process.stderr.write(`eval failed: ${message}\n`);
+		process.stderr.write(`${formatEvalCliFailure(process.argv.slice(2), error)}\n`);
 		process.exitCode = 1;
 	});
 }

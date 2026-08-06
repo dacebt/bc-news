@@ -4,7 +4,7 @@
 	"private": true,
 	"type": "module",
 	"exports": {
-		"./canonical-walk-verifier": "./src/canonical-walk-verifier.ts",
+		"./recorded-replay-acceptance-verifier": "./src/recorded-replay-acceptance-verifier.ts",
 		"./evaluation-artifact": "./src/evaluation-artifact.ts",
 		"./model-adapters": "./src/model-adapters.ts",
 		"./run-file": "./src/run-file.ts"
@@ -15,7 +15,9 @@
 		"eval": "node --env-file-if-exists=../generation/.dev.vars --import tsx src/cli.ts",
 		"verify:evaluation-trial-retention": "tsx src/evaluation-trial-verifier.ts",
 		"verify:evaluation-benchmark-continuation": "tsx src/evaluation-benchmark-verifier.ts",
-		"verify:evaluation-browse": "tsx src/evaluation-browse-verifier.ts"
+		"verify:evaluation-browse": "tsx src/evaluation-browse-verifier.ts",
+		"verify:recorded-replay-acceptance": "tsx src/recorded-replay-acceptance-verifier.ts",
+		"verify:recorded-response-fixture-authoring": "tsx src/recorded-response-fixture-authoring-verifier.ts"
 	},
 	"dependencies": {
 		"@bc-news/contracts": "workspace:*",
