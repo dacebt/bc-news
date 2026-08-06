@@ -8,7 +8,7 @@ tags: [documentation, testing, verification, evaluation]
 status: stable
 generated:
   by: ebt-skills/okf-v0.2
-  at: "2026-08-06T19:06:47Z"
+  at: "2026-08-06T21:23:59Z"
 authority: binding
 ---
 
@@ -29,14 +29,18 @@ outcome or silently substitutes for it.
    reproduced defects, and high-risk state transitions. A failing test is a
    hard failed test; it is not a retained model-evaluation attempt.
 2. **Model evaluation.** `evaluate --fixture <path> --config <path>
-   [--results-dir <path>]` observes one declared configuration and repetition.
-   Its strict Benchmark Run retains every reached Step Invocation before
-   transport and before parsing. Model rejection is a typed subject outcome
+   [--results-dir <path>]` observes an ordered configuration and repetition
+   roster serially. Its strict Benchmark Run retains every reached Step
+   Invocation before transport and before parsing. Model rejection is a typed subject outcome
    and can coexist with `harness_outcome: retained`; invalid configuration or
    an untrustworthy create, write, or reparse is a harness failure and stops.
    Evaluation reports behavior, provenance, and deterministic findings without
-   a judge, score, or acceptance verdict. Historical successful run files and
-   context results keep their existing meanings.
+   a judge, score, or acceptance verdict. Eligible transport failures receive
+   only the declared bounded retries, with each attempt retained and linked.
+   Provider exhaustion or model rejection closes its dependent track without
+   suppressing the independent editorial track or later declared trials.
+   Historical successful run files and context results keep their existing
+   meanings.
 3. **Recorded-replay acceptance.** The canonical recorded run executes the
    four dependent production steps twice. Results must be identical apart from
    run identity and timestamps, carry the exact ordered roster and usage, match
@@ -135,6 +139,17 @@ proves, tests of glue and framework wiring, tests to satisfy coverage.
   the temporary path while preserving the primary `write_rejected` cause. V1
   validation does not call mutable production parsers, prompt builders,
   fencing, or product checks when re-validating historical evidence.
+- Version 2 alone validates serial benchmark lifecycle: the roster is the exact
+  configuration-order/repetition-order Cartesian product; trials form an
+  append-only prefix; only the final trial may run; retries link to the
+  immediately previous eligible same-step failure with an identical request;
+  terminal trials are immutable; and counts exactly match retained terminal
+  outcomes. The repository-owned benchmark verifier observes a transient
+  failure followed by success, provider exhaustion isolated from the other
+  editorial track, model-level rejection, and a later completed trial. Every
+  observer snapshot must parse before the verifier prints
+  `walk: serial evaluation benchmark retained linked retries and continued
+  later trials`.
 - V1 code provenance is the clean repository commit itself: repository name,
   validated 40-character commit SHA, and `dirty: false`. Strict validation
   rejects missing, malformed, or extra provenance fields rather than retaining

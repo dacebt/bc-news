@@ -51,8 +51,10 @@ Where authority lives:
 
 ## Model evaluation
 
-Run one declared live Evaluation Trial with an explicit strict four-step
-configuration:
+Run a declared serial live benchmark with a strict configuration file containing
+an ordered nonempty list of four-step configurations, a positive
+`repetition_count`, and a bounded `transport_retry_limit` from zero through
+three:
 
 ```sh
 pnpm --filter @bc-news/eval eval -- evaluate \
@@ -61,10 +63,12 @@ pnpm --filter @bc-news/eval eval -- evaluate \
   --results-dir path/to/evaluation-results
 ```
 
-The command incrementally retains a versioned Benchmark Run. Its report names
-the model's subject outcome separately from whether the harness retained
-trustworthy evidence. This is independent of recorded-replay acceptance,
-context measurement, and `pnpm walk`.
+The command incrementally retains every Evaluation Trial and Step Invocation in
+a versioned Benchmark Run. Its report names model subject outcomes separately
+from whether the harness retained trustworthy evidence. Model rejection or
+provider exhaustion does not suppress an independent editorial track or a later
+declared trial. This is independent of recorded-replay acceptance, context
+measurement, and `pnpm walk`.
 
 The frozen v1 (`bc-news-worker` and siblings, in the parent directory) is
 reference material only — see the [v1 reference map](docs/v1-reference.md).

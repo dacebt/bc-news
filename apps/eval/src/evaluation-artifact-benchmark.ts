@@ -8,20 +8,21 @@ import {
 	type V1EvalConfig, type V1ProductionModelStep,
 } from "./evaluation-artifact-v1-contracts";
 
-function addCompletionIssue(context: z.RefinementCtx, index: number, message: string): void {
-	context.addIssue({ code: "custom", path: ["trials", 0, "invocations", index, "completion"], message });
+function addCompletionIssue(context: z.RefinementCtx, trialIndex: number, index: number, message: string): void {
+	context.addIssue({ code: "custom", path: ["trials", trialIndex, "invocations", index, "completion"], message });
 }
 
-function refineCompletionEvidence(
+export function refineCompletionEvidence(
 	adapter: V1EvalConfig["production_steps"][V1ProductionModelStep],
 	completion: z.infer<typeof BenchmarkRunBaseSchema>["trials"][number]["invocations"][number] & { transport: "succeeded" },
+	trialIndex: number,
 	index: number,
 	context: z.RefinementCtx,
 ): void {
 	if (adapter.adapter === "lmstudio") {
 		const billing = completion.completion.external_billing;
 		if (billing.classification !== "none" || billing.reason !== "local_inference") {
-			addCompletionIssue(context, index, "local inference must retain zero external billing classified as local_inference");
+			addCompletionIssue(context, trialIndex, index, "local inference must retain zero external billing classified as local_inference");
 		}
 		return;
 	}
@@ -29,7 +30,7 @@ function refineCompletionEvidence(
 	const usage = completion.completion.token_usage;
 	const billing = completion.completion.external_billing;
 	if (usage.measurement !== "reported") {
-		addCompletionIssue(context, index, "hosted inference must retain provider-reported token usage");
+		addCompletionIssue(context, trialIndex, index, "hosted inference must retain provider-reported token usage");
 		return;
 	}
 	const expectedAmount = (
@@ -39,11 +40,11 @@ function refineCompletionEvidence(
 	if (billing.classification !== "calculated"
 		|| billing.amount_usd !== expectedAmount
 		|| billing.pricing_reference !== adapter.billing.pricing_reference) {
-		addCompletionIssue(context, index, "hosted inference billing must derive exactly from retained usage and declared pricing inputs");
+		addCompletionIssue(context, trialIndex, index, "hosted inference billing must derive exactly from retained usage and declared pricing inputs");
 	}
 }
 
-export const BenchmarkRunSchema = BenchmarkRunBaseSchema.extend({
+export const V1BenchmarkRunSchema = BenchmarkRunBaseSchema.extend({
 	prepared_evidence: z.strictObject({
 		identity_sha256: V1Sha256HashSchema,
 		active_region_id: z.string().min(1),
@@ -68,7 +69,7 @@ export const BenchmarkRunSchema = BenchmarkRunBaseSchema.extend({
 		if (invocation.transport !== "succeeded") continue;
 		const expectedExecution = adapter.adapter === "lmstudio" ? "local_inference" : adapter.adapter === "recorded" ? "recorded_replay" : "hosted_inference";
 		if (invocation.completion.execution !== expectedExecution || (adapter.adapter === "lmstudio" && invocation.completion.provider !== "lmstudio") || (adapter.adapter === "openai_compatible_hosted" && invocation.completion.provider !== adapter.provider)) context.addIssue({ code: "custom", path: ["trials", 0, "invocations", index, "completion"], message: "completion must match its declared step adapter execution and provider class" });
-		refineCompletionEvidence(adapter, invocation, index, context);
+		refineCompletionEvidence(adapter, invocation, 0, index, context);
 	}
 	const countTotal = Object.values(run.outcome_counts).reduce((sum, count) => sum + count, 0);
 	if (run.lifecycle === "running" && (run.completed_at !== null || run.harness_outcome !== "pending" || trial.lifecycle !== "running" || countTotal !== 0)) context.addIssue({ code: "custom", path: ["lifecycle"], message: "running benchmark requires a pending harness, running trial, null completion, and zero counts" });
@@ -78,7 +79,10 @@ export const BenchmarkRunSchema = BenchmarkRunBaseSchema.extend({
 	}
 });
 
-export type BenchmarkRun = z.infer<typeof BenchmarkRunSchema>;
+export type V1BenchmarkRun = z.infer<typeof V1BenchmarkRunSchema>;
+export type BenchmarkRun = V1BenchmarkRun;
+
+export const BenchmarkRunSchema = V1BenchmarkRunSchema;
 
 export function evaluationOutputContractProvenance(): BenchmarkRun["provenance"]["output_contracts"] {
 	return v1OutputContractProvenance() as BenchmarkRun["provenance"]["output_contracts"];

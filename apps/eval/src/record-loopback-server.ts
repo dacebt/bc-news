@@ -62,6 +62,8 @@ async function handleRequest(input: {
 	readonly outputByModel: Readonly<Record<string, string>>;
 	readonly observedRequests: ObservedModelRequest[];
 	readonly retryableFailureModels: ReadonlySet<string>;
+	readonly transientFailureModels: ReadonlySet<string>;
+	readonly requestCountByModel: Map<string, number>;
 }): Promise<void> {
 	const url = new URL(input.request.url ?? "/", "http://127.0.0.1");
 	if (
@@ -91,7 +93,9 @@ async function handleRequest(input: {
 		system: parsed.data.messages[0].content,
 		user: parsed.data.messages[1].content,
 	});
-	if (input.retryableFailureModels.has(parsed.data.model)) {
+	const requestCount = (input.requestCountByModel.get(parsed.data.model) ?? 0) + 1;
+	input.requestCountByModel.set(parsed.data.model, requestCount);
+	if (input.retryableFailureModels.has(parsed.data.model) || (input.transientFailureModels.has(parsed.data.model) && requestCount === 1)) {
 		throw new LoopbackRequestError(503, "controlled_retryable_failure", "Controlled retryable evaluation transport failure");
 	}
 	respondJson(input.response, 200, {
@@ -109,12 +113,21 @@ function closeServer(server: Server): Promise<void> {
 
 export function startRecordLoopbackServer(
 	outputByModel: Readonly<Record<string, string>>,
-	options: { readonly retryableFailureModels?: ReadonlySet<string> } = {},
+	options: {
+		readonly retryableFailureModels?: ReadonlySet<string>;
+		readonly transientFailureModels?: ReadonlySet<string>;
+	} = {},
 ): Promise<RecordLoopbackServer> {
 	const observedRequests: ObservedModelRequest[] = [];
+	const retryableFailureModels = options.retryableFailureModels ?? new Set<string>();
+	const transientFailureModels = options.transientFailureModels ?? new Set<string>();
+	if ([...retryableFailureModels].some((model) => transientFailureModels.has(model))) {
+		return Promise.reject(new Error("A loopback model cannot be configured for both transient and persistent retryable failure"));
+	}
+	const requestCountByModel = new Map<string, number>();
 	return new Promise((resolve, reject) => {
 		const server = createServer((request, response) => {
-			void handleRequest({ request, response, outputByModel, observedRequests, retryableFailureModels: options.retryableFailureModels ?? new Set() }).catch((cause: unknown) => {
+			void handleRequest({ request, response, outputByModel, observedRequests, retryableFailureModels, transientFailureModels, requestCountByModel }).catch((cause: unknown) => {
 				const error = cause instanceof LoopbackRequestError
 					? cause
 					: new LoopbackRequestError(500, "unexpected_failure", "Loopback request failed unexpectedly", { cause });

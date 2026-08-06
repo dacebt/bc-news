@@ -16,6 +16,19 @@ export const EvalConfigSchema = z.strictObject({
 
 export type EvalConfig = z.infer<typeof EvalConfigSchema>;
 
+export const LiveBenchmarkConfigSchema = z.strictObject({
+	configurations: z.array(EvalConfigSchema).min(1),
+	repetition_count: z.number().int().positive(),
+	transport_retry_limit: z.number().int().min(0).max(3),
+}).superRefine((benchmark, context) => {
+	const identities = benchmark.configurations.map((configuration) => JSON.stringify(configuration));
+	if (new Set(identities).size !== identities.length) {
+		context.addIssue({ code: "custom", path: ["configurations"], message: "benchmark configurations must have unique identities" });
+	}
+});
+
+export type LiveBenchmarkConfig = z.infer<typeof LiveBenchmarkConfigSchema>;
+
 export class LiveEvaluationConfigError extends Error {
 	readonly code = "recorded_adapter_rejected_for_live_evaluation";
 	constructor(path: string) {
@@ -61,4 +74,17 @@ export async function loadLiveEvaluationConfig(path: string): Promise<EvalConfig
 		throw new LiveEvaluationConfigError(path);
 	}
 	return config;
+}
+
+export async function loadLiveBenchmarkConfig(path: string): Promise<LiveBenchmarkConfig> {
+	const raw = await readFile(path, "utf8");
+	let candidate: unknown;
+	try { candidate = JSON.parse(raw); }
+	catch (cause) { throw new EvalConfigError("invalid_json", path, `Config at ${path} is not valid JSON`, { cause }); }
+	const parsed = LiveBenchmarkConfigSchema.safeParse(candidate);
+	if (!parsed.success) throw new EvalConfigError("config_rejected", path, `Benchmark config at ${path} was rejected: ${parsed.error.message}`);
+	if (parsed.data.configurations.some((configuration) => Object.values(configuration.production_steps).some(({ adapter }) => adapter === "recorded"))) {
+		throw new LiveEvaluationConfigError(path);
+	}
+	return parsed.data;
 }

@@ -5,7 +5,7 @@ import { parseEvalCliCommand } from "./cli-options";
 import { runContextBenchmark } from "./context-benchmark-command";
 import { formatContextBenchmarkReport } from "./context-benchmark-report";
 import { recordCommand } from "./record-command";
-import { evaluateTrialCommand } from "./evaluation-trial-command";
+import { evaluateBenchmarkCommand } from "./evaluation-benchmark-command";
 import { formatEvaluationTrialReport } from "./evaluation-report";
 import {
 	formatRecordSummary,
@@ -65,7 +65,7 @@ async function main(): Promise<void> {
 	}
 
 	if (command.command === "evaluate") {
-		const result = await evaluateTrialCommand({
+		const result = await evaluateBenchmarkCommand({
 			fixturePath: resolve(cwd, command.fixturePath),
 			configPath: resolve(cwd, command.configPath),
 			resultsDirectory: command.resultsDirectory === undefined

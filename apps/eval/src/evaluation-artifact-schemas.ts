@@ -122,6 +122,10 @@ export const EvaluationTrialSchema = z.strictObject({
 	selected_invocation_ids: SelectedInvocationIdsSchema, invocations: z.array(StepInvocationSchema),
 });
 
+export const EvaluationTrialV2Schema = EvaluationTrialSchema.extend({
+	repetition: z.number().int().positive(),
+});
+
 export const SubjectOutcomeCountsSchema = z.strictObject(Object.fromEntries(
 	SubjectOutcomeSchema.options.map((outcome) => [outcome, z.number().int().nonnegative()]),
 ) as Record<(typeof SubjectOutcomeSchema.options)[number], z.ZodNumber>);
@@ -148,5 +152,7 @@ export const BenchmarkRunBaseSchema = z.strictObject({
 
 export type EvaluationFinding = z.infer<typeof EvaluationFindingSchema>;
 export type StepInvocation = z.infer<typeof StepInvocationSchema>;
-export type EvaluationTrial = z.infer<typeof EvaluationTrialSchema>;
+export type V1EvaluationTrial = z.infer<typeof EvaluationTrialSchema>;
+export type EvaluationTrial = z.infer<typeof EvaluationTrialV2Schema>;
+export type EvaluationTrialV2 = EvaluationTrial;
 export type SubjectOutcome = z.infer<typeof SubjectOutcomeSchema>;

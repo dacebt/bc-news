@@ -9,7 +9,7 @@ import { OpenAiCompatibleRetryableError } from "@bc-news/model-adapters";
 import { BenchmarkRunSchema, deriveEvaluationTrialOutcome, type BenchmarkRun, type EvaluationFinding, type EvaluationTrial } from "./evaluation-artifact";
 import { EvaluationArtifactStore } from "./evaluation-artifact-store";
 import { findAnnouncementsFinalProductFailures, findMainStoryFinalProductFailures } from "./product-checks";
-import { emptyOutcomeCounts, parseFinding, sha256Json, terminalTrackOutcome, transportErrorIdentity } from "./evaluation-trial-support";
+import { parseFinding, sha256Json, terminalTrackOutcome, transportErrorIdentity } from "./evaluation-trial-support";
 
 export async function executeEvaluationTrial(input: {
 	benchmark: BenchmarkRun;
@@ -17,59 +17,73 @@ export async function executeEvaluationTrial(input: {
 	preparedEvidence: PreparedEvidence;
 	providers: Record<ProductionModelStep, ModelProviderPort>;
 	configIdentity: string;
+	trialId?: string;
+	transportRetryLimit?: number;
 }): Promise<BenchmarkRun> {
 	let benchmark = input.benchmark;
 	async function retain(next: BenchmarkRun): Promise<void> { await input.store.replace(next); benchmark = next; }
-	function trial(): EvaluationTrial { return benchmark.trials[0]!; }
-	async function updateTrial(nextTrial: EvaluationTrial): Promise<void> { await retain(BenchmarkRunSchema.parse({ ...benchmark, trials: [nextTrial] })); }
+	const trialId = input.trialId ?? benchmark.trials[0]!.id;
+	function trial(): EvaluationTrial {
+		const retained = benchmark.trials.find(({ id }) => id === trialId);
+		if (retained === undefined || benchmark.trials.at(-1)?.id !== trialId) throw new Error(`Evaluation trial ${trialId} is not the final running trial`);
+		return retained;
+	}
+	async function updateTrial(nextTrial: EvaluationTrial): Promise<void> {
+		await retain(BenchmarkRunSchema.parse({ ...benchmark, trials: benchmark.trials.map((candidate) => candidate.id === trialId ? nextTrial : candidate) }));
+	}
 
 	async function invoke<T extends Record<string, unknown>>(stepInput: {
 		productionStep: ProductionModelStep; system: string; user: string; parse: (completion: ModelCompletion) => T;
 	}): Promise<T | undefined> {
 		const request: ModelProviderRequest = { productionStep: stepInput.productionStep, system: stepInput.system, user: stepInput.user };
 		const retainedRequest = { production_step: stepInput.productionStep, system: stepInput.system, user: stepInput.user };
-		const ordinal = trial().invocations.length + 1;
-		const invocationId = `${trial().id}-invocation-${ordinal}`;
-		const startedAt = new Date();
-		await updateTrial({ ...trial(), invocations: [...trial().invocations, {
-			id: invocationId, production_step: stepInput.productionStep, config_identity: input.configIdentity,
-			ordinal, predecessor_invocation_id: null, request: retainedRequest, request_sha256: sha256Json(retainedRequest),
-			started_at: startedAt.toISOString(), transport: "in_flight", parse: { state: "pending" },
-		}] });
-
+		let predecessorInvocationId: string | null = null;
 		let completion: ModelCompletion;
-		try { completion = await input.providers[stepInput.productionStep].complete(request); }
-		catch (error: unknown) {
+		for (let attempt = 0; ; attempt += 1) {
+			const ordinal = trial().invocations.length + 1;
+			const invocationId = `${trial().id}-invocation-${ordinal}`;
+			const startedAt = new Date();
+			await updateTrial({ ...trial(), invocations: [...trial().invocations, {
+				id: invocationId, production_step: stepInput.productionStep, config_identity: input.configIdentity,
+				ordinal, predecessor_invocation_id: predecessorInvocationId, request: retainedRequest, request_sha256: sha256Json(retainedRequest),
+				started_at: startedAt.toISOString(), transport: "in_flight", parse: { state: "pending" },
+			}] });
+			try { completion = await input.providers[stepInput.productionStep].complete(request); }
+			catch (error: unknown) {
+				const endedAt = new Date();
+				await updateTrial({ ...trial(), invocations: trial().invocations.map((candidate) => candidate.id === invocationId ? {
+					...candidate, transport: "failed" as const, failure: transportErrorIdentity(error), ended_at: endedAt.toISOString(),
+					duration_ms: Math.max(0, endedAt.getTime() - startedAt.getTime()), retry_classification: { state: "pending" as const }, parse: { state: "pending" as const },
+				} : candidate) });
+				const eligible = error instanceof OpenAiCompatibleRetryableError;
+				await updateTrial({ ...trial(), invocations: trial().invocations.map((candidate) => candidate.id === invocationId && candidate.transport === "failed" ? {
+					...candidate, retry_classification: { state: "classified" as const, eligible,
+						reason: eligible ? "provider classified the transport failure as retryable" : "provider classified the transport failure as deterministic" },
+				} : candidate) });
+				if (!eligible || attempt >= (input.transportRetryLimit ?? 0)) return undefined;
+				predecessorInvocationId = invocationId;
+				continue;
+			}
+
 			const endedAt = new Date();
 			await updateTrial({ ...trial(), invocations: trial().invocations.map((candidate) => candidate.id === invocationId ? {
-				...candidate, transport: "failed" as const, failure: transportErrorIdentity(error), ended_at: endedAt.toISOString(),
-				duration_ms: Math.max(0, endedAt.getTime() - startedAt.getTime()), retry_classification: { state: "pending" as const }, parse: { state: "pending" as const },
-			} : candidate) });
-			await updateTrial({ ...trial(), invocations: trial().invocations.map((candidate) => candidate.id === invocationId && candidate.transport === "failed" ? {
-				...candidate, retry_classification: { state: "classified" as const, eligible: error instanceof OpenAiCompatibleRetryableError,
-					reason: error instanceof OpenAiCompatibleRetryableError ? "provider classified the transport failure as retryable" : "provider classified the transport failure as deterministic" },
-			} : candidate) });
-			return undefined;
-		}
-
-		const endedAt = new Date();
-		await updateTrial({ ...trial(), invocations: trial().invocations.map((candidate) => candidate.id === invocationId ? {
 			...candidate, transport: "succeeded" as const, completion, ended_at: endedAt.toISOString(),
 			duration_ms: Math.max(0, endedAt.getTime() - startedAt.getTime()), parse: { state: "pending" as const },
-		} : candidate) });
-		try {
-			const output = stepInput.parse(completion);
-			await updateTrial({ ...trial(), invocations: trial().invocations.map((candidate) => candidate.id === invocationId && candidate.transport === "succeeded" ? {
-				...candidate, parse: { state: "succeeded" as const, output },
-			} : candidate), selected_invocation_ids: { ...trial().selected_invocation_ids, [stepInput.productionStep]: invocationId } });
-			return output;
-		} catch (error: unknown) {
-			const finding = parseFinding(error);
-			if (finding === undefined) throw error;
-			await updateTrial({ ...trial(), invocations: trial().invocations.map((candidate) => candidate.id === invocationId && candidate.transport === "succeeded" ? {
-				...candidate, parse: { state: "rejected" as const, findings: [finding] },
 			} : candidate) });
-			return undefined;
+			try {
+				const output = stepInput.parse(completion);
+				await updateTrial({ ...trial(), invocations: trial().invocations.map((candidate) => candidate.id === invocationId && candidate.transport === "succeeded" ? {
+				...candidate, parse: { state: "succeeded" as const, output },
+				} : candidate), selected_invocation_ids: { ...trial().selected_invocation_ids, [stepInput.productionStep]: invocationId } });
+				return output;
+			} catch (error: unknown) {
+				const finding = parseFinding(error);
+				if (finding === undefined) throw error;
+				await updateTrial({ ...trial(), invocations: trial().invocations.map((candidate) => candidate.id === invocationId && candidate.transport === "succeeded" ? {
+				...candidate, parse: { state: "rejected" as const, findings: [finding] },
+				} : candidate) });
+				return undefined;
+			}
 		}
 	}
 
@@ -103,10 +117,15 @@ export async function executeEvaluationTrial(input: {
 	}
 
 	const outcome = deriveEvaluationTrialOutcome(trial());
-	const counts = emptyOutcomeCounts(); counts[outcome] = 1;
 	const completedAt = new Date().toISOString();
-	await retain(BenchmarkRunSchema.parse({ ...benchmark, lifecycle: "complete", completed_at: completedAt,
-		trials: [{ ...trial(), lifecycle: "complete", completed_at: completedAt, subject_outcome: outcome }],
-		outcome_counts: counts, harness_outcome: "retained" }));
+	const counts = { ...benchmark.outcome_counts }; counts[outcome] += 1;
+	const completedTrial = { ...trial(), lifecycle: "complete" as const, completed_at: completedAt, subject_outcome: outcome };
+	if (benchmark.version === 1) {
+		await retain(BenchmarkRunSchema.parse({ ...benchmark, lifecycle: "complete", completed_at: completedAt,
+			trials: [completedTrial], outcome_counts: counts, harness_outcome: "retained" }));
+	} else {
+		await retain(BenchmarkRunSchema.parse({ ...benchmark,
+			trials: benchmark.trials.map((candidate) => candidate.id === trialId ? completedTrial : candidate), outcome_counts: counts }));
+	}
 	return benchmark;
 }

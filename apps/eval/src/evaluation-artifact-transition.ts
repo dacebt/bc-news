@@ -121,10 +121,21 @@ export function validateBenchmarkRunTransition(current: BenchmarkRun, next: Benc
 		"benchmark identity, declaration, fixture, prepared evidence, provenance, and roster",
 	);
 	if (next.lifecycle !== "running" && next.lifecycle !== "complete") throw new Error("benchmark transition is not monotonic");
-	if (next.lifecycle === "running") {
+	if (next.lifecycle === "running" && current.version === 1) {
 		requireEqual(current.completed_at, next.completed_at, "running benchmark completion time");
 		requireEqual(current.outcome_counts, next.outcome_counts, "running benchmark outcome counts");
 		requireEqual(current.harness_outcome, next.harness_outcome, "running benchmark harness outcome");
 	}
-	validateTrialTransition(current.trials[0]!, next.trials[0]!);
+	if (current.version === 1 && next.version === 1) {
+		validateTrialTransition(current.trials[0]!, next.trials[0]!);
+		return;
+	}
+	if (current.version !== 2 || next.version !== 2) throw new Error("benchmark artifact version is immutable");
+	if (next.trials.length < current.trials.length || next.trials.length > current.trials.length + 1) throw new Error("trials may append exactly one roster member and may never be removed");
+	for (const [index, trial] of current.trials.entries()) validateTrialTransition(trial, next.trials[index]!);
+	if (next.trials.length === current.trials.length + 1) {
+		if (current.trials.at(-1)?.lifecycle === "running") throw new Error("a new trial cannot append while the previous trial is running");
+		const appended = next.trials.at(-1)!;
+		if (appended.lifecycle !== "running" || appended.invocations.length !== 0) throw new Error("an appended trial must begin running without invocations");
+	}
 }

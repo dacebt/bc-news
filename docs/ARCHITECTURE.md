@@ -8,7 +8,7 @@ tags: [documentation, architecture, ports, typescript]
 status: stable
 generated:
   by: ebt-skills/okf-v0.2
-  at: "2026-08-06T19:06:47Z"
+  at: "2026-08-06T21:23:59Z"
 authority: binding
 ---
 
@@ -198,10 +198,12 @@ byte pin, or source-digest acceptance gate.
 
 The model-evaluation command is a separate surface:
 `evaluate --fixture <path> --config <path> [--results-dir <path>]`. Its strict
-four-step configuration is one declared configuration and repetition in a new
-versioned Benchmark Run under its own `evaluation-results` default; historical
-run files keep their existing directory, schema, and meaning. The eval
-application owns this artifact boundary directly, adding no third domain port.
+benchmark declaration contains a nonempty ordered list of exact four-step live
+configurations, a positive repetition count, and an explicit transport retry
+limit from zero through three. Recorded adapters and duplicate configuration
+identities reject before artifact creation. Historical run files keep their
+existing directory, schema, and meaning. The eval application owns this
+artifact boundary directly, adding no third domain port.
 
 The artifact is exclusively created in `running` state before any provider
 call. Before transport, it atomically retains the exact assembled
@@ -209,8 +211,12 @@ call. Before transport, it atomically retains the exact assembled
 ordinal, predecessor link, timestamp, `transport: in_flight`, and
 `parse: pending`. A successful application-facing completion is retained while
 parse remains pending before editorial parsing. A transport failure is retained
-with classification pending and then classified in a separate write; this first
-slice records but performs no retry. Every replacement validates and reparses
+with classification pending and then classified in a separate write. An
+eligible failure may append at most the declared number of retries; each retry
+points to the immediately previous same-step invocation and retains the exact
+same request and request hash. Deterministic transport failures and model-level
+parse, contract, preservation, or final-product findings never retry. Every
+replacement validates and reparses
 before becoming authoritative. A failed pre-rename replacement always attempts
 to remove its unique temporary file without changing the authoritative bytes.
 Cleanup is best-effort: a cleanup failure remains an explicit harness-failure
@@ -220,6 +226,16 @@ stops the harness and never claims retention; interruption leaves the last
 strict running artifact inspectable. Ended invocation durations equal their
 retained timestamp endpoints exactly, and trial and benchmark completions
 cannot precede any lifecycle event they contain.
+
+Artifact version 2 retains the exact declared configuration-order and
+repetition-order trial roster. Its trials are an append-only prefix: only the
+final retained trial may run, terminal predecessors are immutable, and outcome
+counts exactly reflect every retained terminal trial. Provider exhaustion
+closes only the affected editorial track as infrastructure-incomplete;
+main-story and announcements execute independently, and a rejected or
+infrastructure-incomplete trial does not suppress later roster members. A
+benchmark becomes retained only after every declared trial is terminal.
+Invalid artifact state or persistence stops coordination.
 
 Main-story and announcements evaluation tracks execute independently. A
 rejection in one does not suppress the other. Final-product findings are pure
@@ -247,6 +263,12 @@ meaning of retained v1 evidence.
 V1 code provenance is exactly `repository: bc-news`, a validated 40-character
 commit SHA, and `dirty: false`. Evaluation starts only from that clean commit;
 no second unbound workspace digest competes with the commit identity.
+
+Artifact version 1 remains the single-configuration, repetition-one historical
+boundary and retains its original transition semantics. Version 2 alone owns
+the serial roster, positive repetitions, linked retries, multi-trial outcome
+counts, and benchmark continuation. The version-dispatched store rejects a
+cross-version replacement.
 
 Settled — edition identity enforcement, three layers with the SQL layer
 authoritative: (1) the trigger derives a deterministic Workflow instance
