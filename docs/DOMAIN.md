@@ -57,6 +57,11 @@ verbatim in code, schema, tests, and APIs — no synonyms.
   quotations, numbers, coverage, order, structure, or meaning. Mechanical
   preservation checks narrow this authority but do not prove semantic
   equivalence.
+- **context benchmark** — an eval-only measurement of the exact four
+  production requests against one already-loaded local Qwen model. It reports
+  model-template input, evidence or draft marginal, runtime delta, completion,
+  total, and remaining context at fixed prepared-message loads. It is evidence
+  for later design choices, never an evidence-policy change itself.
 - **ingest** — the process that collects regional chat messages from BitJita
   and validates them before they become edition evidence.
 - **Actors**: the **reader** (a BitCraft player), the **operator** (who

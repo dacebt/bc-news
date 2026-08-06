@@ -11,3 +11,6 @@ dist/
 .env*
 .dev.vars*
 !apps/generation/.dev.vars.example
+
+# generated local benchmark output
+apps/eval/context-results/

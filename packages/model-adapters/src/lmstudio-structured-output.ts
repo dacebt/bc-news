@@ -1,7 +1,7 @@
 import { z } from "zod";
 import {
-	AnnouncementsCopyeditOutputSchema,
 	AnnouncementsWriterOutputSchema,
+	IdentifiedAnnouncementSchema,
 	MainStoryCopyeditOutputSchema,
 	MainStoryDraftSchema,
 	type ProductionModelStep,
@@ -9,6 +9,10 @@ import {
 import { OpenAiCompatibleDeterministicError } from "./errors";
 
 type JsonSchema = Readonly<Record<string, unknown>>;
+
+const LmStudioAnnouncementsCopyeditOutputSchema = z.strictObject({
+	announcements: z.array(IdentifiedAnnouncementSchema.extend({ id: z.string() })),
+});
 
 export interface LmStudioStructuredOutputContract {
 	readonly name: string;
@@ -72,6 +76,6 @@ export const LM_STUDIO_PRODUCTION_STEP_OUTPUT_CONTRACTS: LmStudioStructuredOutpu
 	),
 	announcements_copyedit: lmStudioStructuredOutputContract(
 		"announcements_copyedit_output",
-		AnnouncementsCopyeditOutputSchema,
+		LmStudioAnnouncementsCopyeditOutputSchema,
 	),
 };

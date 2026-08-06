@@ -5,6 +5,7 @@ import {
 	LmStudioAdapterConfigSchema,
 	OpenAiCompatibleDeterministicError,
 	OpenAiCompatibleRetryableError,
+	buildLmStudioChatCompletionsRequest,
 	createOpenAiCompatibleModelProvider,
 	openAiCompatibleChatCompletionsUrl,
 	type LmStudioReasoningEffort,
@@ -173,6 +174,69 @@ it.each([
 	} else {
 		expect(parsed.reasoning_effort).toBe(expected);
 	}
+});
+
+it("sends the exported LM Studio request builder result without changing its shape", async () => {
+	const fetchCall = vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({
+		model: "returned-local-model",
+		choices: [{ message: { content: "completion" } }],
+	}));
+	const request = {
+		productionStep: "announcements_copyedit" as const,
+		system: "copyedit system",
+		user: "announcement draft",
+	};
+	const expected = buildLmStudioChatCompletionsRequest({
+		requestedModel: "requested-local-model",
+		...request,
+		sampling: LOCAL_SAMPLING,
+		reasoningEffort: "low",
+		structuredOutputContracts: LM_STUDIO_PRODUCTION_STEP_OUTPUT_CONTRACTS,
+	});
+
+	await localProvider("low").complete(request);
+	const body = fetchCall.mock.calls[0]?.[1]?.body;
+	if (typeof body !== "string") throw new Error("Expected request body to be JSON text");
+	expect(JSON.parse(body) as unknown).toEqual(expected);
+});
+
+it("omits only provider-default reasoning effort from the built LM Studio request", () => {
+	const base = {
+		requestedModel: "requested-local-model",
+		productionStep: "main_story_write" as const,
+		system: "system",
+		user: "prompt",
+		sampling: LOCAL_SAMPLING,
+		structuredOutputContracts: LM_STUDIO_PRODUCTION_STEP_OUTPUT_CONTRACTS,
+	};
+	const providerDefault = buildLmStudioChatCompletionsRequest({
+		...base,
+		reasoningEffort: "provider_default",
+	});
+	const explicitNone = buildLmStudioChatCompletionsRequest({
+		...base,
+		reasoningEffort: "none",
+	});
+
+	expect(providerDefault).toEqual({
+		model: "requested-local-model",
+		messages: [
+			{ role: "system", content: "system" },
+			{ role: "user", content: "prompt" },
+		],
+		temperature: 1,
+		top_p: 0.95,
+		top_k: 20,
+		response_format: {
+			type: "json_schema",
+			json_schema: {
+				name: "main_story_write_output",
+				strict: true,
+				schema: LM_STUDIO_PRODUCTION_STEP_OUTPUT_CONTRACTS.main_story_write.schema,
+			},
+		},
+	});
+	expect(explicitNone).toHaveProperty("reasoning_effort", "none");
 });
 
 it.each([

@@ -9,6 +9,7 @@ import { validateRunId } from "./run-file";
  */
 export type EvalCliCommand =
 	| { command: "run"; fixturePath: string; configPath?: string; resultsDirectory?: string }
+	| { command: "context"; fixturePath: string; resultsDirectory?: string }
 	| { command: "list"; resultsDirectory?: string }
 	| { command: "show"; runId: string; resultsDirectory?: string }
 	| { command: "compare"; leftRunId: string; rightRunId: string; resultsDirectory?: string };
@@ -76,6 +77,16 @@ export function parseEvalCliCommand(argv: readonly string[]): EvalCliCommand {
 			...(values["results-dir"] === undefined ? {} : { resultsDirectory: values["results-dir"] }),
 		};
 	}
+	if (command === "context") {
+		exactPositionals(positionals, 1, command);
+		rejectUnknownOptions(values, ["fixture", "results-dir"], command);
+		if (values.fixture === undefined) throw new CliOptionsError("--fixture is required");
+		return {
+			command,
+			fixturePath: values.fixture,
+			...(values["results-dir"] === undefined ? {} : { resultsDirectory: values["results-dir"] }),
+		};
+	}
 	if (command === "list") {
 		exactPositionals(positionals, 1, command);
 		rejectUnknownOptions(values, ["results-dir"], command);
@@ -103,5 +114,5 @@ export function parseEvalCliCommand(argv: readonly string[]): EvalCliCommand {
 			...(values["results-dir"] === undefined ? {} : { resultsDirectory: values["results-dir"] }),
 		};
 	}
-	throw new CliOptionsError("Expected the run, list, show, or compare command");
+	throw new CliOptionsError("Expected the run, context, list, show, or compare command");
 }

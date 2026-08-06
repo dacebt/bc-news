@@ -89,7 +89,7 @@ unchanged. After the established hygiene and burst stages, it keeps at most
 those bounds by the stable FNV hash of
 `activeRegionId|publicationDate|message.id`. `sampling_dropped` reports
 the messages removed by that sampling stage. These are restored baseline
-values, not newly tuned quality thresholds. The next context-budget capability
+values, not newly tuned quality thresholds. The eval-owned context benchmark
 measures exact representative requests before any later selection rule or
 numeric limit is adjusted.
 
@@ -285,11 +285,22 @@ Canonical acceptance has no model judge, quality threshold, byte pin, or source
 digest gate; retained output and source fingerprints remain human comparison
 evidence.
 
-Exact context-budget measurement for representative message loads is the next
-mapped capability. Until that measurement exists, the inherited deterministic
-sampler remains unchanged; this architecture introduces no new filtering,
-retrieval, or chunking policy and makes no claim about a model's usable context
-size.
+Exact context-budget measurement is an eval concern, not a production port.
+It reuses the production prompt builders, strict structured-output contracts,
+and pure LM Studio request builder, while an eval-local SDK runtime only lists
+the loaded LLM, applies its chat template, counts with its tokenizer, and reads
+its configured context length. The live command requires exactly one loaded
+Qwen model and the same model id across all four production-step configs; it
+never loads, switches, unloads, or contacts a hosted model.
+
+The canonical evidence corpus produces 208 prepared messages under the
+unchanged sampler, so its fixed measurement matrix is 1, 50, 100, 150, and 208.
+Each load preserves the retained message order and builds both copyedit requests
+from that load's actual writer drafts. Provider-reported usage is reconciled
+against model-native template/token counts and written as strict JSON. Schema
+constraints are recorded by name and digest rather than assigned a fictional
+token cost. This architecture still introduces no filtering, retrieval, or
+chunking policy; the production 300-message and 13-per-hour limits remain intact.
 
 The final reader check launches installed Google Chrome through
 `playwright-core`, blocks service workers, and installs a request-aborting

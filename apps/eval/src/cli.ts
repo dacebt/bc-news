@@ -2,12 +2,15 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { compareRuns } from "./compare";
 import { parseEvalCliCommand } from "./cli-options";
+import { runContextBenchmark } from "./context-benchmark-command";
+import { formatContextBenchmarkReport } from "./context-benchmark-report";
 import { formatRunComparison, formatRunDetail, formatRunListing, formatRunSummary } from "./report";
 import { listRunFiles, loadRunFile } from "./run-file";
 import { runCommand } from "./run-command";
 
 const USAGE = `Usage:
   pnpm --filter @bc-news/eval eval -- run --fixture <path> [--config <path>] [--results-dir <path>]
+  pnpm --filter @bc-news/eval eval -- context --fixture <path> [--results-dir <path>]
   pnpm --filter eval run eval -- list [--results-dir <path>]
   pnpm --filter eval run eval -- show <run-id> [--results-dir <path>]
   pnpm --filter eval run eval -- compare <left-run-id> <right-run-id> [--results-dir <path>]`;
@@ -65,6 +68,18 @@ async function main(): Promise<void> {
 			resultsDirectory: resultsDirectoryFor(command.resultsDirectory),
 		});
 		process.stdout.write(`${formatRunSummary(saved.run, saved.path)}\n`);
+		return;
+	}
+	if (command.command === "context") {
+		const defaultResultsDirectory = resolve(appDirectory, "context-results");
+		const resultsDirectory = command.resultsDirectory === undefined
+			? defaultResultsDirectory
+			: resolve(cwd, command.resultsDirectory);
+		const saved = await runContextBenchmark({
+			fixturePath: resolve(cwd, command.fixturePath),
+			resultsDirectory,
+		});
+		process.stdout.write(`${formatContextBenchmarkReport(saved.report, saved.path)}\n`);
 		return;
 	}
 	if (command.command === "list") {

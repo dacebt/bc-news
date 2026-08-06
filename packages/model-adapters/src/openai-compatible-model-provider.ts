@@ -1,5 +1,9 @@
 import { z } from "zod";
-import type { ExternalBilling, ModelProviderPort } from "@bc-news/generation-core";
+import type {
+	ExternalBilling,
+	ModelProviderPort,
+	ProductionModelStep,
+} from "@bc-news/generation-core";
 import type {
 	CalculatedBillingConfig,
 	LmStudioReasoningEffort,
@@ -106,6 +110,63 @@ interface HostedProviderInput {
 
 export type OpenAiCompatibleProviderInput = LocalProviderInput | HostedProviderInput;
 
+export interface LmStudioChatCompletionsRequestInput {
+	readonly requestedModel: string;
+	readonly productionStep: ProductionModelStep;
+	readonly system: string;
+	readonly user: string;
+	readonly sampling: LmStudioSamplingConfig;
+	readonly reasoningEffort: LmStudioReasoningEffort;
+	readonly structuredOutputContracts: LmStudioStructuredOutputContracts;
+}
+
+export interface LmStudioChatCompletionsRequestBody {
+	readonly model: string;
+	readonly messages: readonly [
+		{ readonly role: "system"; readonly content: string },
+		{ readonly role: "user"; readonly content: string },
+	];
+	readonly temperature: number;
+	readonly top_p: number;
+	readonly top_k: number;
+	readonly reasoning_effort?: Exclude<LmStudioReasoningEffort, "provider_default">;
+	readonly response_format: {
+		readonly type: "json_schema";
+		readonly json_schema: {
+			readonly name: string;
+			readonly strict: true;
+			readonly schema: Readonly<Record<string, unknown>>;
+		};
+	};
+}
+
+export function buildLmStudioChatCompletionsRequest(
+	input: LmStudioChatCompletionsRequestInput,
+): LmStudioChatCompletionsRequestBody {
+	const contract = input.structuredOutputContracts[input.productionStep];
+	return {
+		model: input.requestedModel,
+		messages: [
+			{ role: "system", content: input.system },
+			{ role: "user", content: input.user },
+		],
+		temperature: input.sampling.temperature,
+		top_p: input.sampling.top_p,
+		top_k: input.sampling.top_k,
+		...(input.reasoningEffort === "provider_default"
+			? {}
+			: { reasoning_effort: input.reasoningEffort }),
+		response_format: {
+			type: "json_schema",
+			json_schema: {
+				name: contract.name,
+				strict: true,
+				schema: contract.schema,
+			},
+		},
+	};
+}
+
 export function openAiCompatibleChatCompletionsUrl(rawBaseUrl: string): URL {
 	if (rawBaseUrl.trim() !== rawBaseUrl) {
 		throw new OpenAiCompatibleDeterministicError(
@@ -205,24 +266,23 @@ export function createOpenAiCompatibleModelProvider(
 	}
 	return {
 		async complete(request) {
-			const localRequest = input.execution === "local_inference"
-				? {
-						temperature: input.sampling.temperature,
-						top_p: input.sampling.top_p,
-						top_k: input.sampling.top_k,
-						...(input.reasoningEffort === "provider_default"
-							? {}
-							: { reasoning_effort: input.reasoningEffort }),
-						response_format: {
-							type: "json_schema",
-							json_schema: {
-								name: input.structuredOutputContracts[request.productionStep].name,
-								strict: true,
-								schema: input.structuredOutputContracts[request.productionStep].schema,
-							},
-						},
-					}
-				: {};
+			const requestBody = input.execution === "local_inference"
+				? buildLmStudioChatCompletionsRequest({
+						requestedModel: input.requestedModel,
+						productionStep: request.productionStep,
+						system: request.system,
+						user: request.user,
+						sampling: input.sampling,
+						reasoningEffort: input.reasoningEffort,
+						structuredOutputContracts: input.structuredOutputContracts,
+					})
+				: {
+						model: input.requestedModel,
+						messages: [
+							{ role: "system", content: request.system },
+							{ role: "user", content: request.user },
+						],
+					};
 			let response: Response;
 			try {
 				response = await fetch(endpoint, {
@@ -231,14 +291,7 @@ export function createOpenAiCompatibleModelProvider(
 						Authorization: `Bearer ${input.execution === "hosted_inference" ? input.apiKey : "lmstudio"}`,
 						"Content-Type": "application/json",
 					},
-					body: JSON.stringify({
-						model: input.requestedModel,
-						messages: [
-							{ role: "system", content: request.system },
-							{ role: "user", content: request.user },
-						],
-						...localRequest,
-					}),
+					body: JSON.stringify(requestBody),
 					signal: AbortSignal.timeout(600_000),
 				});
 			} catch (cause) {

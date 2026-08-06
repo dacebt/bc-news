@@ -119,13 +119,25 @@ proves, tests of glue and framework wiring, tests to satisfy coverage.
   and protected markdown spans. They cannot prove semantic equivalence or prose
   quality. Representative live-model evaluation remains required before model,
   prompt, or evidence-policy decisions are treated as production-ready.
-- Exact context-budget benchmarks are a later mapped capability and must exist
-  before the inherited evidence sampler is adjusted. Until then, tests and the
-  recorded request relationship protect the restored baseline: at most 300
-  messages, at most 13 from each UTC hour, stable FNV selection from
+- Exact context-budget measurement runs through
+  `pnpm --filter @bc-news/eval eval -- context --fixture packages/fixtures`.
+  Automated tests use a fake local runtime and fake completion endpoint; they
+  never invoke LM Studio. The accepted representative run requires exactly one
+  already-loaded local Qwen model, rejects any hosted or mixed-model config,
+  and never loads, unloads, or switches model state.
+- The canonical corpus prepares to 208 messages under the unchanged production
+  sampler, so the truthful representative matrix is 1, 50, 100, 150, and 208.
+  The benchmark records the corpus hash and ceiling; it does not pad or duplicate
+  messages to manufacture a 300-message row. The production baseline remains at
+  most 300 messages, at most 13 from each UTC hour, stable FNV selection from
   `activeRegionId|publicationDate|message.id`, and truthful `sampling_dropped`
-  accounting. No new filtering, retrieval, or
-  chunking policy is selected here.
+  accounting. No filtering, retrieval, or chunking policy changes here.
+- Each benchmark row retains the exact production request hash, structured-output
+  schema hash, loaded model context length, fixed templated input, evidence or
+  draft marginal, any nonnegative provider/runtime delta, provider-reported
+  input and completion usage, total, and remaining headroom. Component sums and
+  model identity are rejecting contracts; unsupported attribution is never
+  estimated.
 - A live four-response recorder is also a later mapped capability. The current
   walk replays the committed four-file set; it does not claim to record it.
 - Completion claims cite the tier that proved them. "Done" without evidence

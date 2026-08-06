@@ -17,8 +17,11 @@ export {
 	type OpenAiCompatibleRetryableErrorCode,
 } from "./errors";
 export {
+	buildLmStudioChatCompletionsRequest,
 	createOpenAiCompatibleModelProvider,
 	openAiCompatibleChatCompletionsUrl,
+	type LmStudioChatCompletionsRequestBody,
+	type LmStudioChatCompletionsRequestInput,
 	type OpenAiCompatibleProviderInput,
 } from "./openai-compatible-model-provider";
 export {
