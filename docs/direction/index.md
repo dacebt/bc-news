@@ -1,5 +1,8 @@
 # Direction
 
+- [Shape: real model evaluation harness](2026-08-06-real-model-evaluation-harness.shape.md) — Session boundaries, cadence, and success signal for separating verification domains and retaining real model behavior as durable evaluation evidence.
+- [Capability map: real model evaluation harness](2026-08-06-real-model-evaluation-harness.map.md) — Risk-ordered vertical capabilities and feature conventions for retaining and comparing real model behavior without conflating verification domains.
+- [Domain model: bc-news evaluation and verification](bc-news.model.md) — Operational ubiquitous-language glossary and bounded contexts for bc-news evaluation and verification.
 - [Shape: two-track editorial workflow rewrite](2026-08-05-editorial-workflow-rewrite.shape.md) — Session boundaries, cadence, and success signal for replacing the inherited three-stage generator and judge-centered eval with two writer-to-copyedit tracks and measured local-model context budgets.
 - [Capability map: two-track editorial workflow](2026-08-05-editorial-workflow-rewrite.map.md) — Risk-ordered vertical capabilities and stable conventions for the writer-to-copyedit generator, local context measurement, recording, and evaluation workflow.
 - [Shape: eval harness and recorded-provenance recovery](2026-08-05-eval-harness-recovery.shape.md) — Session boundaries, cadence, and success signal for recovering the valid harness redesign from an unapproved and internally contradictory dirty tree.
