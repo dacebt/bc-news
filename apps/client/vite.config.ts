@@ -7,6 +7,7 @@ import { defineConfig } from "vite";
 // the shared runtime used by both markdown and the newspaper shell.
 const MARKDOWN_DEPENDENCY_PACKAGES = [
 	"react-markdown",
+	"rehype-sanitize",
 	"remark-parse",
 	"remark-rehype",
 	"mdast-util-from-markdown",
@@ -44,6 +45,7 @@ const MARKDOWN_DEPENDENCY_PACKAGES = [
 	"unist-util-visit",
 	"unist-util-visit-parents",
 	"hast-util-to-jsx-runtime",
+	"hast-util-sanitize",
 	"hast-util-whitespace",
 	"unified",
 	"vfile",

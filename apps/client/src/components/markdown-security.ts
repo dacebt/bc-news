@@ -1,5 +1,12 @@
-// Raw HTML never renders: react-markdown skips HTML nodes by default, and the
-// disallowed list keeps active-content elements out even if a plugin changes that.
-// img is disallowed too: a remote src is a fetch beacon any reader triggers on
-// render, and edition prose has no legitimate use for embedded images.
-export const DISALLOWED_ELEMENTS = ["script", "iframe", "object", "embed", "img"];
+import type { Options } from "rehype-sanitize";
+
+export const ALLOWED_MARKDOWN_ELEMENTS = ["p", "strong", "em"] as const;
+
+// Model-authored game-chat prose has no attributes, URLs, or embedded content.
+// Unsupported markup unwraps to inert text; active elements never enter the DOM.
+export const MARKDOWN_SANITIZE_SCHEMA: Options = {
+	tagNames: [...ALLOWED_MARKDOWN_ELEMENTS],
+	attributes: {},
+	protocols: {},
+	strip: ["script", "style"],
+};

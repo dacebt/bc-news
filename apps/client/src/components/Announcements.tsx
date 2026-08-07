@@ -1,6 +1,6 @@
 import { Box, Divider, Flex, Heading, Text } from "@chakra-ui/react";
 import type { Announcement } from "@bc-news/contracts";
-import { MarkdownText } from "./MarkdownText";
+import { NewspaperText } from "./NewspaperText";
 
 export function Announcements({ announcements }: { announcements: Announcement[] }) {
 	return (
@@ -27,7 +27,7 @@ export function Announcements({ announcements }: { announcements: Announcement[]
 									{announcement.title}
 								</Heading>
 								<Box fontSize="sm" color="paper.ink" lineHeight="1.5">
-									<MarkdownText text={announcement.summary} />
+									<NewspaperText text={announcement.summary} />
 								</Box>
 							</Box>
 							{index < announcements.length - 1 && <Divider borderColor="paper.rule" />}

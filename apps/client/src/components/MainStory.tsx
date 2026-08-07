@@ -1,6 +1,6 @@
 import { Box, Flex, Heading, Text } from "@chakra-ui/react";
 import type { MainStory as MainStoryContent } from "@bc-news/contracts";
-import { MainStoryBody } from "./MainStoryBody";
+import { NewspaperText } from "./NewspaperText";
 import { PAPER_SERIF_NARROW } from "./typography";
 
 const TWO_COLUMN_MIN_BODY_LENGTH = 1200;
@@ -50,15 +50,11 @@ export function MainStory({ mainStory }: { mainStory: MainStoryContent }) {
 						fontFamily: PAPER_SERIF_NARROW,
 					},
 					"& > div > p": {
-						marginBottom: "1em",
 						textAlign: "left",
-					},
-					"& > div > p:last-child": {
-						marginBottom: 0,
 					},
 				}}
 			>
-				<MainStoryBody text={mainStory.body} />
+				<NewspaperText text={mainStory.body} />
 			</Box>
 		</Flex>
 	);
