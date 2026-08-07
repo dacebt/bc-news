@@ -5,10 +5,10 @@ title: >-
 description: >-
   Session boundaries, cadence, and success signal for separating verification domains and retaining real model behavior as durable evaluation evidence.
 tags: [wsd, direction, shape, evaluation, verification]
-status: stable
+status: deprecated
 generated:
   by: ebt-wsd/okf-v0.2
-  at: "2026-08-06T18:45:48Z"
+  at: "2026-08-07T19:31:52Z"
 ---
 # Shape: real model evaluation harness
 
