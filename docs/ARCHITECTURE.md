@@ -302,12 +302,16 @@ commit SHA, and `dirty: false`. Evaluation starts only from that clean commit;
 no second unbound workspace digest competes with the commit identity.
 
 Artifact version 1 remains the single-configuration, repetition-one historical
-boundary and retains its original transition semantics. Version 2 alone owns
+boundary and retains its original transition semantics. Versions 2 and 3 own
 the serial roster, positive repetitions, linked retries, multi-trial outcome
-counts, and benchmark continuation. The version-dispatched store rejects a
-cross-version replacement.
+counts, and benchmark continuation. Version 2 keeps the original prompt and
+copyedit-preservation semantics frozen. Version 3 freezes the corrected writer
+field-purpose contracts and treats leading or trailing whitespace-only
+separators as boundary whitespace while continuing to protect interior
+paragraph structure. The version-dispatched store rejects a cross-version
+replacement.
 
-The representative local version-2 declaration contains exactly four
+The representative local version-3 declaration contains exactly four
 configurations, in order: `qwen/qwen3.5-9b`, `openai/gpt-oss-20b`,
 `prism-ml/bonsai-27b`, and `google/gemma-4-e4b`. Each configuration assigns the
 same model to all four production steps with `temperature: 1`, `top_p: 0.95`,

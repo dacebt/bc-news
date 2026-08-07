@@ -47,15 +47,11 @@ Extract every noteworthy achievement and milestone from the chat messages, inclu
 ${fenceUntrustedTranscript(preparedEvidence)}
 
 [OUTPUT]
-Return valid JSON:
-{
-  "announcements": [
-    {
-      "title": "Brief achievement headline, plain text",
-      "summary": "What was accomplished, with markdown only for player names and emphasis"
-    }
-  ]
-}`;
+Return one valid JSON object matching this field contract:
+- announcements (array): zero or more noteworthy achievements;
+- each announcements item contains exactly:
+  - title (string): a brief plain-text achievement headline;
+  - summary (string): what was accomplished, with markdown permitted only as defined by the system formatting rules.`;
 }
 
 export function parseAnnouncementsWriterOutput(text: string): AnnouncementsDraft {

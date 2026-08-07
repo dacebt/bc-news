@@ -3,6 +3,7 @@ import {
 	CopyeditPreservationError,
 	attachAnnouncementIds,
 	buildAnnouncementsCopyeditPrompt,
+	buildAnnouncementsWriterPrompt,
 	parseAnnouncementsCopyeditOutput,
 	parseAnnouncementsWriterOutput,
 } from "../src/index";
@@ -19,6 +20,28 @@ const DRAFT = {
 		},
 	],
 };
+
+function evidence() {
+	return {
+		active_region_id: "7",
+		publication_date: "2026-01-25",
+		raw_count: 0,
+		after_filter_count: 0,
+		after_burst_count: 0,
+		final_count: 0,
+		drop_stats: { empty_after_trim: 0, too_short: 0, burst_merged: 0, sampling_dropped: 0 },
+		messages: [],
+	};
+}
+
+test("writer contract describes announcement fields without copyable placeholder values", () => {
+	const prompt = buildAnnouncementsWriterPrompt(evidence());
+
+	expect(prompt).toContain("announcements (array): zero or more noteworthy achievements");
+	expect(prompt).toContain("title (string): a brief plain-text achievement headline");
+	expect(prompt).not.toContain("Brief achievement headline, plain text");
+	expect(prompt).not.toContain("What was accomplished, with markdown only");
+});
 
 test("attaches stable internal ids and strips them from the accepted public product", () => {
 	const identified = attachAnnouncementIds(DRAFT);

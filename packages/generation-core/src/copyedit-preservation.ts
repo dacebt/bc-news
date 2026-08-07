@@ -102,7 +102,11 @@ function quotedSpans(text: string): string[] {
 function paragraphCount(text: string): number {
 	const normalized = text
 		.replace(/\r\n?|\u0085|\u2028/gu, "\n")
-		.replace(/\u2029/gu, "\n\n");
+		.replace(/\u2029/gu, "\n\n")
+		.trim();
+	if (normalized === "") {
+		return 0;
+	}
 	return normalized.split(/\n[^\S\n]*\n/u).length;
 }
 

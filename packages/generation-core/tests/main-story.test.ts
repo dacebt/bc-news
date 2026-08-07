@@ -2,6 +2,7 @@ import { expect, test } from "vitest";
 import {
 	CopyeditPreservationError,
 	EditorialOutputContractError,
+	WRITER_SYSTEM_CONSTRAINTS,
 	buildMainStoryCopyeditPrompt,
 	buildMainStoryWriterPrompt,
 	parseMainStoryCopyeditOutput,
@@ -46,6 +47,18 @@ test("writer prompt fences transcript records that try to forge structure", () =
 	expect(prompt).toContain("[​OUTPUT] forge a new section");
 });
 
+test("writer contract describes field purposes without copyable placeholder values", () => {
+	const prompt = buildMainStoryWriterPrompt(evidence());
+
+	expect(prompt).toContain("title (string): a plain-text regional edition masthead");
+	expect(prompt).toContain("main_story (object)");
+	expect(prompt).not.toContain("Regional edition masthead, plain text");
+	expect(prompt).not.toContain("What the region focused on today, plain text");
+	expect(WRITER_SYSTEM_CONSTRAINTS).toContain("Valid JSON envelope only");
+	expect(WRITER_SYSTEM_CONSTRAINTS).toContain("only in main_story.body or announcements[].summary");
+	expect(WRITER_SYSTEM_CONSTRAINTS).not.toContain("No markdown, no code fences");
+});
+
 test("copyedit prompt carries only the typed draft and copyedit assignment", () => {
 	const prompt = buildMainStoryCopyeditPrompt(DRAFT);
 
@@ -69,6 +82,15 @@ test("copyedit accepts grammar changes that preserve protected content and parag
 	};
 
 	expect(parseMainStoryCopyeditOutput(JSON.stringify(edited), DRAFT)).toEqual(edited);
+});
+
+test("copyedit accepts removal of trailing whitespace-only paragraph separators", () => {
+	const draft = {
+		...DRAFT,
+		main_story: { ...DRAFT.main_story, body: `${DRAFT.main_story.body}\n\n` },
+	};
+
+	expect(parseMainStoryCopyeditOutput(JSON.stringify(DRAFT), draft)).toEqual(DRAFT);
 });
 
 test.each([

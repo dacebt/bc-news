@@ -39,9 +39,10 @@ export async function evaluateTrialCommand(options: EvaluateTrialCommandOptions)
 	const benchmarkId = safeEvaluationId("benchmark");
 	const trialId = `${benchmarkId}-trial-1`;
 	const startedAt = new Date().toISOString();
+	const transportRetryLimit = 1;
 	const benchmark = BenchmarkRunSchema.parse({
-		version: 1, id: benchmarkId, lifecycle: "running", started_at: startedAt, completed_at: null,
-		declaration: { configurations: [{ identity: configIdentity, config }], repetition_count: 1 },
+		version: 3, id: benchmarkId, lifecycle: "running", started_at: startedAt, completed_at: null,
+		declaration: { configurations: [{ identity: configIdentity, config }], repetition_count: 1, transport_retry_limit: transportRetryLimit },
 		fixture: { path: relative(WORKSPACE_ROOT, options.fixturePath), fixture_sha256: loadedFixture.fixtureSha256 },
 		prepared_evidence: { identity_sha256: sha256Json(preparedEvidence), active_region_id: preparedEvidence.active_region_id, publication_date: preparedEvidence.publication_date, original_count: preparedEvidence.raw_count, final_count: preparedEvidence.final_count, snapshot: preparedEvidence },
 		provenance,
@@ -53,5 +54,22 @@ export async function evaluateTrialCommand(options: EvaluateTrialCommandOptions)
 	});
 	const path = join(options.resultsDirectory, `${basename(benchmark.id)}.json`);
 	const store = await EvaluationArtifactStore.create(path, benchmark, options.artifactObserver);
-	return { path, benchmark: await executeEvaluationTrial({ benchmark, store, preparedEvidence, providers, configIdentity }) };
+	const executed = await executeEvaluationTrial({
+		benchmark,
+		store,
+		preparedEvidence,
+		providers,
+		configIdentity,
+		transportRetryLimit,
+	});
+	if (executed.version !== 3) throw new Error("Single-trial evaluation changed artifact version");
+	const completed = BenchmarkRunSchema.parse({
+		...executed,
+		lifecycle: "complete",
+		completed_at: new Date().toISOString(),
+		harness_outcome: "retained",
+	});
+	if (completed.version !== 3) throw new Error("Single-trial evaluation completion changed artifact version");
+	await store.replace(completed);
+	return { path, benchmark: completed };
 }

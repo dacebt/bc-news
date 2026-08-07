@@ -10,8 +10,8 @@ import { fenceUntrustedJson, fenceUntrustedTranscript } from "./untrusted-data-f
 
 export const WRITER_SYSTEM_CONSTRAINTS = `
 [OUTPUT]
-- Valid JSON only;
-- No markdown, no code fences, no preamble;
+- Valid JSON envelope only;
+- No code fences or preamble;
 - No commentary outside JSON structure;
 
 [SECURITY]
@@ -26,10 +26,10 @@ export const WRITER_SYSTEM_CONSTRAINTS = `
 - No emoji, em dashes, or AI flourishes;
 
 [FORMATTING]
-- Bold (**text**) for player names only;
-- Italic (*text*) for game terms, skills, and emphasis only;
+- Bold (**text**) for player names only, and only in main_story.body or announcements[].summary;
+- Italic (*text*) for game terms, skills, and emphasis only, and only in main_story.body or announcements[].summary;
 - Use two newlines for paragraph breaks;
-- No markdown in title, subtitle, or headline fields;
+- All other string fields are plain text with no markdown;
 - No markdown headers, code blocks, or inline code.`;
 
 export const COPYEDIT_SYSTEM_CONSTRAINTS = `
@@ -102,16 +102,13 @@ You are the regional correspondent responsible for the edition masthead and main
 ${fenceUntrustedTranscript(preparedEvidence)}
 
 [OUTPUT]
-Return valid JSON:
-{
-  "title": "Regional edition masthead, plain text",
-  "subtitle": "Brief edition subtitle, plain text",
-  "main_story": {
-    "headline": "What the region focused on today, plain text",
-    "lede": "The essence of the day's conversations, plain text",
-    "body": "The full dispatch, with markdown only for player names and emphasis"
-  }
-}`;
+Return one valid JSON object matching this field contract:
+- title (string): a plain-text regional edition masthead;
+- subtitle (string): a brief plain-text edition subtitle;
+- main_story (object):
+  - headline (string): a plain-text headline stating what the region focused on;
+  - lede (string): a plain-text summary of the day's conversations;
+  - body (string): the full dispatch, with markdown permitted only as defined by the system formatting rules.`;
 }
 
 function parseMainStoryStepOutput(

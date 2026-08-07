@@ -193,7 +193,7 @@ proves, tests of glue and framework wiring, tests to satisfy coverage.
   the temporary path while preserving the primary `write_rejected` cause. V1
   validation does not call mutable production parsers, prompt builders,
   fencing, or product checks when re-validating historical evidence.
-- Version 2 alone validates serial benchmark lifecycle: the roster is the exact
+- Versions 2 and 3 validate serial benchmark lifecycle: the roster is the exact
   configuration-order/repetition-order Cartesian product; trials form an
   append-only prefix; only the final trial may run; retries link to the
   immediately previous eligible same-step failure with an identical request;
@@ -204,6 +204,12 @@ proves, tests of glue and framework wiring, tests to satisfy coverage.
   observer snapshot must parse before the verifier prints
   `evaluation: serial benchmark retained linked retries and continued
   later trials`.
+- Version 3 additionally freezes the current corrected writer requests and
+  copyedit-preservation parser. Contract tests require its system messages,
+  writer prompts, and dependent copyedit prompts to equal the production
+  builders at the version boundary, and require boundary-only blank separators
+  to remain non-structural. Version 1 and version 2 validation continue through
+  their frozen original prompt and preservation semantics.
 - The repository-owned benchmark-browse verifier creates strict retained
   evidence through the loopback provider and invokes the exported eval CLI
   application boundary for all four `benchmark` routes. It proves both the

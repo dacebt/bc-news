@@ -10,7 +10,7 @@ const MUTABLE_BOUNDARIES = new Set([
 ]);
 
 async function topLevelValidatorGraph(): Promise<Map<string, string>> {
-	const pending = ["evaluation-artifact.ts"];
+	const pending = ["evaluation-artifact-benchmark.ts"];
 	const visited = new Map<string, string>();
 	while (pending.length > 0) {
 		const file = pending.pop()!;

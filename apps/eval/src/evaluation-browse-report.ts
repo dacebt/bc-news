@@ -62,7 +62,7 @@ export function summarizeBenchmarkRun(run: BenchmarkRun) {
 		})),
 		policy: {
 			repetition_count: run.declaration.repetition_count,
-			transport_retry_limit: run.version === 2 ? run.declaration.transport_retry_limit : 0,
+			transport_retry_limit: run.version === 1 ? 0 : run.declaration.transport_retry_limit,
 		},
 		trials: run.trials.map((trial, index) => {
 			const configurationOrdinal = run.declaration.configurations.findIndex(

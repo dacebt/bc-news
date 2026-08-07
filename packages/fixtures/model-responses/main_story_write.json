@@ -2,6 +2,6 @@
 	"production_step": "main_story_write",
 	"provider": "migrated_fixture",
 	"model": "legacy/main-story-plus-packaging-v1",
-	"prompt_sha256": "15a35d12b12552ca4438e7c25d55858121bb733bbd203737a38d770717aca8de",
+	"prompt_sha256": "7209e421019b0c48be2b79059ca025df9f4be7546030d8c460dd5256298ad98b",
 	"text": "{\"title\":\"The Widmoria Muster\",\"subtitle\":\"January 25, 2026\",\"main_story\":{\"headline\":\"Dungeon Muster at Widmoria as the Region Reckons With Its Pyramid\",\"lede\":\"An evening expedition assembled itself in open chat while a newcomer's question about high-tier work got the same answer from every direction: the base of the pyramid is always Tier 1.\",\"body\":\"The evening's main event assembled itself over an hour of open chat. **Aryn** put out the call, \\\"im ready for dungeon crawls when everyone else is,\\\" and directions followed for anyone who needed them. **Archaelic** confessed, \\\"Would love to join, just dont have any plate.\\\" and was told a bow and a place in the back would do.\\n\\nBehind the outing sits a real ambition. **TinyHouseGamer** noted that \\\"damn R9 is doing T7 dungeons atm\\\", and **Ariakan** laid the region's position out plainly: \\\"im all for running t7s here domesctically, just hard to gather people with our pop\\\".\\n\\nThe day's other seminar was economics. **Peanuts** supplied the theory: \\\"its a pyramid , every time the pyramid gets bigger, but the base of the pyramid is always Tier1\\\". **HereticalSage** did the arithmetic, \\\"so in the end game you need thousands of t1s\\\".\"}}"
 }
