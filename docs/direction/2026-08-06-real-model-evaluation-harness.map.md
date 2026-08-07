@@ -5,10 +5,10 @@ title: >-
 description: >-
   Risk-ordered vertical capabilities and feature conventions for retaining and comparing real model behavior without conflating verification domains.
 tags: [wsd, direction, capability-map, evaluation, verification]
-status: stable
+status: deprecated
 generated:
   by: ebt-wsd/okf-v0.2
-  at: "2026-08-06T18:45:48Z"
+  at: "2026-08-07T22:08:38Z"
 ---
 # Capability map: real model evaluation harness
 

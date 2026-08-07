@@ -5,10 +5,10 @@ title: >-
 description: >-
   Risk-ordered vertical capabilities and stable conventions for the writer-to-copyedit generator, local context measurement, recording, and evaluation workflow.
 tags: [wsd, direction, capability-map, generation, evaluation]
-status: stable
+status: deprecated
 generated:
   by: ebt-wsd/okf-v0.2
-  at: "2026-08-06T01:22:13Z"
+  at: "2026-08-07T22:08:38Z"
 ---
 # Capability map: two-track editorial workflow
 
