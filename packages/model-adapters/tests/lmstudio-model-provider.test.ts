@@ -30,6 +30,8 @@ interface FakeModel {
 function result(overrides: Record<string, unknown> = {}) {
 	return {
 		content: '{"title":"native"}',
+		reasoningContent: "",
+		nonReasoningContent: '{"title":"native"}',
 		modelInfo: { identifier: "loaded-qwen" },
 		stats: {
 			stopReason: "eosFound",
@@ -137,10 +139,10 @@ it("uses the exact loaded model, native structured prediction, truthful evidence
 				type: "json",
 				jsonSchema: LM_STUDIO_PRODUCTION_STEP_OUTPUT_CONTRACTS.main_story_write.schema,
 			},
-			signal: expect.any(AbortSignal),
 		}),
 	);
 	const options = model.respond.mock.calls[0]?.[1] as Record<string, unknown>;
+	expect(options.signal).toBeInstanceOf(AbortSignal);
 	expect(options).not.toHaveProperty("reasoningEffort");
 	expect(options).not.toHaveProperty("reasoning_effort");
 	expect(options).not.toHaveProperty("raw");
@@ -164,9 +166,27 @@ it("never loads and rejects zero or ambiguous loaded-model matches", async () =>
 	expect(second.respond).not.toHaveBeenCalled();
 });
 
-it("preserves native content byte-for-byte for the application parser", async () => {
+it("selects only native non-reasoning content for the application parser", async () => {
+	const answer = '{"title":"native"}';
+	const model = loadedModel({
+		respond: vi.fn().mockResolvedValue(result({
+			content: `Thinking Process:\ninspect the request\n__LM_STUDIO_INTERNAL_LSEP__${answer}`,
+			reasoningContent: "Thinking Process:\ninspect the request\n",
+			nonReasoningContent: answer,
+		})),
+	});
+	queueClient([model]);
+	await expect(provider().complete(request)).resolves.toMatchObject({ text: answer });
+});
+
+it("preserves native non-reasoning content byte-for-byte for the application parser", async () => {
 	const malformed = '{"summary":"called it "good" today"}';
-	const model = loadedModel({ respond: vi.fn().mockResolvedValue(result({ content: malformed })) });
+	const model = loadedModel({
+		respond: vi.fn().mockResolvedValue(result({
+			content: malformed,
+			nonReasoningContent: malformed,
+		})),
+	});
 	queueClient([model]);
 	await expect(provider().complete(request)).resolves.toMatchObject({ text: malformed });
 });

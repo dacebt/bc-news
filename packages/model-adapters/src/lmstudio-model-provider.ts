@@ -153,7 +153,7 @@ function completionFromResult(result: PredictionResult, timeoutFired: boolean): 
 		);
 	}
 	return {
-		text: result.content,
+		text: result.nonReasoningContent,
 		provider: "lmstudio",
 		model: result.modelInfo.identifier,
 		execution: "local_inference",

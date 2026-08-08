@@ -147,7 +147,7 @@ function installNativeCompletions(input?: {
 		"announcements_copyedit",
 	]);
 	const requests: NativeRequest[] = [];
-	nativeSdk.respond.mockImplementation((chat, options) => {
+	nativeSdk.respond.mockImplementation((chat: NativeRequest["chat"], options: NativeRequest["options"]) => {
 		const step = steps[requests.length];
 		if (step === undefined) throw new Error("Unexpected native LM Studio completion");
 		requests.push({ step, chat, options });
@@ -155,6 +155,8 @@ function installNativeCompletions(input?: {
 		const completionTokens = 11;
 		return Promise.resolve({
 			content: RESPONSE_TEXT[step],
+			reasoningContent: "",
+			nonReasoningContent: RESPONSE_TEXT[step],
 			modelInfo: { identifier: input?.responseModel ?? MODEL },
 			stats: {
 				stopReason: "eosFound",
