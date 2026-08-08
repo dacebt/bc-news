@@ -12,6 +12,11 @@ const RECORDED_MODEL_CONFIG = JSON.stringify({
 export default defineConfig(async () => {
 	const migrations = await readD1Migrations(path.join(import.meta.dirname, "migrations"));
 	return {
+		resolve: {
+			alias: {
+				"@lmstudio/sdk": path.resolve(import.meta.dirname, "tests/lmstudio-sdk-double.ts"),
+			},
+		},
 		plugins: [
 			cloudflareTest({
 				wrangler: { configPath: "./wrangler.jsonc" },

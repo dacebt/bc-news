@@ -5,7 +5,10 @@ import {
 	type AnnouncementsDraft, type AnnouncementsProduct, type MainStoryDraft, type MainStoryProduct,
 	type ModelCompletion, type ModelProviderPort, type ModelProviderRequest, type PreparedEvidence, type ProductionModelStep,
 } from "@bc-news/generation-core";
-import { OpenAiCompatibleRetryableError } from "@bc-news/model-adapters";
+import {
+	LmStudioRetryableError,
+	OpenAiCompatibleRetryableError,
+} from "@bc-news/model-adapters";
 import { BenchmarkRunSchema, deriveEvaluationTrialOutcome, type BenchmarkRun, type EvaluationFinding, type EvaluationTrial } from "./evaluation-artifact";
 import { EvaluationArtifactStore } from "./evaluation-artifact-store";
 import { findAnnouncementsFinalProductFailures, findMainStoryFinalProductFailures } from "./product-checks";
@@ -55,7 +58,9 @@ export async function executeEvaluationTrial(input: {
 					...candidate, transport: "failed" as const, failure: transportErrorIdentity(error), ended_at: endedAt.toISOString(),
 					duration_ms: Math.max(0, endedAt.getTime() - startedAt.getTime()), retry_classification: { state: "pending" as const }, parse: { state: "pending" as const },
 				} : candidate) });
-				const eligible = error instanceof OpenAiCompatibleRetryableError;
+				const eligible =
+					error instanceof OpenAiCompatibleRetryableError
+					|| error instanceof LmStudioRetryableError;
 				await updateTrial({ ...trial(), invocations: trial().invocations.map((candidate) => candidate.id === invocationId && candidate.transport === "failed" ? {
 					...candidate, retry_classification: { state: "classified" as const, eligible,
 						reason: eligible ? "provider classified the transport failure as retryable" : "provider classified the transport failure as deterministic" },

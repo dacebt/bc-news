@@ -1,7 +1,7 @@
 import { mkdir } from "node:fs/promises";
 import { basename, join, relative } from "node:path";
 import { prepareEvidence } from "@bc-news/generation-core";
-import { loadLiveBenchmarkConfig } from "./config";
+import { EvalConfigSchema, loadLiveBenchmarkConfig } from "./config";
 import {
 	BenchmarkRunSchema,
 	EvaluationCodeProvenanceSchema,
@@ -109,7 +109,10 @@ export async function evaluateBenchmarkCommand(options: EvaluateBenchmarkCommand
 			benchmark,
 			store,
 			preparedEvidence,
-			providers: providersFor(configuration.config, options.environment ?? process.env),
+			providers: providersFor(
+				EvalConfigSchema.parse(configuration.config),
+				options.environment ?? process.env,
+			),
 			configIdentity: roster.config_identity,
 			trialId: roster.trial_id,
 			transportRetryLimit: declared.transport_retry_limit,

@@ -19,6 +19,27 @@ import type {
 	ContextBenchmarkRuntime,
 } from "../src/context-benchmark-runtime";
 
+const nativeSdk = vi.hoisted(() => ({
+	constructor: vi.fn(),
+	listLoaded: vi.fn(),
+	respond: vi.fn(),
+	dispose: vi.fn(),
+}));
+
+vi.mock("@lmstudio/sdk", () => ({
+	LMStudioClient: class {
+		readonly llm = { listLoaded: nativeSdk.listLoaded };
+
+		constructor(options: unknown) {
+			nativeSdk.constructor(options);
+		}
+
+		async [Symbol.asyncDispose](): Promise<void> {
+			await nativeSdk.dispose();
+		}
+	},
+}));
+
 const MODEL = "qwen3-local";
 const MODEL_METADATA = {
 	identifier: MODEL,
@@ -67,18 +88,16 @@ const RESPONSE_TEXT = {
 } as const;
 
 type ProductionStep = keyof typeof RESPONSE_TEXT;
-type RequestBody = {
-	readonly model: string;
-	readonly messages: readonly [
+type NativeRequest = {
+	readonly step: ProductionStep;
+	readonly chat: readonly [
 		{ readonly role: "system"; readonly content: string },
 		{ readonly role: "user"; readonly content: string },
 	];
-	readonly response_format: {
-		readonly type: string;
-		readonly json_schema: {
-			readonly name: string;
-			readonly strict: boolean;
-			readonly schema: Readonly<Record<string, unknown>>;
+	readonly options: {
+		readonly structured: {
+			readonly type: "json";
+			readonly jsonSchema: Readonly<Record<string, unknown>>;
 		};
 	};
 };
@@ -88,7 +107,7 @@ function localStepConfig(model: string) {
 		adapter: "lmstudio",
 		model,
 		sampling: { temperature: 0, top_p: 1, top_k: 40 },
-		reasoning_effort: "none",
+		reasoning_effort: "provider_default",
 	};
 }
 
@@ -117,47 +136,56 @@ function createRuntime() {
 	return { runtime, close, getOnlyLoadedQwen };
 }
 
-function productionStep(body: RequestBody): ProductionStep {
-	return body.response_format.json_schema.name.replace(/_output$/u, "") as ProductionStep;
-}
-
-function installCompletionFetch(input?: {
+function installNativeCompletions(input?: {
 	readonly omitUsage?: boolean;
 	readonly responseModel?: string;
 }) {
-	const requests: RequestBody[] = [];
-	const fetchMock = vi.fn((_url: string | URL | Request, init?: RequestInit) => {
-		if (typeof init?.body !== "string") throw new Error("Expected a string request body");
-		const body = JSON.parse(init.body) as RequestBody;
-		requests.push(body);
-		const promptTokens = JSON.stringify(body.messages).length + 7;
+	const steps: ProductionStep[] = CONTEXT_BENCHMARK_LOADS.flatMap(() => [
+		"main_story_write",
+		"main_story_copyedit",
+		"announcements_write",
+		"announcements_copyedit",
+	]);
+	const requests: NativeRequest[] = [];
+	nativeSdk.respond.mockImplementation((chat, options) => {
+		const step = steps[requests.length];
+		if (step === undefined) throw new Error("Unexpected native LM Studio completion");
+		requests.push({ step, chat, options });
+		const promptTokens = JSON.stringify(chat).length + 7;
 		const completionTokens = 11;
-		return Promise.resolve(new Response(JSON.stringify({
-			model: input?.responseModel ?? MODEL,
-			choices: [{ message: { content: RESPONSE_TEXT[productionStep(body)] } }],
-			...(input?.omitUsage
-				? {}
-				: {
-					usage: {
-						prompt_tokens: promptTokens,
-						completion_tokens: completionTokens,
-						total_tokens: promptTokens + completionTokens,
-					},
-				}),
-		}), { status: 200, headers: { "Content-Type": "application/json" } }));
+		return Promise.resolve({
+			content: RESPONSE_TEXT[step],
+			modelInfo: { identifier: input?.responseModel ?? MODEL },
+			stats: {
+				stopReason: "eosFound",
+				...(input?.omitUsage
+					? {}
+					: {
+						promptTokensCount: promptTokens,
+						predictedTokensCount: completionTokens,
+						totalTokensCount: promptTokens + completionTokens,
+					}),
+			},
+		});
 	});
-	vi.stubGlobal("fetch", fetchMock);
-	return { requests, fetchMock };
+	nativeSdk.listLoaded.mockResolvedValue([{
+		identifier: MODEL,
+		modelKey: MODEL,
+		path: MODEL,
+		displayName: MODEL,
+		respond: nativeSdk.respond,
+	}]);
+	return { requests };
 }
 
 afterEach(() => {
-	vi.unstubAllGlobals();
-	vi.restoreAllMocks();
+	vi.clearAllMocks();
+	nativeSdk.dispose.mockResolvedValue(undefined);
 });
 
 test("benchmarks the exact dependent four-step roster at every canonical message load", async () => {
 	const { runtime, close } = createRuntime();
-	const { requests, fetchMock } = installCompletionFetch();
+	const { requests } = installNativeCompletions();
 	const resultsDirectory = await mkdtemp(join(tmpdir(), "bc-news-context-benchmark-"));
 	const times = [new Date("2026-08-06T12:00:00.000Z"), new Date("2026-08-06T12:01:00.000Z")];
 	const { path, report } = await runContextBenchmark({
@@ -174,30 +202,27 @@ test("benchmarks the exact dependent four-step roster at every canonical message
 		"announcements_write",
 		"announcements_copyedit",
 	]);
-	expect(requests.map(productionStep)).toEqual(expectedSteps);
+	expect(requests.map(({ step }) => step)).toEqual(expectedSteps);
 	expect(report.rows.map((row) => row.message_load)).toEqual(
 		CONTEXT_BENCHMARK_LOADS.flatMap((load) => [load, load, load, load]),
 	);
-	expect(fetchMock).toHaveBeenCalledTimes(20);
+	expect(nativeSdk.respond).toHaveBeenCalledTimes(20);
+	expect(nativeSdk.dispose).toHaveBeenCalledTimes(20);
 	expect(close).toHaveBeenCalledOnce();
 
 	const mainStoryDraft = parseMainStoryWriterOutput(RESPONSE_TEXT.main_story_write);
 	const announcementsDraft = parseAnnouncementsWriterOutput(RESPONSE_TEXT.announcements_write);
 	for (let offset = 0; offset < requests.length; offset += 4) {
-		expect(requests[offset + 1]?.messages[1].content).toBe(buildMainStoryCopyeditPrompt(mainStoryDraft));
-		expect(requests[offset + 3]?.messages[1].content).toBe(
+		expect(requests[offset + 1]?.chat[1].content).toBe(buildMainStoryCopyeditPrompt(mainStoryDraft));
+		expect(requests[offset + 3]?.chat[1].content).toBe(
 			buildAnnouncementsCopyeditPrompt(attachAnnouncementIds(announcementsDraft)),
 		);
 	}
 
 	for (const [index, request] of requests.entries()) {
-		expect(request.model).toBe(MODEL);
-		expect(request.response_format.type).toBe("json_schema");
-		expect(request.response_format.json_schema).toMatchObject({
-			name: `${expectedSteps[index]}_output`,
-			strict: true,
-		});
-		expect(request.response_format.json_schema.schema).toEqual(expect.objectContaining({ type: "object" }));
+		expect(request.step).toBe(expectedSteps[index]);
+		expect(request.options.structured.type).toBe("json");
+		expect(request.options.structured.jsonSchema).toEqual(expect.objectContaining({ type: "object" }));
 	}
 
 	expect(report.loads).toEqual(CONTEXT_BENCHMARK_LOADS);
@@ -266,7 +291,7 @@ test("rejects mixed local model names before opening the local runtime", async (
 
 test("rejects unavailable provider usage and closes the runtime", async () => {
 	const { runtime, close } = createRuntime();
-	installCompletionFetch({ omitUsage: true });
+	installNativeCompletions({ omitUsage: true });
 
 	await expect(runContextBenchmark({
 		fixturePath: REPRESENTATIVE_FIXTURE_PATH,
@@ -279,7 +304,7 @@ test("rejects unavailable provider usage and closes the runtime", async () => {
 
 test("rejects a completion from a model other than the loaded Qwen and closes the runtime", async () => {
 	const { runtime, close } = createRuntime();
-	installCompletionFetch({ responseModel: "different-model" });
+	installNativeCompletions({ responseModel: "different-model" });
 
 	await expect(runContextBenchmark({
 		fixturePath: REPRESENTATIVE_FIXTURE_PATH,

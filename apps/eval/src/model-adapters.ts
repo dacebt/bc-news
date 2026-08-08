@@ -5,7 +5,9 @@ import {
 	HostedModelAdapterConfigSchema,
 	LM_STUDIO_PRODUCTION_STEP_OUTPUT_CONTRACTS,
 	LmStudioAdapterConfigSchema,
+	LmStudioDeterministicError,
 	OpenAiCompatibleDeterministicError,
+	createLmStudioModelProvider,
 	createOpenAiCompatibleModelProvider,
 } from "@bc-news/model-adapters";
 
@@ -33,13 +35,12 @@ export function resolveModelProvider(
 		case "lmstudio": {
 			const baseUrl = environment.LMSTUDIO_BASE_URL;
 			if (baseUrl === undefined || baseUrl === "") {
-				throw new OpenAiCompatibleDeterministicError(
-					"openai_compatible_invalid_config",
+				throw new LmStudioDeterministicError(
+					"lmstudio_invalid_config",
 					`LMSTUDIO_BASE_URL is required for ${productionStep}`,
 				);
 			}
-			return createOpenAiCompatibleModelProvider({
-				execution: "local_inference",
+			return createLmStudioModelProvider({
 				baseUrl,
 				requestedModel: config.model,
 				sampling: config.sampling,

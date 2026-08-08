@@ -6,7 +6,7 @@ import {
 	MainStoryDraftSchema,
 	type ProductionModelStep,
 } from "@bc-news/generation-core";
-import { OpenAiCompatibleDeterministicError } from "./errors";
+import { LmStudioDeterministicError } from "./lmstudio-errors";
 
 type JsonSchema = Readonly<Record<string, unknown>>;
 
@@ -32,14 +32,14 @@ function assertInlineStrictJsonSchema(schema: JsonSchema): void {
 		if (candidate === null || typeof candidate !== "object") return;
 		const node = candidate as Record<string, unknown>;
 		if ("$ref" in node || "$defs" in node) {
-			throw new OpenAiCompatibleDeterministicError(
-				"openai_compatible_invalid_config",
+			throw new LmStudioDeterministicError(
+				"lmstudio_invalid_config",
 				"LM Studio structured output schema must be inline without $ref or $defs",
 			);
 		}
 		if (node.type === "object" && "properties" in node && node.additionalProperties !== false) {
-			throw new OpenAiCompatibleDeterministicError(
-				"openai_compatible_invalid_config",
+			throw new LmStudioDeterministicError(
+				"lmstudio_invalid_config",
 				"LM Studio structured output object schemas must reject additional properties",
 			);
 		}
@@ -53,8 +53,8 @@ export function lmStudioStructuredOutputContract(
 	schema: z.ZodType,
 ): LmStudioStructuredOutputContract {
 	if (!/^[A-Za-z0-9_-]+$/u.test(name)) {
-		throw new OpenAiCompatibleDeterministicError(
-			"openai_compatible_invalid_config",
+		throw new LmStudioDeterministicError(
+			"lmstudio_invalid_config",
 			"LM Studio structured output schema name is invalid",
 		);
 	}

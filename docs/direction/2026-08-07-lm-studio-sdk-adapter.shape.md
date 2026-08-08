@@ -24,6 +24,8 @@ generated:
   billing, cancellation, failure classification, parsing, and preservation.
 - Prove Node evaluation and local Worker execution on representative evidence;
   align context-benchmark connection rules and remove superseded LM Studio code.
+- Enable Cloudflare's documented `nodejs_compat` Worker flag required by the
+  SDK's published ESM bundle, subject to real bundle and runtime proof.
 
 ## Out of scope (deliberately)
 
@@ -36,7 +38,8 @@ generated:
 ## Known risks
 
 - Browser and outbound-WebSocket support are documented, but the installed SDK
-  has not run in local `workerd`; incompatibility blocks a fallback transport.
+  imports Node compatibility surfaces. `nodejs_compat` is the only authorized
+  compatibility mechanism; any further shim or fallback blocks completion.
 - Public prediction options do not visibly expose current `reasoning_effort`;
   preservation needs observed native behavior or a supported mapping.
 - Native structured output and statistics differ from the current envelope;

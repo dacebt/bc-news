@@ -79,7 +79,7 @@ it("requires a valid LM Studio binding and complete per-step config", () => {
 		adapter: "lmstudio",
 		model: "local-main",
 		sampling: LOCAL_SAMPLING,
-		reasoning_effort: "none",
+		reasoning_effort: "provider_default",
 	};
 	const modelConfig = { ...recordedConfig(), main_story_write: local };
 	expect(() => resolveGenerationPorts(envWith({ MODEL_CONFIG: JSON.stringify(modelConfig) }))).toThrow(
@@ -97,16 +97,17 @@ it("requires a valid LM Studio binding and complete per-step config", () => {
 
 it("rejects incomplete LM Studio model, sampling, and reasoning fields", () => {
 	for (const local of [
-		{ adapter: "lmstudio", sampling: LOCAL_SAMPLING, reasoning_effort: "none" },
-		{ adapter: "lmstudio", model: " \t ", sampling: LOCAL_SAMPLING, reasoning_effort: "none" },
-		{ adapter: "lmstudio", model: "local", sampling: undefined, reasoning_effort: "none" },
+		{ adapter: "lmstudio", sampling: LOCAL_SAMPLING, reasoning_effort: "provider_default" },
+		{ adapter: "lmstudio", model: " \t ", sampling: LOCAL_SAMPLING, reasoning_effort: "provider_default" },
+		{ adapter: "lmstudio", model: "local", sampling: undefined, reasoning_effort: "provider_default" },
 		{
 			adapter: "lmstudio",
 			model: "local",
 			sampling: { ...LOCAL_SAMPLING, top_p: 1.1 },
-			reasoning_effort: "none",
+			reasoning_effort: "provider_default",
 		},
 		{ adapter: "lmstudio", model: "local", sampling: LOCAL_SAMPLING },
+		{ adapter: "lmstudio", model: "local", sampling: LOCAL_SAMPLING, reasoning_effort: "none" },
 		{ adapter: "lmstudio", model: "local", sampling: LOCAL_SAMPLING, reasoning_effort: "maximum" },
 	]) {
 		expect(() => resolveGenerationPorts(envWith({

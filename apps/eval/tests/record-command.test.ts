@@ -89,7 +89,7 @@ function localAdapterConfig() {
 		adapter: "lmstudio",
 		model: "memory-model",
 		sampling: { temperature: 0, top_p: 1, top_k: 40 },
-		reasoning_effort: "none",
+		reasoning_effort: "provider_default",
 	};
 }
 

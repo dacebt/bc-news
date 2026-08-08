@@ -8,15 +8,7 @@ export const LmStudioSamplingConfigSchema = z.strictObject({
 	top_k: z.number().int().nonnegative(),
 });
 
-export const LmStudioReasoningEffortSchema = z.enum([
-	"provider_default",
-	"none",
-	"minimal",
-	"low",
-	"medium",
-	"high",
-	"xhigh",
-]);
+export const LmStudioReasoningEffortSchema = z.literal("provider_default");
 
 export const LmStudioAdapterConfigSchema = z.strictObject({
 	adapter: z.literal("lmstudio"),

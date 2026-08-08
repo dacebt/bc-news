@@ -125,10 +125,12 @@ This operational evidence does not replace or mutate the immutable edition.
 The model provider port returns content and provenance plus truthful execution,
 token-usage, and external-billing classifications. Recorded adapters report
 recorded replay, unavailable token measurement, and zero external billing. The
-shared OpenAI-compatible infrastructure adapter implements that existing port
-for LM Studio and hosted inference. LM Studio reports local inference, validates
-complete provider token counts when present, marks wholly absent counts
-unavailable, and reports zero external billing. Hosted responses must carry
+shared model-adapter package implements that existing port with the native LM
+Studio SDK for local inference and a separate OpenAI-compatible adapter for
+hosted inference. LM Studio selects an already-loaded model without loading or
+unloading model state, reports local inference, validates complete provider
+token counts when present, marks wholly absent counts unavailable, and reports
+zero external billing. Hosted responses must carry
 exactly one nonblank completion, the returned model, and complete internally
 consistent provider-reported token counts. Hosted cost is calculated only from
 those counts and operator-supplied per-million-token rates, retaining the
@@ -140,10 +142,13 @@ model.
 requested model, explicit local sampling and reasoning values, provider id,
 and pricing inputs. `LMSTUDIO_BASE_URL`,
 `HOSTED_MODEL_BASE_URL`, and `HOSTED_MODEL_API_KEY` are environment-only, and a
-base URL containing credentials rejects. Timeout, network/body-read failure,
-and HTTP 408/409/425/429/5xx are retryable within the Workflow's existing
-three-attempt model-call ceiling. Invalid configuration, ordinary 4xx, invalid
-JSON, response/usage rejection, and impossible cost are deterministic. Errors
+base URL containing credentials rejects. Native LM Studio timeout, model
+availability, SDK, and transport failures are retryable by default. Hosted
+timeout, network/body-read failure, and HTTP 408/409/425/429/5xx are retryable
+within the Workflow's existing three-attempt model-call ceiling. Invalid
+configuration, loaded-model resolution, incomplete output, response/usage
+rejection, ordinary hosted 4xx, invalid hosted JSON, and impossible cost are
+deterministic. Errors
 and retained evidence never contain authorization values, prompts, raw
 response bodies, or response-validation detail that could echo payloads.
 
@@ -182,9 +187,11 @@ For local development, copy `apps/generation/.dev.vars.example` to the ignored
 `MODEL_CONFIG` is strict and contains exactly
 `main_story_write`, `main_story_copyedit`, `announcements_write`, and
 `announcements_copyedit`. Every LM Studio adapter requires explicit finite
-`temperature` and `top_p`, integer `top_k`, and a `reasoning_effort` value from
-the supported roster. Non-default reasoning is sent unchanged; provider default
-omits that request field. LM Studio requests use strict inline JSON schemas
+`temperature` and `top_p`, integer `top_k`, and
+`reasoning_effort: provider_default`. The native SDK request omits reasoning
+effort because its public prediction options do not expose that control;
+explicit effort values reject instead of being approximated. LM Studio requests
+use strict inline JSON schemas
 derived from the same Zod contracts that validate outputs. Recorded and hosted
 requests do not receive local decoding controls.
 
@@ -315,7 +322,7 @@ The representative local version-3 declaration contains exactly four
 configurations, in order: `qwen/qwen3.5-9b`, `openai/gpt-oss-20b`,
 `prism-ml/bonsai-27b`, and `google/gemma-4-e4b`. Each configuration assigns the
 same model to all four production steps with `temperature: 1`, `top_p: 0.95`,
-`top_k: 20`, and `reasoning_effort: none`; the declaration uses one repetition
+`top_k: 20`, and `reasoning_effort: provider_default`; the declaration uses one repetition
 and a transport retry limit of one. It remains ignored local evidence, runs
 serially through `benchmark run`, and is inspected through `benchmark summary`.
 The summary must retain every actual trial outcome and exact configuration

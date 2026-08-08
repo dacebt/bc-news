@@ -3,7 +3,7 @@
 # they may intentionally use the same model. The generation Worker has no
 # packaging or judge model slot.
 LMSTUDIO_BASE_URL="http://127.0.0.1:1234/v1"
-MODEL_CONFIG='{"main_story_write":{"adapter":"lmstudio","model":"replace-with-local-model-id","sampling":{"temperature":1,"top_p":0.95,"top_k":20},"reasoning_effort":"none"},"main_story_copyedit":{"adapter":"lmstudio","model":"replace-with-local-model-id","sampling":{"temperature":1,"top_p":0.95,"top_k":20},"reasoning_effort":"none"},"announcements_write":{"adapter":"lmstudio","model":"replace-with-local-model-id","sampling":{"temperature":1,"top_p":0.95,"top_k":20},"reasoning_effort":"none"},"announcements_copyedit":{"adapter":"lmstudio","model":"replace-with-local-model-id","sampling":{"temperature":1,"top_p":0.95,"top_k":20},"reasoning_effort":"none"}}'
+MODEL_CONFIG='{"main_story_write":{"adapter":"lmstudio","model":"replace-with-local-model-id","sampling":{"temperature":1,"top_p":0.95,"top_k":20},"reasoning_effort":"provider_default"},"main_story_copyedit":{"adapter":"lmstudio","model":"replace-with-local-model-id","sampling":{"temperature":1,"top_p":0.95,"top_k":20},"reasoning_effort":"provider_default"},"announcements_write":{"adapter":"lmstudio","model":"replace-with-local-model-id","sampling":{"temperature":1,"top_p":0.95,"top_k":20},"reasoning_effort":"provider_default"},"announcements_copyedit":{"adapter":"lmstudio","model":"replace-with-local-model-id","sampling":{"temperature":1,"top_p":0.95,"top_k":20},"reasoning_effort":"provider_default"}}'
 
 # Hosted alternative: comment the local block above, uncomment this block,
 # replace all placeholders, and never commit the secret.

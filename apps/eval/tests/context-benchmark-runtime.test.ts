@@ -63,7 +63,6 @@ async function expectRuntimeError(
 describe("LM Studio base URL", () => {
 	test.each([
 		["http://localhost:1234/v1", "ws://localhost:1234"],
-		["https://localhost:1234/api/", "wss://localhost:1234"],
 		["http://127.0.0.1:1234/v1", "ws://127.0.0.1:1234"],
 		["http://[::1]:1234/v1", "ws://[::1]:1234"],
 		["http://192.168.1.20:1234/v1", "ws://192.168.1.20:1234"],
@@ -80,6 +79,7 @@ describe("LM Studio base URL", () => {
 		"http://user:secret@localhost:1234/v1",
 		"http://localhost:1234/v1?token=secret",
 		"http://localhost:1234/v1#fragment",
+		"https://localhost:1234/api/",
 	])("rejects malformed or decorated URL %j", (input) => {
 		expect(() => lmStudioSdkBaseUrl(input)).toThrowError(
 			expect.objectContaining({ code: "invalid_lmstudio_base_url" }),

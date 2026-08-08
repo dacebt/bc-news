@@ -1,5 +1,5 @@
 {
 	"extends": "../../tsconfig.base.json",
-	"compilerOptions": { "rootDir": ".", "lib": ["ES2023", "DOM"] },
+	"compilerOptions": { "rootDir": ".", "lib": ["ES2023", "DOM", "ESNext.Disposable"] },
 	"include": ["src/**/*.ts", "tests/**/*.ts"]
 }

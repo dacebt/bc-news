@@ -3,6 +3,7 @@
 	"name": "bc-news-generation",
 	"main": "src/index.ts",
 	"compatibility_date": "2026-08-03",
+	"compatibility_flags": ["nodejs_compat"],
 	"triggers": {
 		"crons": ["0 0 * * *"]
 	},

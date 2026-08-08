@@ -17,13 +17,24 @@ export {
 	type OpenAiCompatibleRetryableErrorCode,
 } from "./errors";
 export {
-	buildLmStudioChatCompletionsRequest,
 	createOpenAiCompatibleModelProvider,
 	openAiCompatibleChatCompletionsUrl,
-	type LmStudioChatCompletionsRequestBody,
-	type LmStudioChatCompletionsRequestInput,
 	type OpenAiCompatibleProviderInput,
 } from "./openai-compatible-model-provider";
+export { lmStudioSdkBaseUrl } from "./lmstudio-base-url";
+export {
+	LmStudioDeterministicError,
+	LmStudioRetryableError,
+	type LmStudioDeterministicErrorCode,
+	type LmStudioRetryableErrorCode,
+} from "./lmstudio-errors";
+export {
+	buildLmStudioPredictionRequest,
+	createLmStudioModelProvider,
+	type LmStudioPredictionRequest,
+	type LmStudioPredictionRequestInput,
+	type LmStudioProviderInput,
+} from "./lmstudio-model-provider";
 export {
 	LM_STUDIO_PRODUCTION_STEP_OUTPUT_CONTRACTS,
 	lmStudioStructuredOutputContract,

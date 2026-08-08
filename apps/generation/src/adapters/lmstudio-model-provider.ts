@@ -1,19 +1,15 @@
 import {
-	OpenAiCompatibleDeterministicError,
-	OpenAiCompatibleRetryableError,
 	LM_STUDIO_PRODUCTION_STEP_OUTPUT_CONTRACTS,
-	createOpenAiCompatibleModelProvider,
-	openAiCompatibleChatCompletionsUrl,
+	LmStudioDeterministicError,
+	LmStudioRetryableError,
+	createLmStudioModelProvider as createSharedLmStudioModelProvider,
+	lmStudioSdkBaseUrl,
 	type LmStudioReasoningEffort,
 	type LmStudioSamplingConfig,
 } from "@bc-news/model-adapters";
 
-export {
-	OpenAiCompatibleDeterministicError as LmStudioDeterministicError,
-	OpenAiCompatibleRetryableError as LmStudioRetryableError,
-};
-
-export const lmStudioChatCompletionsUrl = openAiCompatibleChatCompletionsUrl;
+export { LmStudioDeterministicError, LmStudioRetryableError };
+export const lmStudioNativeBaseUrl = lmStudioSdkBaseUrl;
 
 export function createLmStudioModelProvider(input: {
 	baseUrl: string;
@@ -21,8 +17,7 @@ export function createLmStudioModelProvider(input: {
 	sampling: LmStudioSamplingConfig;
 	reasoningEffort: LmStudioReasoningEffort;
 }) {
-	return createOpenAiCompatibleModelProvider({
-		execution: "local_inference",
+	return createSharedLmStudioModelProvider({
 		baseUrl: input.baseUrl,
 		requestedModel: input.model,
 		sampling: input.sampling,

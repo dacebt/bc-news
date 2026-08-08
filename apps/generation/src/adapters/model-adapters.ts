@@ -3,6 +3,7 @@ import type { ModelProviderPort, ProductionModelStep } from "@bc-news/generation
 import { recordedModelProvider } from "@bc-news/fixtures";
 import {
 	HostedModelAdapterConfigSchema,
+	LmStudioDeterministicError,
 	LmStudioAdapterConfigSchema,
 	OpenAiCompatibleDeterministicError,
 	createOpenAiCompatibleModelProvider,
@@ -30,7 +31,10 @@ export function resolveModelProvider(
 		try {
 			return work();
 		} catch (error) {
-			if (error instanceof OpenAiCompatibleDeterministicError) {
+			if (
+				error instanceof OpenAiCompatibleDeterministicError
+				|| error instanceof LmStudioDeterministicError
+			) {
 				throw new GenerationConfigError(error.message, { cause: error });
 			}
 			throw error;

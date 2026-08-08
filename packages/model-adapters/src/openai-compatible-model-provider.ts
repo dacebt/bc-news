@@ -1,40 +1,26 @@
 import { z } from "zod";
-import type {
-	ExternalBilling,
-	ModelProviderPort,
-	ProductionModelStep,
-} from "@bc-news/generation-core";
-import type {
-	CalculatedBillingConfig,
-	LmStudioReasoningEffort,
-	LmStudioSamplingConfig,
-} from "./config";
+import type { ExternalBilling, ModelProviderPort } from "@bc-news/generation-core";
+import type { CalculatedBillingConfig } from "./config";
 import {
 	OpenAiCompatibleDeterministicError,
 	OpenAiCompatibleRetryableError,
 } from "./errors";
-import { normalizeLmStudioJsonQuotes } from "./lmstudio-json-normalizer";
-import type { LmStudioStructuredOutputContracts } from "./lmstudio-structured-output";
-
-const PromptTokenDetailsSchema = z.strictObject({
-	cached_tokens: z.int().nonnegative().optional(),
-	audio_tokens: z.int().nonnegative().optional(),
-});
-
-const CompletionTokenDetailsSchema = z.strictObject({
-	reasoning_tokens: z.int().nonnegative().optional(),
-	audio_tokens: z.int().nonnegative().optional(),
-	accepted_prediction_tokens: z.int().nonnegative().optional(),
-	rejected_prediction_tokens: z.int().nonnegative().optional(),
-});
 
 const UsageSchema = z
 	.strictObject({
 		prompt_tokens: z.int().nonnegative(),
 		completion_tokens: z.int().nonnegative(),
 		total_tokens: z.int().nonnegative(),
-		prompt_tokens_details: PromptTokenDetailsSchema.optional(),
-		completion_tokens_details: CompletionTokenDetailsSchema.optional(),
+		prompt_tokens_details: z.strictObject({
+			cached_tokens: z.int().nonnegative().optional(),
+			audio_tokens: z.int().nonnegative().optional(),
+		}).optional(),
+		completion_tokens_details: z.strictObject({
+			reasoning_tokens: z.int().nonnegative().optional(),
+			audio_tokens: z.int().nonnegative().optional(),
+			accepted_prediction_tokens: z.int().nonnegative().optional(),
+			rejected_prediction_tokens: z.int().nonnegative().optional(),
+		}).optional(),
 	})
 	.refine((usage) => usage.total_tokens === usage.prompt_tokens + usage.completion_tokens);
 
@@ -55,116 +41,18 @@ const CompletionSchema = z.strictObject({
 			logprobs: z.null().optional(),
 		}),
 	]),
-	usage: UsageSchema.optional(),
+	usage: UsageSchema,
 	service_tier: z.string().nullable().optional(),
 	system_fingerprint: z.string().nullable().optional(),
 });
 
-const LmStudioCompletionSchema = z.strictObject({
-	id: z.string().trim().min(1).optional(),
-	object: z.literal("chat.completion").optional(),
-	created: z.int().nonnegative().optional(),
-	model: z.string().trim().min(1),
-	choices: z.tuple([
-		z.strictObject({
-			index: z.int().nonnegative().optional(),
-			message: z
-				.strictObject({
-					role: z.literal("assistant").optional(),
-					content: z.string().trim().min(1),
-					refusal: z.string().nullable().optional(),
-					reasoning: z.string().optional(),
-					reasoning_content: z.string().optional(),
-					tool_calls: z.tuple([]).optional(),
-				})
-				.refine(
-					(message) => message.reasoning === undefined || message.reasoning_content === undefined,
-				),
-			finish_reason: z.string().nullable().optional(),
-			logprobs: z.null().optional(),
-		}),
-	]),
-	usage: UsageSchema.optional(),
-	service_tier: z.string().nullable().optional(),
-	system_fingerprint: z.string().nullable().optional(),
-	stats: z.strictObject({}).optional(),
-});
-
-interface LocalProviderInput {
-	readonly execution: "local_inference";
-	readonly baseUrl: string;
-	readonly requestedModel: string;
-	readonly sampling: LmStudioSamplingConfig;
-	readonly reasoningEffort: LmStudioReasoningEffort;
-	readonly structuredOutputContracts: LmStudioStructuredOutputContracts;
-}
-
-interface HostedProviderInput {
+export interface OpenAiCompatibleProviderInput {
 	readonly execution: "hosted_inference";
 	readonly baseUrl: string;
 	readonly apiKey: string;
 	readonly provider: string;
 	readonly requestedModel: string;
 	readonly billing: CalculatedBillingConfig;
-}
-
-export type OpenAiCompatibleProviderInput = LocalProviderInput | HostedProviderInput;
-
-export interface LmStudioChatCompletionsRequestInput {
-	readonly requestedModel: string;
-	readonly productionStep: ProductionModelStep;
-	readonly system: string;
-	readonly user: string;
-	readonly sampling: LmStudioSamplingConfig;
-	readonly reasoningEffort: LmStudioReasoningEffort;
-	readonly structuredOutputContracts: LmStudioStructuredOutputContracts;
-}
-
-export interface LmStudioChatCompletionsRequestBody {
-	readonly model: string;
-	readonly messages: readonly [
-		{ readonly role: "system"; readonly content: string },
-		{ readonly role: "user"; readonly content: string },
-	];
-	readonly temperature: number;
-	readonly top_p: number;
-	readonly top_k: number;
-	readonly reasoning_effort?: Exclude<LmStudioReasoningEffort, "provider_default">;
-	readonly response_format: {
-		readonly type: "json_schema";
-		readonly json_schema: {
-			readonly name: string;
-			readonly strict: true;
-			readonly schema: Readonly<Record<string, unknown>>;
-		};
-	};
-}
-
-export function buildLmStudioChatCompletionsRequest(
-	input: LmStudioChatCompletionsRequestInput,
-): LmStudioChatCompletionsRequestBody {
-	const contract = input.structuredOutputContracts[input.productionStep];
-	return {
-		model: input.requestedModel,
-		messages: [
-			{ role: "system", content: input.system },
-			{ role: "user", content: input.user },
-		],
-		temperature: input.sampling.temperature,
-		top_p: input.sampling.top_p,
-		top_k: input.sampling.top_k,
-		...(input.reasoningEffort === "provider_default"
-			? {}
-			: { reasoning_effort: input.reasoningEffort }),
-		response_format: {
-			type: "json_schema",
-			json_schema: {
-				name: contract.name,
-				strict: true,
-				schema: contract.schema,
-			},
-		},
-	};
 }
 
 export function openAiCompatibleChatCompletionsUrl(rawBaseUrl: string): URL {
@@ -252,46 +140,29 @@ export function createOpenAiCompatibleModelProvider(
 	input: OpenAiCompatibleProviderInput,
 ): ModelProviderPort {
 	const endpoint = openAiCompatibleChatCompletionsUrl(input.baseUrl);
-	if (input.requestedModel.trim() === "") {
+	if (input.requestedModel.trim() === "" || input.apiKey.trim() === "") {
 		throw new OpenAiCompatibleDeterministicError(
 			"openai_compatible_invalid_config",
-			"OpenAI-compatible requested model must be nonblank",
-		);
-	}
-	if (input.execution === "hosted_inference" && input.apiKey.trim() === "") {
-		throw new OpenAiCompatibleDeterministicError(
-			"openai_compatible_invalid_config",
-			"Hosted OpenAI-compatible API key must be nonblank",
+			"Hosted OpenAI-compatible requested model and API key must be nonblank",
 		);
 	}
 	return {
 		async complete(request) {
-			const requestBody = input.execution === "local_inference"
-				? buildLmStudioChatCompletionsRequest({
-						requestedModel: input.requestedModel,
-						productionStep: request.productionStep,
-						system: request.system,
-						user: request.user,
-						sampling: input.sampling,
-						reasoningEffort: input.reasoningEffort,
-						structuredOutputContracts: input.structuredOutputContracts,
-					})
-				: {
-						model: input.requestedModel,
-						messages: [
-							{ role: "system", content: request.system },
-							{ role: "user", content: request.user },
-						],
-					};
 			let response: Response;
 			try {
 				response = await fetch(endpoint, {
 					method: "POST",
 					headers: {
-						Authorization: `Bearer ${input.execution === "hosted_inference" ? input.apiKey : "lmstudio"}`,
+						Authorization: `Bearer ${input.apiKey}`,
 						"Content-Type": "application/json",
 					},
-					body: JSON.stringify(requestBody),
+					body: JSON.stringify({
+						model: input.requestedModel,
+						messages: [
+							{ role: "system", content: request.system },
+							{ role: "user", content: request.user },
+						],
+					}),
 					signal: AbortSignal.timeout(600_000),
 				});
 			} catch (cause) {
@@ -329,10 +200,8 @@ export function createOpenAiCompatibleModelProvider(
 					{ cause },
 				);
 			}
-			const parsed = input.execution === "local_inference"
-				? LmStudioCompletionSchema.safeParse(candidate)
-				: CompletionSchema.safeParse(candidate);
-			if (!parsed.success || (input.execution === "hosted_inference" && parsed.data.usage === undefined)) {
+			const parsed = CompletionSchema.safeParse(candidate);
+			if (!parsed.success) {
 				throw new OpenAiCompatibleDeterministicError(
 					"openai_compatible_response_contract_rejected",
 					"OpenAI-compatible completion response rejected by the strict contract",
@@ -340,26 +209,17 @@ export function createOpenAiCompatibleModelProvider(
 			}
 			const usage = parsed.data.usage;
 			return {
-				text:
-					input.execution === "local_inference"
-						? normalizeLmStudioJsonQuotes(parsed.data.choices[0].message.content)
-						: parsed.data.choices[0].message.content,
-				provider: input.execution === "hosted_inference" ? input.provider : "lmstudio",
+				text: parsed.data.choices[0].message.content,
+				provider: input.provider,
 				model: parsed.data.model,
 				execution: input.execution,
-				token_usage:
-					usage === undefined
-						? { measurement: "unavailable" }
-						: {
-								measurement: "reported",
-								input_tokens: usage.prompt_tokens,
-								output_tokens: usage.completion_tokens,
-								total_tokens: usage.total_tokens,
-							},
-				external_billing:
-					input.execution === "hosted_inference"
-						? calculatedBilling(usage!, input.billing)
-						: { classification: "none", amount_usd: 0, reason: "local_inference" },
+				token_usage: {
+					measurement: "reported",
+					input_tokens: usage.prompt_tokens,
+					output_tokens: usage.completion_tokens,
+					total_tokens: usage.total_tokens,
+				},
+				external_billing: calculatedBilling(usage, input.billing),
 			};
 		},
 	};

@@ -23,7 +23,7 @@ import {
 } from "@bc-news/generation-core";
 import {
 	LM_STUDIO_PRODUCTION_STEP_OUTPUT_CONTRACTS,
-	buildLmStudioChatCompletionsRequest,
+	buildLmStudioPredictionRequest,
 	type LmStudioAdapterConfig,
 } from "@bc-news/model-adapters";
 import {
@@ -246,13 +246,11 @@ async function measureCompletion(input: {
 			`${input.step} at load ${input.messageLoad} exceeded the loaded context length`,
 		);
 	}
-	const requestBody = buildLmStudioChatCompletionsRequest({
-		requestedModel: input.config.model,
+	const requestBody = buildLmStudioPredictionRequest({
 		productionStep: input.step,
 		system: input.prompt.system,
 		user: input.prompt.user,
 		sampling: input.config.sampling,
-		reasoningEffort: input.config.reasoning_effort,
 		structuredOutputContracts: LM_STUDIO_PRODUCTION_STEP_OUTPUT_CONTRACTS,
 	});
 	const contract = LM_STUDIO_PRODUCTION_STEP_OUTPUT_CONTRACTS[input.step];

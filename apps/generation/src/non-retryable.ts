@@ -8,7 +8,10 @@ import {
 } from "@bc-news/generation-core";
 import { FixtureEvidenceMismatchError, RecordedModelProviderError } from "@bc-news/fixtures";
 import { D1ChatEvidenceError } from "./adapters/d1-chat-evidence";
-import { OpenAiCompatibleDeterministicError } from "@bc-news/model-adapters";
+import {
+	LmStudioDeterministicError,
+	OpenAiCompatibleDeterministicError,
+} from "@bc-news/model-adapters";
 import { GenerationConfigError } from "./config-error";
 
 const DETERMINISTIC_FAILURES = [
@@ -20,6 +23,7 @@ const DETERMINISTIC_FAILURES = [
 	FixtureEvidenceMismatchError,
 	RecordedModelProviderError,
 	OpenAiCompatibleDeterministicError,
+	LmStudioDeterministicError,
 	GenerationConfigError,
 	D1ChatEvidenceError,
 ] as const;

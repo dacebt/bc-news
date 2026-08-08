@@ -1,4 +1,8 @@
 import { LMStudioClient, type LLM } from "@lmstudio/sdk";
+import {
+	LmStudioDeterministicError,
+	lmStudioSdkBaseUrl as canonicalLmStudioSdkBaseUrl,
+} from "@bc-news/model-adapters";
 
 export type ContextBenchmarkRuntimeErrorCode =
 	| "invalid_lmstudio_base_url"
@@ -45,28 +49,14 @@ function invalidBaseUrl(message: string, cause?: unknown): ContextBenchmarkRunti
 }
 
 export function lmStudioSdkBaseUrl(openAiBaseUrl: string): string {
-	if (openAiBaseUrl.trim() !== openAiBaseUrl || openAiBaseUrl === "") {
-		throw invalidBaseUrl("LM Studio base URL must be nonblank and contain no surrounding whitespace");
-	}
-
-	let url: URL;
 	try {
-		url = new URL(openAiBaseUrl);
+		return canonicalLmStudioSdkBaseUrl(openAiBaseUrl);
 	} catch (cause) {
-		throw invalidBaseUrl("LM Studio base URL is not a valid URL", cause);
+		if (cause instanceof LmStudioDeterministicError) {
+			throw invalidBaseUrl(cause.message, cause);
+		}
+		throw cause;
 	}
-
-	if (url.protocol !== "http:" && url.protocol !== "https:") {
-		throw invalidBaseUrl("LM Studio base URL must use HTTP or HTTPS");
-	}
-	if (url.username !== "" || url.password !== "") {
-		throw invalidBaseUrl("LM Studio base URL must not include credentials");
-	}
-	if (url.search !== "" || url.hash !== "") {
-		throw invalidBaseUrl("LM Studio base URL must not include a query or fragment");
-	}
-	url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
-	return url.origin;
 }
 
 function identifiesQwen(model: Pick<LLM, "identifier" | "modelKey" | "path" | "displayName">): boolean {
