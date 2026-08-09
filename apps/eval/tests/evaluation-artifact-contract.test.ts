@@ -12,6 +12,12 @@ import {
 	TEST_SOURCE_PROVENANCE, clone, controlledEvaluation, rejectsWithoutChangingBytes, sha256Json, temporaryRoot,
 } from "./evaluation-artifact-test-support";
 
+function first<T>(items: readonly T[], label: string): T {
+	const item = items[0];
+	if (item === undefined) throw new Error(`Expected ${label}`);
+	return item;
+}
+
 test("accepts recovered retry evidence without classifying the trial as infrastructure incomplete", async () => {
 	const { result, resultsDirectory } = await controlledEvaluation();
 	const recovered = clone(result.benchmark);
@@ -146,7 +152,7 @@ test("accepts truthful resolved model provenance distinct from the requested mod
 	const resolved = clone(result.benchmark);
 	const invocation = resolved.trials[0]!.invocations[0]!;
 	if (invocation.transport !== "succeeded") throw new Error("expected succeeded invocation");
-	const requested = resolved.declaration.configurations[0].config.production_steps.main_story_write;
+	const requested = first(resolved.declaration.configurations, "one declaration").config.production_steps.main_story_write;
 	if (requested.adapter !== "openai_compatible_hosted") throw new Error("expected hosted declaration");
 	invocation.completion.model = "canonical/resolved-main-story-model";
 	expect(invocation.completion.model).not.toBe(requested.model);
@@ -173,15 +179,16 @@ test("binds usage and billing evidence to the declared adapter", async () => {
 	expect(BenchmarkRunSchema.safeParse(hostedBilling).success).toBe(false);
 
 	const local = clone(result.benchmark);
-	local.declaration.configurations[0].config.production_steps.main_story_write = {
+	const localDeclaration = first(local.declaration.configurations, "one local declaration");
+	localDeclaration.config.production_steps.main_story_write = {
 		adapter: "lmstudio",
 		model: "local/requested-model",
 		sampling: { temperature: 0.2, top_p: 0.95, top_k: 40 },
 		reasoning_effort: "provider_default",
 	};
-	const localIdentity = evaluationConfigIdentity(local.declaration.configurations[0].config);
-	local.declaration.configurations[0].identity = localIdentity;
-	local.trial_roster[0].config_identity = localIdentity;
+	const localIdentity = evaluationConfigIdentity(localDeclaration.config);
+	localDeclaration.identity = localIdentity;
+	first(local.trial_roster, "one local roster member").config_identity = localIdentity;
 	local.trials[0]!.config_identity = localIdentity;
 	for (const invocation of local.trials[0]!.invocations) invocation.config_identity = localIdentity;
 	const localInvocation = local.trials[0]!.invocations[0]!;
@@ -201,6 +208,20 @@ test("generated results do not change injected code provenance across runs", asy
 	expect(results).toHaveLength(2);
 	expect(results[0]!.benchmark.provenance.code).toEqual(TEST_SOURCE_PROVENANCE);
 	expect(results[1]!.benchmark.provenance.code).toEqual(TEST_SOURCE_PROVENANCE);
+});
+
+test("keeps malformed JSON and strict schema mismatch as the only model-output rejections", async () => {
+	const malformed = await controlledEvaluation(undefined, 1, { main_story_copyedit: "not json" });
+	expect(malformed.result.benchmark.trials[0]!.tracks.main_story.subject_outcome).toBe("parse_rejected");
+	expect(malformed.result.benchmark.trials[0]!.selected_invocation_ids.main_story_copyedit).toBeNull();
+
+	const retained = JSON.parse(await readFile(new URL("../../../packages/fixtures/model-responses/main_story_copyedit.json", import.meta.url), "utf8")) as { text: string };
+	const schemaInvalid = { ...(JSON.parse(retained.text) as Record<string, unknown>), invented: true };
+	const mismatch = await controlledEvaluation(undefined, 1, { main_story_copyedit: JSON.stringify(schemaInvalid) });
+	expect(mismatch.result.benchmark.trials[0]!.tracks.main_story.subject_outcome).toBe("contract_rejected");
+	expect(Object.keys(mismatch.result.benchmark.outcome_counts)).toEqual([
+		"completed", "parse_rejected", "contract_rejected", "infrastructure_incomplete",
+	]);
 });
 
 test("live evaluation rejects recorded adapters before artifact creation", async () => {

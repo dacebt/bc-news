@@ -3,17 +3,20 @@ import {
 	COPYEDIT_SYSTEM_CONSTRAINTS,
 	PRODUCTION_MODEL_STEPS,
 	WRITER_SYSTEM_CONSTRAINTS,
+	announcementsFinalProductDiagnostics,
 	attachAnnouncementIds,
 	buildAnnouncementsCopyeditPrompt,
 	buildAnnouncementsWriterPrompt,
 	buildMainStoryCopyeditPrompt,
 	buildMainStoryWriterPrompt,
+	mainStoryFinalProductDiagnostics,
 	modelUsageRecord,
-	parseAnnouncementsCopyeditOutput,
+	parseAnnouncementsCopyeditOutputWithDiagnostics,
 	parseAnnouncementsWriterOutput,
-	parseMainStoryCopyeditOutput,
+	parseMainStoryCopyeditOutputWithDiagnostics,
 	parseMainStoryWriterOutput,
 	type AnnouncementsProduct,
+	type EditorialDiagnostic,
 	type MainStoryProduct,
 	type ModelCompletion,
 	type ModelProviderPort,
@@ -43,6 +46,7 @@ export interface ProductionStepObservation {
 export interface ProductionStepsExecution {
 	readonly steps: readonly EvalStep[];
 	readonly products: EvalProducts;
+	readonly diagnostics: readonly EditorialDiagnostic[];
 	readonly observations: readonly ProductionStepObservation[];
 }
 
@@ -94,7 +98,10 @@ export async function executeProductionSteps(
 		system: COPYEDIT_SYSTEM_CONSTRAINTS,
 		user: mainStoryCopyeditUser,
 	});
-	const mainStory = parseMainStoryCopyeditOutput(mainStoryCopyedit.completion.text, mainStoryDraft);
+	const mainStory = parseMainStoryCopyeditOutputWithDiagnostics(
+		mainStoryCopyedit.completion.text,
+		mainStoryDraft,
+	);
 
 	const announcementsWriterUser = buildAnnouncementsWriterPrompt(preparedEvidence);
 	const announcementsWriter = await completeStep({
@@ -113,16 +120,22 @@ export async function executeProductionSteps(
 		system: COPYEDIT_SYSTEM_CONSTRAINTS,
 		user: announcementsCopyeditUser,
 	});
-	const announcements = parseAnnouncementsCopyeditOutput(
+	const announcements = parseAnnouncementsCopyeditOutputWithDiagnostics(
 		announcementsCopyedit.completion.text,
 		identifiedAnnouncements,
 	);
+	const diagnostics = [
+		...mainStory.diagnostics,
+		...mainStoryFinalProductDiagnostics(mainStory.product, preparedEvidence),
+		...announcements.diagnostics,
+		...announcementsFinalProductDiagnostics(announcements.product, preparedEvidence),
+	];
 
 	const outputs: Readonly<Record<ProductionModelStep, Record<string, unknown>>> = {
 		main_story_write: mainStoryDraft,
-		main_story_copyedit: mainStory,
+		main_story_copyedit: mainStory.product,
 		announcements_write: announcementsDraft,
-		announcements_copyedit: announcements,
+		announcements_copyedit: announcements.product,
 	};
 	const completedSteps = [
 		mainStoryWriter,
@@ -135,7 +148,8 @@ export async function executeProductionSteps(
 			...completedSteps[index]!.step,
 			output: outputs[productionStep],
 		})),
-		products: { mainStory, announcements },
+		products: { mainStory: mainStory.product, announcements: announcements.product },
+		diagnostics,
 		observations: completedSteps.map(({ request, completion }) => ({ request, completion })),
 	};
 }

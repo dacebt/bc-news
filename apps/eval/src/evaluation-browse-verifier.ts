@@ -153,7 +153,7 @@ export async function verifyEvaluationBenchmarkBrowsing(temporaryRoot?: string):
 			sourceProvenance: FIRST_PROVENANCE,
 		});
 		const evaluated = BenchmarkRunSchema.parse(result.benchmark);
-		assertProof(evaluated.version === 4, "current_artifact_version", "Browse proof did not produce current artifact version 4");
+		assertProof(evaluated.version === 5, "current_artifact_version", "Browse proof did not produce current artifact version 5");
 		await unlink(result.path);
 		const newer = withArtifactIdentity(evaluated, "a-chronologically-newer", evaluated.started_at);
 		const older = withArtifactIdentity(
@@ -182,6 +182,7 @@ export async function verifyEvaluationBenchmarkBrowsing(temporaryRoot?: string):
 		assertProof(BenchmarkRunSchema.safeParse(JSON.parse(showOutput) as unknown).success, "show_route_invalid", "Explicit-directory benchmark show did not emit the complete strict artifact");
 		const summary = summarizeBenchmarkRun(older);
 		assertProof(summary.trials.length === 2, "summary_trial_attribution_missing", "Multi-configuration summary omitted retained trials");
+		assertProof(summary.trials.every((trial) => "diagnostics" in trial.tracks.main_story && "diagnostics" in trial.tracks.announcements), "summary_diagnostics_missing", "Benchmark summary omitted track diagnostic details");
 		assertProof(summary.trials.every((trial, index) => trial.ordinal === index + 1
 			&& trial.configuration_ordinal === index + 1
 			&& trial.configuration_identity === older.declaration.configurations[index]?.identity

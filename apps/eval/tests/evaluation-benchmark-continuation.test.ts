@@ -29,8 +29,8 @@ test("retains retries and continues independent tracks and later trials", async 
 	await verifyEvaluationBenchmarkContinuation(root);
 	const [artifactName] = await readdir(join(root, "results"));
 	const benchmark = BenchmarkRunSchema.parse(JSON.parse(await readFile(join(root, "results", artifactName!), "utf8")) as unknown);
-	expect(benchmark.version).toBe(4);
-	if (benchmark.version !== 4) throw new Error("expected version 4 benchmark");
+	expect(benchmark.version).toBe(5);
+	if (benchmark.version !== 5) throw new Error("expected version 5 benchmark");
 
 	const prematureExhaustion = clone(benchmark);
 	const exhaustedTrial = prematureExhaustion.trials.find(({ subject_outcome }) => subject_outcome === "infrastructure_incomplete");

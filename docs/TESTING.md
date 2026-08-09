@@ -40,26 +40,36 @@ retained model-evaluation attempt.
 **Model evaluation** uses `benchmark run --fixture <path> --config <path>
 [--results-dir <path>]` to observe an ordered configuration and repetition
 roster serially. Its strict Benchmark Run retains every reached Step Invocation
-before transport and before parsing. Model rejection is a typed subject outcome
-and can coexist with `harness_outcome: retained`; invalid configuration or an
+before transport and before parsing. Malformed JSON, strict schema mismatch,
+and infrastructure-incomplete execution are distinct typed subject outcomes and
+can coexist with `harness_outcome: retained`; invalid configuration or an
 untrustworthy create, write, or reparse is a harness failure and stops.
 Evaluation reports behavior, provenance, and deterministic findings without a
 judge, score, or acceptance verdict. Eligible transport failures receive only
 the declared bounded retries, with each attempt retained and linked. Provider
-exhaustion or model rejection closes its dependent track without suppressing
+exhaustion or schema rejection closes its dependent track without suppressing
 the independent editorial track or later declared trials. `benchmark list`,
 `benchmark show`, `benchmark summary`, and `benchmark compare` strictly browse
 this retained evidence. Comparison separates fixture, configuration, and
 provenance context from behavior and reports no score, judge result,
 recommendation, or acceptance decision.
 
-Current Benchmark Run version 4 retains LM Studio sampling posture as part of
-the declared evidence. A behavioral production baseline omits `sampling` from
+Current Benchmark Run version 5 retains LM Studio sampling posture and exact
+schema-valid copyedit diagnostics as declared evidence. A behavioral production
+baseline omits `sampling` from
 every LM Studio step, which sends no temperature, top-p, or top-k override. A
 deterministic drift, structure, reliability, or completion declaration supplies
 one complete model-specific tuple per step. Partial tuples reject. Explicit
 sampling can support deterministic evidence, but it is never labeled as a
-production-behavior baseline. Versions 1–3 remain frozen historical contracts.
+production-behavior baseline. Version 5 has exactly four subject outcomes:
+`completed`, `parse_rejected`, `contract_rejected`, and
+`infrastructure_incomplete`. Versions 1–4 remain frozen historical contracts.
+
+Malformed JSON or strict schema mismatch is the only terminal model-output
+failure. Infrastructure failure is classified separately. Every schema-valid
+grammar, punctuation, markdown, wording, preservation, or editorial-policy
+finding is retained as a non-terminal diagnostic after one copyedit pass and
+never causes another model call, rejection, or publication stop.
 
 **Fixture and context tooling** owns two different development artifacts.
 `fixture record-responses --fixture <path> --config <path> [--response-dir
@@ -80,7 +90,8 @@ parsed recorded responses, recompute request relations from the requests
 actually built, and assemble the final edition from the two copyedited
 products. This is an explicit acceptance gate over controlled evidence, not a
 live model evaluation. Its artifact is the historical Run File, not a
-Benchmark Run.
+Benchmark Run. Current Run Files require exact ordered diagnostics; historical
+files without the field report diagnostics as unknown, never as observed empty.
 
 **The composed skeleton walk** runs a fixed local conversation through the whole
 pipeline: ingest into a fresh isolated D1 database; the real scheduled
@@ -90,8 +101,9 @@ assembly, and publication; the operator status projection; API read; and the
 published/unavailable/Back reader experience in installed Chrome. It uses
 exactly four recorded responses and no production data, live model, paid
 service, or external origin. The status proof requires all seven generation
-steps in order and exactly four ordered recorded-replay usage records at zero
-external billing. The served edition must equal the two copyedited products,
+steps in order, exactly four ordered recorded-replay usage records at zero
+external billing, and the exact ordered diagnostics from the representative
+schema-valid copyedit. The served edition must equal the two copyedited products,
 derive grouped writer/copyeditor provenance from those four usages, and contain
 no internal announcement ids. Duplicate delivery must preserve edition bytes
 and usage, and an unknown pair must remain absent. Browser traffic is
@@ -130,13 +142,16 @@ failed:`, `acceptance failed:`, `fixture authoring failed:`, or `context
 benchmark failed:`. Failures before namespace recognition begin with `command
 failed:`; `eval failed:` is forbidden.
 
-The three evaluation verifiers print `evaluation:` observations. In
-particular, continuation ends with `evaluation: serial benchmark retained
+The three evaluation verifiers print `evaluation:` observations. Trial
+retention ends with `evaluation: diagnostics, schema rejection, infrastructure
+failure, and completion retained incrementally`, continuation ends with
+`evaluation: serial benchmark retained
 linked retries and continued later trials`, and browsing ends with `evaluation:
 evidence listed summarized and compared without verdicts`. Fixture proof ends
 with `fixture authoring: four strict v2 hosted responses retained not-applicable
-sampling, replayed, and compared`. Acceptance proof ends with `acceptance: four recorded production
-steps replayed request-linked and deterministic`. The composed walk prints none
+sampling, replayed, and compared`. Acceptance proof ends with `acceptance: four
+recorded production steps replayed request-linked and deterministic; diagnostics
+retained: 4`. The composed walk prints none
 of those exact verifier observations; it ends with its independent `WALK PASS`.
 
 ## What isolated tests defend here
@@ -227,6 +242,11 @@ proves, tests of glue and framework wiring, tests to satisfy coverage.
   declarations omit all three native SDK properties, explicit declarations
   retain an unchanged complete tuple, partial tuples reject, and versions 1–3
   still validate only against their frozen semantics.
+- Version 5 preserves version 4 sampling semantics and is the current
+  production-aligned contract. It completes schema-valid products with exact
+  preservation and final-product diagnostics and has only `completed`,
+  `parse_rejected`, `contract_rejected`, and `infrastructure_incomplete`
+  outcomes; versions 1–4 continue through their frozen parsers.
 - The repository-owned benchmark-browse verifier creates strict retained
   evidence through the loopback provider and invokes the exported eval CLI
   application boundary for all four `benchmark` routes. It proves both the

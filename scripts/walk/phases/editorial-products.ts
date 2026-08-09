@@ -1,6 +1,6 @@
 import { EditionSchema, MainStorySchema, type MainStory } from "@bc-news/contracts";
 import type { WalkContext, WalkPhase } from "../phase";
-import { readRecordedResponse } from "../recorded-response";
+import { readRecordedResponse } from "../recorded-response-reader";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value);

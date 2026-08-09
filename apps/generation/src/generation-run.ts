@@ -4,6 +4,7 @@ import { GenerationRunParamsSchema, type GenerationRunParams } from "@bc-news/co
 import {
 	COPYEDIT_SYSTEM_CONSTRAINTS,
 	WRITER_SYSTEM_CONSTRAINTS,
+	announcementsFinalProductDiagnostics,
 	assembleEdition,
 	attachAnnouncementIds,
 	buildAnnouncementsCopyeditPrompt,
@@ -11,12 +12,14 @@ import {
 	buildMainStoryCopyeditPrompt,
 	buildMainStoryWriterPrompt,
 	evidenceDateForPublicationDate,
+	mainStoryFinalProductDiagnostics,
 	modelUsageRecord,
-	parseAnnouncementsCopyeditOutput,
+	parseAnnouncementsCopyeditOutputWithDiagnostics,
 	parseAnnouncementsWriterOutput,
-	parseMainStoryCopyeditOutput,
+	parseMainStoryCopyeditOutputWithDiagnostics,
 	parseMainStoryWriterOutput,
 	prepareEvidence,
+	type EditorialDiagnostic,
 	type ModelUsageRecord,
 	type PreparedEvidence,
 } from "@bc-news/generation-core";
@@ -90,6 +93,7 @@ export class GenerationRun extends WorkflowEntrypoint<Env, GenerationRunParams> 
 		let failureStep: GenerationRunFailure["step"] = "configure-generation-run";
 		let completedSteps: GenerationStep[] = [];
 		let modelUsage: ModelUsageRecord[] = [];
+		let diagnostics: EditorialDiagnostic[] = [];
 
 		try {
 			const ports = await failNonRetryablyOnDeterministicErrors(() =>
@@ -100,7 +104,7 @@ export class GenerationRun extends WorkflowEntrypoint<Env, GenerationRunParams> 
 				recordGenerationRunProgress(
 					this.env.DB,
 					params,
-					{ currentStep: "prepare-evidence", completedSteps, modelUsage },
+					{ currentStep: "prepare-evidence", completedSteps, modelUsage, diagnostics },
 					new Date().toISOString(),
 				),
 			);
@@ -134,6 +138,7 @@ export class GenerationRun extends WorkflowEntrypoint<Env, GenerationRunParams> 
 					currentStep: "main_story_write",
 					completedSteps,
 					modelUsage,
+					diagnostics,
 				}, new Date().toISOString()),
 			);
 
@@ -155,6 +160,7 @@ export class GenerationRun extends WorkflowEntrypoint<Env, GenerationRunParams> 
 					currentStep: "main_story_copyedit",
 					completedSteps,
 					modelUsage,
+					diagnostics,
 				}, new Date().toISOString()),
 			);
 
@@ -166,19 +172,28 @@ export class GenerationRun extends WorkflowEntrypoint<Env, GenerationRunParams> 
 						user: buildMainStoryCopyeditPrompt(mainStoryDraft.product),
 					});
 					return {
-						product: parseMainStoryCopyeditOutput(completion.text, mainStoryDraft.product),
+						...parseMainStoryCopyeditOutputWithDiagnostics(
+							completion.text,
+							mainStoryDraft.product,
+						),
 						completion,
 					};
 				}),
 			);
 			completedSteps = [...completedSteps, "main_story_copyedit"];
 			modelUsage = [...modelUsage, modelUsageRecord("main_story_copyedit", mainStory.completion)];
+			diagnostics = [
+				...diagnostics,
+				...mainStory.diagnostics,
+				...mainStoryFinalProductDiagnostics(mainStory.product, preparedEvidence),
+			];
 			failureStep = "announcements_write";
 			await step.do("record-main-story-copyedit-status", BOUNDED_RETRIES, () =>
 				recordGenerationRunProgress(this.env.DB, params, {
 					currentStep: "announcements_write",
 					completedSteps,
 					modelUsage,
+					diagnostics,
 				}, new Date().toISOString()),
 			);
 
@@ -200,6 +215,7 @@ export class GenerationRun extends WorkflowEntrypoint<Env, GenerationRunParams> 
 					currentStep: "announcements_copyedit",
 					completedSteps,
 					modelUsage,
+					diagnostics,
 				}, new Date().toISOString()),
 			);
 
@@ -212,19 +228,28 @@ export class GenerationRun extends WorkflowEntrypoint<Env, GenerationRunParams> 
 						user: buildAnnouncementsCopyeditPrompt(identifiedAnnouncements),
 					});
 					return {
-						product: parseAnnouncementsCopyeditOutput(completion.text, identifiedAnnouncements),
+						...parseAnnouncementsCopyeditOutputWithDiagnostics(
+							completion.text,
+							identifiedAnnouncements,
+						),
 						completion,
 					};
 				}),
 			);
 			completedSteps = [...completedSteps, "announcements_copyedit"];
 			modelUsage = [...modelUsage, modelUsageRecord("announcements_copyedit", announcements.completion)];
+			diagnostics = [
+				...diagnostics,
+				...announcements.diagnostics,
+				...announcementsFinalProductDiagnostics(announcements.product, preparedEvidence),
+			];
 			failureStep = "validate-edition";
 			await step.do("record-announcements-copyedit-status", BOUNDED_RETRIES, () =>
 				recordGenerationRunProgress(this.env.DB, params, {
 					currentStep: "validate-edition",
 					completedSteps,
 					modelUsage,
+					diagnostics,
 				}, new Date().toISOString()),
 			);
 
@@ -244,6 +269,7 @@ export class GenerationRun extends WorkflowEntrypoint<Env, GenerationRunParams> 
 					currentStep: "publish-edition",
 					completedSteps,
 					modelUsage,
+					diagnostics,
 				}, new Date().toISOString()),
 			);
 
@@ -251,7 +277,13 @@ export class GenerationRun extends WorkflowEntrypoint<Env, GenerationRunParams> 
 				await publishEdition(this.env.DB, edition, new Date().toISOString());
 			});
 			await step.do("record-complete", BOUNDED_RETRIES, () =>
-				recordGenerationRunComplete(this.env.DB, params, modelUsage, new Date().toISOString()),
+				recordGenerationRunComplete(
+					this.env.DB,
+					params,
+					modelUsage,
+					diagnostics,
+					new Date().toISOString(),
+				),
 			);
 		} catch (error) {
 			const failure: GenerationRunFailure = {

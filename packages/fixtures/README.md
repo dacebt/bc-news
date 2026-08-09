@@ -44,9 +44,12 @@ packaging response and no judge directory.
 
 The writer records migrate retained v1 editorial content. The main-story
 record combines the old story with the old deterministic-packaging title and
-subtitle. The copyedit records are explicitly synthetic preservation copies,
-not newly generated Qwen output. Their provider and model labels make that
-provenance visible rather than implying a live re-record occurred.
+subtitle. The copyedit records are explicitly synthetic schema-valid products,
+not newly generated Qwen output. The main-story copyedit deliberately changes a
+number inside one quote and contains an em dash so the composed
+recorded-provider path retains exact preservation and final-product diagnostics
+while still publishing the copyedited product. Their provider and model labels
+make that provenance visible rather than implying a live re-record occurred.
 
 Committed absent-version records remain the strict legacy response contract
 and replay unchanged. The current recorder writes strict response version 2.

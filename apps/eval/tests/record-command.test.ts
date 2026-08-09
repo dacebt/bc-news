@@ -46,7 +46,7 @@ vi.mock("../src/model-adapters", async (importOriginal) => {
 			main_story: {
 				headline: "Aryn Organizes a Dungeon Muster",
 				lede: "Aryn organized a regional dungeon muster.",
-				body: "**Aryn** invited the region to a dungeon crawl.\n\n**Archaelic** joined the group.",
+				body: "**Aryn** invited the region to a dungeon crawl — together.\n\n**Archaelic** joined the group.",
 			},
 		}),
 		announcements_write: JSON.stringify({
@@ -253,8 +253,18 @@ test("binds every retained response to the exact dependent live request", async 
 	expect(result.responseDirectory).toBe(responseDirectory);
 	expect(result.comparison.differences).toEqual([]);
 	expect(result.replayProducts).toEqual(result.liveProducts);
+	expect(result.liveDiagnostics).toEqual(result.replayDiagnostics);
+	expect(result.liveDiagnostics).toEqual(expect.arrayContaining([
+		expect.objectContaining({
+			kind: "final_product",
+			production_step: "main_story_copyedit",
+			code: "forbidden_marker",
+		}),
+	]));
 	expect(formatRecordSummary(result)).toContain("Artifact version: 2");
 	expect(formatRecordSummary(result)).toContain("lmstudio/explicit(temperature=0, top_p=1, top_k=40)");
+	expect(formatRecordSummary(result)).toContain("Live diagnostics:");
+	expect(formatRecordSummary(result)).toContain("Replay diagnostics:");
 });
 
 test("retains provider-default and hosted sampling truth per production step", async () => {

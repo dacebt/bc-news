@@ -5,7 +5,8 @@ import { expect, test, vi } from "vitest";
 import { RECORDED_REPLAY_CONFIG_PATH } from "../src/recorded-replay-acceptance-verifier";
 import { REPRESENTATIVE_FIXTURE_PATH } from "../src/representative-fixture";
 import { runCommand } from "../src/run-command";
-import { listRunFiles, loadRunFile, saveRunFile } from "../src/run-file";
+import { RunFileSchema, listRunFiles, loadRunFile, saveRunFile } from "../src/run-file";
+import { formatRunDetail, formatRunListing, formatRunSummary } from "../src/report";
 
 test("round-trips a current strict four-step run", async () => {
 	const directory = await mkdtemp(join(tmpdir(), "bc-news-eval-roundtrip-"));
@@ -21,7 +22,50 @@ test("round-trips a current strict four-step run", async () => {
 
 	expect(loaded.id).toBe(copy.id);
 	expect(loaded.steps).toHaveLength(4);
+	expect(loaded.diagnostics).toEqual(copy.diagnostics);
+	expect(formatRunSummary(copy, path)).toContain("Diagnostics:");
+	expect(formatRunSummary(copy, path)).not.toContain("Diagnostics: unknown");
+	expect(formatRunListing([loaded])).toContain(`diagnostics: ${String(copy.diagnostics.length)} observed`);
 	await expect(readFile(path, "utf8")).resolves.toContain(copy.id);
+	const withoutDiagnostics = {
+		id: copy.id,
+		config: copy.config,
+		fixture: copy.fixture,
+		steps: copy.steps,
+		edition: copy.edition,
+		started_at: copy.started_at,
+		completed_at: copy.completed_at,
+	};
+	expect(RunFileSchema.safeParse(withoutDiagnostics).success).toBe(false);
+	expect(RunFileSchema.safeParse({
+		...copy,
+		diagnostics: [
+			{
+				kind: "final_product",
+				production_step: "announcements_copyedit",
+				code: "forbidden_marker",
+				message: "announcement diagnostic",
+			},
+			{
+				kind: "final_product",
+				production_step: "main_story_copyedit",
+				code: "forbidden_marker",
+				message: "main-story diagnostic",
+			},
+		],
+	}).success).toBe(false);
+});
+
+test("keeps absent historical diagnostics unknown instead of defaulting them to observed none", async () => {
+	const directory = await mkdtemp(join(tmpdir(), "bc-news-eval-historical-run-"));
+	const path = join(directory, "historical-run.json");
+	await writeFile(path, `${JSON.stringify({ id: "historical-run", started_at: "old" })}\n`, "utf8");
+
+	const loaded = await loadRunFile("historical-run", directory);
+	expect(Object.hasOwn(loaded, "diagnostics")).toBe(false);
+	expect(loaded.diagnostics).toBeUndefined();
+	expect(formatRunListing([loaded])).toContain("diagnostics: unknown");
+	expect(formatRunDetail(loaded)).not.toContain("diagnostics");
 });
 
 test("recorded replay reports no token measurement and no external billing", async () => {

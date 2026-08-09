@@ -1,31 +1,10 @@
+import type {
+	PreservationDiagnostic,
+	PreservationDiagnosticCode,
+} from "./editorial-diagnostics";
 import type { ProductionModelStep } from "./ports";
 
 type CopyeditStep = "main_story_copyedit" | "announcements_copyedit";
-type CopyeditPreservationErrorCode =
-	| "announcement_count"
-	| "announcement_identity"
-	| "field_shape"
-	| "paragraph_count"
-	| "quoted_span"
-	| "numeric_literal"
-	| "protected_markdown"
-	| "protected_value";
-
-export class CopyeditPreservationError extends Error {
-	readonly productionStep: CopyeditStep;
-	readonly code: CopyeditPreservationErrorCode;
-
-	constructor(
-		productionStep: CopyeditStep,
-		code: CopyeditPreservationErrorCode,
-		message: string,
-	) {
-		super(message);
-		this.name = "CopyeditPreservationError";
-		this.productionStep = productionStep;
-		this.code = code;
-	}
-}
 
 type TextFieldComparison = readonly [path: string, before: string, after: string];
 
@@ -114,7 +93,15 @@ function sameOrderedValues(left: readonly string[], right: readonly string[]): b
 	return left.length === right.length && left.every((value, index) => value === right[index]);
 }
 
-function assertOrderedMatches(input: {
+function diagnostic(
+	productionStep: CopyeditStep,
+	code: PreservationDiagnosticCode,
+	message: string,
+): PreservationDiagnostic {
+	return { kind: "preservation", production_step: productionStep, code, message };
+}
+
+function orderedMatchDiagnostic(input: {
 	productionStep: CopyeditStep;
 	path: string;
 	before: string;
@@ -122,43 +109,44 @@ function assertOrderedMatches(input: {
 	pattern: RegExp;
 	code: "quoted_span" | "numeric_literal" | "protected_markdown";
 	description: string;
-}): void {
+}): PreservationDiagnostic | undefined {
 	const beforeMatches = matches(input.before, input.pattern);
 	const afterMatches = matches(input.after, input.pattern);
-	if (!sameOrderedValues(beforeMatches, afterMatches)) {
-		throw new CopyeditPreservationError(
+	return sameOrderedValues(beforeMatches, afterMatches)
+		? undefined
+		: diagnostic(
 			input.productionStep,
 			input.code,
 			`Copyedit changed ${input.description} in ${input.path}`,
 		);
-	}
 }
 
 /**
- * Enforces observable structural and protected-token invariants around the
- * narrow copyedit pass. Passing these checks is not proof of factual or
- * semantic equivalence; the model can still change unprotected prose meaning.
+ * Reports observable structural and protected-token differences around the
+ * narrow copyedit pass in field and condition order. An empty result is not
+ * proof of factual or semantic equivalence.
  */
-export function assertCopyeditPreservesTextFields(
+export function copyeditPreservationDiagnosticsForTextFields(
 	productionStep: Extract<ProductionModelStep, CopyeditStep>,
 	fields: readonly TextFieldComparison[],
-): void {
+): PreservationDiagnostic[] {
+	const diagnostics: PreservationDiagnostic[] = [];
 	for (const [path, before, after] of fields) {
 		if (paragraphCount(before) !== paragraphCount(after)) {
-			throw new CopyeditPreservationError(
+			diagnostics.push(diagnostic(
 				productionStep,
 				"paragraph_count",
 				`Copyedit changed paragraph count in ${path}`,
-			);
+			));
 		}
 		if (!sameOrderedValues(quotedSpans(before), quotedSpans(after))) {
-			throw new CopyeditPreservationError(
+			diagnostics.push(diagnostic(
 				productionStep,
 				"quoted_span",
 				`Copyedit changed quoted spans or their order in ${path}`,
-			);
+			));
 		}
-		assertOrderedMatches({
+		const numericLiteralDiagnostic = orderedMatchDiagnostic({
 			productionStep,
 			path,
 			before,
@@ -167,7 +155,8 @@ export function assertCopyeditPreservesTextFields(
 			code: "numeric_literal",
 			description: "numeric literals or their order",
 		});
-		assertOrderedMatches({
+		if (numericLiteralDiagnostic !== undefined) diagnostics.push(numericLiteralDiagnostic);
+		const protectedMarkdownDiagnostic = orderedMatchDiagnostic({
 			productionStep,
 			path,
 			before,
@@ -176,5 +165,7 @@ export function assertCopyeditPreservesTextFields(
 			code: "protected_markdown",
 			description: "protected bold or italic spans or their order",
 		});
+		if (protectedMarkdownDiagnostic !== undefined) diagnostics.push(protectedMarkdownDiagnostic);
 	}
+	return diagnostics;
 }

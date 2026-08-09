@@ -115,12 +115,14 @@ is never the edition's durable home (ADR-005).
 
 `generation_run_status` is direct D1 shell code, not a repository or a third
 port. It holds queued/running/complete/errored progress, ordered completed
-generation steps, structured terminal failure, and one usage record per
-completed production model step. Full-array replacement makes retried status
-writes idempotent; terminal rows cannot regress. Reads validate stored JSON and
-cross-field state strictly, and corruption surfaces as
+generation steps, structured terminal failure, one usage record per completed
+production model step, and ordered editorial diagnostics. Full-array
+replacement makes retried status writes idempotent; terminal rows cannot
+regress. Reads validate stored JSON and cross-field state strictly, and
+corruption surfaces as
 `generation_run_status_unreadable`, never absence or a partial projection.
-This operational evidence does not replace or mutate the immutable edition.
+This operational evidence does not replace or mutate the immutable edition;
+diagnostics live in generation status and never enter `EditionSchema`.
 
 The model provider port returns content and provenance plus truthful execution,
 token-usage, and external-billing classifications. Recorded adapters report
@@ -157,14 +159,18 @@ main-story writer receives prepared evidence and owns `title`, `subtitle`, and
 `main_story`; its copyeditor receives only that typed draft plus house rules.
 The announcements writer independently receives prepared evidence; its
 copyeditor receives only its typed draft plus stable internal announcement ids.
-Those ids prove count, correspondence, and order through copyediting and are
-stripped before publication. Copyedit preservation additionally observes
-paragraph count, quotes, numeric literals, and protected markdown spans.
-These mechanical checks narrow permissible mutation; they are not proof of
-semantic equivalence. Code validates both final products, adds identity,
-provenance, counts, and time, then assembles the edition deterministically.
-There is no packaging model, judge call, score, verdict, or automatic revision
-loop in production.
+Those ids support count, correspondence, and order diagnostics through
+copyediting and are stripped before publication. Malformed JSON or strict
+schema mismatch is the only terminal model-output failure. Infrastructure and
+provider failures are a separate failure class. Every schema-valid grammar,
+punctuation, markdown, wording, preservation, or editorial-policy finding is an
+ordered non-terminal diagnostic after the single copyedit pass; it never causes
+another model call, model-output rejection, or publication stop. Preservation
+diagnostics observe field shape, paragraph count, quotes, numeric literals, and
+protected markdown spans, but do not prove semantic equivalence. Code retains
+the diagnostics, adds identity, provenance, counts, and time, then assembles and
+publishes both final products deterministically. There is no packaging model,
+judge call, score, verdict, or automatic revision loop in production.
 
 ### Verification ownership
 
@@ -238,12 +244,13 @@ identities reject before artifact creation. Historical run files keep their
 existing directory, schema, and meaning. The eval application owns this
 artifact boundary directly, adding no third domain port.
 
-Current Benchmark Run artifact version 4 retains each declared LM Studio
-sampling posture. Provider-default behavior omits the tuple and all three SDK
-properties; explicit deterministic evidence retains one complete,
-model-specific tuple. Partial tuples reject before artifact creation. Versions
-1–3 remain version-dispatched historical boundaries and are never reinterpreted
-as provider-default evidence.
+Current Benchmark Run artifact version 5 retains each declared LM Studio
+sampling posture and every exact copyedit diagnostic. Provider-default behavior
+omits the tuple and all three SDK properties; explicit deterministic evidence
+retains one complete, model-specific tuple. Partial tuples reject before
+artifact creation. Its four subject outcomes are `completed`, `parse_rejected`,
+`contract_rejected`, and `infrastructure_incomplete`. Versions 1–4 remain
+version-dispatched historical boundaries and keep their frozen semantics.
 
 The artifact is exclusively created in `running` state before any provider
 call. Before transport, it atomically retains the exact assembled
@@ -254,8 +261,10 @@ parse remains pending before editorial parsing. A transport failure is retained
 with classification pending and then classified in a separate write. An
 eligible failure may append at most the declared number of retries; each retry
 points to the immediately previous same-step invocation and retains the exact
-same request and request hash. Deterministic transport failures and model-level
-parse, contract, preservation, or final-product findings never retry. Every
+same request and request hash. Deterministic transport failures, malformed JSON,
+and strict schema mismatch never retry. Preservation and final-product findings
+complete their track with the schema-valid product and retained diagnostics,
+also without retry. Every
 replacement validates and reparses
 before becoming authoritative. A failed pre-rename replacement always attempts
 to remove its unique temporary file without changing the authoritative bytes.
@@ -298,11 +307,11 @@ reports exhaustive paths only; it owns no score, judge, recommendation, or
 acceptance decision.
 
 Main-story and announcements evaluation tracks execute independently. A
-rejection in one does not suppress the other. Final-product findings are pure
-deterministic checks attributed to each track's terminal copyedit step;
-production retains its aggregate throwing wrapper and hard-failure behavior.
-Subject outcome describes model behavior, while harness outcome states only
-whether trustworthy evidence was retained.
+rejection in one does not suppress the other. Preservation and final-product
+findings are deterministic diagnostics attributed to each track's terminal
+copyedit step; a schema-valid product completes its track with those diagnostics
+retained. Subject outcome describes model behavior, while harness outcome states
+only whether trustworthy evidence was retained.
 
 Artifact version 1 is a historical-validation boundary, not an alias for the
 current production implementation. Eval-local frozen schemas, parsers, writer
@@ -331,10 +340,13 @@ counts, and benchmark continuation. Version 2 keeps the original prompt and
 copyedit-preservation semantics frozen. Version 3 freezes the corrected writer
 field-purpose contracts and treats leading or trailing whitespace-only
 separators as boundary whitespace while continuing to protect interior
-paragraph structure. Version 4 is the current production-aligned boundary and
-adds truthful provider-default versus complete explicit LM Studio sampling
-without changing versions 1–3. The version-dispatched store rejects a
-cross-version replacement.
+paragraph structure. Version 4 adds truthful provider-default versus complete
+explicit LM Studio sampling without changing versions 1–3. Version 5 is the
+current production-aligned boundary: it preserves version 4 sampling semantics,
+retains schema-valid preservation and final-product diagnostics with completed
+products, and narrows terminal model-output outcomes to malformed JSON or strict
+schema mismatch. The version-dispatched store rejects a cross-version
+replacement.
 
 The representative local deterministic declaration contains, in order,
 `qwen/qwen3.5-9b`, `prism-ml/bonsai-27b`, and `google/gemma-4-e4b`. Each assigns
@@ -427,9 +439,11 @@ the absent-evidence pair reaches a structured prepare-evidence failure with no
 model usage, and proves region 7 reaches complete with all seven ordered
 generation steps and exactly one recorded-replay usage record for each of the
 four production model steps, each with unavailable token measurement and zero
-external billing. It proves deterministic assembly serves the two recorded
-copyedited products. Repeated scheduled delivery must leave both edition bytes and
-retained usage unchanged. The walk does not invoke evaluation, fixture-authoring,
+external billing. It strictly observes the exact ordered preservation and
+final-product diagnostics carried by the representative schema-valid copyedit,
+then proves deterministic assembly serves that copyedited product. Repeated
+scheduled delivery must leave edition bytes, retained usage, and retained
+diagnostics unchanged. The walk does not invoke evaluation, fixture-authoring,
 context, or recorded-replay acceptance verifiers. It owns only its composed
 product observations and terminal `WALK PASS`; the exact successful observations
 from those direct verifiers must not appear in walk output.
@@ -443,12 +457,15 @@ and every differing path is reported rather than the first. Recorded-replay
 semantics require the exact ordered roster, four recorded-replay
 usages at zero external billing, outputs equal to the parsed recorded responses,
 request stamps recomputed from current builders and each step's actual input,
-and a final assembled edition equal to the two copyedited products. The evidence
-fixture remains identified by workspace-relative path and current bytes.
+ordered diagnostics, and a final assembled edition equal to the two copyedited
+products. Current Run Files require diagnostics; historical files without that
+field report diagnostic evidence as unknown rather than an empty observation.
+The evidence fixture remains identified by workspace-relative path and current
+bytes.
 Recorded-replay acceptance has no model judge, quality threshold, byte pin, or source
 digest gate; retained output and source fingerprints remain human comparison
 evidence. Its direct verifier prints
-`acceptance: four recorded production steps replayed request-linked and deterministic`
+`acceptance: four recorded production steps replayed request-linked and deterministic; diagnostics retained: 4`
 only after success.
 
 Exact context-budget measurement is invoked as `context benchmark --fixture

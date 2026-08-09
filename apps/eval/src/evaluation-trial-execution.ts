@@ -1,38 +1,42 @@
 import {
 	COPYEDIT_SYSTEM_CONSTRAINTS, WRITER_SYSTEM_CONSTRAINTS, attachAnnouncementIds,
+	announcementsFinalProductDiagnostics,
 	buildAnnouncementsCopyeditPrompt, buildAnnouncementsWriterPrompt, buildMainStoryCopyeditPrompt, buildMainStoryWriterPrompt,
-	parseAnnouncementsCopyeditOutput, parseAnnouncementsWriterOutput, parseMainStoryCopyeditOutput, parseMainStoryWriterOutput,
+	mainStoryFinalProductDiagnostics,
+	parseAnnouncementsCopyeditOutputWithDiagnostics, parseAnnouncementsWriterOutput,
+	parseMainStoryCopyeditOutputWithDiagnostics, parseMainStoryWriterOutput,
 	type AnnouncementsDraft, type AnnouncementsProduct, type MainStoryDraft, type MainStoryProduct,
+	type EditorialDiagnostic,
 	type ModelCompletion, type ModelProviderPort, type ModelProviderRequest, type PreparedEvidence, type ProductionModelStep,
 } from "@bc-news/generation-core";
 import {
 	LmStudioRetryableError,
 	OpenAiCompatibleRetryableError,
 } from "@bc-news/model-adapters";
-import { BenchmarkRunSchema, deriveEvaluationTrialOutcome, type BenchmarkRun, type EvaluationFinding, type EvaluationTrial } from "./evaluation-artifact";
+import { V5BenchmarkRunSchema, type V5BenchmarkRun, type V5EvaluationTrial } from "./evaluation-artifact";
 import { EvaluationArtifactStore } from "./evaluation-artifact-store";
-import { findAnnouncementsFinalProductFailures, findMainStoryFinalProductFailures } from "./product-checks";
-import { parseFinding, sha256Json, terminalTrackOutcome, transportErrorIdentity } from "./evaluation-trial-support";
+import { deriveVersion5TrialOutcome } from "./evaluation-artifact-v5-trial-refinement";
+import { parseFinding, sha256Json, terminalVersion5TrackOutcome, transportErrorIdentity } from "./evaluation-trial-support";
 
 export async function executeEvaluationTrial(input: {
-	benchmark: BenchmarkRun;
+	benchmark: V5BenchmarkRun;
 	store: EvaluationArtifactStore;
 	preparedEvidence: PreparedEvidence;
 	providers: Record<ProductionModelStep, ModelProviderPort>;
 	configIdentity: string;
 	trialId?: string;
 	transportRetryLimit?: number;
-}): Promise<BenchmarkRun> {
+}): Promise<V5BenchmarkRun> {
 	let benchmark = input.benchmark;
-	async function retain(next: BenchmarkRun): Promise<void> { await input.store.replace(next); benchmark = next; }
+	async function retain(next: V5BenchmarkRun): Promise<void> { await input.store.replace(next); benchmark = next; }
 	const trialId = input.trialId ?? benchmark.trials[0]!.id;
-	function trial(): EvaluationTrial {
+	function trial(): V5EvaluationTrial {
 		const retained = benchmark.trials.find(({ id }) => id === trialId);
 		if (retained === undefined || benchmark.trials.at(-1)?.id !== trialId) throw new Error(`Evaluation trial ${trialId} is not the final running trial`);
 		return retained;
 	}
-	async function updateTrial(nextTrial: EvaluationTrial): Promise<void> {
-		await retain(BenchmarkRunSchema.parse({ ...benchmark, trials: benchmark.trials.map((candidate) => candidate.id === trialId ? nextTrial : candidate) }));
+	async function updateTrial(nextTrial: V5EvaluationTrial): Promise<void> {
+		await retain(V5BenchmarkRunSchema.parse({ ...benchmark, trials: benchmark.trials.map((candidate) => candidate.id === trialId ? nextTrial : candidate) }));
 	}
 
 	async function invoke<T extends Record<string, unknown>>(stepInput: {
@@ -92,45 +96,48 @@ export async function executeEvaluationTrial(input: {
 		}
 	}
 
-	async function setTrack(track: "main_story" | "announcements", state: EvaluationTrial["tracks"][typeof track]): Promise<void> {
+	async function setTrack(track: "main_story" | "announcements", state: V5EvaluationTrial["tracks"][typeof track]): Promise<void> {
 		await updateTrial({ ...trial(), tracks: { ...trial().tracks, [track]: state } });
 	}
 
 	await setTrack("main_story", { ...trial().tracks.main_story, lifecycle: "running" });
 	const mainDraft = await invoke<MainStoryDraft>({ productionStep: "main_story_write", system: WRITER_SYSTEM_CONSTRAINTS, user: buildMainStoryWriterPrompt(input.preparedEvidence), parse: ({ text }) => parseMainStoryWriterOutput(text) });
 	let mainStory: MainStoryProduct | undefined;
-	if (mainDraft !== undefined) mainStory = await invoke<MainStoryProduct>({ productionStep: "main_story_copyedit", system: COPYEDIT_SYSTEM_CONSTRAINTS, user: buildMainStoryCopyeditPrompt(mainDraft), parse: ({ text }) => parseMainStoryCopyeditOutput(text, mainDraft) });
+	let mainDiagnostics: readonly EditorialDiagnostic[] = [];
+	if (mainDraft !== undefined) mainStory = await invoke<MainStoryProduct>({ productionStep: "main_story_copyedit", system: COPYEDIT_SYSTEM_CONSTRAINTS, user: buildMainStoryCopyeditPrompt(mainDraft), parse: ({ text }) => {
+		const parsed = parseMainStoryCopyeditOutputWithDiagnostics(text, mainDraft);
+		mainDiagnostics = [...parsed.diagnostics, ...mainStoryFinalProductDiagnostics(parsed.product, input.preparedEvidence)];
+		return parsed.product;
+	} });
 	if (mainStory === undefined) {
-		await setTrack("main_story", { ...trial().tracks.main_story, lifecycle: "rejected", subject_outcome: terminalTrackOutcome(trial(), "main_story", []), terminal_production_step: mainDraft === undefined ? "main_story_write" : "main_story_copyedit" });
+		await setTrack("main_story", { ...trial().tracks.main_story, lifecycle: "rejected", subject_outcome: terminalVersion5TrackOutcome(trial(), "main_story"), terminal_production_step: mainDraft === undefined ? "main_story_write" : "main_story_copyedit" });
 	} else {
-		const findings = findMainStoryFinalProductFailures(mainStory, input.preparedEvidence).map((message, index): EvaluationFinding => ({ kind: "final_product", production_step: "main_story_copyedit", code: `final_product_${index + 1}`, message }));
-		await setTrack("main_story", { lifecycle: findings.length === 0 ? "completed" : "rejected", subject_outcome: terminalTrackOutcome(trial(), "main_story", findings), terminal_production_step: "main_story_copyedit", product: mainStory, findings });
+		await setTrack("main_story", { lifecycle: "completed", subject_outcome: "completed", terminal_production_step: "main_story_copyedit", product: mainStory, findings: [...mainDiagnostics] });
 	}
 
 	await setTrack("announcements", { ...trial().tracks.announcements, lifecycle: "running" });
 	const announcementsDraft = await invoke<AnnouncementsDraft>({ productionStep: "announcements_write", system: WRITER_SYSTEM_CONSTRAINTS, user: buildAnnouncementsWriterPrompt(input.preparedEvidence), parse: ({ text }) => parseAnnouncementsWriterOutput(text) });
 	let announcements: AnnouncementsProduct | undefined;
+	let announcementDiagnostics: readonly EditorialDiagnostic[] = [];
 	if (announcementsDraft !== undefined) {
 		const identified = attachAnnouncementIds(announcementsDraft);
-		announcements = await invoke<AnnouncementsProduct>({ productionStep: "announcements_copyedit", system: COPYEDIT_SYSTEM_CONSTRAINTS, user: buildAnnouncementsCopyeditPrompt(identified), parse: ({ text }) => parseAnnouncementsCopyeditOutput(text, identified) });
+		announcements = await invoke<AnnouncementsProduct>({ productionStep: "announcements_copyedit", system: COPYEDIT_SYSTEM_CONSTRAINTS, user: buildAnnouncementsCopyeditPrompt(identified), parse: ({ text }) => {
+			const parsed = parseAnnouncementsCopyeditOutputWithDiagnostics(text, identified);
+			announcementDiagnostics = [...parsed.diagnostics, ...announcementsFinalProductDiagnostics(parsed.product, input.preparedEvidence)];
+			return parsed.product;
+		} });
 	}
 	if (announcements === undefined) {
-		await setTrack("announcements", { ...trial().tracks.announcements, lifecycle: "rejected", subject_outcome: terminalTrackOutcome(trial(), "announcements", []), terminal_production_step: announcementsDraft === undefined ? "announcements_write" : "announcements_copyedit" });
+		await setTrack("announcements", { ...trial().tracks.announcements, lifecycle: "rejected", subject_outcome: terminalVersion5TrackOutcome(trial(), "announcements"), terminal_production_step: announcementsDraft === undefined ? "announcements_write" : "announcements_copyedit" });
 	} else {
-		const findings = findAnnouncementsFinalProductFailures(announcements, input.preparedEvidence).map((message, index): EvaluationFinding => ({ kind: "final_product", production_step: "announcements_copyedit", code: `final_product_${index + 1}`, message }));
-		await setTrack("announcements", { lifecycle: findings.length === 0 ? "completed" : "rejected", subject_outcome: terminalTrackOutcome(trial(), "announcements", findings), terminal_production_step: "announcements_copyedit", product: announcements, findings });
+		await setTrack("announcements", { lifecycle: "completed", subject_outcome: "completed", terminal_production_step: "announcements_copyedit", product: announcements, findings: [...announcementDiagnostics] });
 	}
 
-	const outcome = deriveEvaluationTrialOutcome(trial());
+	const outcome = deriveVersion5TrialOutcome(trial());
 	const completedAt = new Date().toISOString();
 	const counts = { ...benchmark.outcome_counts }; counts[outcome] += 1;
 	const completedTrial = { ...trial(), lifecycle: "complete" as const, completed_at: completedAt, subject_outcome: outcome };
-	if (benchmark.version === 1) {
-		await retain(BenchmarkRunSchema.parse({ ...benchmark, lifecycle: "complete", completed_at: completedAt,
-			trials: [completedTrial], outcome_counts: counts, harness_outcome: "retained" }));
-	} else {
-		await retain(BenchmarkRunSchema.parse({ ...benchmark,
-			trials: benchmark.trials.map((candidate) => candidate.id === trialId ? completedTrial : candidate), outcome_counts: counts }));
-	}
+	await retain(V5BenchmarkRunSchema.parse({ ...benchmark,
+		trials: benchmark.trials.map((candidate) => candidate.id === trialId ? completedTrial : candidate), outcome_counts: counts }));
 	return benchmark;
 }

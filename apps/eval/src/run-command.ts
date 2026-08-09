@@ -3,7 +3,6 @@ import { assembleEdition, prepareEvidence, type ProductionModelStep } from "@bc-
 import { loadConfig } from "./config";
 import { loadFixture } from "./evidence-fixture";
 import { resolveModelProvider, type ModelProviderEnvironment } from "./model-adapters";
-import { assertFinalProductChecks } from "./product-checks";
 import { executeProductionSteps } from "./production-step-runners";
 import { generateRunId, saveRunFile, type RunFile } from "./run-file";
 
@@ -33,7 +32,6 @@ export async function runCommand(options: RunCommandOptions): Promise<{ path: st
 	) as Record<ProductionModelStep, ReturnType<typeof resolveModelProvider>>;
 	const startedAt = new Date().toISOString();
 	const execution = await executeProductionSteps(preparedEvidence, providers);
-	assertFinalProductChecks(execution.products.mainStory, execution.products.announcements, preparedEvidence);
 
 	const edition = assembleEdition({
 		mainStory: execution.products.mainStory,
@@ -51,6 +49,7 @@ export async function runCommand(options: RunCommandOptions): Promise<{ path: st
 		},
 		steps: [...execution.steps],
 		edition,
+		diagnostics: [...execution.diagnostics],
 		started_at: startedAt,
 		completed_at: new Date().toISOString(),
 	};

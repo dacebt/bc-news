@@ -2,6 +2,7 @@ import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { EditionSchema } from "@bc-news/contracts";
 import {
+	EditorialDiagnosticSchema,
 	ModelUsageRecordSchema,
 	PRODUCTION_MODEL_STEPS,
 	ProductionModelStepSchema,
@@ -31,6 +32,7 @@ export const RunFileSchema = z.strictObject({
 	fixture: z.strictObject({ path: z.string().min(1), fixture_sha256: Sha256HashSchema }),
 	steps: z.array(RunStepSchema).length(PRODUCTION_MODEL_STEPS.length),
 	edition: EditionSchema,
+	diagnostics: z.array(EditorialDiagnosticSchema),
 	started_at: z.iso.datetime({ offset: true }),
 	completed_at: z.iso.datetime({ offset: true }),
 }).superRefine((run, context) => {
@@ -41,6 +43,18 @@ export const RunFileSchema = z.strictObject({
 			path: ["steps"],
 			message: "steps must match the exact ordered production roster",
 		});
+	}
+	let previousDiagnosticStep = -1;
+	for (const [index, diagnostic] of run.diagnostics.entries()) {
+		const diagnosticStep = PRODUCTION_MODEL_STEPS.indexOf(diagnostic.production_step);
+		if (diagnosticStep < previousDiagnosticStep) {
+			context.addIssue({
+				code: "custom",
+				path: ["diagnostics", index],
+				message: "diagnostics must follow production step order",
+			});
+		}
+		previousDiagnosticStep = diagnosticStep;
 	}
 });
 export type RunFile = z.infer<typeof RunFileSchema>;
@@ -55,6 +69,7 @@ export const RunFileReadSchema = z.looseObject({
 		model_usage: z.unknown().optional(),
 	})).default([]),
 	edition: z.unknown().optional(),
+	diagnostics: z.array(EditorialDiagnosticSchema).optional(),
 	started_at: z.string().optional(),
 	completed_at: z.string().optional(),
 });

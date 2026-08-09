@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, test } from "vitest";
 import { PRODUCTION_MODEL_STEPS } from "@bc-news/generation-core";
+import { assertRecordedReplayAcceptanceDeterminism } from "../src/recorded-replay-acceptance-determinism";
 import { assertRecordedReplayAcceptanceGrounding } from "../src/recorded-replay-acceptance-grounding";
 import { assertRecordedReplayAcceptanceSemantics } from "../src/recorded-replay-acceptance-semantics";
 import { RECORDED_REPLAY_CONFIG_PATH } from "../src/recorded-replay-acceptance-verifier";
@@ -20,8 +21,27 @@ test("recorded replay retains the four outputs and recomputed request relations"
 	});
 
 	expect(run.steps.map((step) => step.production_step)).toEqual(PRODUCTION_MODEL_STEPS);
+	expect(Array.isArray(run.diagnostics)).toBe(true);
 	expect(() => assertRecordedReplayAcceptanceSemantics(run)).not.toThrow();
 	await expect(assertRecordedReplayAcceptanceGrounding(run, REPRESENTATIVE_FIXTURE_PATH)).resolves.toBeUndefined();
+	await expect(assertRecordedReplayAcceptanceGrounding({
+		...run,
+		diagnostics: [...run.diagnostics, {
+			kind: "final_product",
+			production_step: "announcements_copyedit",
+			code: "forbidden_marker",
+			message: "invented retained diagnostic",
+		}],
+	}, REPRESENTATIVE_FIXTURE_PATH)).rejects.toThrow("diagnostics were not retained exactly");
+	expect(() => assertRecordedReplayAcceptanceDeterminism(run, {
+		...run,
+		diagnostics: [...run.diagnostics, {
+			kind: "final_product",
+			production_step: "announcements_copyedit",
+			code: "forbidden_marker",
+			message: "invented deterministic diagnostic",
+		}],
+	})).toThrow("recorded-replay acceptance is not deterministic");
 });
 
 test("difference reporting names every changed product path", () => {

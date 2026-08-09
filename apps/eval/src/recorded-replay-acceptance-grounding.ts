@@ -9,15 +9,17 @@ import {
 	COPYEDIT_SYSTEM_CONSTRAINTS,
 	PRODUCTION_MODEL_STEPS,
 	WRITER_SYSTEM_CONSTRAINTS,
+	announcementsFinalProductDiagnostics,
 	assembleEdition,
 	attachAnnouncementIds,
 	buildAnnouncementsCopyeditPrompt,
 	buildAnnouncementsWriterPrompt,
 	buildMainStoryCopyeditPrompt,
 	buildMainStoryWriterPrompt,
-	parseAnnouncementsCopyeditOutput,
+	mainStoryFinalProductDiagnostics,
+	parseAnnouncementsCopyeditOutputWithDiagnostics,
 	parseAnnouncementsWriterOutput,
-	parseMainStoryCopyeditOutput,
+	parseMainStoryCopyeditOutputWithDiagnostics,
 	parseMainStoryWriterOutput,
 	prepareEvidence,
 	type ProductionModelStep,
@@ -62,14 +64,22 @@ export async function assertRecordedReplayAcceptanceGrounding(run: RunFile, fixt
 	)) as Record<ProductionModelStep, RecordedModelResponse>;
 
 	const mainStoryDraft = parseMainStoryWriterOutput(records.main_story_write.text);
-	const identifiedAnnouncements = attachAnnouncementIds(
-		parseAnnouncementsWriterOutput(records.announcements_write.text),
+	const announcementsDraft = parseAnnouncementsWriterOutput(records.announcements_write.text);
+	const identifiedAnnouncements = attachAnnouncementIds(announcementsDraft);
+	const mainStory = parseMainStoryCopyeditOutputWithDiagnostics(
+		records.main_story_copyedit.text,
+		mainStoryDraft,
 	);
-	const mainStory = parseMainStoryCopyeditOutput(records.main_story_copyedit.text, mainStoryDraft);
-	const announcements = parseAnnouncementsCopyeditOutput(
+	const announcements = parseAnnouncementsCopyeditOutputWithDiagnostics(
 		records.announcements_copyedit.text,
 		identifiedAnnouncements,
 	);
+	const expectedDiagnostics = [
+		...mainStory.diagnostics,
+		...mainStoryFinalProductDiagnostics(mainStory.product, prepared),
+		...announcements.diagnostics,
+		...announcementsFinalProductDiagnostics(announcements.product, prepared),
+	];
 	const requests: Readonly<Record<ProductionModelStep, { readonly system: string; readonly user: string }>> = {
 		main_story_write: {
 			system: WRITER_SYSTEM_CONSTRAINTS,
@@ -90,9 +100,9 @@ export async function assertRecordedReplayAcceptanceGrounding(run: RunFile, fixt
 	};
 	const expectedOutputs: Readonly<Record<ProductionModelStep, unknown>> = {
 		main_story_write: mainStoryDraft,
-		main_story_copyedit: mainStory,
-		announcements_write: parseAnnouncementsWriterOutput(records.announcements_write.text),
-		announcements_copyedit: announcements,
+		main_story_copyedit: mainStory.product,
+		announcements_write: announcementsDraft,
+		announcements_copyedit: announcements.product,
 	};
 
 	for (const [index, productionStep] of PRODUCTION_MODEL_STEPS.entries()) {
@@ -115,10 +125,14 @@ export async function assertRecordedReplayAcceptanceGrounding(run: RunFile, fixt
 			throw new Error(`${productionStep} usage does not retain fixture provider/model provenance`);
 		}
 	}
+	const diagnosticDifferences = allDifferences(run.diagnostics, expectedDiagnostics);
+	if (diagnosticDifferences.length > 0) {
+		throw new Error(`recorded-replay acceptance diagnostics were not retained exactly: ${diagnosticDifferences.join(", ")}`);
+	}
 
 	const expectedEdition = assembleEdition({
-		mainStory,
-		announcements,
+		mainStory: mainStory.product,
+		announcements: announcements.product,
 		preparedEvidence: prepared,
 		generatedAtUtc: run.edition.meta.generated_at_utc,
 		modelUsages: run.steps.map((step) => step.model_usage),

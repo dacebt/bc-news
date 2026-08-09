@@ -1,9 +1,9 @@
 import { z } from "zod";
 import { EditionSchema } from "@bc-news/contracts";
 import {
-	CopyeditPreservationError,
-	assertCopyeditPreservesTextFields,
+	copyeditPreservationDiagnosticsForTextFields,
 } from "./copyedit-preservation";
+import type { EditorialDiagnostic } from "./editorial-diagnostics";
 import type { PreparedEvidence } from "./prepared-evidence";
 import type { ProductionModelStep } from "./ports";
 import { fenceUntrustedJson, fenceUntrustedTranscript } from "./untrusted-data-fence";
@@ -61,6 +61,10 @@ export const MainStoryCopyeditOutputSchema = MainStoryProductSchema;
 
 export type MainStoryDraft = z.infer<typeof MainStoryDraftSchema>;
 export type MainStoryProduct = z.infer<typeof MainStoryProductSchema>;
+export interface MainStoryCopyeditResult {
+	readonly product: MainStoryProduct;
+	readonly diagnostics: readonly EditorialDiagnostic[];
+}
 
 type EditorialOutputContractErrorCode = "invalid_json" | "contract_mismatch";
 
@@ -153,26 +157,47 @@ Return the same JSON shape with title, subtitle, and main_story fields.`;
 
 export function parseMainStoryCopyeditOutput(
 	text: string,
-	draft: MainStoryDraft,
 ): MainStoryProduct {
-	const product = parseMainStoryStepOutput(text, "main_story_copyedit");
+	return parseMainStoryStepOutput(text, "main_story_copyedit");
+}
+
+export function parseMainStoryCopyeditOutputWithDiagnostics(
+	text: string,
+	draft: MainStoryDraft,
+): MainStoryCopyeditResult {
+	const product = parseMainStoryCopyeditOutput(text);
+	const diagnostics: EditorialDiagnostic[] = [];
 	if ((draft.main_story.image === undefined) !== (product.main_story.image === undefined)) {
-		throw new CopyeditPreservationError(
-			"main_story_copyedit",
-			"field_shape",
-			"Copyedit changed the optional main-story image shape",
-		);
+		diagnostics.push({
+			kind: "preservation",
+			production_step: "main_story_copyedit",
+			code: "field_shape",
+			message: "Copyedit changed the optional main-story image shape",
+		});
 	}
 	if (
 		draft.main_story.image !== undefined &&
 		product.main_story.image !== undefined &&
 		draft.main_story.image.url !== product.main_story.image.url
 	) {
-		throw new CopyeditPreservationError(
-			"main_story_copyedit",
-			"protected_value",
-			"Copyedit changed the main-story image URL",
-		);
+		diagnostics.push({
+			kind: "preservation",
+			production_step: "main_story_copyedit",
+			code: "protected_value",
+			message: "Copyedit changed the main-story image URL",
+		});
+	}
+	if (
+		draft.main_story.image !== undefined &&
+		product.main_story.image !== undefined &&
+		(draft.main_story.image.credit === undefined) !== (product.main_story.image.credit === undefined)
+	) {
+		diagnostics.push({
+			kind: "preservation",
+			production_step: "main_story_copyedit",
+			code: "field_shape",
+			message: "Copyedit changed the optional main-story image credit shape",
+		});
 	}
 	const textFields: Array<readonly [path: string, before: string, after: string]> = [
 		["title", draft.title, product.title],
@@ -195,17 +220,6 @@ export function parseMainStoryCopyeditOutput(
 			]);
 		}
 	}
-	assertCopyeditPreservesTextFields("main_story_copyedit", textFields);
-	if (
-		draft.main_story.image !== undefined &&
-		product.main_story.image !== undefined &&
-		(draft.main_story.image.credit === undefined) !== (product.main_story.image.credit === undefined)
-	) {
-		throw new CopyeditPreservationError(
-			"main_story_copyedit",
-			"field_shape",
-			"Copyedit changed the optional main-story image credit shape",
-		);
-	}
-	return product;
+	diagnostics.push(...copyeditPreservationDiagnosticsForTextFields("main_story_copyedit", textFields));
+	return { product, diagnostics };
 }

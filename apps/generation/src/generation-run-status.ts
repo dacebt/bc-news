@@ -1,8 +1,10 @@
 import { z } from "zod";
 import { GenerationRunParamsSchema, type GenerationRunParams } from "@bc-news/contracts";
 import {
+	EditorialDiagnosticSchema,
 	ModelUsageRecordSchema,
 	PRODUCTION_MODEL_STEPS,
+	type EditorialDiagnostic,
 	type ModelUsageRecord,
 	type ProductionModelStep,
 } from "@bc-news/generation-core";
@@ -35,6 +37,7 @@ export const GenerationRunProjectionSchema = z
 		current_step: GenerationStepSchema.nullable(),
 		completed_steps: z.array(GenerationStepSchema),
 		model_usage: z.array(ModelUsageRecordSchema),
+		diagnostics: z.array(EditorialDiagnosticSchema),
 		failure: FailureSchema.nullable(),
 		created_at_utc: UtcTimestampSchema,
 		updated_at_utc: UtcTimestampSchema,
@@ -75,6 +78,17 @@ export const GenerationRunProjectionSchema = z
 		) {
 			context.addIssue({ code: "custom", message: "model usage must match completed model steps" });
 		}
+		let previousDiagnosticStep = -1;
+		for (const diagnostic of projection.diagnostics) {
+			const stepIndex = PRODUCTION_MODEL_STEPS.indexOf(diagnostic.production_step);
+			if (!projection.completed_steps.includes(diagnostic.production_step)) {
+				context.addIssue({ code: "custom", message: "diagnostics require their completed production step" });
+			}
+			if (stepIndex < previousDiagnosticStep) {
+				context.addIssue({ code: "custom", message: "diagnostics must follow production step order" });
+			}
+			previousDiagnosticStep = stepIndex;
+		}
 	});
 
 export type GenerationRunProjection = z.infer<typeof GenerationRunProjectionSchema>;
@@ -87,6 +101,7 @@ interface GenerationRunStatusRow {
 	current_step: string | null;
 	completed_steps_json: string;
 	model_usage_json: string;
+	diagnostics_json: string;
 	failure_json: string | null;
 	created_at_utc: string;
 	updated_at_utc: string;
@@ -117,6 +132,7 @@ function parseRow(row: GenerationRunStatusRow, params: GenerationRunParams): Gen
 			current_step: row.current_step,
 			completed_steps: parseStoredJson(row.completed_steps_json),
 			model_usage: parseStoredJson(row.model_usage_json),
+			diagnostics: parseStoredJson(row.diagnostics_json),
 			failure: row.failure_json === null ? null : parseStoredJson(row.failure_json),
 			created_at_utc: row.created_at_utc,
 			updated_at_utc: row.updated_at_utc,
@@ -133,7 +149,7 @@ export async function readGenerationRunStatus(
 	const row = await db
 		.prepare(
 			`SELECT active_region_id, publication_date, state, current_step,
-			        completed_steps_json, model_usage_json, failure_json,
+			        completed_steps_json, model_usage_json, diagnostics_json, failure_json,
 			        created_at_utc, updated_at_utc
 			 FROM generation_run_status
 			 WHERE active_region_id = ?1 AND publication_date = ?2`,
@@ -153,9 +169,9 @@ export async function queueGenerationRunStatus(
 		.prepare(
 			`INSERT INTO generation_run_status (
 				active_region_id, publication_date, state, current_step,
-				completed_steps_json, model_usage_json, failure_json,
+				completed_steps_json, model_usage_json, diagnostics_json, failure_json,
 				created_at_utc, updated_at_utc
-			) VALUES (?1, ?2, 'queued', NULL, '[]', '[]', NULL, ?3, ?3)
+			) VALUES (?1, ?2, 'queued', NULL, '[]', '[]', '[]', NULL, ?3, ?3)
 			ON CONFLICT (active_region_id, publication_date) DO NOTHING`,
 		)
 		.bind(params.active_region_id, params.publication_date, nowUtc)
@@ -175,6 +191,7 @@ async function replaceProjection(
 			current.current_step === next.current_step &&
 			JSON.stringify(current.completed_steps) === JSON.stringify(next.completed_steps) &&
 			JSON.stringify(current.model_usage) === JSON.stringify(next.model_usage) &&
+			JSON.stringify(current.diagnostics) === JSON.stringify(next.diagnostics) &&
 			JSON.stringify(current.failure) === JSON.stringify(next.failure);
 		if (isExactTerminalReplay) return;
 		throw new Error(`Cannot transition terminal generation run status ${current.state}`);
@@ -200,12 +217,20 @@ async function replaceProjection(
 	) {
 		throw new Error("Generation run model usage cannot regress or replace completed records");
 	}
+	if (
+		next.diagnostics.length < current.diagnostics.length ||
+		current.diagnostics.some(
+			(diagnostic, index) => JSON.stringify(next.diagnostics[index]) !== JSON.stringify(diagnostic),
+		)
+	) {
+		throw new Error("Generation run diagnostics cannot regress or replace retained findings");
+	}
 	const result = await db
 		.prepare(
 			`UPDATE generation_run_status
 			 SET state = ?3, current_step = ?4, completed_steps_json = ?5,
-			     model_usage_json = ?6, failure_json = ?7, updated_at_utc = ?8
-			 WHERE active_region_id = ?1 AND publication_date = ?2 AND state = ?9`,
+			     model_usage_json = ?6, diagnostics_json = ?7, failure_json = ?8, updated_at_utc = ?9
+			 WHERE active_region_id = ?1 AND publication_date = ?2 AND state = ?10`,
 		)
 		.bind(
 			next.active_region_id,
@@ -214,6 +239,7 @@ async function replaceProjection(
 			next.current_step,
 			JSON.stringify(next.completed_steps),
 			JSON.stringify(next.model_usage),
+			JSON.stringify(next.diagnostics),
 			next.failure === null ? null : JSON.stringify(next.failure),
 			next.updated_at_utc,
 			current.state,
@@ -240,6 +266,7 @@ export async function recordGenerationRunProgress(
 		currentStep: GenerationStep;
 		completedSteps: readonly GenerationStep[];
 		modelUsage: readonly ModelUsageRecord[];
+		diagnostics: readonly EditorialDiagnostic[];
 	},
 	nowUtc: string,
 ): Promise<void> {
@@ -250,6 +277,7 @@ export async function recordGenerationRunProgress(
 		current_step: progress.currentStep,
 		completed_steps: [...progress.completedSteps],
 		model_usage: [...progress.modelUsage],
+		diagnostics: [...progress.diagnostics],
 		failure: null,
 		updated_at_utc: nowUtc,
 	});
@@ -259,6 +287,7 @@ export async function recordGenerationRunComplete(
 	db: D1Database,
 	params: GenerationRunParams,
 	modelUsage: readonly ModelUsageRecord[],
+	diagnostics: readonly EditorialDiagnostic[],
 	nowUtc: string,
 ): Promise<void> {
 	const current = await requireProjection(db, params);
@@ -268,6 +297,7 @@ export async function recordGenerationRunComplete(
 		current_step: null,
 		completed_steps: [...GENERATION_STEPS],
 		model_usage: [...modelUsage],
+		diagnostics: [...diagnostics],
 		failure: null,
 		updated_at_utc: nowUtc,
 	});

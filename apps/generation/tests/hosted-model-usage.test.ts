@@ -36,11 +36,13 @@ it("retains hosted completion usage and calculated billing in the D1 operator pr
 			currentStep: "main_story_copyedit",
 			completedSteps: ["prepare-evidence", "main_story_write"],
 			modelUsage: [usage],
+			diagnostics: [],
 		},
 		"2026-08-05T00:00:01.000Z",
 	);
 
 	await expect(readGenerationRunStatus(env.DB, params)).resolves.toMatchObject({
 		model_usage: [usage],
+		diagnostics: [],
 	});
 });

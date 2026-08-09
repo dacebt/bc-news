@@ -15,6 +15,8 @@ function trackProducts(trial: Trial, trialOrdinal: number) {
 		track,
 		track_outcome: state.subject_outcome,
 		product: state.product,
+		diagnostic_count: state.findings.length,
+		diagnostics: state.findings,
 	}]);
 }
 
@@ -82,11 +84,15 @@ export function summarizeBenchmarkRun(run: BenchmarkRun) {
 						lifecycle: trial.tracks.main_story.lifecycle,
 						subject_outcome: trial.tracks.main_story.subject_outcome,
 						terminal_production_step: trial.tracks.main_story.terminal_production_step,
+						diagnostic_count: trial.tracks.main_story.findings.length,
+						diagnostics: trial.tracks.main_story.findings,
 					},
 					announcements: {
 						lifecycle: trial.tracks.announcements.lifecycle,
 						subject_outcome: trial.tracks.announcements.subject_outcome,
 						terminal_production_step: trial.tracks.announcements.terminal_production_step,
+						diagnostic_count: trial.tracks.announcements.findings.length,
+						diagnostics: trial.tracks.announcements.findings,
 					},
 				},
 			};
@@ -94,6 +100,7 @@ export function summarizeBenchmarkRun(run: BenchmarkRun) {
 		outcome_counts: run.outcome_counts,
 		track_outcome_counts: trackOutcomes,
 		finding_kind_counts: findingKinds,
+		diagnostic_kind_counts: findingKinds,
 		products: run.trials.flatMap((trial, index) => trackProducts(trial, index + 1)),
 		invocation_count: run.trials.reduce((count, trial) => count + trial.invocations.length, 0),
 		retry_count: run.trials.reduce(

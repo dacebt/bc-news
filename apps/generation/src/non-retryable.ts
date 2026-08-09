@@ -1,7 +1,6 @@
 import { NonRetryableError } from "cloudflare:workflows";
 import { ZodError } from "zod";
 import {
-	CopyeditPreservationError,
 	DateDerivationError,
 	EditorialOutputContractError,
 	EvidenceContractError,
@@ -16,7 +15,6 @@ import { GenerationConfigError } from "./config-error";
 
 const DETERMINISTIC_FAILURES = [
 	ZodError,
-	CopyeditPreservationError,
 	DateDerivationError,
 	EditorialOutputContractError,
 	EvidenceContractError,

@@ -96,15 +96,18 @@ async function parseEverySavedArtifact(resultsDirectory: string): Promise<Benchm
 export async function verifyEvaluationTrialRetention(): Promise<void> {
 	const temporaryRoot = await mkdtemp(join(tmpdir(), "bc-news-evaluation-trial-retention-"));
 	const completeResults = join(temporaryRoot, "complete-results");
-	const rejectedResults = join(temporaryRoot, "rejected-results");
+	const diagnosticResults = join(temporaryRoot, "diagnostic-results");
+	const contractResults = join(temporaryRoot, "contract-results");
 	const failureResults = join(temporaryRoot, "failure-results");
 	const mixedResults = join(temporaryRoot, "mixed-results");
 	const completeConfigPath = join(temporaryRoot, "complete.config.json");
-	const rejectedConfigPath = join(temporaryRoot, "rejected.config.json");
+	const diagnosticConfigPath = join(temporaryRoot, "diagnostic.config.json");
+	const contractConfigPath = join(temporaryRoot, "contract.config.json");
 	const failureConfigPath = join(temporaryRoot, "failure.config.json");
 	const mixedConfigPath = join(temporaryRoot, "mixed.config.json");
 	await writeFile(completeConfigPath, `${JSON.stringify(liveConfig("complete"), null, 2)}\n`, "utf8");
-	await writeFile(rejectedConfigPath, `${JSON.stringify(liveConfig("rejected"), null, 2)}\n`, "utf8");
+	await writeFile(diagnosticConfigPath, `${JSON.stringify(liveConfig("diagnostic"), null, 2)}\n`, "utf8");
+	await writeFile(contractConfigPath, `${JSON.stringify(liveConfig("contract"), null, 2)}\n`, "utf8");
 	await writeFile(failureConfigPath, `${JSON.stringify(liveConfig("failure"), null, 2)}\n`, "utf8");
 	await writeFile(mixedConfigPath, `${JSON.stringify(liveConfig("mixed"), null, 2)}\n`, "utf8");
 
@@ -114,22 +117,24 @@ export async function verifyEvaluationTrialRetention(): Promise<void> {
 		subtitle: string;
 		main_story: { headline: string; lede: string; body: string };
 	};
-	const rejectedMainCopyedit = JSON.stringify({
+	const diagnosticMainCopyedit = JSON.stringify({
 		...retainedMainCopyedit,
 		main_story: {
 			...retainedMainCopyedit.main_story,
-			body: `${retainedMainCopyedit.main_story.body} 999`,
+			body: "**Mallory** summarized “invented words”—system prompt.",
 		},
 	});
+	const contractInvalidMainCopyedit = JSON.stringify({ ...retainedMainCopyedit, invented: true });
 	const outputByModel: Record<string, string> = {};
 	for (const step of PRODUCTION_MODEL_STEPS) {
 		outputByModel[`complete/${step}`] = outputs[step];
-		outputByModel[`rejected/${step}`] = step === "main_story_copyedit"
-			? rejectedMainCopyedit
+		outputByModel[`diagnostic/${step}`] = step === "main_story_copyedit"
+			? diagnosticMainCopyedit
 			: outputs[step];
 		outputByModel[`failure/${step}`] = outputs[step];
+		outputByModel[`contract/${step}`] = step === "main_story_copyedit" ? contractInvalidMainCopyedit : outputs[step];
 		outputByModel[`mixed/${step}`] = step === "main_story_copyedit"
-			? rejectedMainCopyedit
+			? diagnosticMainCopyedit
 			: step === "announcements_write"
 				? "not json"
 				: outputs[step];
@@ -151,16 +156,25 @@ export async function verifyEvaluationTrialRetention(): Promise<void> {
 			artifactObserver: (artifact) => diskAuthoritativeObserver(completeResults, completeStates, artifact),
 			sourceProvenance: VERIFIER_SOURCE_PROVENANCE,
 		});
-		const rejectedStates: BenchmarkRun[] = [];
-		const rejected = await evaluateTrialCommand({
+		const diagnosticStates: BenchmarkRun[] = [];
+		const diagnostic = await evaluateTrialCommand({
 			fixturePath: REPRESENTATIVE_FIXTURE_PATH,
-			configPath: rejectedConfigPath,
-			resultsDirectory: rejectedResults,
+			configPath: diagnosticConfigPath,
+			resultsDirectory: diagnosticResults,
 			environment,
-			artifactObserver: (artifact) => diskAuthoritativeObserver(rejectedResults, rejectedStates, artifact),
+			artifactObserver: (artifact) => diskAuthoritativeObserver(diagnosticResults, diagnosticStates, artifact),
 			sourceProvenance: VERIFIER_SOURCE_PROVENANCE,
 		});
 		const failureStates: BenchmarkRun[] = [];
+		const contractStates: BenchmarkRun[] = [];
+		const contractRejected = await evaluateTrialCommand({
+			fixturePath: REPRESENTATIVE_FIXTURE_PATH,
+			configPath: contractConfigPath,
+			resultsDirectory: contractResults,
+			environment,
+			artifactObserver: (artifact) => diskAuthoritativeObserver(contractResults, contractStates, artifact),
+			sourceProvenance: VERIFIER_SOURCE_PROVENANCE,
+		});
 		const failed = await evaluateTrialCommand({
 			fixturePath: REPRESENTATIVE_FIXTURE_PATH,
 			configPath: failureConfigPath,
@@ -180,22 +194,29 @@ export async function verifyEvaluationTrialRetention(): Promise<void> {
 		});
 
 		assertProof(completed.benchmark.trials[0]!.subject_outcome === "completed", "complete_trial_not_completed", "Controlled complete trial did not complete");
-		assertProof(rejected.benchmark.trials[0]!.subject_outcome === "preservation_rejected", "rejected_trial_misclassified", "Controlled preservation rejection was not retained as preservation_rejected");
-		assertProof(rejected.benchmark.trials[0]!.tracks.announcements.lifecycle === "completed", "independent_track_suppressed", "Main-story rejection suppressed the independent announcements track");
-		assertProof(rejected.benchmark.trials[0]!.invocations.length === 4, "rejected_invocation_roster", "Preservation rejection did not retain the independent four-invocation roster");
+		const diagnosticTrack = diagnostic.benchmark.trials[0]!.tracks.main_story;
+		assertProof(diagnostic.benchmark.trials[0]!.subject_outcome === "completed", "diagnostic_trial_not_completed", "Schema-valid copyedit diagnostics changed the trial outcome");
+		assertProof(diagnosticTrack.lifecycle === "completed" && diagnosticTrack.product !== null, "diagnostic_product_not_retained", "Schema-valid copyedit did not retain its completed product");
+		assertProof(new Set(diagnosticTrack.findings.map(({ kind }) => kind)).size === 2, "diagnostic_categories_incomplete", "Preservation and final-product diagnostic categories were not both retained");
+		assertProof(diagnostic.benchmark.trials[0]!.invocations.length === 4, "diagnostic_invocation_roster", "Diagnostics changed the one-writer one-copyedit invocation roster");
+		assertProof(diagnostic.benchmark.trials[0]!.invocations.filter(({ production_step }) => production_step === "main_story_copyedit").length === 1, "diagnostic_copyedit_retried", "Diagnostics triggered another copyedit invocation");
 		assertPersistenceSequence(completeStates);
-		assertPersistenceSequence(rejectedStates);
+		assertPersistenceSequence(diagnosticStates);
+		assertPersistenceSequence(contractStates);
+		assertProof(contractRejected.benchmark.trials[0]!.tracks.main_story.subject_outcome === "contract_rejected", "schema_mismatch_not_terminal", "Strict copyedit schema mismatch did not remain terminal");
+		assertProof(contractRejected.benchmark.trials[0]!.selected_invocation_ids.main_story_copyedit === null, "schema_mismatch_selected", "Strict schema mismatch was selected as a usable copyedit");
 		assertTransportFailureSequence(failureStates);
 		assertProof(failed.benchmark.trials[0]!.subject_outcome === "infrastructure_incomplete", "failure_subject_outcome", "Transport failure did not produce infrastructure_incomplete");
 		assertProof(failed.benchmark.trials[0]!.tracks.announcements.lifecycle === "completed", "failure_independent_track", "Transport failure suppressed announcements");
-		assertProof(mixed.benchmark.trials[0]!.subject_outcome === "parse_rejected", "mixed_failure_precedence", "Aggregate outcome did not apply parse rejection ahead of preservation rejection");
-		assertProof(mixed.benchmark.trials[0]!.tracks.main_story.subject_outcome === "preservation_rejected", "mixed_main_story_outcome", "Mixed trial lost the main-story preservation rejection");
+		assertProof(mixed.benchmark.trials[0]!.subject_outcome === "parse_rejected", "mixed_failure_precedence", "Aggregate outcome did not retain the independent malformed-JSON rejection");
+		assertProof(mixed.benchmark.trials[0]!.tracks.main_story.subject_outcome === "completed" && mixed.benchmark.trials[0]!.tracks.main_story.findings.length > 1, "mixed_main_story_outcome", "Mixed trial lost the completed main-story diagnostics");
 		assertProof(mixed.benchmark.trials[0]!.tracks.announcements.subject_outcome === "parse_rejected", "mixed_announcements_outcome", "Mixed trial lost the announcements parse rejection");
+		assertProof(mixed.benchmark.trials[0]!.selected_invocation_ids.announcements_write === null, "malformed_json_selected", "Malformed writer JSON was selected as usable output");
 		assertProof(mixed.benchmark.lifecycle === "complete" && mixed.benchmark.harness_outcome === "retained", "mixed_harness_outcome", "Mixed-failure trial was not terminally retained");
 		assertPersistenceSequence(mixedStates);
-		const saved = [...await parseEverySavedArtifact(completeResults), ...await parseEverySavedArtifact(rejectedResults), ...await parseEverySavedArtifact(failureResults), ...await parseEverySavedArtifact(mixedResults)];
-		assertProof(saved.length === 4, "saved_artifact_count", "Verifier did not retain exactly four terminal artifacts");
-		assertProof(saved.every(({ version }) => version === 4), "current_artifact_version", "A newly generated trial did not retain current artifact version 4");
+		const saved = [...await parseEverySavedArtifact(completeResults), ...await parseEverySavedArtifact(diagnosticResults), ...await parseEverySavedArtifact(contractResults), ...await parseEverySavedArtifact(failureResults), ...await parseEverySavedArtifact(mixedResults)];
+		assertProof(saved.length === 5, "saved_artifact_count", "Verifier did not retain exactly five terminal artifacts");
+		assertProof(saved.every(({ version }) => version === 5), "current_artifact_version", "A newly generated trial did not retain current artifact version 5");
 		assertProof(saved.every(({ lifecycle, harness_outcome }) => lifecycle === "complete" && harness_outcome === "retained"), "harness_outcome_not_retained", "A terminal artifact did not retain a successful harness outcome");
 		assertProof(saved.every(({ provenance }) => JSON.stringify(provenance.output_contracts) === JSON.stringify(evaluationOutputContractProvenance())), "current_contract_provenance", "A newly generated artifact did not retain the current application output contracts and hashes");
 	} catch (error: unknown) {
@@ -224,7 +245,7 @@ export async function verifyEvaluationTrialRetention(): Promise<void> {
 			cause: cleanupErrors[0],
 		});
 	}
-	process.stdout.write("evaluation: rejected, failed, and completed trials retained incrementally\n");
+	process.stdout.write("evaluation: diagnostics, schema rejection, infrastructure failure, and completion retained incrementally\n");
 }
 
 void verifyEvaluationTrialRetention().catch((error: unknown) => {

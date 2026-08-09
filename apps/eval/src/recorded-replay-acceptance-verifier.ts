@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Edition } from "@bc-news/contracts";
+import type { EditorialDiagnostic } from "@bc-news/generation-core";
 import { assertRecordedReplayAcceptanceDeterminism } from "./recorded-replay-acceptance-determinism";
 import { assertRecordedReplayAcceptanceGrounding } from "./recorded-replay-acceptance-grounding";
 import {
@@ -41,7 +42,14 @@ async function executeRecordedReplayAcceptance(resultsDirectory: string): Promis
 	return { path: saved.path, run: parseStrictRun(await readFile(saved.path), saved.path) };
 }
 
-export async function verifyRecordedReplayAcceptance(resultsDirectory?: string): Promise<Edition> {
+export interface RecordedReplayAcceptanceResult {
+	readonly edition: Edition;
+	readonly diagnostics: readonly EditorialDiagnostic[];
+}
+
+export async function verifyRecordedReplayAcceptance(
+	resultsDirectory?: string,
+): Promise<RecordedReplayAcceptanceResult> {
 	if (resultsDirectory !== undefined) return verifyRecordedReplayAcceptanceAt(resultsDirectory);
 	const ownedRoot = await mkdtemp(join(tmpdir(), "bc-news-recorded-replay-acceptance-"));
 	try {
@@ -51,7 +59,9 @@ export async function verifyRecordedReplayAcceptance(resultsDirectory?: string):
 	}
 }
 
-async function verifyRecordedReplayAcceptanceAt(resultsDirectory: string): Promise<Edition> {
+async function verifyRecordedReplayAcceptanceAt(
+	resultsDirectory: string,
+): Promise<RecordedReplayAcceptanceResult> {
 	const config = await loadConfig(RECORDED_REPLAY_CONFIG_PATH);
 	assertRecordedReplayConfig(config);
 	const candidate = await executeRecordedReplayAcceptance(resultsDirectory);
@@ -59,12 +69,12 @@ async function verifyRecordedReplayAcceptanceAt(resultsDirectory: string): Promi
 	assertRecordedReplayAcceptanceSemantics(candidate.run);
 	await assertRecordedReplayAcceptanceGrounding(candidate.run, REPRESENTATIVE_FIXTURE_PATH);
 	assertRecordedReplayAcceptanceDeterminism(candidate.run, repeat.run);
-	return candidate.run.edition;
+	return { edition: candidate.run.edition, diagnostics: candidate.run.diagnostics };
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-	verifyRecordedReplayAcceptance().then(() => {
-		console.log("acceptance: four recorded production steps replayed request-linked and deterministic");
+	verifyRecordedReplayAcceptance().then((result) => {
+		console.log(`acceptance: four recorded production steps replayed request-linked and deterministic; diagnostics retained: ${String(result.diagnostics.length)}`);
 	}).catch((error: unknown) => {
 		process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
 		process.exitCode = 1;

@@ -130,7 +130,7 @@ export function validateBenchmarkRunTransition(current: BenchmarkRun, next: Benc
 		validateTrialTransition(current.trials[0]!, next.trials[0]!);
 		return;
 	}
-	if (current.version !== next.version || (current.version !== 2 && current.version !== 3 && current.version !== 4)) {
+	if (current.version !== next.version || (current.version !== 2 && current.version !== 3 && current.version !== 4 && current.version !== 5)) {
 		throw new Error("benchmark artifact version is immutable");
 	}
 	if (next.trials.length < current.trials.length || next.trials.length > current.trials.length + 1) throw new Error("trials may append exactly one roster member and may never be removed");

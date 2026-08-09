@@ -16,6 +16,20 @@ type WalkProductionStep =
 	| "main_story_copyedit"
 	| "announcements_write"
 	| "announcements_copyedit";
+type WalkCopyeditStep = "main_story_copyedit" | "announcements_copyedit";
+type WalkPreservationDiagnosticCode =
+	| "announcement_count"
+	| "announcement_identity"
+	| "field_shape"
+	| "paragraph_count"
+	| "quoted_span"
+	| "numeric_literal"
+	| "protected_markdown"
+	| "protected_value";
+type WalkFinalProductDiagnosticCode =
+	| "forbidden_marker"
+	| "ungrounded_marked_name"
+	| "ungrounded_quote";
 type WalkExecution = "recorded_replay" | "local_inference" | "hosted_inference";
 type WalkTokenUsage =
 	| {
@@ -50,6 +64,20 @@ export interface WalkModelUsageRecord {
 	external_billing: WalkExternalBilling;
 }
 
+export type WalkEditorialDiagnostic =
+	| {
+			kind: "preservation";
+			production_step: WalkCopyeditStep;
+			code: WalkPreservationDiagnosticCode;
+			message: string;
+	  }
+	| {
+			kind: "final_product";
+			production_step: WalkCopyeditStep;
+			code: WalkFinalProductDiagnosticCode;
+			message: string;
+	  };
+
 export interface WalkGenerationRunStatus {
 	active_region_id: string;
 	publication_date: string;
@@ -58,6 +86,7 @@ export interface WalkGenerationRunStatus {
 	current_step: WalkGenerationStep | null;
 	completed_steps: WalkGenerationStep[];
 	model_usage: WalkModelUsageRecord[];
+	diagnostics: WalkEditorialDiagnostic[];
 	failure: {
 		step: WalkGenerationStep | "configure-generation-run" | "launch-generation-run";
 		code: string;
@@ -90,6 +119,67 @@ function isProductionStep(value: unknown): value is WalkProductionStep {
 		value === "announcements_write" ||
 		value === "announcements_copyedit"
 	);
+}
+
+function isCopyeditStep(value: unknown): value is WalkCopyeditStep {
+	return value === "main_story_copyedit" || value === "announcements_copyedit";
+}
+
+function isPreservationDiagnosticCode(value: unknown): value is WalkPreservationDiagnosticCode {
+	return (
+		value === "announcement_count" ||
+		value === "announcement_identity" ||
+		value === "field_shape" ||
+		value === "paragraph_count" ||
+		value === "quoted_span" ||
+		value === "numeric_literal" ||
+		value === "protected_markdown" ||
+		value === "protected_value"
+	);
+}
+
+function isFinalProductDiagnosticCode(value: unknown): value is WalkFinalProductDiagnosticCode {
+	return (
+		value === "forbidden_marker" ||
+		value === "ungrounded_marked_name" ||
+		value === "ungrounded_quote"
+	);
+}
+
+function parseEditorialDiagnostic(value: unknown, body: string): WalkEditorialDiagnostic {
+	if (
+		!isRecord(value) ||
+		!hasExactKeys(value, ["kind", "production_step", "code", "message"]) ||
+		!isCopyeditStep(value["production_step"]) ||
+		typeof value["message"] !== "string" ||
+		value["message"].length === 0
+	) {
+		throw new Error(`generation run operator status has an invalid diagnostic: ${body}`);
+	}
+	if (value["kind"] === "preservation" && isPreservationDiagnosticCode(value["code"])) {
+		return {
+			kind: "preservation",
+			production_step: value["production_step"],
+			code: value["code"],
+			message: value["message"],
+		};
+	}
+	if (value["kind"] === "final_product" && isFinalProductDiagnosticCode(value["code"])) {
+		return {
+			kind: "final_product",
+			production_step: value["production_step"],
+			code: value["code"],
+			message: value["message"],
+		};
+	}
+	throw new Error(`generation run operator status has an invalid diagnostic: ${body}`);
+}
+
+function parseDiagnostics(value: unknown, body: string): WalkEditorialDiagnostic[] {
+	if (!Array.isArray(value)) {
+		throw new Error(`generation run operator status has invalid diagnostics: ${body}`);
+	}
+	return value.map((diagnostic) => parseEditorialDiagnostic(diagnostic, body));
 }
 
 function isExecution(value: unknown): value is WalkExecution {
@@ -324,6 +414,14 @@ function assertProjectionCoherence(status: WalkGenerationRunStatus, body: string
 	) {
 		throw new Error(`generation run operator status has incoherent model usage: ${body}`);
 	}
+	let previousDiagnosticStep = -1;
+	for (const diagnostic of status.diagnostics) {
+		const stepIndex = expectedProductionSteps.indexOf(diagnostic.production_step);
+		if (stepIndex === -1 || stepIndex < previousDiagnosticStep) {
+			throw new Error(`generation run operator status has incoherent diagnostics: ${body}`);
+		}
+		previousDiagnosticStep = stepIndex;
+	}
 }
 
 export function generationRunStatusUrl(baseUrl: string, pair: GenerationRunParams): string {
@@ -348,7 +446,8 @@ export function parseGenerationRunStatusResponse(
 		parsed["generation_run_id"] !== `generation-run-${expectedPair.active_region_id}-${expectedPair.publication_date}` ||
 		!isGenerationState(parsed["state"]) ||
 		!(parsed["current_step"] === null || isGenerationStep(parsed["current_step"])) ||
-		!Array.isArray(parsed["model_usage"])
+		!Array.isArray(parsed["model_usage"]) ||
+		!Array.isArray(parsed["diagnostics"])
 	) {
 		throw new Error(`generation run operator status has an invalid envelope: ${body}`);
 	}
@@ -360,6 +459,7 @@ export function parseGenerationRunStatusResponse(
 		current_step: parsed["current_step"],
 		completed_steps: parseCompletedSteps(parsed["completed_steps"], body),
 		model_usage: parsed["model_usage"].map((record) => parseModelUsage(record, body)),
+		diagnostics: parseDiagnostics(parsed["diagnostics"], body),
 		failure: parseFailure(parsed["failure"], body),
 		workflow: parseWorkflow(parsed["workflow"], body),
 	};

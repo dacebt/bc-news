@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { AnnouncementSchema } from "@bc-news/contracts";
-import { assertCopyeditPreservesTextFields, CopyeditPreservationError } from "./copyedit-preservation";
+import { copyeditPreservationDiagnosticsForTextFields } from "./copyedit-preservation";
+import type { EditorialDiagnostic } from "./editorial-diagnostics";
 import { EditorialOutputContractError } from "./main-story";
 import type { PreparedEvidence } from "./prepared-evidence";
 import { fenceUntrustedJson, fenceUntrustedTranscript } from "./untrusted-data-fence";
@@ -14,6 +15,10 @@ export const AnnouncementsWriterOutputSchema = AnnouncementsProductSchema;
 
 export type AnnouncementsDraft = z.infer<typeof AnnouncementsDraftSchema>;
 export type AnnouncementsProduct = z.infer<typeof AnnouncementsProductSchema>;
+export interface AnnouncementsCopyeditResult {
+	readonly product: AnnouncementsProduct;
+	readonly diagnostics: readonly EditorialDiagnostic[];
+}
 
 const AnnouncementInternalIdSchema = z.string().regex(/^announcement-[1-9]\d*$/u);
 
@@ -121,35 +126,49 @@ function parseIdentifiedAnnouncementsCopyeditOutput(text: string): IdentifiedAnn
 
 export function parseAnnouncementsCopyeditOutput(
 	text: string,
-	draft: IdentifiedAnnouncementsDraft,
 ): AnnouncementsProduct {
 	const edited = parseIdentifiedAnnouncementsCopyeditOutput(text);
+	return AnnouncementsProductSchema.parse({
+		announcements: edited.announcements.map(({ title, summary }) => ({ title, summary })),
+	});
+}
+
+export function parseAnnouncementsCopyeditOutputWithDiagnostics(
+	text: string,
+	draft: IdentifiedAnnouncementsDraft,
+): AnnouncementsCopyeditResult {
+	const edited = parseIdentifiedAnnouncementsCopyeditOutput(text);
+	const diagnostics: EditorialDiagnostic[] = [];
 	if (edited.announcements.length !== draft.announcements.length) {
-		throw new CopyeditPreservationError(
-			"announcements_copyedit",
-			"announcement_count",
-			"Copyedit changed the announcement count",
-		);
+		diagnostics.push({
+			kind: "preservation",
+			production_step: "announcements_copyedit",
+			code: "announcement_count",
+			message: "Copyedit changed the announcement count",
+		});
 	}
-	for (let index = 0; index < draft.announcements.length; index += 1) {
+	const comparableCount = Math.min(draft.announcements.length, edited.announcements.length);
+	for (let index = 0; index < comparableCount; index += 1) {
 		const before = draft.announcements[index]!;
 		const after = edited.announcements[index]!;
 		if (after.id !== before.id) {
-			throw new CopyeditPreservationError(
-				"announcements_copyedit",
-				"announcement_identity",
-				`Copyedit changed or reordered announcement id ${before.id} at index ${index}`,
-			);
+			diagnostics.push({
+				kind: "preservation",
+				production_step: "announcements_copyedit",
+				code: "announcement_identity",
+				message: `Copyedit changed or reordered announcement id ${before.id} at index ${index}`,
+			});
 		}
-		assertCopyeditPreservesTextFields(
+		diagnostics.push(...copyeditPreservationDiagnosticsForTextFields(
 			"announcements_copyedit",
 			[
 				[`announcements.${index}.title`, before.title, after.title],
 				[`announcements.${index}.summary`, before.summary, after.summary],
 			],
-		);
+		));
 	}
-	return AnnouncementsProductSchema.parse({
+	const product = AnnouncementsProductSchema.parse({
 		announcements: edited.announcements.map(({ title, summary }) => ({ title, summary })),
 	});
+	return { product, diagnostics };
 }

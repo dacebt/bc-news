@@ -214,7 +214,7 @@ it("a retried status write does not repeat the completed main-story model call",
 	});
 });
 
-it("copyedit preservation failure retains writer progress and prevents publication", async () => {
+it("schema-valid copyedit findings publish after one pass and remain durable diagnostics", async () => {
 	const params = { active_region_id: "7", publication_date: "2026-01-27" } as const;
 	await env.DB.prepare(
 		`INSERT INTO chat_messages (
@@ -223,9 +223,9 @@ it("copyedit preservation failure retains writer progress and prevents publicati
 		 'one more message worth reporting', '2026-01-26T12:00:00Z', ?1)`,
 	).bind(Date.UTC(2026, 0, 26, 12)).run();
 	await queueGenerationRunStatus(env.DB, params, "2026-08-04T23:00:00.000Z");
-	mockDeterministicModelCompletions((outputs) => {
+	const modelCalls = mockDeterministicModelCompletions((outputs) => {
 		const output = JSON.parse(outputs.main_story_copyedit) as { main_story: { body: string } };
-		output.main_story.body = `${output.main_story.body}\n\nInvented structural rewrite.`;
+		output.main_story.body = "**Mallory** reported 2 claims.\n\nThey called it “invented words”—and cited a system prompt.";
 		outputs.main_story_copyedit = JSON.stringify(output);
 	});
 	await using instance = await introspectWorkflowInstance(
@@ -236,13 +236,67 @@ it("copyedit preservation failure retains writer progress and prevents publicati
 		await m.disableRetryDelays();
 	});
 	await env.GENERATION_RUN.create({ id: "generation-run-7-2026-01-27", params });
+	await instance.waitForStatus("complete");
+	expect(modelCalls).toHaveBeenCalledTimes(4);
+	await expect(readEdition(env.DB, "7", "2026-01-27")).resolves.toMatchObject({
+		main_story: {
+			body: "**Mallory** reported 2 claims.\n\nThey called it “invented words”—and cited a system prompt.",
+		},
+	});
+	await expect(readGenerationRunStatus(env.DB, params)).resolves.toMatchObject({
+		state: "complete",
+		diagnostics: [
+			{ kind: "preservation", production_step: "main_story_copyedit", code: "paragraph_count" },
+			{ kind: "preservation", production_step: "main_story_copyedit", code: "quoted_span" },
+			{ kind: "preservation", production_step: "main_story_copyedit", code: "numeric_literal" },
+			{ kind: "preservation", production_step: "main_story_copyedit", code: "protected_markdown" },
+			{ kind: "final_product", production_step: "main_story_copyedit", code: "forbidden_marker" },
+			{ kind: "final_product", production_step: "main_story_copyedit", code: "forbidden_marker" },
+			{ kind: "final_product", production_step: "main_story_copyedit", code: "ungrounded_marked_name" },
+			{ kind: "final_product", production_step: "main_story_copyedit", code: "ungrounded_quote" },
+		],
+		failure: null,
+	});
+});
+
+it.each([
+	["malformed JSON", "not json", "invalid_json"],
+	["schema mismatch", JSON.stringify({ title: "Incomplete" }), "contract_mismatch"],
+] as const)("%s from copyedit remains terminal", async (_label, copyeditOutput, code) => {
+	const publicationDate = code === "invalid_json" ? "2026-01-28" : "2026-01-29";
+	const params = { active_region_id: "7", publication_date: publicationDate } as const;
+	await env.DB.prepare(
+		`INSERT INTO chat_messages (
+		 entity_id, region_id, channel_id, username_raw, username, text, timestamp_utc, timestamp_ts
+		) VALUES (?1, 7, 1, 'en/Someone', 'Someone',
+		 'schema boundary evidence', ?2, ?3)`,
+	).bind(
+		`generation-run-test-${code}`,
+		`${publicationDate.slice(0, -2)}${String(Number(publicationDate.slice(-2)) - 1).padStart(2, "0")}T12:00:00Z`,
+		Date.parse(`${publicationDate.slice(0, -2)}${String(Number(publicationDate.slice(-2)) - 1).padStart(2, "0")}T12:00:00Z`),
+	).run();
+	await queueGenerationRunStatus(env.DB, params, "2026-08-04T23:00:00.000Z");
+	const modelCalls = mockDeterministicModelCompletions((outputs) => {
+		outputs.main_story_copyedit = copyeditOutput;
+	});
+	await using instance = await introspectWorkflowInstance(
+		env.GENERATION_RUN,
+		`generation-run-7-${publicationDate}`,
+	);
+	await instance.modify(async (m) => {
+		await m.disableRetryDelays();
+	});
+	await env.GENERATION_RUN.create({ id: `generation-run-7-${publicationDate}`, params });
 	await instance.waitForStatus("errored");
-	await expect(readEdition(env.DB, "7", "2026-01-27")).resolves.toBeUndefined();
+	const productionSteps = modelCalls.mock.calls.map(([request]) => request.productionStep);
+	expect(productionSteps[0]).toBe("main_story_write");
+	expect(new Set(productionSteps)).toEqual(new Set(["main_story_write", "main_story_copyedit"]));
+	await expect(readEdition(env.DB, "7", publicationDate)).resolves.toBeUndefined();
 	await expect(readGenerationRunStatus(env.DB, params)).resolves.toMatchObject({
 		state: "errored",
 		completed_steps: ["prepare-evidence", "main_story_write"],
-		model_usage: [{ production_step: "main_story_write" }],
-		failure: { step: "main_story_copyedit", code: "paragraph_count" },
+		diagnostics: [],
+		failure: { step: "main_story_copyedit", code },
 	});
 });
 

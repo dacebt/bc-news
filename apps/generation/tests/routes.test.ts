@@ -170,6 +170,39 @@ it("returns unreadable projection as 500 and keeps failed Workflow observation e
 	});
 });
 
+it("exposes retained editorial diagnostics through the strict operator status route", async () => {
+	const publicationDate = "2026-03-12";
+	const completedSteps = ["prepare-evidence", "main_story_write", "main_story_copyedit"];
+	const diagnostics = [{
+		kind: "preservation",
+		production_step: "main_story_copyedit",
+		code: "paragraph_count",
+		message: "Copyedit changed paragraph count in main_story.body",
+	}];
+	await env.DB.prepare(
+		`INSERT INTO generation_run_status (
+		 active_region_id, publication_date, state, current_step, completed_steps_json,
+		 model_usage_json, diagnostics_json, failure_json, created_at_utc, updated_at_utc
+		) VALUES ('7', ?1, 'running', 'announcements_write', ?2, ?3, ?4, NULL,
+		 '2026-08-04T23:00:00.000Z', '2026-08-04T23:00:00.000Z')`,
+	).bind(
+		publicationDate,
+		JSON.stringify(completedSteps),
+		JSON.stringify(COMPLETE_MODEL_USAGE.slice(0, 2)),
+		JSON.stringify(diagnostics),
+	).run();
+	const get = vi.fn().mockResolvedValue({
+		status: vi.fn().mockResolvedValue({ status: "running" }),
+	});
+	const response = await getGenerationRunStatusByPair(
+		pairRequest(publicationDate),
+		envWith(vi.fn(), get),
+	);
+
+	expect(response.status).toBe(200);
+	expect(await response.json()).toMatchObject({ diagnostics });
+});
+
 it("rejects malformed Workflow status instead of leaking it", async () => {
 	const params = { active_region_id: "7", publication_date: "2026-03-08" } as const;
 	await queueGenerationRunStatus(env.DB, params, "2026-08-04T23:00:00.000Z");

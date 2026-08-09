@@ -7,7 +7,9 @@ import {
 	buildAnnouncementsWriterPrompt,
 	buildMainStoryCopyeditPrompt,
 	buildMainStoryWriterPrompt,
+	mainStoryFinalProductDiagnostics,
 	parseAnnouncementsWriterOutput,
+	parseMainStoryCopyeditOutputWithDiagnostics,
 	parseMainStoryWriterOutput,
 	prepareEvidence,
 } from "@bc-news/generation-core";
@@ -153,6 +155,42 @@ test("replays the exact dependent requests used by the real workflow", async () 
 			reason: "recorded_replay",
 		});
 	}
+});
+
+test("retains representative preservation and final-product diagnostics in the synthetic copyedit", async () => {
+	const preparedEvidence = await canonicalPreparedEvidence();
+	const draft = parseMainStoryWriterOutput(mainStoryWriteResponseJson.text);
+	const copyedit = parseMainStoryCopyeditOutputWithDiagnostics(mainStoryCopyeditResponseJson.text, draft);
+
+	expect([
+		...copyedit.diagnostics,
+		...mainStoryFinalProductDiagnostics(copyedit.product, preparedEvidence),
+	]).toEqual([
+		{
+			kind: "preservation",
+			production_step: "main_story_copyedit",
+			code: "quoted_span",
+			message: "Copyedit changed quoted spans or their order in main_story.body",
+		},
+		{
+			kind: "preservation",
+			production_step: "main_story_copyedit",
+			code: "numeric_literal",
+			message: "Copyedit changed numeric literals or their order in main_story.body",
+		},
+		{
+			kind: "final_product",
+			production_step: "main_story_copyedit",
+			code: "forbidden_marker",
+			message: "Forbidden output marker: —",
+		},
+		{
+			kind: "final_product",
+			production_step: "main_story_copyedit",
+			code: "ungrounded_quote",
+			message: "Ungrounded quote: damn R8 is doing T7 dungeons atm",
+		},
+	]);
 });
 
 test.each(["system", "user"] as const)("rejects a replay when the real %s prompt bytes differ", async (field) => {

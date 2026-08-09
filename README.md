@@ -63,7 +63,7 @@ result in another.
 | Deterministic tests | `pnpm test` | Isolated invariants, reproduced defects, and high-risk state transitions | Test pass or hard test failure |
 | Model evaluation | `pnpm --filter @bc-news/eval eval -- benchmark run ...` and `benchmark list/show/summary/compare` | Strict versioned Benchmark Runs in `apps/eval/evaluation-results` | Retained model behavior and harness outcome; no score or acceptance verdict |
 | Fixture and context tooling | `fixture record-responses ...` and `context benchmark ...` | Four request-linked recorded responses, or strict context-measurement results | Fixture-authoring or context-measurement tooling result, never a walk or acceptance result |
-| Recorded-replay acceptance | `acceptance run/list/show/compare` and `verify:recorded-replay-acceptance` | Historical Run Files in `apps/eval/results` | `acceptance: four recorded production steps replayed request-linked and deterministic` |
+| Recorded-replay acceptance | `acceptance run/list/show/compare` and `verify:recorded-replay-acceptance` | Historical Run Files in `apps/eval/results` | `acceptance: four recorded production steps replayed request-linked and deterministic; diagnostics retained: 4` |
 | Composed skeleton walk | `pnpm walk` | The deployed local ingest, generation, D1, API, status, and browser path using committed recorded adapters | Independent `walk:` observations and terminal `WALK PASS` |
 
 Static guarantees (`pnpm typecheck` and `pnpm lint`) support every row but do
@@ -92,13 +92,18 @@ or completion evidence. Partial tuples reject, and explicit sampling evidence
 is never presented as a production-behavior baseline.
 
 The command incrementally retains every Evaluation Trial and Step Invocation in
-a versioned Benchmark Run. The current version 4 artifact retains omitted
-versus complete explicit sampling truthfully; versions 1–3 keep their frozen
-historical semantics. Its report names model subject outcomes separately
-from whether the harness retained trustworthy evidence. Model rejection or
-provider exhaustion does not suppress an independent editorial track or a later
-declared trial. This is independent of recorded-replay acceptance, fixture
-authoring, context measurement, and `pnpm walk`.
+a versioned Benchmark Run. The current version 5 artifact preserves version 4
+sampling semantics and retains exact schema-valid copyedit diagnostics;
+versions 1–4 keep their frozen historical semantics. Its four subject outcomes
+are `completed`, `parse_rejected`, `contract_rejected`, and
+`infrastructure_incomplete`, separate from whether the harness retained
+trustworthy evidence. Malformed JSON or strict schema mismatch is the only
+terminal model-output failure; infrastructure failure is separate. Every
+schema-valid grammar, punctuation, markdown, wording, preservation, or
+editorial-policy finding remains a non-terminal diagnostic after one copyedit
+pass and never causes another model call, rejection, or publication stop. This
+is independent of recorded-replay acceptance, fixture authoring, context
+measurement, and `pnpm walk`.
 
 Browse retained Benchmark Runs through the same explicit namespace:
 
@@ -129,7 +134,10 @@ pnpm --filter @bc-news/eval eval -- acceptance compare <left-id> <right-id>
 The default acceptance configuration is
 `apps/eval/recorded-replay.config.json`; `acceptance run` also accepts an
 explicit `--config`, and all acceptance routes accept `--results-dir` where
-applicable. Run Files live in `apps/eval/results` by default.
+applicable. Run Files live in `apps/eval/results` by default. Current Run Files
+require exact ordered diagnostics; historical files without that field report
+diagnostics as unknown, not as observed empty. Production diagnostics are
+operator evidence in generation status and are not part of `EditionSchema`.
 
 Fixture authoring and context measurement are tooling surfaces rather than
 evaluation or acceptance:
@@ -163,15 +171,17 @@ pnpm --filter @bc-news/eval verify:recorded-response-fixture-authoring
 pnpm --filter @bc-news/eval verify:recorded-replay-acceptance
 ```
 
-The evaluation proofs print `evaluation:` observations; the continuation and
-browse proofs respectively end with
+The evaluation proofs print `evaluation:` observations. Trial retention ends
+with `evaluation: diagnostics, schema rejection, infrastructure failure, and
+completion retained incrementally`; the continuation and browse proofs
+respectively end with
 `evaluation: serial benchmark retained linked retries and continued later trials`
 and
 `evaluation: evidence listed summarized and compared without verdicts`.
 Fixture proof prints
 `fixture authoring: four strict v2 hosted responses retained not-applicable sampling, replayed, and compared`;
 recorded-replay proof prints
-`acceptance: four recorded production steps replayed request-linked and deterministic`.
+`acceptance: four recorded production steps replayed request-linked and deterministic; diagnostics retained: 4`.
 None of these commands prints or confers `WALK PASS`.
 
 The representative deterministic local benchmark uses one ignored declaration

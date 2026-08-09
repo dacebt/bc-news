@@ -11,6 +11,7 @@ import {
 import {
 	PRODUCTION_MODEL_STEPS,
 	prepareEvidence,
+	type EditorialDiagnostic,
 	type ModelProviderPort,
 	type ProductionModelStep,
 } from "@bc-news/generation-core";
@@ -43,7 +44,9 @@ export interface RecordCommandResult {
 	readonly responseDirectory: string;
 	readonly recordedResponses: RecordedModelResponseV2Roster;
 	readonly liveProducts: EvalProducts;
+	readonly liveDiagnostics: readonly EditorialDiagnostic[];
 	readonly replayProducts: EvalProducts;
+	readonly replayDiagnostics: readonly EditorialDiagnostic[];
 	readonly comparison: FinalProductComparison;
 }
 
@@ -224,7 +227,9 @@ export async function recordCommand(options: RecordCommandOptions): Promise<Reco
 			responseDirectory: options.responseDirectory,
 			recordedResponses: roster,
 			liveProducts: liveExecution.products,
+			liveDiagnostics: liveExecution.diagnostics,
 			replayProducts: replayExecution.products,
+			replayDiagnostics: replayExecution.diagnostics,
 			comparison,
 		};
 	} finally {

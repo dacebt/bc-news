@@ -150,8 +150,12 @@ test("rejects cross-version artifact replacement", async () => {
 	const states: BenchmarkRun[] = [];
 	await controlledEvaluation((artifact) => { states.push(artifact); });
 	const current = states[0]!;
-	expect(current.version).toBe(4);
-	const historical = BenchmarkRunSchema.parse({ ...clone(current), version: 3 });
+	expect(current.version).toBe(5);
+	const historical = BenchmarkRunSchema.parse({
+		...clone(current),
+		version: 4,
+		outcome_counts: { ...current.outcome_counts, preservation_rejected: 0, final_product_rejected: 0 },
+	});
 	const root = await temporaryRoot("bc-news-cross-version-transition-test-");
 	const path = join(root, "benchmark.json");
 	const store = await EvaluationArtifactStore.create(path, historical);
@@ -170,7 +174,7 @@ test("rejects semantic corruption and preserves authoritative bytes after invali
 	const lifecycleContradiction = clone(result.benchmark); lifecycleContradiction.completed_at = null; mutations.push(lifecycleContradiction);
 	const trackContradiction = clone(result.benchmark); trackContradiction.trials[0]!.tracks.main_story.product = null; mutations.push(trackContradiction);
 	const terminalContradiction = clone(result.benchmark); terminalContradiction.trials[0]!.tracks.main_story.terminal_production_step = "announcements_copyedit"; mutations.push(terminalContradiction);
-	const findingContradiction = clone(result.benchmark); findingContradiction.trials[0]!.tracks.main_story.findings = [{ kind: "final_product", production_step: "announcements_copyedit", code: "wrong", message: "wrong track" }]; mutations.push(findingContradiction);
+	const findingContradiction = clone(result.benchmark); findingContradiction.trials[0]!.tracks.main_story.findings = [{ kind: "final_product", production_step: "announcements_copyedit", code: "forbidden_marker", message: "wrong track" }]; mutations.push(findingContradiction);
 	const invalidSelection = clone(result.benchmark); invalidSelection.trials[0]!.selected_invocation_ids.main_story_copyedit = "missing-invocation"; mutations.push(invalidSelection);
 	const fabricatedMainProduct = clone(result.benchmark); fabricatedMainProduct.trials[0]!.tracks.main_story.product!.title = "Fabricated retained title"; mutations.push(fabricatedMainProduct);
 	const fabricatedAnnouncementsProduct = clone(result.benchmark); fabricatedAnnouncementsProduct.trials[0]!.tracks.announcements.product = { announcements: [] }; mutations.push(fabricatedAnnouncementsProduct);
@@ -234,15 +238,16 @@ test("rejects semantic corruption and preserves authoritative bytes after invali
 	}
 }, 15_000);
 
-test("rejects retained parse findings that contradict the version 1 parser", async () => {
-	const rejectedOutput = await preservationRejectedCopyeditOutput("main_story_copyedit");
-	const { result, resultsDirectory } = await controlledEvaluation(undefined, 1, { main_story_copyedit: rejectedOutput });
-	const path = join(resultsDirectory, "rejected-finding-copy.json");
+test("rejects non-schema diagnostics disguised as parse rejection", async () => {
+	const diagnosticOutput = await preservationRejectedCopyeditOutput("main_story_copyedit");
+	const { result, resultsDirectory } = await controlledEvaluation(undefined, 1, { main_story_copyedit: diagnosticOutput });
+	const path = join(resultsDirectory, "diagnostic-copy.json");
 	const store = await EvaluationArtifactStore.create(path, result.benchmark);
 	const inconsistentFinding = clone(result.benchmark);
-	const rejected = inconsistentFinding.trials[0]!.invocations.find(({ production_step }) => production_step === "main_story_copyedit")!;
-	if (rejected.transport !== "succeeded" || rejected.parse.state !== "rejected") throw new Error("expected copyedit parse rejection");
-	rejected.parse.findings = [{ kind: "preservation", production_step: "main_story_copyedit", code: "fabricated", message: "fabricated retained finding" }];
+	const copyedit = inconsistentFinding.trials[0]!.invocations.find(({ production_step }) => production_step === "main_story_copyedit")!;
+	if (copyedit.transport !== "succeeded") throw new Error("expected succeeded copyedit");
+	copyedit.parse = { state: "rejected", findings: [{ kind: "preservation", production_step: "main_story_copyedit", code: "numeric_literal", message: "diagnostic is not a parse rejection" }] };
+	inconsistentFinding.trials[0]!.selected_invocation_ids.main_story_copyedit = null;
 	expect(BenchmarkRunSchema.safeParse(inconsistentFinding).success).toBe(false);
 	await rejectsWithoutChangingBytes(store, path, inconsistentFinding);
 
@@ -254,16 +259,16 @@ test("rejects retained parse findings that contradict the version 1 parser", asy
 	await rejectsWithoutChangingBytes(store, path, staleFinding);
 });
 
-test("binds every reached rejected copyedit request to its independently parsed writer", async () => {
+test("binds every reached copyedit request to its independently parsed writer", async () => {
 	for (const copyeditStep of ["main_story_copyedit", "announcements_copyedit"] as const) {
 		const writerStep = copyeditStep === "main_story_copyedit" ? "main_story_write" : "announcements_write";
-		const rejectedOutput = await preservationRejectedCopyeditOutput(copyeditStep);
-		const { result, resultsDirectory } = await controlledEvaluation(undefined, 1, { [copyeditStep]: rejectedOutput });
-		const path = join(resultsDirectory, `${copyeditStep}-rejected-copy.json`);
+		const diagnosticOutput = await preservationRejectedCopyeditOutput(copyeditStep);
+		const { result, resultsDirectory } = await controlledEvaluation(undefined, 1, { [copyeditStep]: diagnosticOutput });
+		const path = join(resultsDirectory, `${copyeditStep}-diagnostic-copy.json`);
 		const store = await EvaluationArtifactStore.create(path, result.benchmark);
 		const reachedCopyedit = result.benchmark.trials[0]!.invocations.find(({ production_step }) => production_step === copyeditStep)!;
-		expect(reachedCopyedit.transport === "succeeded" && reachedCopyedit.parse.state === "rejected").toBe(true);
-		expect(result.benchmark.trials[0]!.selected_invocation_ids[copyeditStep]).toBeNull();
+		expect(reachedCopyedit.transport === "succeeded" && reachedCopyedit.parse.state === "succeeded").toBe(true);
+		expect(result.benchmark.trials[0]!.selected_invocation_ids[copyeditStep]).toBe(reachedCopyedit.id);
 
 		const fabricatedWriter = clone(result.benchmark);
 		const writer = fabricatedWriter.trials[0]!.invocations.find(({ production_step }) => production_step === writerStep)!;
@@ -282,50 +287,35 @@ test("binds every reached rejected copyedit request to its independently parsed 
 	}
 });
 
-test("binds final-product rejection evidence to the selected copyedit output", async () => {
-	const { result, resultsDirectory } = await controlledEvaluation();
-	const rejected = clone(result.benchmark);
-	const trial = rejected.trials[0]!;
-	const invocation = trial.invocations.find(({ id }) => id === trial.selected_invocation_ids.main_story_copyedit)!;
-	if (invocation.transport !== "succeeded" || invocation.parse.state !== "succeeded") throw new Error("expected selected copyedit success");
-	const product = JSON.parse(invocation.completion.text) as Record<string, unknown>;
-	product.title = `${String(product.title)} —`;
-	invocation.completion.text = JSON.stringify(product);
-	invocation.parse.output = clone(product);
-	trial.tracks.main_story.product = clone(product);
-	expect(BenchmarkRunSchema.safeParse(rejected).success).toBe(false);
-	trial.tracks.main_story.lifecycle = "rejected";
-	trial.tracks.main_story.subject_outcome = "final_product_rejected";
-	trial.tracks.main_story.findings = [{ kind: "final_product", production_step: "main_story_copyedit", code: "final_product_1", message: "forbidden output marker: —" }];
-	trial.subject_outcome = "final_product_rejected";
-	rejected.outcome_counts.completed = 0;
-	rejected.outcome_counts.final_product_rejected = 1;
-	expect(BenchmarkRunSchema.safeParse(rejected).success).toBe(true);
-	const path = join(resultsDirectory, "final-product-rejected-copy.json");
-	const store = await EvaluationArtifactStore.create(path, rejected);
+test("binds completed diagnostic evidence to the selected copyedit output", async () => {
+	const diagnosticOutput = await preservationRejectedCopyeditOutput("main_story_copyedit");
+	const { result, resultsDirectory } = await controlledEvaluation(undefined, 1, { main_story_copyedit: diagnosticOutput });
+	const retained = clone(result.benchmark);
+	const retainedTrack = retained.trials[0]!.tracks.main_story;
+	expect(retainedTrack.findings.length).toBeGreaterThan(0);
+	expect(BenchmarkRunSchema.safeParse(retained).success).toBe(true);
+	const mismatchedProduct = clone(retained);
+	mismatchedProduct.trials[0]!.tracks.main_story.product!.title = "Detached diagnostic product";
+	expect(BenchmarkRunSchema.safeParse(mismatchedProduct).success).toBe(false);
+	const path = join(resultsDirectory, "completed-diagnostic-copy.json");
+	const store = await EvaluationArtifactStore.create(path, retained);
+	await rejectsWithoutChangingBytes(store, path, mismatchedProduct);
 
-	const fabricated = clone(rejected);
-	fabricated.trials[0]!.tracks.main_story.findings[0] = { kind: "final_product", production_step: "main_story_copyedit", code: "fabricated", message: "fabricated finding" };
+	const fabricated = clone(retained);
+	fabricated.trials[0]!.tracks.main_story.findings[0] = { kind: "final_product", production_step: "main_story_copyedit", code: "ungrounded_quote", message: "fabricated finding" };
 	expect(BenchmarkRunSchema.safeParse(fabricated).success).toBe(false);
 	await rejectsWithoutChangingBytes(store, path, fabricated);
-	const missing = clone(rejected);
+	const missing = clone(retained);
 	missing.trials[0]!.tracks.main_story.findings = [];
 	expect(BenchmarkRunSchema.safeParse(missing).success).toBe(false);
 	await rejectsWithoutChangingBytes(store, path, missing);
-	const extra = clone(rejected);
-	extra.trials[0]!.tracks.main_story.findings.push({ kind: "final_product", production_step: "main_story_copyedit", code: "final_product_2", message: "extra finding" });
+	const extra = clone(retained);
+	extra.trials[0]!.tracks.main_story.findings.push({ kind: "final_product", production_step: "main_story_copyedit", code: "ungrounded_quote", message: "extra finding" });
 	expect(BenchmarkRunSchema.safeParse(extra).success).toBe(false);
 	await rejectsWithoutChangingBytes(store, path, extra);
-	const missingProduct = clone(rejected);
+	const missingProduct = clone(retained);
 	missingProduct.trials[0]!.tracks.main_story.product = null;
 	expect(BenchmarkRunSchema.safeParse(missingProduct).success).toBe(false);
 	await rejectsWithoutChangingBytes(store, path, missingProduct);
 
-	const preservationOutput = await preservationRejectedCopyeditOutput("main_story_copyedit");
-	const preservation = await controlledEvaluation(undefined, 1, { main_story_copyedit: preservationOutput });
-	const higherPrecedence = clone(preservation.result.benchmark);
-	higherPrecedence.trials[0]!.tracks.main_story.findings = clone(rejected.trials[0]!.tracks.main_story.findings);
-	expect(higherPrecedence.trials[0]!.tracks.main_story.subject_outcome).toBe("preservation_rejected");
-	expect(BenchmarkRunSchema.safeParse(higherPrecedence).success).toBe(false);
-	await rejectsWithoutChangingBytes(store, path, higherPrecedence);
 });
