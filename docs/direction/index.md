@@ -1,5 +1,7 @@
 # Direction
 
+- [Shape: LM Studio sampling postures](2026-08-08-lm-studio-sampling-postures.shape.md) — Session boundaries, cadence, and success signal for aligning production and evaluation sampling intent.
+- [Capability map: LM Studio sampling postures](2026-08-08-lm-studio-sampling-postures.map.md) — Risk-ordered vertical capabilities and feature conventions for provider-default and explicit LM Studio sampling.
 - [Shape: native LM Studio inference adapter](2026-08-07-lm-studio-sdk-adapter.shape.md) — Session boundaries, cadence, and success signal for replacing local OpenAI-compatible inference with the native LM Studio SDK.
 - [Shape: real model evaluation harness](2026-08-06-real-model-evaluation-harness.shape.md) — Session boundaries, cadence, and success signal for separating verification domains and retaining real model behavior as durable evaluation evidence.
 - [Capability map: real model evaluation harness](2026-08-06-real-model-evaluation-harness.map.md) — Risk-ordered vertical capabilities and feature conventions for retaining and comparing real model behavior without conflating verification domains.
