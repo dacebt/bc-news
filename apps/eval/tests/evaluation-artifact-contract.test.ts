@@ -88,8 +88,13 @@ test("rejects unreachable track selections for both editorial tracks", async () 
 		mutation.trials[0]!.selected_invocation_ids[`${trackName}_write`] = null;
 		expect(BenchmarkRunSchema.safeParse(mutation).success).toBe(false);
 		const orderMutation = clone(result.benchmark);
-		const writerIndex = trackName === "main_story" ? 0 : 2;
-		const copyeditIndex = writerIndex + 1;
+		const writerStep = `${trackName}_write` as const;
+		const copyeditStep = `${trackName}_copyedit` as const;
+		const writerId = orderMutation.trials[0]!.selected_invocation_ids[writerStep];
+		const copyeditId = orderMutation.trials[0]!.selected_invocation_ids[copyeditStep];
+		const writerIndex = orderMutation.trials[0]!.invocations.findIndex(({ id }) => id === writerId);
+		const copyeditIndex = orderMutation.trials[0]!.invocations.findIndex(({ id }) => id === copyeditId);
+		if (writerIndex < 0 || copyeditIndex < 0) throw new Error(`expected selected ${trackName} writer and copyeditor`);
 		const writer = orderMutation.trials[0]!.invocations[writerIndex]!;
 		const copyedit = orderMutation.trials[0]!.invocations[copyeditIndex]!;
 		orderMutation.trials[0]!.invocations[writerIndex] = { ...copyedit, ordinal: writerIndex + 1 };

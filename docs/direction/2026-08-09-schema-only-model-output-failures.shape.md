@@ -5,10 +5,10 @@ title: >-
 description: >-
   Session boundaries, cadence, and success signal for making every schema-valid editorial finding diagnostic rather than terminal.
 tags: [wsd, direction, shape, generation, evaluation]
-status: stable
+status: deprecated
 generated:
   by: ebt-wsd/okf-v0.2
-  at: "2026-08-09T14:28:32Z"
+  at: "2026-08-09T18:33:31Z"
 ---
 # Shape: Schema-only model-output failures
 

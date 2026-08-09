@@ -5,6 +5,8 @@ import { join } from "node:path";
 import { PRODUCTION_MODEL_STEPS, type ProductionModelStep } from "@bc-news/generation-core";
 import { RecordedModelResponseSchema } from "@bc-news/fixtures";
 import { BenchmarkRunSchema, evaluationOutputContractProvenance, type BenchmarkRun } from "./evaluation-artifact";
+import { loadBenchmarkRun } from "./evaluation-artifact-reader";
+import { summarizeBenchmarkRun } from "./evaluation-browse-report";
 import { REPRESENTATIVE_FIXTURE_PATH } from "./representative-fixture";
 import { evaluateTrialCommand } from "./evaluation-trial-command";
 import { startRecordLoopbackServer } from "./record-loopback-server";
@@ -93,6 +95,50 @@ async function parseEverySavedArtifact(resultsDirectory: string): Promise<Benchm
 	return Promise.all(names.map(async (name) => BenchmarkRunSchema.parse(JSON.parse(await readFile(join(resultsDirectory, name), "utf8")) as unknown)));
 }
 
+async function waitForControlledEventOrTrialFailure(input: {
+	readonly event: Promise<void>;
+	readonly trial: Promise<unknown>;
+	readonly label: string;
+}): Promise<void> {
+	let timeout: NodeJS.Timeout | undefined;
+	const timeoutFailure = new Promise<never>((_resolve, reject) => {
+		timeout = setTimeout(() => reject(new EvaluationTrialVerificationError("controlled_request_timeout", `Timed out waiting for ${input.label}`)), 5_000);
+	});
+	const prematureTrial = input.trial.then(
+		() => { throw new EvaluationTrialVerificationError("trial_completed_before_control", `Trial completed before ${input.label}`); },
+		(error: unknown) => { throw error; },
+	);
+	try {
+		await Promise.race([input.event, prematureTrial, timeoutFailure]);
+	} finally {
+		if (timeout !== undefined) clearTimeout(timeout);
+	}
+}
+
+function waitForRequestsOrTrialFailure(input: {
+	readonly server: Awaited<ReturnType<typeof startRecordLoopbackServer>>;
+	readonly models: readonly string[];
+	readonly trial: Promise<unknown>;
+	readonly label: string;
+}): Promise<void> {
+	return waitForControlledEventOrTrialFailure({
+		event: input.server.waitForRequests(input.models),
+		trial: input.trial,
+		label: input.label,
+	});
+}
+
+function assertTrackDependency(trial: BenchmarkRun["trials"][number], track: "main_story" | "announcements"): void {
+	const writerStep = `${track}_write` as ProductionModelStep;
+	const copyeditStep = `${track}_copyedit` as ProductionModelStep;
+	const writerId = trial.selected_invocation_ids[writerStep];
+	const copyedit = trial.invocations.find(({ production_step }) => production_step === copyeditStep);
+	assertProof(writerId !== null && copyedit !== undefined, "track_dependency_evidence_missing", `${track} did not retain its selected writer and in-flight copyeditor`);
+	const writerIndex = trial.invocations.findIndex(({ id }) => id === writerId);
+	const copyeditIndex = trial.invocations.findIndex(({ id }) => id === copyedit.id);
+	assertProof(writerIndex >= 0 && copyeditIndex > writerIndex, "track_dependency_invalid", `${track} copyeditor did not follow its selected writer`);
+}
+
 export async function verifyEvaluationTrialRetention(): Promise<void> {
 	const temporaryRoot = await mkdtemp(join(tmpdir(), "bc-news-evaluation-trial-retention-"));
 	const completeResults = join(temporaryRoot, "complete-results");
@@ -100,16 +146,19 @@ export async function verifyEvaluationTrialRetention(): Promise<void> {
 	const contractResults = join(temporaryRoot, "contract-results");
 	const failureResults = join(temporaryRoot, "failure-results");
 	const mixedResults = join(temporaryRoot, "mixed-results");
+	const harnessFailureResults = join(temporaryRoot, "harness-failure-results");
 	const completeConfigPath = join(temporaryRoot, "complete.config.json");
 	const diagnosticConfigPath = join(temporaryRoot, "diagnostic.config.json");
 	const contractConfigPath = join(temporaryRoot, "contract.config.json");
 	const failureConfigPath = join(temporaryRoot, "failure.config.json");
 	const mixedConfigPath = join(temporaryRoot, "mixed.config.json");
+	const harnessFailureConfigPath = join(temporaryRoot, "harness-failure.config.json");
 	await writeFile(completeConfigPath, `${JSON.stringify(liveConfig("complete"), null, 2)}\n`, "utf8");
 	await writeFile(diagnosticConfigPath, `${JSON.stringify(liveConfig("diagnostic"), null, 2)}\n`, "utf8");
 	await writeFile(contractConfigPath, `${JSON.stringify(liveConfig("contract"), null, 2)}\n`, "utf8");
 	await writeFile(failureConfigPath, `${JSON.stringify(liveConfig("failure"), null, 2)}\n`, "utf8");
 	await writeFile(mixedConfigPath, `${JSON.stringify(liveConfig("mixed"), null, 2)}\n`, "utf8");
+	await writeFile(harnessFailureConfigPath, `${JSON.stringify(liveConfig("harness-failure"), null, 2)}\n`, "utf8");
 
 	const outputs = await retainedOutputs();
 	const retainedMainCopyedit = JSON.parse(outputs.main_story_copyedit) as {
@@ -133,6 +182,7 @@ export async function verifyEvaluationTrialRetention(): Promise<void> {
 			: outputs[step];
 		outputByModel[`failure/${step}`] = outputs[step];
 		outputByModel[`contract/${step}`] = step === "main_story_copyedit" ? contractInvalidMainCopyedit : outputs[step];
+		outputByModel[`harness-failure/${step}`] = outputs[step];
 		outputByModel[`mixed/${step}`] = step === "main_story_copyedit"
 			? diagnosticMainCopyedit
 			: step === "announcements_write"
@@ -142,13 +192,21 @@ export async function verifyEvaluationTrialRetention(): Promise<void> {
 	let primaryFailure: unknown;
 	let server: Awaited<ReturnType<typeof startRecordLoopbackServer>> | undefined;
 	try {
-		server = await startRecordLoopbackServer(outputByModel, { retryableFailureModels: new Set(["failure/main_story_write"]) });
+		const heldModels = new Set([
+			...PRODUCTION_MODEL_STEPS.map((step) => `complete/${step}`),
+			"harness-failure/main_story_write",
+			"harness-failure/announcements_write",
+		]);
+		server = await startRecordLoopbackServer(outputByModel, {
+			retryableFailureModels: new Set(["failure/main_story_write"]),
+			heldModels,
+		});
 		const environment = {
 			HOSTED_MODEL_BASE_URL: server.baseUrl,
 			HOSTED_MODEL_API_KEY: "record-loopback-proof",
 		};
 		const completeStates: BenchmarkRun[] = [];
-		const completed = await evaluateTrialCommand({
+		const completeTrial = evaluateTrialCommand({
 			fixturePath: REPRESENTATIVE_FIXTURE_PATH,
 			configPath: completeConfigPath,
 			resultsDirectory: completeResults,
@@ -156,6 +214,94 @@ export async function verifyEvaluationTrialRetention(): Promise<void> {
 			artifactObserver: (artifact) => diskAuthoritativeObserver(completeResults, completeStates, artifact),
 			sourceProvenance: VERIFIER_SOURCE_PROVENANCE,
 		});
+		await waitForRequestsOrTrialFailure({
+			server,
+			models: ["complete/main_story_write", "complete/announcements_write"],
+			trial: completeTrial,
+			label: "both controlled writer requests",
+		});
+		const writerInterruptionId = completeStates.at(-1)?.id;
+		assertProof(writerInterruptionId !== undefined, "writer_interruption_missing", "Concurrent writer dispatch retained no observable artifact");
+		const writerInterruption = await loadBenchmarkRun(writerInterruptionId, completeResults);
+		const writerTrial = writerInterruption.trials[0]!;
+		assertProof(writerInterruption.version === 6 && writerInterruption.lifecycle === "running", "writer_interruption_invalid", "Concurrent writer interruption was not a strict running v6 artifact");
+		assertProof(writerTrial.tracks.main_story.lifecycle === "running" && writerTrial.tracks.announcements.lifecycle === "running", "tracks_not_running_together", "Both tracks were not durably running together");
+		for (const writerStep of ["main_story_write", "announcements_write"] as const) {
+			const invocation = writerTrial.invocations.find(({ production_step }) => production_step === writerStep);
+			assertProof(invocation?.transport === "in_flight", "writer_not_in_flight", `${writerStep} was not durably in flight before controlled release`);
+		}
+		server.releaseRequests(["complete/announcements_write"]);
+		await waitForRequestsOrTrialFailure({ server, models: ["complete/announcements_copyedit"], trial: completeTrial, label: "announcements copyeditor request" });
+		server.releaseRequests(["complete/main_story_write"]);
+		await waitForRequestsOrTrialFailure({ server, models: ["complete/main_story_copyedit"], trial: completeTrial, label: "main-story copyeditor request" });
+		const interleaved = await loadBenchmarkRun(writerInterruptionId, completeResults);
+		const interleavedTrial = interleaved.trials[0]!;
+		assertProof(interleaved.lifecycle === "running" && interleaved.harness_outcome === "pending", "interruption_not_running", "Interleaved interruption evidence did not remain a running harness artifact");
+		assertProof(
+			JSON.stringify(interleavedTrial.invocations.map(({ production_step }) => production_step)) === JSON.stringify([
+				"main_story_write", "announcements_write", "announcements_copyedit", "main_story_copyedit",
+			]),
+			"invocation_progress_not_interleaved",
+			"Controlled invocation history did not retain the deliberate cross-track interleaving",
+		);
+		assertTrackDependency(interleavedTrial, "main_story");
+		assertTrackDependency(interleavedTrial, "announcements");
+		const interruptionSummary = summarizeBenchmarkRun(interleaved);
+		assertProof(interruptionSummary.lifecycle === "running" && interruptionSummary.invocations.filter(({ transport }) => transport === "in_flight").length === 2, "interruption_summary_invalid", "Strict interruption summary lost its two in-flight copyeditors");
+		server.releaseRequests(["complete/main_story_copyedit", "complete/announcements_copyedit"]);
+		const completed = await completeTrial;
+
+		const harnessFailureStates: BenchmarkRun[] = [];
+		let rejectNextHarnessObserver = false;
+		let markHarnessObserverRejected = (): void => undefined;
+		const harnessObserverRejected = new Promise<void>((resolve) => { markHarnessObserverRejected = resolve; });
+		const harnessFailureTrial = evaluateTrialCommand({
+			fixturePath: REPRESENTATIVE_FIXTURE_PATH,
+			configPath: harnessFailureConfigPath,
+			resultsDirectory: harnessFailureResults,
+			environment,
+			artifactObserver: async (artifact) => {
+				await diskAuthoritativeObserver(harnessFailureResults, harnessFailureStates, artifact);
+				if (!rejectNextHarnessObserver) return;
+				rejectNextHarnessObserver = false;
+				markHarnessObserverRejected();
+				throw new EvaluationTrialVerificationError("controlled_observer_rejection", "Controlled artifact observer rejected after durable retention");
+			},
+			sourceProvenance: VERIFIER_SOURCE_PROVENANCE,
+		});
+		const harnessFailureSettlement = harnessFailureTrial.then(
+			(value) => ({ status: "fulfilled" as const, value }),
+			(reason: unknown) => ({ status: "rejected" as const, reason }),
+		);
+		let harnessFailureSettled = false;
+		void harnessFailureSettlement.then(() => { harnessFailureSettled = true; });
+		await waitForRequestsOrTrialFailure({
+			server,
+			models: ["harness-failure/main_story_write", "harness-failure/announcements_write"],
+			trial: harnessFailureTrial,
+			label: "both harness-failure writer requests",
+		});
+		const harnessFailureId = harnessFailureStates.at(-1)?.id;
+		assertProof(harnessFailureId !== undefined, "harness_failure_artifact_missing", "Harness-failure trial retained no artifact after both writers dispatched");
+		rejectNextHarnessObserver = true;
+		server.releaseRequests(["harness-failure/main_story_write"]);
+		await waitForControlledEventOrTrialFailure({
+			event: harnessObserverRejected,
+			trial: harnessFailureTrial,
+			label: "controlled artifact observer rejection",
+		});
+		await new Promise<void>((resolve) => { setImmediate(resolve); });
+		assertProof(!harnessFailureSettled, "harness_failure_did_not_quiesce", "Harness failure completed the trial before the held sibling track quiesced");
+		server.releaseRequests(["harness-failure/announcements_write"]);
+		const harnessFailure = await harnessFailureSettlement;
+		assertProof(harnessFailure.status === "rejected" && harnessFailure.reason instanceof AggregateError, "harness_failure_not_propagated", "Failure-sticky coordination did not reject after both tracks quiesced");
+		const interruptedHarnessArtifact = await loadBenchmarkRun(harnessFailureId, harnessFailureResults);
+		assertProof(interruptedHarnessArtifact.version === 6 && interruptedHarnessArtifact.lifecycle === "running" && interruptedHarnessArtifact.harness_outcome === "pending", "harness_failure_not_running", "Harness failure did not leave a strict running v6 artifact");
+		assertProof(interruptedHarnessArtifact.completed_at === null && Object.values(interruptedHarnessArtifact.outcome_counts).every((count) => count === 0), "harness_failure_aggregated", "Harness failure retained terminal aggregation or changed outcome counts");
+		assertProof(interruptedHarnessArtifact.trials[0]!.lifecycle === "running", "harness_failure_trial_terminal", "Harness failure terminally completed the retained trial");
+		const harnessFailureSummary = summarizeBenchmarkRun(interruptedHarnessArtifact);
+		assertProof(harnessFailureSummary.lifecycle === "running", "harness_failure_not_browseable", "Harness-failure interruption evidence was not browseable as running");
+
 		const diagnosticStates: BenchmarkRun[] = [];
 		const diagnostic = await evaluateTrialCommand({
 			fixturePath: REPRESENTATIVE_FIXTURE_PATH,
@@ -205,6 +351,7 @@ export async function verifyEvaluationTrialRetention(): Promise<void> {
 		assertPersistenceSequence(contractStates);
 		assertProof(contractRejected.benchmark.trials[0]!.tracks.main_story.subject_outcome === "contract_rejected", "schema_mismatch_not_terminal", "Strict copyedit schema mismatch did not remain terminal");
 		assertProof(contractRejected.benchmark.trials[0]!.selected_invocation_ids.main_story_copyedit === null, "schema_mismatch_selected", "Strict schema mismatch was selected as a usable copyedit");
+		assertProof(contractRejected.benchmark.trials[0]!.tracks.announcements.lifecycle === "completed", "contract_rejection_suppressed_track", "Main-story contract rejection suppressed announcements");
 		assertTransportFailureSequence(failureStates);
 		assertProof(failed.benchmark.trials[0]!.subject_outcome === "infrastructure_incomplete", "failure_subject_outcome", "Transport failure did not produce infrastructure_incomplete");
 		assertProof(failed.benchmark.trials[0]!.tracks.announcements.lifecycle === "completed", "failure_independent_track", "Transport failure suppressed announcements");
@@ -245,7 +392,7 @@ export async function verifyEvaluationTrialRetention(): Promise<void> {
 			cause: cleanupErrors[0],
 		});
 	}
-	process.stdout.write("evaluation: diagnostics, schema rejection, infrastructure failure, and completion retained incrementally\n");
+	process.stdout.write("evaluation: concurrent tracks retained interleaved progress, diagnostics, schema rejection, infrastructure failure, interruption evidence, and completion\n");
 }
 
 void verifyEvaluationTrialRetention().catch((error: unknown) => {

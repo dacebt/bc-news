@@ -1,5 +1,6 @@
 # Direction
 
+- [Shape: parallel evaluation tracks](2026-08-09-parallel-evaluation-tracks.shape.md) — Session boundaries, cadence, and success signal for concurrent within-trial evaluation tracks with one truthful retained-state history.
 - [Shape: Schema-only model-output failures](2026-08-09-schema-only-model-output-failures.shape.md) — Session boundaries, cadence, and success signal for making every schema-valid editorial finding diagnostic rather than terminal.
 - [Shape: LM Studio sampling postures](2026-08-08-lm-studio-sampling-postures.shape.md) — Session boundaries, cadence, and success signal for aligning production and evaluation sampling intent.
 - [Capability map: production-aligned LM Studio sampling](2026-08-08-production-aligned-lm-studio-sampling.map.md) — The invariant-coupled capability and feature conventions for truthful provider-default and explicit LM Studio sampling postures.

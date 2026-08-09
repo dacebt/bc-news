@@ -39,20 +39,28 @@ retained model-evaluation attempt.
 
 **Model evaluation** uses `benchmark run --fixture <path> --config <path>
 [--results-dir <path>]` to observe an ordered configuration and repetition
-roster serially. Its strict Benchmark Run retains every reached Step Invocation
-before transport and before parsing. Malformed JSON, strict schema mismatch,
-and infrastructure-incomplete execution are distinct typed subject outcomes and
-can coexist with `harness_outcome: retained`; invalid configuration or an
-untrustworthy create, write, or reparse is a harness failure and stops.
+roster serially. Within each Evaluation Trial, the main-story and announcements
+writer-to-copyeditor chains dispatch concurrently, with each writer preceding
+its own copyeditor. One ordered application owner allocates invocations and
+applies every retained version 6 transition, retaining each invocation before
+its provider transport. This produces one truthful interleaved history while the
+artifact store's atomic full-file replacement never races. Its strict Benchmark
+Run retains every reached Step Invocation before transport and before parsing.
+Malformed JSON, strict schema mismatch, and infrastructure-incomplete execution
+are distinct typed subject outcomes and can coexist with `harness_outcome:
+retained`; invalid configuration or an untrustworthy create, write, reparse, or
+unknown harness rejection stops without terminal retained completion.
 Evaluation reports behavior, provenance, and deterministic findings without a
 judge, score, or acceptance verdict. Eligible transport failures receive only
 the declared bounded retries, with each attempt retained and linked. Provider
 exhaustion or schema rejection closes its dependent track without suppressing
-the independent editorial track or later declared trials. `benchmark list`,
-`benchmark show`, `benchmark summary`, and `benchmark compare` strictly browse
-this retained evidence. Comparison separates fixture, configuration, and
-provenance context from behavior and reports no score, judge result,
-recommendation, or acceptance decision.
+the independent editorial track or later declared trials. Both tracks quiesce
+before terminal aggregation; interruption leaves a strict running version 6
+artifact browseable through `benchmark list`, `benchmark show`, `benchmark
+summary`, and `benchmark compare`. Concurrent dispatch proves harness
+scheduling, not parallel processing inside a selected model runtime. Comparison
+separates fixture, configuration, and provenance context from behavior and
+reports no score, judge result, recommendation, or acceptance decision.
 
 Current Benchmark Run version 6 retains every exact per-agent configuration and
 schema-valid copyedit diagnostic as declared evidence. Each role independently
@@ -143,8 +151,9 @@ benchmark failed:`. Failures before namespace recognition begin with `command
 failed:`; `eval failed:` is forbidden.
 
 The three evaluation verifiers print `evaluation:` observations. Trial
-retention ends with `evaluation: diagnostics, schema rejection, infrastructure
-failure, and completion retained incrementally`, continuation ends with
+retention ends with `evaluation: concurrent tracks retained interleaved
+progress, diagnostics, schema rejection, infrastructure failure, interruption
+evidence, and completion`, continuation ends with
 `evaluation: serial benchmark retained
 linked retries and continued later trials`, and browsing ends with `evaluation:
 evidence listed summarized and compared without verdicts`. Fixture proof ends
@@ -251,6 +260,19 @@ proves, tests of glue and framework wiring, tests to satisfy coverage.
   production agents, accepts optional temperature as the only decoding control,
   and rejects obsolete `sampling`, `top_p`, and `top_k` fields. Versions 1–5
   continue through their frozen parsers.
+- The repository-owned trial-retention verifier controls provider release and
+  directly observes both writer invocations durably `in_flight` before either
+  completes. It then observes deliberate cross-track interleaving, each
+  writer-before-copyeditor dependency, an expected rejection or provider
+  exhaustion isolated to one track, and both chains quiesced before aggregation.
+  A controlled observer rejection after both writers dispatch proves that an
+  unexpected harness failure waits for the held sibling, propagates without
+  terminal aggregation or changed outcome counts, and leaves a strict browseable
+  running version 6 interruption artifact. The verifier also proves normal
+  terminal completion before printing `evaluation: concurrent tracks retained
+  interleaved progress, diagnostics, schema rejection, infrastructure failure,
+  interruption evidence, and completion`. This proves concurrent harness
+  dispatch and retained-state ordering, not model-runtime parallelism.
 - The repository-owned benchmark-browse verifier creates strict retained
   evidence through the loopback provider and invokes the exported eval CLI
   application boundary for all four `benchmark` routes. It proves both the

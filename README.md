@@ -71,10 +71,12 @@ not replace its runtime evidence.
 
 ## Model evaluation
 
-Run a declared serial live benchmark with a strict configuration file containing
-an ordered nonempty list of four-step configurations, a positive
+Run a declared live benchmark with a strict configuration file containing an
+ordered nonempty list of four-step configurations, a positive
 `repetition_count`, and a bounded `transport_retry_limit` from zero through
-three:
+three. The declared configuration/repetition roster remains serial; within each
+Evaluation Trial, the main-story and announcements writer-to-copyeditor chains
+dispatch concurrently:
 
 ```sh
 pnpm --filter @bc-news/eval eval -- benchmark run \
@@ -93,18 +95,31 @@ candidate configurations for each role and select the configuration that will
 be deployed; it is not a deterministic test or a provider-default quality gate.
 
 The command incrementally retains every Evaluation Trial and Step Invocation in
-a versioned Benchmark Run. The current version 6 artifact retains every exact
-per-agent configuration and schema-valid copyedit diagnostic; versions 1–5
-keep their frozen historical semantics. Its four subject outcomes
-are `completed`, `parse_rejected`, `contract_rejected`, and
-`infrastructure_incomplete`, separate from whether the harness retained
-trustworthy evidence. Malformed JSON or strict schema mismatch is the only
-terminal model-output failure; infrastructure failure is separate. Every
-schema-valid grammar, punctuation, markdown, wording, preservation, or
-editorial-policy finding remains a non-terminal diagnostic after one copyedit
-pass and never causes another model call, rejection, or publication stop. This
-is independent of recorded-replay acceptance, fixture authoring, context
-measurement, and `pnpm walk`.
+a versioned Benchmark Run. One ordered application owner allocates invocation
+ordinals and applies every version 6 transition, retaining each invocation
+before its provider transport. The two concurrently dispatched chains therefore
+form one truthful interleaved history, and the artifact store's atomic full-file
+replacement never races. Each writer still precedes its own copyeditor. Expected
+schema rejection or provider exhaustion closes only its track without
+suppressing the sibling; both tracks quiesce before terminal aggregation.
+Validation, persistence, or an unknown harness rejection prevents terminal
+retained completion, leaving the last strict running artifact inspectable
+through the benchmark browse routes.
+
+The current version 6 artifact retains every exact per-agent configuration and
+schema-valid copyedit diagnostic; versions 1–5 keep their frozen historical
+semantics. Its four subject outcomes are `completed`,
+`parse_rejected`, `contract_rejected`, and `infrastructure_incomplete`, separate
+from whether the harness retained trustworthy evidence. Malformed JSON or
+strict schema mismatch is the only terminal model-output failure;
+infrastructure failure is separate. Every schema-valid grammar, punctuation,
+markdown, wording, preservation, or editorial-policy finding remains a
+non-terminal diagnostic after one copyedit pass and never causes another model
+call, rejection, or publication stop. Concurrent dispatch is an eval-harness
+guarantee, not a guarantee that the selected model runtime processes requests
+in parallel. It changes neither provider adapters nor the serial four-step
+production Workflow, and is independent of recorded-replay acceptance, fixture
+authoring, context measurement, and `pnpm walk`.
 
 Browse retained Benchmark Runs through the same explicit namespace:
 
@@ -172,9 +187,9 @@ pnpm --filter @bc-news/eval verify:recorded-replay-acceptance
 ```
 
 The evaluation proofs print `evaluation:` observations. Trial retention ends
-with `evaluation: diagnostics, schema rejection, infrastructure failure, and
-completion retained incrementally`; the continuation and browse proofs
-respectively end with
+with `evaluation: concurrent tracks retained interleaved progress, diagnostics,
+schema rejection, infrastructure failure, interruption evidence, and
+completion`; the continuation and browse proofs respectively end with
 `evaluation: serial benchmark retained linked retries and continued later trials`
 and
 `evaluation: evidence listed summarized and compared without verdicts`.

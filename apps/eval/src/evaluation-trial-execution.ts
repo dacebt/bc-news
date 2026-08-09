@@ -28,15 +28,45 @@ export async function executeEvaluationTrial(input: {
 	transportRetryLimit?: number;
 }): Promise<V6BenchmarkRun> {
 	let benchmark = input.benchmark;
-	async function retain(next: V6BenchmarkRun): Promise<void> { await input.store.replace(next); benchmark = next; }
 	const trialId = input.trialId ?? benchmark.trials[0]!.id;
-	function trial(): V6EvaluationTrial {
-		const retained = benchmark.trials.find(({ id }) => id === trialId);
-		if (retained === undefined || benchmark.trials.at(-1)?.id !== trialId) throw new Error(`Evaluation trial ${trialId} is not the final running trial`);
+	let mutationTail = Promise.resolve();
+	let mutationFailed = false;
+	let mutationFailure: unknown;
+
+	function retainedTrial(retainedBenchmark: V6BenchmarkRun): V6EvaluationTrial {
+		const retained = retainedBenchmark.trials.find(({ id }) => id === trialId);
+		if (retained === undefined || retainedBenchmark.trials.at(-1)?.id !== trialId) throw new Error(`Evaluation trial ${trialId} is not the final running trial`);
 		return retained;
 	}
-	async function updateTrial(nextTrial: V6EvaluationTrial): Promise<void> {
-		await retain(V6BenchmarkRunSchema.parse({ ...benchmark, trials: benchmark.trials.map((candidate) => candidate.id === trialId ? nextTrial : candidate) }));
+	function enqueueMutation<T>(derive: (current: V6BenchmarkRun) => { readonly next: V6BenchmarkRun; readonly result: T }): Promise<T> {
+		const operation = mutationTail.then(async () => {
+			if (mutationFailed) throw mutationFailure;
+			try {
+				const mutation = derive(benchmark);
+				const next = V6BenchmarkRunSchema.parse(mutation.next);
+				await input.store.replace(next);
+				benchmark = next;
+				return mutation.result;
+			} catch (error: unknown) {
+				mutationFailed = true;
+				mutationFailure = error;
+				throw error;
+			}
+		});
+		mutationTail = operation.then(() => undefined, () => undefined);
+		return operation;
+	}
+	function updateTrial<T>(derive: (current: V6EvaluationTrial) => { readonly next: V6EvaluationTrial; readonly result: T }): Promise<T> {
+		return enqueueMutation((currentBenchmark) => {
+			const mutation = derive(retainedTrial(currentBenchmark));
+			return {
+				next: {
+					...currentBenchmark,
+					trials: currentBenchmark.trials.map((candidate) => candidate.id === trialId ? mutation.next : candidate),
+				},
+				result: mutation.result,
+			};
+		});
 	}
 
 	async function invoke<T extends Record<string, unknown>>(stepInput: {
@@ -47,97 +77,124 @@ export async function executeEvaluationTrial(input: {
 		let predecessorInvocationId: string | null = null;
 		let completion: ModelCompletion;
 		for (let attempt = 0; ; attempt += 1) {
-			const ordinal = trial().invocations.length + 1;
-			const invocationId = `${trial().id}-invocation-${ordinal}`;
-			const startedAt = new Date();
-			await updateTrial({ ...trial(), invocations: [...trial().invocations, {
-				id: invocationId, production_step: stepInput.productionStep, config_identity: input.configIdentity,
-				ordinal, predecessor_invocation_id: predecessorInvocationId, request: retainedRequest, request_sha256: sha256Json(retainedRequest),
-				started_at: startedAt.toISOString(), transport: "in_flight", parse: { state: "pending" },
-			}] });
+			const allocation = await updateTrial((current) => {
+				const ordinal = current.invocations.length + 1;
+				const invocationId = `${current.id}-invocation-${ordinal}`;
+				const startedAt = new Date();
+				return {
+					next: { ...current, invocations: [...current.invocations, {
+						id: invocationId, production_step: stepInput.productionStep, config_identity: input.configIdentity,
+						ordinal, predecessor_invocation_id: predecessorInvocationId, request: retainedRequest, request_sha256: sha256Json(retainedRequest),
+						started_at: startedAt.toISOString(), transport: "in_flight", parse: { state: "pending" },
+					}] },
+					result: { invocationId, startedAt },
+				};
+			});
+			const { invocationId, startedAt } = allocation;
 			try { completion = await input.providers[stepInput.productionStep].complete(request); }
 			catch (error: unknown) {
 				const endedAt = new Date();
-				await updateTrial({ ...trial(), invocations: trial().invocations.map((candidate) => candidate.id === invocationId ? {
+				await updateTrial((current) => ({ next: { ...current, invocations: current.invocations.map((candidate) => candidate.id === invocationId ? {
 					...candidate, transport: "failed" as const, failure: transportErrorIdentity(error), ended_at: endedAt.toISOString(),
 					duration_ms: Math.max(0, endedAt.getTime() - startedAt.getTime()), retry_classification: { state: "pending" as const }, parse: { state: "pending" as const },
-				} : candidate) });
+				} : candidate) }, result: undefined }));
 				const eligible =
 					error instanceof OpenAiCompatibleRetryableError
 					|| error instanceof LmStudioRetryableError;
-				await updateTrial({ ...trial(), invocations: trial().invocations.map((candidate) => candidate.id === invocationId && candidate.transport === "failed" ? {
+				await updateTrial((current) => ({ next: { ...current, invocations: current.invocations.map((candidate) => candidate.id === invocationId && candidate.transport === "failed" ? {
 					...candidate, retry_classification: { state: "classified" as const, eligible,
 						reason: eligible ? "provider classified the transport failure as retryable" : "provider classified the transport failure as deterministic" },
-				} : candidate) });
+				} : candidate) }, result: undefined }));
 				if (!eligible || attempt >= (input.transportRetryLimit ?? 0)) return undefined;
 				predecessorInvocationId = invocationId;
 				continue;
 			}
 
 			const endedAt = new Date();
-			await updateTrial({ ...trial(), invocations: trial().invocations.map((candidate) => candidate.id === invocationId ? {
+			await updateTrial((current) => ({ next: { ...current, invocations: current.invocations.map((candidate) => candidate.id === invocationId ? {
 			...candidate, transport: "succeeded" as const, completion, ended_at: endedAt.toISOString(),
 			duration_ms: Math.max(0, endedAt.getTime() - startedAt.getTime()), parse: { state: "pending" as const },
-			} : candidate) });
+			} : candidate) }, result: undefined }));
 			try {
 				const output = stepInput.parse(completion);
-				await updateTrial({ ...trial(), invocations: trial().invocations.map((candidate) => candidate.id === invocationId && candidate.transport === "succeeded" ? {
-				...candidate, parse: { state: "succeeded" as const, output },
-				} : candidate), selected_invocation_ids: { ...trial().selected_invocation_ids, [stepInput.productionStep]: invocationId } });
+				await updateTrial((current) => ({ next: { ...current, invocations: current.invocations.map((candidate) => candidate.id === invocationId && candidate.transport === "succeeded" ? {
+					...candidate, parse: { state: "succeeded" as const, output },
+				} : candidate), selected_invocation_ids: { ...current.selected_invocation_ids, [stepInput.productionStep]: invocationId } }, result: undefined }));
 				return output;
 			} catch (error: unknown) {
 				const finding = parseFinding(error);
 				if (finding === undefined) throw error;
-				await updateTrial({ ...trial(), invocations: trial().invocations.map((candidate) => candidate.id === invocationId && candidate.transport === "succeeded" ? {
-				...candidate, parse: { state: "rejected" as const, findings: [finding] },
-				} : candidate) });
+				await updateTrial((current) => ({ next: { ...current, invocations: current.invocations.map((candidate) => candidate.id === invocationId && candidate.transport === "succeeded" ? {
+					...candidate, parse: { state: "rejected" as const, findings: [finding] },
+				} : candidate) }, result: undefined }));
 				return undefined;
 			}
 		}
 	}
 
 	async function setTrack(track: "main_story" | "announcements", state: V6EvaluationTrial["tracks"][typeof track]): Promise<void> {
-		await updateTrial({ ...trial(), tracks: { ...trial().tracks, [track]: state } });
+		await updateTrial((current) => ({ next: { ...current, tracks: { ...current.tracks, [track]: state } }, result: undefined }));
 	}
 
-	await setTrack("main_story", { ...trial().tracks.main_story, lifecycle: "running" });
-	const mainDraft = await invoke<MainStoryDraft>({ productionStep: "main_story_write", system: WRITER_SYSTEM_CONSTRAINTS, user: buildMainStoryWriterPrompt(input.preparedEvidence), parse: ({ text }) => parseMainStoryWriterOutput(text) });
-	let mainStory: MainStoryProduct | undefined;
-	let mainDiagnostics: readonly EditorialDiagnostic[] = [];
-	if (mainDraft !== undefined) mainStory = await invoke<MainStoryProduct>({ productionStep: "main_story_copyedit", system: COPYEDIT_SYSTEM_CONSTRAINTS, user: buildMainStoryCopyeditPrompt(mainDraft), parse: ({ text }) => {
-		const parsed = parseMainStoryCopyeditOutputWithDiagnostics(text, mainDraft);
-		mainDiagnostics = [...parsed.diagnostics, ...mainStoryFinalProductDiagnostics(parsed.product, input.preparedEvidence)];
-		return parsed.product;
-	} });
-	if (mainStory === undefined) {
-		await setTrack("main_story", { ...trial().tracks.main_story, lifecycle: "rejected", subject_outcome: terminalCurrentTrackOutcome(trial(), "main_story"), terminal_production_step: mainDraft === undefined ? "main_story_write" : "main_story_copyedit" });
-	} else {
-		await setTrack("main_story", { lifecycle: "completed", subject_outcome: "completed", terminal_production_step: "main_story_copyedit", product: mainStory, findings: [...mainDiagnostics] });
-	}
-
-	await setTrack("announcements", { ...trial().tracks.announcements, lifecycle: "running" });
-	const announcementsDraft = await invoke<AnnouncementsDraft>({ productionStep: "announcements_write", system: WRITER_SYSTEM_CONSTRAINTS, user: buildAnnouncementsWriterPrompt(input.preparedEvidence), parse: ({ text }) => parseAnnouncementsWriterOutput(text) });
-	let announcements: AnnouncementsProduct | undefined;
-	let announcementDiagnostics: readonly EditorialDiagnostic[] = [];
-	if (announcementsDraft !== undefined) {
-		const identified = attachAnnouncementIds(announcementsDraft);
-		announcements = await invoke<AnnouncementsProduct>({ productionStep: "announcements_copyedit", system: COPYEDIT_SYSTEM_CONSTRAINTS, user: buildAnnouncementsCopyeditPrompt(identified), parse: ({ text }) => {
-			const parsed = parseAnnouncementsCopyeditOutputWithDiagnostics(text, identified);
-			announcementDiagnostics = [...parsed.diagnostics, ...announcementsFinalProductDiagnostics(parsed.product, input.preparedEvidence)];
+	async function runMainStoryTrack(): Promise<void> {
+		const mainDraft = await invoke<MainStoryDraft>({ productionStep: "main_story_write", system: WRITER_SYSTEM_CONSTRAINTS, user: buildMainStoryWriterPrompt(input.preparedEvidence), parse: ({ text }) => parseMainStoryWriterOutput(text) });
+		let mainStory: MainStoryProduct | undefined;
+		let mainDiagnostics: readonly EditorialDiagnostic[] = [];
+		if (mainDraft !== undefined) mainStory = await invoke<MainStoryProduct>({ productionStep: "main_story_copyedit", system: COPYEDIT_SYSTEM_CONSTRAINTS, user: buildMainStoryCopyeditPrompt(mainDraft), parse: ({ text }) => {
+			const parsed = parseMainStoryCopyeditOutputWithDiagnostics(text, mainDraft);
+			mainDiagnostics = [...parsed.diagnostics, ...mainStoryFinalProductDiagnostics(parsed.product, input.preparedEvidence)];
 			return parsed.product;
 		} });
-	}
-	if (announcements === undefined) {
-		await setTrack("announcements", { ...trial().tracks.announcements, lifecycle: "rejected", subject_outcome: terminalCurrentTrackOutcome(trial(), "announcements"), terminal_production_step: announcementsDraft === undefined ? "announcements_write" : "announcements_copyedit" });
-	} else {
-		await setTrack("announcements", { lifecycle: "completed", subject_outcome: "completed", terminal_production_step: "announcements_copyedit", product: announcements, findings: [...announcementDiagnostics] });
+		if (mainStory === undefined) {
+			await updateTrial((current) => ({ next: { ...current, tracks: { ...current.tracks, main_story: { ...current.tracks.main_story, lifecycle: "rejected", subject_outcome: terminalCurrentTrackOutcome(current, "main_story"), terminal_production_step: mainDraft === undefined ? "main_story_write" : "main_story_copyedit" } } }, result: undefined }));
+		} else {
+			await setTrack("main_story", { lifecycle: "completed", subject_outcome: "completed", terminal_production_step: "main_story_copyedit", product: mainStory, findings: [...mainDiagnostics] });
+		}
 	}
 
-	const outcome = deriveVersion5TrialOutcome(trial());
-	const completedAt = new Date().toISOString();
-	const counts = { ...benchmark.outcome_counts }; counts[outcome] += 1;
-	const completedTrial = { ...trial(), lifecycle: "complete" as const, completed_at: completedAt, subject_outcome: outcome };
-	await retain(V6BenchmarkRunSchema.parse({ ...benchmark,
-		trials: benchmark.trials.map((candidate) => candidate.id === trialId ? completedTrial : candidate), outcome_counts: counts }));
+	async function runAnnouncementsTrack(): Promise<void> {
+		const announcementsDraft = await invoke<AnnouncementsDraft>({ productionStep: "announcements_write", system: WRITER_SYSTEM_CONSTRAINTS, user: buildAnnouncementsWriterPrompt(input.preparedEvidence), parse: ({ text }) => parseAnnouncementsWriterOutput(text) });
+		let announcements: AnnouncementsProduct | undefined;
+		let announcementDiagnostics: readonly EditorialDiagnostic[] = [];
+		if (announcementsDraft !== undefined) {
+			const identified = attachAnnouncementIds(announcementsDraft);
+			announcements = await invoke<AnnouncementsProduct>({ productionStep: "announcements_copyedit", system: COPYEDIT_SYSTEM_CONSTRAINTS, user: buildAnnouncementsCopyeditPrompt(identified), parse: ({ text }) => {
+				const parsed = parseAnnouncementsCopyeditOutputWithDiagnostics(text, identified);
+				announcementDiagnostics = [...parsed.diagnostics, ...announcementsFinalProductDiagnostics(parsed.product, input.preparedEvidence)];
+				return parsed.product;
+			} });
+		}
+		if (announcements === undefined) {
+			await updateTrial((current) => ({ next: { ...current, tracks: { ...current.tracks, announcements: { ...current.tracks.announcements, lifecycle: "rejected", subject_outcome: terminalCurrentTrackOutcome(current, "announcements"), terminal_production_step: announcementsDraft === undefined ? "announcements_write" : "announcements_copyedit" } } }, result: undefined }));
+		} else {
+			await setTrack("announcements", { lifecycle: "completed", subject_outcome: "completed", terminal_production_step: "announcements_copyedit", product: announcements, findings: [...announcementDiagnostics] });
+		}
+	}
+
+	await updateTrial((current) => ({ next: {
+		...current,
+		tracks: {
+			main_story: { ...current.tracks.main_story, lifecycle: "running" },
+			announcements: { ...current.tracks.announcements, lifecycle: "running" },
+		},
+	}, result: undefined }));
+	const trackResults = await Promise.allSettled([runMainStoryTrack(), runAnnouncementsTrack()]);
+	const failures: unknown[] = [];
+	for (const result of trackResults) {
+		if (result.status === "rejected") failures.push(result.reason as unknown);
+	}
+	if (failures.length === 1) throw failures[0];
+	if (failures.length === 2) throw new AggregateError(failures, `Both evaluation tracks failed for ${trialId}`);
+
+	await enqueueMutation((current) => {
+		const currentTrial = retainedTrial(current);
+		const outcome = deriveVersion5TrialOutcome(currentTrial);
+		const completedAt = new Date().toISOString();
+		const counts = { ...current.outcome_counts };
+		counts[outcome] += 1;
+		const completedTrial = { ...currentTrial, lifecycle: "complete" as const, completed_at: completedAt, subject_outcome: outcome };
+		return { next: { ...current,
+			trials: current.trials.map((candidate) => candidate.id === trialId ? completedTrial : candidate), outcome_counts: counts }, result: undefined };
+	});
 	return benchmark;
 }
