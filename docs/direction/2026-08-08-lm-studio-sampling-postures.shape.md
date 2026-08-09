@@ -5,10 +5,10 @@ title: >-
 description: >-
   Session boundaries, cadence, and success signal for aligning production and evaluation sampling intent.
 tags: [wsd, direction, shape, lm-studio, evaluation]
-status: stable
+status: deprecated
 generated:
   by: ebt-wsd/okf-v0.2
-  at: "2026-08-09T02:58:38Z"
+  at: "2026-08-09T14:28:32Z"
 ---
 # Shape: LM Studio sampling postures
 
