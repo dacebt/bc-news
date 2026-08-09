@@ -5,10 +5,7 @@ import type { RecordCommandResult } from "./record-command";
 import type { RunFile, RunFileRead } from "./run-file";
 
 function formatRecordedConfiguration(configuration: RecordedModelConfiguration): string {
-	const temperature = configuration.temperature === undefined
-		? "provider_default"
-		: String(configuration.temperature);
-	return `${configuration.adapter}/${configuration.model}/temperature=${temperature}`;
+	return JSON.stringify(configuration);
 }
 
 function formatDiagnostics(

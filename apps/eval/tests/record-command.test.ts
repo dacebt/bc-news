@@ -122,6 +122,13 @@ function explicitProductionSteps() {
 	};
 }
 
+function reportedConfiguration(summary: string, productionStep: ProductionModelStep): unknown {
+	const prefix = `- ${productionStep}: `;
+	const line = summary.split("\n").find((candidate) => candidate.startsWith(prefix));
+	if (line === undefined) throw new Error(`Missing reported configuration for ${productionStep}`);
+	return JSON.parse(line.slice(prefix.length)) as unknown;
+}
+
 type TestModelConfig = ReturnType<typeof localAdapterConfig> | ReturnType<typeof hostedAdapterConfig>;
 type TestProductionSteps = Readonly<Record<ProductionModelStep, TestModelConfig>>;
 
@@ -252,12 +259,14 @@ test("binds every retained response to the exact dependent live request", async 
 			code: "forbidden_marker",
 		}),
 	]));
-	expect(formatRecordSummary(result)).toContain("Artifact version: 3");
-	expect(formatRecordSummary(result)).toContain("main_story_write: lmstudio/memory-model/temperature=0.7");
-	expect(formatRecordSummary(result)).not.toContain("top_p");
-	expect(formatRecordSummary(result)).not.toContain("top_k");
-	expect(formatRecordSummary(result)).toContain("Live diagnostics:");
-	expect(formatRecordSummary(result)).toContain("Replay diagnostics:");
+	const summary = formatRecordSummary(result);
+	expect(summary).toContain("Artifact version: 3");
+	expect(reportedConfiguration(summary, "main_story_write"))
+		.toEqual(explicitProductionSteps().main_story_write);
+	expect(summary).not.toContain("top_p");
+	expect(summary).not.toContain("top_k");
+	expect(summary).toContain("Live diagnostics:");
+	expect(summary).toContain("Replay diagnostics:");
 });
 
 test("retains independent provider-default and explicit temperature truth per production step", async () => {
@@ -286,8 +295,11 @@ test("retains independent provider-default and explicit temperature truth per pr
 	expect(mainStoryCopyedit.configuration).toEqual(localAdapterConfig(0.2));
 	expect(announcementsWrite.configuration).toEqual(hostedAdapterConfig(0.8));
 	expect(announcementsCopyedit.configuration).toEqual(localAdapterConfig(0.3));
-	expect(formatRecordSummary(result)).toContain("main_story_write: lmstudio/memory-model/temperature=provider_default");
-	expect(formatRecordSummary(result)).toContain("announcements_write: openai_compatible_hosted/memory-model/temperature=0.8");
+	const summary = formatRecordSummary(result);
+	expect(reportedConfiguration(summary, "main_story_write"))
+		.toEqual(localAdapterConfig());
+	expect(reportedConfiguration(summary, "announcements_write"))
+		.toEqual(hostedAdapterConfig(0.8));
 });
 
 test("leaves the prior response set unchanged when live output is rejected", async () => {

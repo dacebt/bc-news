@@ -151,11 +151,54 @@ const ContextBenchmarkConfigurationsByStepSchema = z.strictObject({
 	announcements_copyedit: ContextBenchmarkAgentConfigurationSchema,
 });
 
+function validateContextBenchmarkAgentModels(
+	report: {
+		readonly agent_configurations: z.infer<typeof ContextBenchmarkConfigurationsByStepSchema>;
+		readonly model: {
+			readonly identifier: string;
+			readonly model_key: string;
+			readonly path: string;
+			readonly display_name: string;
+		};
+	},
+	context: z.core.$RefinementCtx,
+): void {
+	const configuredModels = PRODUCTION_MODEL_STEPS.map(
+		(step) => report.agent_configurations[step].model,
+	);
+	if (new Set(configuredModels).size !== 1) {
+		context.addIssue({
+			code: "custom",
+			path: ["agent_configurations"],
+			message: "all context benchmark agents must retain one configured model",
+		});
+	}
+
+	const loadedModelNames = new Set([
+		report.model.identifier,
+		report.model.model_key,
+		report.model.path,
+		report.model.display_name,
+	]);
+	for (const step of PRODUCTION_MODEL_STEPS) {
+		if (!loadedModelNames.has(report.agent_configurations[step].model)) {
+			context.addIssue({
+				code: "custom",
+				path: ["agent_configurations", step, "model"],
+				message: "configured model must identify the retained loaded model",
+			});
+		}
+	}
+}
+
 export const ContextBenchmarkFileV3Schema = z.strictObject({
 	version: z.literal(3),
 	...ContextBenchmarkFileShape,
 	agent_configurations: ContextBenchmarkConfigurationsByStepSchema,
-}).superRefine(validateContextBenchmarkRows);
+}).superRefine((report, context) => {
+	validateContextBenchmarkRows(report, context);
+	validateContextBenchmarkAgentModels(report, context);
+});
 
 export const ContextBenchmarkFileSchema = z.union([
 	ContextBenchmarkFileV3Schema,

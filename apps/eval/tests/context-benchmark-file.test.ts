@@ -139,6 +139,46 @@ test("parses strict version 3 independent agent temperatures", () => {
 	}
 });
 
+test("rejects version 3 agent models that do not identify one retained loaded model", () => {
+	const report = validV3Report();
+	const mixedModels = ContextBenchmarkFileV3Schema.safeParse({
+		...report,
+		agent_configurations: {
+			...report.agent_configurations,
+			announcements_copyedit: {
+				...report.agent_configurations.announcements_copyedit,
+				model: report.model.path,
+			},
+		},
+	});
+	expect(mixedModels.success).toBe(false);
+	if (!mixedModels.success) {
+		expect(mixedModels.error.issues).toEqual(expect.arrayContaining([
+			expect.objectContaining({
+				path: ["agent_configurations"],
+				message: "all context benchmark agents must retain one configured model",
+			}),
+		]));
+	}
+
+	const unknownModel = ContextBenchmarkFileV3Schema.safeParse({
+		...report,
+		agent_configurations: Object.fromEntries(PRODUCTION_MODEL_STEPS.map((step) => [
+			step,
+			{ ...report.agent_configurations[step], model: "another-qwen" },
+		])),
+	});
+	expect(unknownModel.success).toBe(false);
+	if (!unknownModel.success) {
+		expect(unknownModel.error.issues).toEqual(expect.arrayContaining([
+			expect.objectContaining({
+				path: ["agent_configurations", "main_story_write", "model"],
+				message: "configured model must identify the retained loaded model",
+			}),
+		]));
+	}
+});
+
 test("reports version 3 exact agent temperatures before measurement rows", () => {
 	const output = formatContextBenchmarkReport(validV3Report(), "context.json");
 	expect(output).toContain("Agent configurations:\n  main_story_write: qwen3-local, temperature=0.7");
