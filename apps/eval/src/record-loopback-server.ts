@@ -184,11 +184,12 @@ export function startRecordLoopbackServer(
 					}));
 				},
 				releaseRequests: (models) => {
-					for (const model of models) {
+					const signals = models.map((model) => {
 						const signal = requestSignals.get(model);
 						if (signal === undefined) throw new Error(`Cannot release unregistered loopback model ${model}`);
-						signal.release();
-					}
+						return signal;
+					});
+					for (const signal of signals) signal.release();
 				},
 				close: async () => {
 					for (const signal of requestSignals.values()) signal.release();

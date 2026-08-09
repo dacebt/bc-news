@@ -196,8 +196,5 @@ export async function executeEvaluationTrial(input: {
 		return { next: { ...current,
 			trials: current.trials.map((candidate) => candidate.id === trialId ? completedTrial : candidate), outcome_counts: counts }, result: undefined };
 	});
-	if (mutationFailed) {
-		throw mutationFailure;
-	}
 	return benchmark;
 }
