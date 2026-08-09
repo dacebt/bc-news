@@ -12,10 +12,15 @@ import {
 	RecordedModelProviderError,
 	RecordedModelResponseSchema,
 	type RecordedModelResponse,
+	type RecordedModelResponseV2,
 } from "./recorded-response";
 
 export type RecordedModelResponseRoster = Readonly<
 	Record<ProductionModelStep, RecordedModelResponse>
+>;
+
+export type RecordedModelResponseV2Roster = Readonly<
+	Record<ProductionModelStep, RecordedModelResponseV2>
 >;
 
 const committedRecordedModelResponses: RecordedModelResponseRoster = {

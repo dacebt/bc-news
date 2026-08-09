@@ -13,6 +13,7 @@ import {
 } from "@bc-news/generation-core";
 import {
 	RecordedModelResponseSchema,
+	RecordedModelResponseV2Schema,
 	createRecordedModelProvider,
 	fixtureEvidenceInput,
 	modelRequestSha256,
@@ -30,6 +31,76 @@ const committedRoster: RecordedModelResponseRoster = {
 	announcements_write: RecordedModelResponseSchema.parse(announcementsWriteResponseJson),
 	announcements_copyedit: RecordedModelResponseSchema.parse(announcementsCopyeditResponseJson),
 };
+
+test("keeps the committed absent-version response contract strict and unchanged", () => {
+	for (const candidate of [
+		mainStoryWriteResponseJson,
+		mainStoryCopyeditResponseJson,
+		announcementsWriteResponseJson,
+		announcementsCopyeditResponseJson,
+	]) {
+		const response = RecordedModelResponseSchema.parse(candidate);
+		expect("version" in response).toBe(false);
+		expect("sampling" in response).toBe(false);
+	}
+});
+
+test.each([
+	["provider-default LM Studio", { adapter: "lmstudio", posture: "provider_default" }],
+	["explicit LM Studio", {
+		adapter: "lmstudio",
+		posture: "explicit",
+		config: { temperature: 0.25, top_p: 0.9, top_k: 40 },
+	}],
+	["hosted not-applicable", {
+		adapter: "openai_compatible_hosted",
+		posture: "not_applicable",
+	}],
+] as const)("accepts strict v2 %s sampling evidence", (_name, sampling) => {
+	const response = RecordedModelResponseV2Schema.parse({
+		...mainStoryWriteResponseJson,
+		version: 2,
+		sampling,
+	});
+	expect(response.sampling).toEqual(sampling);
+	expect(RecordedModelResponseSchema.parse(response)).toEqual(response);
+});
+
+test("rejects partial, contradictory, and extra v2 sampling evidence", () => {
+	const response = {
+		...mainStoryWriteResponseJson,
+		version: 2,
+	};
+	expect(RecordedModelResponseV2Schema.safeParse({
+		...response,
+		sampling: {
+			adapter: "lmstudio",
+			posture: "explicit",
+			config: { temperature: 0, top_p: 1 },
+		},
+	}).success).toBe(false);
+	expect(RecordedModelResponseV2Schema.safeParse({
+		...response,
+		sampling: {
+			adapter: "lmstudio",
+			posture: "provider_default",
+			config: { temperature: 0, top_p: 1, top_k: 40 },
+		},
+	}).success).toBe(false);
+	expect(RecordedModelResponseV2Schema.safeParse({
+		...response,
+		sampling: {
+			adapter: "openai_compatible_hosted",
+			posture: "not_applicable",
+			config: { temperature: 0, top_p: 1, top_k: 40 },
+		},
+	}).success).toBe(false);
+	expect(RecordedModelResponseSchema.safeParse({
+		...response,
+		version: 3,
+		sampling: { adapter: "lmstudio", posture: "provider_default" },
+	}).success).toBe(false);
+});
 
 async function canonicalPreparedEvidence() {
 	const messages = await fixtureEvidenceInput.loadEvidence({
@@ -142,4 +213,30 @@ test("a replay factory validates the selected retained response", async () => {
 		system: WRITER_SYSTEM_CONSTRAINTS,
 		user: buildMainStoryWriterPrompt(preparedEvidence),
 	})).rejects.toEqual(expect.objectContaining({ name: "ZodError" }));
+});
+
+test("replays v2 response text without treating sampling evidence as an instruction", async () => {
+	const preparedEvidence = await canonicalPreparedEvidence();
+	const currentResponse = RecordedModelResponseV2Schema.parse({
+		...mainStoryWriteResponseJson,
+		version: 2,
+		sampling: {
+			adapter: "lmstudio",
+			posture: "explicit",
+			config: { temperature: 0.5, top_p: 0.8, top_k: 30 },
+		},
+	});
+	const provider = createRecordedModelProvider({
+		...committedRoster,
+		main_story_write: currentResponse,
+	});
+
+	const completion = await provider.complete({
+		productionStep: "main_story_write",
+		system: WRITER_SYSTEM_CONSTRAINTS,
+		user: buildMainStoryWriterPrompt(preparedEvidence),
+	});
+	expect(completion.text).toBe(mainStoryWriteResponseJson.text);
+	expect(completion.provider).toBe(mainStoryWriteResponseJson.provider);
+	expect(completion.model).toBe(mainStoryWriteResponseJson.model);
 });

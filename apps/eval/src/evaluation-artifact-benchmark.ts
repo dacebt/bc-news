@@ -5,15 +5,26 @@ import {
 import { refineTrial } from "./evaluation-artifact-trial-refinement";
 import {
 	V1PreparedEvidenceSchema, V1Sha256HashSchema, v1OutputContractProvenance,
-	type V1EvalConfig, type V1ProductionModelStep,
 } from "./evaluation-artifact-v1-contracts";
+
+type CompletionEvidenceAdapter =
+	| { readonly adapter: "recorded" }
+	| { readonly adapter: "lmstudio" }
+	| {
+		readonly adapter: "openai_compatible_hosted";
+		readonly billing: {
+			readonly input_usd_per_million_tokens: number;
+			readonly output_usd_per_million_tokens: number;
+			readonly pricing_reference: string;
+		};
+	};
 
 function addCompletionIssue(context: z.RefinementCtx, trialIndex: number, index: number, message: string): void {
 	context.addIssue({ code: "custom", path: ["trials", trialIndex, "invocations", index, "completion"], message });
 }
 
 export function refineCompletionEvidence(
-	adapter: V1EvalConfig["production_steps"][V1ProductionModelStep],
+	adapter: CompletionEvidenceAdapter,
 	completion: z.infer<typeof BenchmarkRunBaseSchema>["trials"][number]["invocations"][number] & { transport: "succeeded" },
 	trialIndex: number,
 	index: number,

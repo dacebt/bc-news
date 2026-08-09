@@ -3,8 +3,10 @@ import { join } from "node:path";
 import {
 	createRecordedModelProvider,
 	modelRequestSha256,
-	type RecordedModelResponse,
+	type RecordedModelResponseV2,
+	type RecordedModelResponseV2Roster,
 	type RecordedModelResponseRoster,
+	type RecordedModelSampling,
 } from "@bc-news/fixtures";
 import {
 	PRODUCTION_MODEL_STEPS,
@@ -39,6 +41,7 @@ export interface RecordCommandOptions {
 
 export interface RecordCommandResult {
 	readonly responseDirectory: string;
+	readonly recordedResponses: RecordedModelResponseV2Roster;
 	readonly liveProducts: EvalProducts;
 	readonly replayProducts: EvalProducts;
 	readonly comparison: FinalProductComparison;
@@ -61,6 +64,27 @@ export class RecordCommandError extends Error {
 }
 
 type ProviderRoster = Readonly<Record<ProductionModelStep, ModelProviderPort>>;
+type LiveModelConfig = RecorderConfig["production_steps"][ProductionModelStep];
+
+function recordedSampling(config: LiveModelConfig): RecordedModelSampling {
+	switch (config.adapter) {
+		case "lmstudio":
+			if (config.sampling === undefined) {
+				return { adapter: "lmstudio", posture: "provider_default" };
+			}
+			return {
+				adapter: "lmstudio",
+				posture: "explicit",
+				config: {
+					temperature: config.sampling.temperature,
+					top_p: config.sampling.top_p,
+					top_k: config.sampling.top_k,
+				},
+			};
+		case "openai_compatible_hosted":
+			return { adapter: "openai_compatible_hosted", posture: "not_applicable" };
+	}
+}
 
 function resolveRecorderProviders(
 	config: RecorderConfig,
@@ -102,7 +126,8 @@ function replayProviderRoster(provider: ModelProviderPort): ProviderRoster {
 async function recordedResponse(
 	expectedStep: ProductionModelStep,
 	observation: ProductionStepObservation | undefined,
-): Promise<RecordedModelResponse> {
+	config: LiveModelConfig,
+): Promise<RecordedModelResponseV2> {
 	if (observation === undefined || observation.request.productionStep !== expectedStep) {
 		throw new RecordCommandError(
 			"observation_roster_mismatch",
@@ -111,17 +136,20 @@ async function recordedResponse(
 		);
 	}
 	return {
+		version: 2,
 		production_step: expectedStep,
 		provider: observation.completion.provider,
 		model: observation.completion.model,
 		prompt_sha256: await modelRequestSha256(observation.request),
 		text: observation.completion.text,
+		sampling: recordedSampling(config),
 	};
 }
 
 async function recordedResponseRoster(
+	config: RecorderConfig,
 	observations: readonly ProductionStepObservation[],
-): Promise<RecordedModelResponseRoster> {
+): Promise<RecordedModelResponseV2Roster> {
 	if (observations.length !== PRODUCTION_MODEL_STEPS.length) {
 		throw new RecordCommandError(
 			"observation_roster_mismatch",
@@ -129,10 +157,10 @@ async function recordedResponseRoster(
 		);
 	}
 	const [mainStoryWrite, mainStoryCopyedit, announcementsWrite, announcementsCopyedit] = await Promise.all([
-		recordedResponse("main_story_write", observations[0]),
-		recordedResponse("main_story_copyedit", observations[1]),
-		recordedResponse("announcements_write", observations[2]),
-		recordedResponse("announcements_copyedit", observations[3]),
+		recordedResponse("main_story_write", observations[0], config.production_steps.main_story_write),
+		recordedResponse("main_story_copyedit", observations[1], config.production_steps.main_story_copyedit),
+		recordedResponse("announcements_write", observations[2], config.production_steps.announcements_write),
+		recordedResponse("announcements_copyedit", observations[3], config.production_steps.announcements_copyedit),
 	]);
 	return {
 		main_story_write: mainStoryWrite,
@@ -170,7 +198,7 @@ export async function recordCommand(options: RecordCommandOptions): Promise<Reco
 		stagingDirectory = await createRecordedResponseStagingDirectory(options.responseDirectory);
 
 		const liveExecution = await executeProductionSteps(preparedEvidence, liveProviders);
-		const roster = await recordedResponseRoster(liveExecution.observations);
+		const roster = await recordedResponseRoster(config, liveExecution.observations);
 		await writeRecordedResponses(stagingDirectory, roster);
 		const stagedRoster = await validateRecordedResponseDirectory(stagingDirectory);
 
@@ -194,6 +222,7 @@ export async function recordCommand(options: RecordCommandOptions): Promise<Reco
 
 		return {
 			responseDirectory: options.responseDirectory,
+			recordedResponses: roster,
 			liveProducts: liveExecution.products,
 			replayProducts: replayExecution.products,
 			comparison,

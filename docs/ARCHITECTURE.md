@@ -139,8 +139,8 @@ provenance is the configured provider id and model provenance is the response
 model.
 
 `MODEL_CONFIG` and eval configuration contain only non-secret adapter identity,
-requested model, explicit local sampling and reasoning values, provider id,
-and pricing inputs. `LMSTUDIO_BASE_URL`,
+requested model, optional local sampling and reasoning declarations, provider
+id, and pricing inputs. `LMSTUDIO_BASE_URL`,
 `HOSTED_MODEL_BASE_URL`, and `HOSTED_MODEL_API_KEY` are environment-only, and a
 base URL containing credentials rejects. Native LM Studio timeout, model
 availability, SDK, and transport failures are retryable by default. Hosted
@@ -186,12 +186,15 @@ For local development, copy `apps/generation/.dev.vars.example` to the ignored
 `apps/generation/.dev.vars`. Wrangler loads that file for the generation Worker.
 `MODEL_CONFIG` is strict and contains exactly
 `main_story_write`, `main_story_copyedit`, `announcements_write`, and
-`announcements_copyedit`. Every LM Studio adapter requires explicit finite
-`temperature` and `top_p`, integer `top_k`, and
-`reasoning_effort: provider_default`. The native SDK request omits reasoning
-effort because its public prediction options do not expose that control;
-explicit effort values reject instead of being approximated. LM Studio requests
-use strict inline JSON schemas
+`announcements_copyedit`. Every LM Studio adapter requires
+`reasoning_effort: provider_default`. Sampling is an optional all-or-none tuple:
+omission sends none of the native SDK's temperature, top-p, or top-k properties
+and is the production provider-default posture; an explicit posture requires
+finite `temperature` and `top_p` plus integer `top_k`. Partial or invalid tuples
+reject rather than being completed or approximated by the application. The
+native SDK request omits reasoning effort because its public prediction options
+do not expose that control; explicit effort values reject instead of being
+approximated. LM Studio requests use strict inline JSON schemas
 derived from the same Zod contracts that validate outputs. Recorded and hosted
 requests do not receive local decoding controls.
 
@@ -220,6 +223,12 @@ readers. A failed call, validation, staged replay, or comparison leaves the
 previous committed set in place. Recording has no judge, score, threshold,
 byte pin, or source-digest acceptance gate.
 
+Current recorded-response version 2 artifacts retain the declared LM Studio
+sampling posture and the complete tuple only when explicit. Absent-version
+recorded responses keep their legacy meaning and remain parseable. Fixture
+authoring may use either posture; omission is behavioral provider-default
+evidence, while a complete explicit tuple is deterministic evidence.
+
 The model-evaluation command is a separate surface:
 `benchmark run --fixture <path> --config <path> [--results-dir <path>]`. Its strict
 benchmark declaration contains a nonempty ordered list of exact four-step live
@@ -228,6 +237,13 @@ limit from zero through three. Recorded adapters and duplicate configuration
 identities reject before artifact creation. Historical run files keep their
 existing directory, schema, and meaning. The eval application owns this
 artifact boundary directly, adding no third domain port.
+
+Current Benchmark Run artifact version 4 retains each declared LM Studio
+sampling posture. Provider-default behavior omits the tuple and all three SDK
+properties; explicit deterministic evidence retains one complete,
+model-specific tuple. Partial tuples reject before artifact creation. Versions
+1–3 remain version-dispatched historical boundaries and are never reinterpreted
+as provider-default evidence.
 
 The artifact is exclusively created in `running` state before any provider
 call. Before transport, it atomically retains the exact assembled
@@ -315,18 +331,21 @@ counts, and benchmark continuation. Version 2 keeps the original prompt and
 copyedit-preservation semantics frozen. Version 3 freezes the corrected writer
 field-purpose contracts and treats leading or trailing whitespace-only
 separators as boundary whitespace while continuing to protect interior
-paragraph structure. The version-dispatched store rejects a cross-version
-replacement.
+paragraph structure. Version 4 is the current production-aligned boundary and
+adds truthful provider-default versus complete explicit LM Studio sampling
+without changing versions 1–3. The version-dispatched store rejects a
+cross-version replacement.
 
-The representative local version-3 declaration contains exactly four
-configurations, in order: `qwen/qwen3.5-9b`, `openai/gpt-oss-20b`,
-`prism-ml/bonsai-27b`, and `google/gemma-4-e4b`. Each configuration assigns the
-same model to all four production steps with `temperature: 1`, `top_p: 0.95`,
-`top_k: 20`, and `reasoning_effort: provider_default`; the declaration uses one repetition
-and a transport retry limit of one. It remains ignored local evidence, runs
-serially through `benchmark run`, and is inspected through `benchmark summary`.
-The summary must retain every actual trial outcome and exact configuration
-identity; it does not decide quality or acceptance.
+The representative local deterministic declaration contains, in order,
+`qwen/qwen3.5-9b`, `prism-ml/bonsai-27b`, and `google/gemma-4-e4b`. Each assigns
+one model to all four production steps with
+its complete model-specific sampling tuple and
+`reasoning_effort: provider_default`; the declaration uses one repetition and a
+transport retry limit of one. The separate behavioral declaration omits
+sampling from all four steps to match production. These remain ignored local evidence, run
+serially through `benchmark run`, and are inspected through `benchmark summary`.
+The summary must retain every actual trial outcome, sampling posture, and exact
+configuration identity; it does not decide quality or acceptance.
 
 Settled — edition identity enforcement, three layers with the SQL layer
 authoritative: (1) the trigger derives a deterministic Workflow instance
@@ -441,8 +460,14 @@ its configured context length. The live command requires exactly one loaded
 Qwen model and the same model id across all four production-step configs; it
 never loads, switches, unloads, or contacts a hosted model.
 
+Current context-result version 2 artifacts retain provider-default omission or
+the complete explicit tuple; absent-version context results retain their legacy
+meaning. Context measurement may use either posture, and its declaration—not
+the command name—determines whether the result is behavioral or deterministic.
+
 The representative evidence corpus produces 208 prepared messages under the
-unchanged sampler, so its fixed measurement matrix is 1, 50, 100, 150, and 208.
+unchanged evidence-message sampler, so its fixed measurement matrix is 1, 50,
+100, 150, and 208.
 Each load preserves the retained message order and builds both copyedit requests
 from that load's actual writer drafts. Provider-reported usage is reconciled
 against model-native template/token counts and written as strict JSON. Schema

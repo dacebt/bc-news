@@ -5,10 +5,10 @@ title: >-
 description: >-
   Risk-ordered vertical capabilities and feature conventions for provider-default and explicit LM Studio sampling.
 tags: [wsd, direction, capability-map, lm-studio, evaluation]
-status: stable
+status: deprecated
 generated:
   by: ebt-wsd/okf-v0.2
-  at: "2026-08-09T01:41:33Z"
+  at: "2026-08-09T02:05:37Z"
 ---
 # Capability map: LM Studio sampling postures
 
@@ -34,7 +34,7 @@ The composed recorded-provider acceptance spine is already green. Production omi
 
 ## Notes
 
-The WSD domain model remains unchanged until a running-system observation warrants new vocabulary under its update protocol.
+Superseded before construction: seam review proved that production omission and a truthful current artifact boundary are invariant-coupled and cannot land as separate direct-to-main capabilities.
 
 ## Related documentation
 

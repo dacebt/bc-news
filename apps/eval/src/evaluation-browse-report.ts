@@ -1,5 +1,6 @@
 import type { BenchmarkRun } from "./evaluation-artifact";
 import type { BenchmarkComparison } from "./evaluation-comparison";
+import { lmStudioSamplingPosture } from "./config";
 
 type Trial = BenchmarkRun["trials"][number];
 type Invocation = Trial["invocations"][number];
@@ -58,6 +59,7 @@ export function summarizeBenchmarkRun(run: BenchmarkRun) {
 		configurations: run.declaration.configurations.map(({ identity, config }, index) => ({
 			ordinal: index + 1,
 			identity,
+			lm_studio_sampling_posture: lmStudioSamplingPosture(config),
 			production_steps: config.production_steps,
 		})),
 		policy: {

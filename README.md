@@ -83,8 +83,18 @@ pnpm --filter @bc-news/eval eval -- benchmark run \
   --results-dir path/to/evaluation-results
 ```
 
+Each LM Studio step uses one of two sampling postures. Omit `sampling` for
+provider-default behavior: the application sends no temperature, top-p, or
+top-k override. This is the production posture and the only posture that
+constitutes a behavioral production baseline. Supply all three fields as one
+complete, model-specific tuple for deterministic drift, structure, reliability,
+or completion evidence. Partial tuples reject, and explicit sampling evidence
+is never presented as a production-behavior baseline.
+
 The command incrementally retains every Evaluation Trial and Step Invocation in
-a versioned Benchmark Run. Its report names model subject outcomes separately
+a versioned Benchmark Run. The current version 4 artifact retains omitted
+versus complete explicit sampling truthfully; versions 1–3 keep their frozen
+historical semantics. Its report names model subject outcomes separately
 from whether the harness retained trustworthy evidence. Model rejection or
 provider exhaustion does not suppress an independent editorial track or a later
 declared trial. This is independent of recorded-replay acceptance, fixture
@@ -133,9 +143,14 @@ pnpm --filter @bc-news/eval eval -- context benchmark \
 ```
 
 Fixture authoring defaults to `packages/fixtures/model-responses` and accepts
-`--response-dir`. Context measurement defaults to `apps/eval/context-results`
-and accepts `--results-dir`. Explicit paths are resolved relative to the
-invoking workspace. The old bare `evaluate`, `run`, `record`, `context`,
+`--response-dir`. Its current recorded-response version 2 artifacts retain the
+declared sampling posture; absent-version recorded responses retain their legacy
+meaning. Context measurement defaults to `apps/eval/context-results` and
+accepts `--results-dir`. Current context-result version 2 artifacts retain the
+same distinction, while absent-version context results retain their legacy
+meaning. Either tool can use provider-default or explicit sampling; the
+declaration determines its purpose. Explicit paths are resolved relative to
+the invoking workspace. The old bare `evaluate`, `run`, `record`, `context`,
 `list`, `show`, and `compare` routes do not exist.
 
 Repository-owned runtime proofs are direct package commands:
@@ -154,20 +169,22 @@ browse proofs respectively end with
 and
 `evaluation: evidence listed summarized and compared without verdicts`.
 Fixture proof prints
-`fixture authoring: four production responses recorded replayed and compared`;
+`fixture authoring: four strict v2 hosted responses retained not-applicable sampling, replayed, and compared`;
 recorded-replay proof prints
 `acceptance: four recorded production steps replayed request-linked and deterministic`.
 None of these commands prints or confers `WALK PASS`.
 
-The representative local benchmark uses one ignored declaration with exactly
-these four configurations, in order: `qwen/qwen3.5-9b`,
-`openai/gpt-oss-20b`, `prism-ml/bonsai-27b`, and `google/gemma-4-e4b`. Every
-configuration assigns its one model to all four production steps with
-`temperature: 1`, `top_p: 0.95`, `top_k: 20`, and `reasoning_effort: none`;
-the declaration uses one repetition and a transport retry limit of one. Run it
-serially through `benchmark run`, then inspect the returned id through
-`benchmark summary`. The retained actual trial outcomes are observations, not
-quality failures or acceptance verdicts.
+The representative deterministic local benchmark uses one ignored declaration
+with these three configurations, in order: `qwen/qwen3.5-9b`,
+`prism-ml/bonsai-27b`, and `google/gemma-4-e4b`. Every
+configuration assigns its one model to all four production steps with a
+complete model-specific `temperature`, `top_p`, and `top_k` tuple plus
+`reasoning_effort: provider_default`; the declaration uses one repetition and a
+transport retry limit of one. A separate behavioral declaration omits sampling
+on every LM Studio step to match production. Run declarations serially through
+`benchmark run`, then inspect each returned id through `benchmark summary`. The
+retained actual trial outcomes are observations, not quality failures or
+acceptance verdicts.
 
 The frozen v1 (`bc-news-worker` and siblings, in the parent directory) is
 reference material only — see the [v1 reference map](docs/v1-reference.md).

@@ -14,13 +14,13 @@ export const lmStudioNativeBaseUrl = lmStudioSdkBaseUrl;
 export function createLmStudioModelProvider(input: {
 	baseUrl: string;
 	model: string;
-	sampling: LmStudioSamplingConfig;
+	sampling?: LmStudioSamplingConfig;
 	reasoningEffort: LmStudioReasoningEffort;
 }) {
 	return createSharedLmStudioModelProvider({
 		baseUrl: input.baseUrl,
 		requestedModel: input.model,
-		sampling: input.sampling,
+		...(input.sampling === undefined ? {} : { sampling: input.sampling }),
 		reasoningEffort: input.reasoningEffort,
 		structuredOutputContracts: LM_STUDIO_PRODUCTION_STEP_OUTPUT_CONTRACTS,
 	});

@@ -146,6 +146,18 @@ test("enforces monotonic disk-authoritative transitions", async () => {
 	await rejectsWithoutChangingBytes(completeStore, completePath, complete);
 });
 
+test("rejects cross-version artifact replacement", async () => {
+	const states: BenchmarkRun[] = [];
+	await controlledEvaluation((artifact) => { states.push(artifact); });
+	const current = states[0]!;
+	expect(current.version).toBe(4);
+	const historical = BenchmarkRunSchema.parse({ ...clone(current), version: 3 });
+	const root = await temporaryRoot("bc-news-cross-version-transition-test-");
+	const path = join(root, "benchmark.json");
+	const store = await EvaluationArtifactStore.create(path, historical);
+	await rejectsWithoutChangingBytes(store, path, current);
+});
+
 test("rejects semantic corruption and preserves authoritative bytes after invalid replacement", async () => {
 	const { result, resultsDirectory } = await controlledEvaluation();
 	const copyPath = join(resultsDirectory, "copy.json");

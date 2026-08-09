@@ -53,7 +53,7 @@ export function resolveModelProvider(
 			return construct(() => createLmStudioModelProvider({
 				baseUrl,
 				model: config.model,
-				sampling: config.sampling,
+				...(config.sampling === undefined ? {} : { sampling: config.sampling }),
 				reasoningEffort: config.reasoning_effort,
 			}));
 		}

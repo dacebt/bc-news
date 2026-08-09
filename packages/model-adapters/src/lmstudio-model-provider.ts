@@ -19,7 +19,7 @@ const SUCCESSFUL_STOP_REASONS = new Set(["eosFound", "stopStringFound"]);
 export interface LmStudioProviderInput {
 	readonly baseUrl: string;
 	readonly requestedModel: string;
-	readonly sampling: LmStudioSamplingConfig;
+	readonly sampling?: LmStudioSamplingConfig;
 	readonly reasoningEffort: LmStudioReasoningEffort;
 	readonly structuredOutputContracts: LmStudioStructuredOutputContracts;
 }
@@ -28,19 +28,28 @@ export interface LmStudioPredictionRequestInput {
 	readonly productionStep: ProductionModelStep;
 	readonly system: string;
 	readonly user: string;
-	readonly sampling: LmStudioSamplingConfig;
+	readonly sampling?: LmStudioSamplingConfig;
 	readonly structuredOutputContracts: LmStudioStructuredOutputContracts;
 }
+
+type LmStudioSamplingPredictionOptions =
+	| {
+		readonly temperature: number;
+		readonly topPSampling: number;
+		readonly topKSampling: number;
+	}
+	| {
+		readonly temperature?: never;
+		readonly topPSampling?: never;
+		readonly topKSampling?: never;
+	};
 
 export interface LmStudioPredictionRequest {
 	readonly chat: [
 		{ readonly role: "system"; readonly content: string },
 		{ readonly role: "user"; readonly content: string },
 	];
-	readonly options: {
-		readonly temperature: number;
-		readonly topPSampling: number;
-		readonly topKSampling: number;
+	readonly options: LmStudioSamplingPredictionOptions & {
 		readonly structured: {
 			readonly type: "json";
 			readonly jsonSchema: Readonly<Record<string, unknown>>;
@@ -52,15 +61,20 @@ export function buildLmStudioPredictionRequest(
 	input: LmStudioPredictionRequestInput,
 ): LmStudioPredictionRequest {
 	const contract = input.structuredOutputContracts[input.productionStep];
+	const samplingOptions: LmStudioSamplingPredictionOptions = input.sampling === undefined
+		? {}
+		: {
+			temperature: input.sampling.temperature,
+			topPSampling: input.sampling.top_p,
+			topKSampling: input.sampling.top_k,
+		};
 	return {
 		chat: [
 			{ role: "system" as const, content: input.system },
 			{ role: "user" as const, content: input.user },
 		],
 		options: {
-			temperature: input.sampling.temperature,
-			topPSampling: input.sampling.top_p,
-			topKSampling: input.sampling.top_k,
+			...samplingOptions,
 			structured: { type: "json" as const, jsonSchema: contract.schema },
 		},
 	};
@@ -242,7 +256,7 @@ export function createLmStudioModelProvider(input: LmStudioProviderInput): Model
 						productionStep: request.productionStep,
 						system: request.system,
 						user: request.user,
-						sampling: input.sampling,
+						...(input.sampling === undefined ? {} : { sampling: input.sampling }),
 						structuredOutputContracts: input.structuredOutputContracts,
 					});
 					const result = await model.respond(

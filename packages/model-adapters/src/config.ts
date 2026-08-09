@@ -13,7 +13,7 @@ export const LmStudioReasoningEffortSchema = z.literal("provider_default");
 export const LmStudioAdapterConfigSchema = z.strictObject({
 	adapter: z.literal("lmstudio"),
 	model: NonBlankStringSchema,
-	sampling: LmStudioSamplingConfigSchema,
+	sampling: LmStudioSamplingConfigSchema.optional(),
 	reasoning_effort: LmStudioReasoningEffortSchema,
 });
 

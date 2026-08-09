@@ -15,7 +15,15 @@ it("uses the shared strict native LM Studio base URL", () => {
 		.toThrow(LmStudioDeterministicError);
 });
 
-it("constructs the production native provider only with provider-default reasoning", () => {
+it("constructs the production native provider with provider-default sampling", () => {
+	expect(createLmStudioModelProvider({
+		baseUrl: "http://127.0.0.1:1234/v1",
+		model: "qwen/qwen3.5-9b",
+		reasoningEffort: "provider_default",
+	})).toBeDefined();
+});
+
+it("constructs the production native provider with complete explicit sampling", () => {
 	expect(createLmStudioModelProvider({
 		baseUrl: "http://127.0.0.1:1234/v1",
 		model: "qwen/qwen3.5-9b",

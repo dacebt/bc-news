@@ -48,6 +48,26 @@ subtitle. The copyedit records are explicitly synthetic preservation copies,
 not newly generated Qwen output. Their provider and model labels make that
 provenance visible rather than implying a live re-record occurred.
 
+Committed absent-version records remain the strict legacy response contract
+and replay unchanged. The current recorder writes strict response version 2.
+Every v2 response retains adapter-specific sampling evidence from the accepted
+configuration for that exact production step:
+
+- LM Studio provider-default sampling is
+  `{"adapter":"lmstudio","posture":"provider_default"}` and carries no
+  application sampling tuple.
+- LM Studio explicit sampling is
+  `{"adapter":"lmstudio","posture":"explicit","config":{...}}`; `config`
+  contains the exact complete `temperature`, `top_p`, and `top_k` tuple.
+- Hosted sampling is
+  `{"adapter":"openai_compatible_hosted","posture":"not_applicable"}`
+  because the fixture recorder does not apply LM Studio decoding controls to a
+  hosted adapter.
+
+Partial tuples, contradictory posture fields, extra fields, and unknown
+versions reject at the response boundary. Sampling is retained evidence; the
+recorded provider never applies it during replay.
+
 `prompt_sha256` binds a record to the exact `{system, user}` request rebuilt
 from current builders and dependent upstream output. Replay selection remains
 keyed by `production_step`; canonical verification recomputes every stamp.
@@ -55,12 +75,13 @@ The hash is request provenance, not proof that a named model authored text.
 
 The eval recorder requires an explicit live four-step configuration. It makes
 the four dependent production calls, writes each exact
-`(production_step, prompt_sha256)` association into a same-filesystem staging
-directory, validates and replays the complete staged roster, and compares only
-the final main-story and announcements products before recoverable all-or-none
-directory promotion. Promotion does not promise continuous visibility to
-concurrent readers. There is no judge, threshold, byte pin, or source-digest
-acceptance gate.
+`(production_step, prompt_sha256)` association and v2 sampling evidence into a
+same-filesystem staging directory, validates and replays the complete staged
+roster, and compares only the final main-story and announcements products
+before recoverable all-or-none directory promotion. The command report lists
+each production step's retained posture and exact explicit tuple when present.
+Promotion does not promise continuous visibility to concurrent readers. There
+is no judge, threshold, byte pin, or source-digest acceptance gate.
 
 Committed files in `model-responses/` are overwritten only when a developer
 explicitly runs the `record` command with that directory as the target. The

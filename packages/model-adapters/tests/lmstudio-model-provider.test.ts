@@ -6,6 +6,7 @@ import {
 	LmStudioRetryableError,
 	createLmStudioModelProvider,
 	lmStudioSdkBaseUrl,
+	type LmStudioSamplingConfig,
 } from "../src/index";
 
 const sdk = vi.hoisted(() => ({ constructor: vi.fn() }));
@@ -65,11 +66,13 @@ function queueClient(models: readonly FakeModel[], dispose = vi.fn().mockResolve
 	return client;
 }
 
-function provider() {
+function provider(
+	options: { readonly sampling?: LmStudioSamplingConfig } = { sampling: LOCAL_SAMPLING },
+) {
 	return createLmStudioModelProvider({
 		baseUrl: "http://127.0.0.1:1234/v1",
 		requestedModel: "qwen/qwen3.5-9b",
-		sampling: LOCAL_SAMPLING,
+		...(options.sampling === undefined ? {} : { sampling: options.sampling }),
 		reasoningEffort: "provider_default",
 		structuredOutputContracts: LM_STUDIO_PRODUCTION_STEP_OUTPUT_CONTRACTS,
 	});
@@ -85,12 +88,32 @@ it("accepts only provider-default reasoning for current LM Studio configuration"
 	const candidate = {
 		adapter: "lmstudio",
 		model: "qwen/qwen3.5-9b",
-		sampling: LOCAL_SAMPLING,
 		reasoning_effort: "provider_default",
 	};
 	expect(LmStudioAdapterConfigSchema.safeParse(candidate).success).toBe(true);
 	for (const effort of ["none", "minimal", "low", "medium", "high", "xhigh"]) {
 		expect(LmStudioAdapterConfigSchema.safeParse({ ...candidate, reasoning_effort: effort }).success).toBe(false);
+	}
+});
+
+it("accepts omitted or complete sampling and rejects partial or invalid sampling", () => {
+	const candidate = {
+		adapter: "lmstudio",
+		model: "qwen/qwen3.5-9b",
+		reasoning_effort: "provider_default",
+	};
+	expect(LmStudioAdapterConfigSchema.safeParse(candidate).success).toBe(true);
+	expect(LmStudioAdapterConfigSchema.safeParse({ ...candidate, sampling: LOCAL_SAMPLING }).success).toBe(true);
+
+	for (const sampling of [
+		{ temperature: 1, top_p: 0.95 },
+		{ temperature: 1, top_k: 20 },
+		{ top_p: 0.95, top_k: 20 },
+		{ temperature: 3, top_p: 0.95, top_k: 20 },
+		{ temperature: 1, top_p: 1.1, top_k: 20 },
+		{ temperature: 1, top_p: 0.95, top_k: -1 },
+	]) {
+		expect(LmStudioAdapterConfigSchema.safeParse({ ...candidate, sampling }).success).toBe(false);
 	}
 });
 
@@ -143,10 +166,32 @@ it("uses the exact loaded model, native structured prediction, truthful evidence
 	);
 	const options = model.respond.mock.calls[0]?.[1] as Record<string, unknown>;
 	expect(options.signal).toBeInstanceOf(AbortSignal);
+	expect(options).toHaveProperty("temperature", 1);
+	expect(options).toHaveProperty("topPSampling", 0.95);
+	expect(options).toHaveProperty("topKSampling", 20);
 	expect(options).not.toHaveProperty("reasoningEffort");
 	expect(options).not.toHaveProperty("reasoning_effort");
 	expect(options).not.toHaveProperty("raw");
 	expect(client[Symbol.asyncDispose]).toHaveBeenCalledOnce();
+});
+
+it("omits every SDK sampling property for provider-default sampling", async () => {
+	const model = loadedModel();
+	queueClient([model]);
+
+	await provider({}).complete(request);
+
+	const options = model.respond.mock.calls[0]?.[1] as Record<string, unknown>;
+	expect(options).not.toHaveProperty("temperature");
+	expect(options).not.toHaveProperty("topPSampling");
+	expect(options).not.toHaveProperty("topKSampling");
+	expect(options).toMatchObject({
+		structured: {
+			type: "json",
+			jsonSchema: LM_STUDIO_PRODUCTION_STEP_OUTPUT_CONTRACTS.main_story_write.schema,
+		},
+	});
+	expect(options.signal).toBeInstanceOf(AbortSignal);
 });
 
 it("never loads and rejects zero or ambiguous loaded-model matches", async () => {

@@ -8,7 +8,7 @@ tags: [wsd, direction, shape, lm-studio, evaluation]
 status: stable
 generated:
   by: ebt-wsd/okf-v0.2
-  at: "2026-08-09T01:41:33Z"
+  at: "2026-08-09T02:58:38Z"
 ---
 # Shape: LM Studio sampling postures
 
@@ -45,7 +45,7 @@ Fixture authoring and context measurement are posture-configurable: the declarat
 
 ## Related documentation
 
-- [Capability map](2026-08-08-lm-studio-sampling-postures.map.md) — risk-orders the production, behavioral-evaluation, and deterministic-evaluation capabilities.
+- [Capability map](2026-08-08-production-aligned-lm-studio-sampling.map.md) — keeps production-default behavior and its truthful behavioral evidence in one invariant-coupled capability.
 - [Structural discipline](../ARCHITECTURE.md) — binds model-provider configuration and artifact-version compatibility.
 - [Test and verification posture](../TESTING.md) — keeps live model evidence distinct from deterministic tests and the composed walk.
 - [WSD domain model](bc-news.model.md) — supplies the existing evaluation and verification vocabulary.

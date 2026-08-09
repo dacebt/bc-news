@@ -1,3 +1,4 @@
+import { PRODUCTION_MODEL_STEPS } from "@bc-news/generation-core";
 import type { ContextBenchmarkFile } from "./context-benchmark-file";
 
 function pad(value: string | number, width: number): string {
@@ -10,9 +11,22 @@ export function formatContextBenchmarkReport(report: ContextBenchmarkFile, outpu
 		`Model: ${report.model.display_name} (${report.model.identifier})`,
 		`Context length: ${report.model.context_length}`,
 		`Canonical prepared ceiling: ${report.fixture.prepared_message_ceiling}`,
+	];
+	if ("version" in report) {
+		lines.push("Sampling:");
+		for (const step of PRODUCTION_MODEL_STEPS) {
+			const sampling = report.sampling[step];
+			lines.push(sampling.posture === "provider_default"
+				? `  ${step}: provider_default`
+				: `  ${step}: explicit (temperature=${sampling.config.temperature}, top_p=${sampling.config.top_p}, top_k=${sampling.config.top_k})`);
+		}
+	} else {
+		lines.push("Sampling: not retained (legacy context result)");
+	}
+	lines.push(
 		"",
 		" load  production step          fixed  data/draft  runtime  input  output  total  headroom",
-	];
+	);
 	for (const row of report.rows) {
 		lines.push([
 			pad(row.message_load, 5),

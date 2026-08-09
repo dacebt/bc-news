@@ -53,12 +53,24 @@ this retained evidence. Comparison separates fixture, configuration, and
 provenance context from behavior and reports no score, judge result,
 recommendation, or acceptance decision.
 
+Current Benchmark Run version 4 retains LM Studio sampling posture as part of
+the declared evidence. A behavioral production baseline omits `sampling` from
+every LM Studio step, which sends no temperature, top-p, or top-k override. A
+deterministic drift, structure, reliability, or completion declaration supplies
+one complete model-specific tuple per step. Partial tuples reject. Explicit
+sampling can support deterministic evidence, but it is never labeled as a
+production-behavior baseline. Versions 1–3 remain frozen historical contracts.
+
 **Fixture and context tooling** owns two different development artifacts.
 `fixture record-responses --fixture <path> --config <path> [--response-dir
 <path>]` writes the exact four request-linked response files only after staged
 replay and comparison. `context benchmark --fixture <path> [--results-dir
 <path>]` writes strict context-measurement results. Neither tool creates a
 Benchmark Run or Run File and neither confers acceptance.
+Current recorded-response version 2 and context-result version 2 artifacts
+retain provider-default omission versus complete explicit sampling. Their
+absent-version predecessors keep their legacy meaning. Either tool may use
+either posture; the declaration, not the command name, determines its purpose.
 
 **Recorded-replay acceptance** uses `acceptance run --fixture <path> [--config
 <path>] [--results-dir <path>]` and `acceptance list/show/compare`. It executes
@@ -121,9 +133,9 @@ failed:`; `eval failed:` is forbidden.
 The three evaluation verifiers print `evaluation:` observations. In
 particular, continuation ends with `evaluation: serial benchmark retained
 linked retries and continued later trials`, and browsing ends with `evaluation:
-evidence listed summarized and compared without verdicts`. Fixture
-proof ends with `fixture authoring: four production responses recorded replayed
-and compared`. Acceptance proof ends with `acceptance: four recorded production
+evidence listed summarized and compared without verdicts`. Fixture proof ends
+with `fixture authoring: four strict v2 hosted responses retained not-applicable
+sampling, replayed, and compared`. Acceptance proof ends with `acceptance: four recorded production
 steps replayed request-linked and deterministic`. The composed walk prints none
 of those exact verifier observations; it ends with its independent `WALK PASS`.
 
@@ -210,6 +222,11 @@ proves, tests of glue and framework wiring, tests to satisfy coverage.
   builders at the version boundary, and require boundary-only blank separators
   to remain non-structural. Version 1 and version 2 validation continue through
   their frozen original prompt and preservation semantics.
+- Version 4 preserves the version 3 prompt and preservation boundary while
+  retaining sampling posture truthfully. Tests prove provider-default
+  declarations omit all three native SDK properties, explicit declarations
+  retain an unchanged complete tuple, partial tuples reject, and versions 1–3
+  still validate only against their frozen semantics.
 - The repository-owned benchmark-browse verifier creates strict retained
   evidence through the loopback provider and invokes the exported eval CLI
   application boundary for all four `benchmark` routes. It proves both the
@@ -227,16 +244,24 @@ proves, tests of glue and framework wiring, tests to satisfy coverage.
 - Copyedit preservation checks can prove only their mechanical invariants:
   announcement identity/order, paragraph count, quotes, numeric literals,
   and protected markdown spans. They cannot prove semantic equivalence or prose
-  quality. Representative live-model evaluation remains required before model,
-  prompt, or evidence-policy decisions are treated as production-ready.
+  quality. Representative provider-default live-model evaluation remains
+  required before model, prompt, or evidence-policy decisions are treated as
+  production-ready. Explicit deterministic evaluation is complementary drift,
+  structure, reliability, or completion evidence rather than a behavioral
+  substitute.
 - Exact context-budget measurement runs through
   `pnpm --filter @bc-news/eval eval -- context benchmark --fixture packages/fixtures`.
   Automated tests use a fake local runtime and fake completion endpoint; they
   never invoke LM Studio. The accepted representative run requires exactly one
   already-loaded local Qwen model, rejects any hosted or mixed-model config,
   and never loads, unloads, or switches model state.
-- The representative corpus prepares to 208 messages under the unchanged production
-  sampler, so the truthful representative matrix is 1, 50, 100, 150, and 208.
+- Current context-result version 2 tests require the declared sampling posture
+  and any complete explicit tuple to survive write and reparse. Absent-version
+  context results continue through their legacy parser without acquiring a new
+  posture.
+- The representative corpus prepares to 208 messages under the unchanged
+  evidence-message sampler, so the truthful representative matrix is 1, 50,
+  100, 150, and 208.
   The benchmark records the corpus hash and ceiling; it does not pad or duplicate
   messages to manufacture a 300-message row. The production baseline remains at
   most 300 messages, at most 13 from each UTC hour, stable FNV selection from

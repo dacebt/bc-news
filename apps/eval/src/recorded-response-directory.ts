@@ -4,6 +4,7 @@ import { basename, dirname, join } from "node:path";
 import {
 	RecordedModelResponseSchema,
 	type RecordedModelResponse,
+	type RecordedModelResponseV2,
 	type RecordedModelResponseRoster,
 } from "@bc-news/fixtures";
 import { PRODUCTION_MODEL_STEPS, type ProductionModelStep } from "@bc-news/generation-core";
@@ -120,6 +121,36 @@ async function readRecordedResponse(path: string, productionStep: ProductionMode
 	return result.data;
 }
 
+function isCurrentRecordedResponse(
+	response: RecordedModelResponse,
+): response is RecordedModelResponseV2 {
+	return "version" in response && response.version === 2;
+}
+
+function validateRecordedResponseRosterPosture(
+	directory: string,
+	responses: readonly RecordedModelResponse[],
+): void {
+	const currentResponses = responses.filter(isCurrentRecordedResponse);
+	if (currentResponses.length !== 0 && currentResponses.length !== responses.length) {
+		throw new RecordedResponseDirectoryError(
+			"recorded_response_directory_rejected",
+			directory,
+			"Recorded response directory must contain either four legacy responses or four version 2 responses",
+		);
+	}
+	const lmStudioPostures = new Set(currentResponses
+		.filter(({ sampling }) => sampling.adapter === "lmstudio")
+		.map(({ sampling }) => sampling.posture));
+	if (lmStudioPostures.size > 1) {
+		throw new RecordedResponseDirectoryError(
+			"recorded_response_directory_rejected",
+			directory,
+			"All version 2 LM Studio responses must retain one sampling posture",
+		);
+	}
+}
+
 export async function validateRecordedResponseDirectory(
 	directory: string,
 ): Promise<RecordedModelResponseRoster> {
@@ -153,6 +184,12 @@ export async function validateRecordedResponseDirectory(
 			join(directory, responseFileName("announcements_copyedit")),
 			"announcements_copyedit",
 		),
+	]);
+	validateRecordedResponseRosterPosture(directory, [
+		mainStoryWrite,
+		mainStoryCopyedit,
+		announcementsWrite,
+		announcementsCopyedit,
 	]);
 	return {
 		main_story_write: mainStoryWrite,

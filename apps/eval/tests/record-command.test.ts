@@ -1,7 +1,11 @@
 import { mkdtemp, mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { modelRequestSha256, type RecordedModelResponseRoster } from "@bc-news/fixtures";
+import {
+	RecordedModelResponseV2Schema,
+	modelRequestSha256,
+	type RecordedModelResponseRoster,
+} from "@bc-news/fixtures";
 import {
 	PRODUCTION_MODEL_STEPS,
 	type ModelProviderRequest,
@@ -10,6 +14,7 @@ import {
 import { afterEach, expect, test, vi } from "vitest";
 import { recordCommand } from "../src/record-command";
 import { validateRecordedResponseDirectory } from "../src/recorded-response-directory";
+import { formatRecordSummary } from "../src/report";
 
 interface ProviderState {
 	requests: ModelProviderRequest[];
@@ -84,24 +89,54 @@ vi.mock("../src/model-adapters", async (importOriginal) => {
 
 const FIXTURE_PATH = new URL("../../../packages/fixtures", import.meta.url).pathname;
 
-function localAdapterConfig() {
-	return {
+const EXPLICIT_SAMPLING = { temperature: 0, top_p: 1, top_k: 40 } as const;
+
+function localAdapterConfig(sampling?: {
+	readonly temperature: number;
+	readonly top_p: number;
+	readonly top_k: number;
+}) {
+	const config = {
 		adapter: "lmstudio",
 		model: "memory-model",
-		sampling: { temperature: 0, top_p: 1, top_k: 40 },
 		reasoning_effort: "provider_default",
+	} as const;
+	return sampling === undefined ? config : { ...config, sampling };
+}
+
+function hostedAdapterConfig() {
+	return {
+		adapter: "openai_compatible_hosted",
+		provider: "memory-hosted",
+		model: "memory-model",
+		billing: {
+			method: "calculated",
+			input_usd_per_million_tokens: 0,
+			output_usd_per_million_tokens: 0,
+			pricing_reference: "memory test",
+		},
+	} as const;
+}
+
+function explicitProductionSteps() {
+	return {
+		main_story_write: localAdapterConfig(EXPLICIT_SAMPLING),
+		main_story_copyedit: localAdapterConfig(EXPLICIT_SAMPLING),
+		announcements_write: localAdapterConfig(EXPLICIT_SAMPLING),
+		announcements_copyedit: localAdapterConfig(EXPLICIT_SAMPLING),
 	};
 }
 
-async function writeConfig(root: string): Promise<string> {
+type TestModelConfig = ReturnType<typeof localAdapterConfig> | ReturnType<typeof hostedAdapterConfig>;
+type TestProductionSteps = Readonly<Record<ProductionModelStep, TestModelConfig>>;
+
+async function writeConfig(
+	root: string,
+	productionSteps: TestProductionSteps = explicitProductionSteps(),
+): Promise<string> {
 	const path = join(root, "recorder-config.json");
 	await writeFile(path, JSON.stringify({
-		production_steps: {
-			main_story_write: localAdapterConfig(),
-			main_story_copyedit: localAdapterConfig(),
-			announcements_write: localAdapterConfig(),
-			announcements_copyedit: localAdapterConfig(),
-		},
+		production_steps: productionSteps,
 	}));
 	return path;
 }
@@ -205,14 +240,54 @@ test("binds every retained response to the exact dependent live request", async 
 	expect(providerState.requests.map((request) => request.productionStep)).toEqual(PRODUCTION_MODEL_STEPS);
 	const retained = await validateRecordedResponseDirectory(responseDirectory);
 	for (const request of providerState.requests) {
-		const response = retained[request.productionStep];
+		const response = RecordedModelResponseV2Schema.parse(retained[request.productionStep]);
 		expect(response.prompt_sha256).toBe(await modelRequestSha256(request));
 		expect(response.provider).toBe(`memory-${request.productionStep}`);
 		expect(response.model).toBe("memory-model");
+		expect(response.sampling).toEqual({
+			adapter: "lmstudio",
+			posture: "explicit",
+			config: EXPLICIT_SAMPLING,
+		});
 	}
 	expect(result.responseDirectory).toBe(responseDirectory);
 	expect(result.comparison.differences).toEqual([]);
 	expect(result.replayProducts).toEqual(result.liveProducts);
+	expect(formatRecordSummary(result)).toContain("Artifact version: 2");
+	expect(formatRecordSummary(result)).toContain("lmstudio/explicit(temperature=0, top_p=1, top_k=40)");
+});
+
+test("retains provider-default and hosted sampling truth per production step", async () => {
+	const root = await mkdtemp(join(tmpdir(), "bc-news-record-sampling-"));
+	const responseDirectory = join(root, "responses");
+	const configPath = await writeConfig(root, {
+		main_story_write: localAdapterConfig(),
+		main_story_copyedit: localAdapterConfig(),
+		announcements_write: hostedAdapterConfig(),
+		announcements_copyedit: localAdapterConfig(),
+	});
+
+	const result = await recordCommand({
+		fixturePath: FIXTURE_PATH,
+		configPath,
+		responseDirectory,
+		environment: {},
+	});
+	const retained = await validateRecordedResponseDirectory(responseDirectory);
+	const mainStoryWrite = RecordedModelResponseV2Schema.parse(retained.main_story_write);
+	const mainStoryCopyedit = RecordedModelResponseV2Schema.parse(retained.main_story_copyedit);
+	const announcementsWrite = RecordedModelResponseV2Schema.parse(retained.announcements_write);
+	const announcementsCopyedit = RecordedModelResponseV2Schema.parse(retained.announcements_copyedit);
+
+	expect(mainStoryWrite.sampling).toEqual({ adapter: "lmstudio", posture: "provider_default" });
+	expect(mainStoryCopyedit.sampling).toEqual({ adapter: "lmstudio", posture: "provider_default" });
+	expect(announcementsWrite.sampling).toEqual({
+		adapter: "openai_compatible_hosted",
+		posture: "not_applicable",
+	});
+	expect(announcementsCopyedit.sampling).toEqual({ adapter: "lmstudio", posture: "provider_default" });
+	expect(formatRecordSummary(result)).toContain("main_story_write: lmstudio/provider_default");
+	expect(formatRecordSummary(result)).toContain("announcements_write: openai_compatible_hosted/not_applicable");
 });
 
 test("leaves the prior response set unchanged when live output is rejected", async () => {

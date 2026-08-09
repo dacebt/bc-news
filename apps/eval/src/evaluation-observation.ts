@@ -1,10 +1,12 @@
 import type { BenchmarkRun } from "./evaluation-artifact";
+import { lmStudioSamplingPosture, type LmStudioSamplingPosture } from "./config";
 
 export interface BenchmarkContextProjection {
 	readonly version: BenchmarkRun["version"];
 	readonly fixture: BenchmarkRun["fixture"];
 	readonly prepared_evidence: BenchmarkRun["prepared_evidence"];
 	readonly declaration: BenchmarkRun["declaration"];
+	readonly lm_studio_sampling_postures: readonly LmStudioSamplingPosture[];
 	readonly provenance: BenchmarkRun["provenance"];
 }
 
@@ -18,6 +20,7 @@ export function projectBenchmarkContext(run: BenchmarkRun): BenchmarkContextProj
 		fixture: run.fixture,
 		prepared_evidence: run.prepared_evidence,
 		declaration: run.declaration,
+		lm_studio_sampling_postures: run.declaration.configurations.map(({ config }) => lmStudioSamplingPosture(config)),
 		provenance: run.provenance,
 	};
 }

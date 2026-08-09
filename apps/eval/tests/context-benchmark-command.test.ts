@@ -56,6 +56,13 @@ const MODEL_CONFIG = JSON.stringify({
 	announcements_copyedit: localStepConfig(MODEL),
 });
 
+const PROVIDER_DEFAULT_MODEL_CONFIG = JSON.stringify({
+	main_story_write: providerDefaultLocalStepConfig(MODEL),
+	main_story_copyedit: providerDefaultLocalStepConfig(MODEL),
+	announcements_write: providerDefaultLocalStepConfig(MODEL),
+	announcements_copyedit: providerDefaultLocalStepConfig(MODEL),
+});
+
 const RESPONSE_TEXT = {
 	main_story_write: JSON.stringify({
 		title: "Regional Chronicle",
@@ -95,6 +102,9 @@ type NativeRequest = {
 		{ readonly role: "user"; readonly content: string },
 	];
 	readonly options: {
+		readonly temperature?: number;
+		readonly topPSampling?: number;
+		readonly topKSampling?: number;
 		readonly structured: {
 			readonly type: "json";
 			readonly jsonSchema: Readonly<Record<string, unknown>>;
@@ -107,6 +117,14 @@ function localStepConfig(model: string) {
 		adapter: "lmstudio",
 		model,
 		sampling: { temperature: 0, top_p: 1, top_k: 40 },
+		reasoning_effort: "provider_default",
+	};
+}
+
+function providerDefaultLocalStepConfig(model: string) {
+	return {
+		adapter: "lmstudio",
+		model,
 		reasoning_effort: "provider_default",
 	};
 }
@@ -223,10 +241,16 @@ test("benchmarks the exact dependent four-step roster at every canonical message
 
 	for (const [index, request] of requests.entries()) {
 		expect(request.step).toBe(expectedSteps[index]);
+		expect(request.options).toMatchObject({
+			temperature: 0,
+			topPSampling: 1,
+			topKSampling: 40,
+		});
 		expect(request.options.structured.type).toBe("json");
 		expect(request.options.structured.jsonSchema).toEqual(expect.objectContaining({ type: "object" }));
 	}
 
+	expect(report.version).toBe(2);
 	expect(report.loads).toEqual(CONTEXT_BENCHMARK_LOADS);
 	expect(report.model).toEqual({
 		identifier: MODEL_METADATA.identifier,
@@ -243,10 +267,55 @@ test("benchmarks the exact dependent four-step roster at every canonical message
 		expect(row.total_tokens + row.context_headroom_tokens).toBe(MODEL_METADATA.contextLength);
 		expect(row.runtime_delta_tokens).toBe(7);
 	}
+	expect(report.sampling).toEqual({
+		main_story_write: {
+			adapter: "lmstudio",
+			posture: "explicit",
+			config: { temperature: 0, top_p: 1, top_k: 40 },
+		},
+		main_story_copyedit: {
+			adapter: "lmstudio",
+			posture: "explicit",
+			config: { temperature: 0, top_p: 1, top_k: 40 },
+		},
+		announcements_write: {
+			adapter: "lmstudio",
+			posture: "explicit",
+			config: { temperature: 0, top_p: 1, top_k: 40 },
+		},
+		announcements_copyedit: {
+			adapter: "lmstudio",
+			posture: "explicit",
+			config: { temperature: 0, top_p: 1, top_k: 40 },
+		},
+	});
 
 	const saved = await readFile(path, "utf8");
 	expect(saved).toBe(`${JSON.stringify(report, null, 2)}\n`);
 	expect(JSON.parse(saved)).toEqual(report);
+});
+
+test("omits all sampler overrides and retains provider-default posture", async () => {
+	const { runtime } = createRuntime();
+	const { requests } = installNativeCompletions();
+	const { report } = await runContextBenchmark({
+		fixturePath: REPRESENTATIVE_FIXTURE_PATH,
+		resultsDirectory: await mkdtemp(join(tmpdir(), "bc-news-context-defaults-")),
+		environment: benchmarkEnvironment(PROVIDER_DEFAULT_MODEL_CONFIG),
+		runtime,
+	});
+
+	for (const request of requests) {
+		expect(request.options).not.toHaveProperty("temperature");
+		expect(request.options).not.toHaveProperty("topPSampling");
+		expect(request.options).not.toHaveProperty("topKSampling");
+	}
+	expect(report.sampling).toEqual({
+		main_story_write: { adapter: "lmstudio", posture: "provider_default" },
+		main_story_copyedit: { adapter: "lmstudio", posture: "provider_default" },
+		announcements_write: { adapter: "lmstudio", posture: "provider_default" },
+		announcements_copyedit: { adapter: "lmstudio", posture: "provider_default" },
+	});
 });
 
 test("rejects recorded and hosted adapters before opening the local runtime", async () => {
@@ -288,6 +357,20 @@ test("rejects mixed local model names before opening the local runtime", async (
 		environment: benchmarkEnvironment(JSON.stringify(config)),
 		runtime,
 	})).rejects.toMatchObject({ code: "mixed_model_config" });
+	expect(getOnlyLoadedQwen).not.toHaveBeenCalled();
+});
+
+test("rejects mixed local sampling postures before opening the local runtime", async () => {
+	const { runtime, getOnlyLoadedQwen } = createRuntime();
+	const config = JSON.parse(MODEL_CONFIG) as Record<string, unknown>;
+	config.announcements_copyedit = providerDefaultLocalStepConfig(MODEL);
+
+	await expect(runContextBenchmark({
+		fixturePath: REPRESENTATIVE_FIXTURE_PATH,
+		resultsDirectory: await mkdtemp(join(tmpdir(), "bc-news-context-mixed-posture-")),
+		environment: benchmarkEnvironment(JSON.stringify(config)),
+		runtime,
+	})).rejects.toMatchObject({ code: "invalid_model_config" });
 	expect(getOnlyLoadedQwen).not.toHaveBeenCalled();
 });
 

@@ -2,8 +2,14 @@ import { readdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { PRODUCTION_MODEL_STEPS } from "@bc-news/generation-core";
 import { expect, test } from "vitest";
-import { LiveBenchmarkConfigSchema, loadLiveBenchmarkConfig } from "../src/config";
+import {
+	EvalConfigSchema,
+	LiveBenchmarkConfigSchema,
+	lmStudioSamplingPosture,
+	loadLiveBenchmarkConfig,
+} from "../src/config";
 import { BenchmarkRunSchema } from "../src/evaluation-artifact";
+import { V4EvalConfigSchema } from "../src/evaluation-artifact-v4";
 import { verifyEvaluationBenchmarkContinuation } from "../src/evaluation-benchmark-verifier";
 import { clone, temporaryRoot } from "./evaluation-artifact-test-support";
 
@@ -23,8 +29,8 @@ test("retains retries and continues independent tracks and later trials", async 
 	await verifyEvaluationBenchmarkContinuation(root);
 	const [artifactName] = await readdir(join(root, "results"));
 	const benchmark = BenchmarkRunSchema.parse(JSON.parse(await readFile(join(root, "results", artifactName!), "utf8")) as unknown);
-	expect(benchmark.version).toBe(3);
-	if (benchmark.version !== 3) throw new Error("expected version 3 benchmark");
+	expect(benchmark.version).toBe(4);
+	if (benchmark.version !== 4) throw new Error("expected version 4 benchmark");
 
 	const prematureExhaustion = clone(benchmark);
 	const exhaustedTrial = prematureExhaustion.trials.find(({ subject_outcome }) => subject_outcome === "infrastructure_incomplete");
@@ -54,6 +60,49 @@ test("rejects ambiguous or unbounded benchmark declarations", () => {
 	expect(LiveBenchmarkConfigSchema.safeParse({ configurations: [configuration], repetition_count: 0, transport_retry_limit: 1 }).success).toBe(false);
 	expect(LiveBenchmarkConfigSchema.safeParse({ configurations: [configuration], repetition_count: 1, transport_retry_limit: 4 }).success).toBe(false);
 	expect(LiveBenchmarkConfigSchema.safeParse({ configurations: [configuration], repetition_count: 1, transport_retry_limit: 1, extra: true }).success).toBe(false);
+});
+
+test("derives one consistent LM Studio sampling posture per configuration", () => {
+	type LocalConfiguration = {
+		adapter: "lmstudio";
+		model: string;
+		reasoning_effort: "provider_default";
+		sampling?: { temperature: number; top_p: number; top_k: number };
+	};
+	const localConfiguration = (sampling?: LocalConfiguration["sampling"]) => ({
+		production_steps: Object.fromEntries(PRODUCTION_MODEL_STEPS.map((step): [typeof step, LocalConfiguration] => [step, {
+			adapter: "lmstudio",
+			model: `local/${step}`,
+			reasoning_effort: "provider_default",
+			...(sampling === undefined ? {} : { sampling }),
+		}])) as Record<(typeof PRODUCTION_MODEL_STEPS)[number], LocalConfiguration>,
+	});
+	const providerDefault = EvalConfigSchema.parse(localConfiguration());
+	const explicit = EvalConfigSchema.parse(localConfiguration({ temperature: 0, top_p: 1, top_k: 1 }));
+	expect(V4EvalConfigSchema.safeParse(providerDefault).success).toBe(true);
+	expect(V4EvalConfigSchema.safeParse(explicit).success).toBe(true);
+	expect(lmStudioSamplingPosture(providerDefault)).toBe("provider_default");
+	expect(lmStudioSamplingPosture(explicit)).toBe("explicit");
+	expect(lmStudioSamplingPosture(EvalConfigSchema.parse(hostedConfiguration("hosted")))).toBe("not_applicable");
+
+	const inconsistent = localConfiguration();
+	inconsistent.production_steps.main_story_write = {
+		...inconsistent.production_steps.main_story_write,
+		sampling: { temperature: 0, top_p: 1, top_k: 1 },
+	};
+	expect(EvalConfigSchema.safeParse(inconsistent).success).toBe(false);
+	expect(V4EvalConfigSchema.safeParse(inconsistent).success).toBe(false);
+	const partialBase = localConfiguration();
+	const partial = {
+		production_steps: {
+			...partialBase.production_steps,
+			main_story_write: {
+				...partialBase.production_steps.main_story_write,
+				sampling: { temperature: 0, top_p: 1 },
+			},
+		},
+	};
+	expect(EvalConfigSchema.safeParse(partial).success).toBe(false);
 });
 
 test("rejects recorded adapters before serial artifact creation", async () => {

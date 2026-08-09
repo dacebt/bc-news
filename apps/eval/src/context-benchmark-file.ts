@@ -36,7 +36,30 @@ const ContextBenchmarkRowSchema = z.strictObject({
 	}
 });
 
-export const ContextBenchmarkFileSchema = z.strictObject({
+const ContextBenchmarkSamplingEvidenceSchema = z.discriminatedUnion("posture", [
+	z.strictObject({
+		adapter: z.literal("lmstudio"),
+		posture: z.literal("provider_default"),
+	}),
+	z.strictObject({
+		adapter: z.literal("lmstudio"),
+		posture: z.literal("explicit"),
+		config: z.strictObject({
+			temperature: z.number().finite().min(0).max(2),
+			top_p: z.number().finite().min(0).max(1),
+			top_k: z.int().nonnegative(),
+		}),
+	}),
+]);
+
+const ContextBenchmarkSamplingByStepSchema = z.strictObject({
+	main_story_write: ContextBenchmarkSamplingEvidenceSchema,
+	main_story_copyedit: ContextBenchmarkSamplingEvidenceSchema,
+	announcements_write: ContextBenchmarkSamplingEvidenceSchema,
+	announcements_copyedit: ContextBenchmarkSamplingEvidenceSchema,
+});
+
+const ContextBenchmarkFileShape = {
 	id: RunIdSchema,
 	fixture: z.strictObject({
 		path: z.string().min(1),
@@ -63,7 +86,12 @@ export const ContextBenchmarkFileSchema = z.strictObject({
 	),
 	started_at: z.iso.datetime({ offset: true }),
 	completed_at: z.iso.datetime({ offset: true }),
-}).superRefine((report, context) => {
+} as const;
+
+function validateContextBenchmarkRows(
+	report: { readonly rows: readonly ContextBenchmarkRow[]; readonly model: { readonly context_length: number } },
+	context: z.core.$RefinementCtx,
+): void {
 	const expected = CONTEXT_BENCHMARK_LOADS.flatMap((messageLoad) =>
 		PRODUCTION_MODEL_STEPS.map((productionStep) => `${messageLoad}:${productionStep}`)
 	);
@@ -80,9 +108,42 @@ export const ContextBenchmarkFileSchema = z.strictObject({
 			});
 		}
 	}
+}
+
+function validateContextBenchmarkSamplingPosture(
+	report: { readonly sampling: z.infer<typeof ContextBenchmarkSamplingByStepSchema> },
+	context: z.core.$RefinementCtx,
+): void {
+	const postures = new Set(Object.values(report.sampling).map(({ posture }) => posture));
+	if (postures.size > 1) {
+		context.addIssue({
+			code: "custom",
+			path: ["sampling"],
+			message: "all LM Studio production steps must retain one sampling posture",
+		});
+	}
+}
+
+export const LegacyContextBenchmarkFileSchema = z.strictObject(
+	ContextBenchmarkFileShape,
+).superRefine(validateContextBenchmarkRows);
+
+export const ContextBenchmarkFileV2Schema = z.strictObject({
+	version: z.literal(2),
+	...ContextBenchmarkFileShape,
+	sampling: ContextBenchmarkSamplingByStepSchema,
+}).superRefine((report, context) => {
+	validateContextBenchmarkRows(report, context);
+	validateContextBenchmarkSamplingPosture(report, context);
 });
 
+export const ContextBenchmarkFileSchema = z.union([
+	ContextBenchmarkFileV2Schema,
+	LegacyContextBenchmarkFileSchema,
+]);
+
 export type ContextBenchmarkFile = z.infer<typeof ContextBenchmarkFileSchema>;
+export type ContextBenchmarkFileV2 = z.infer<typeof ContextBenchmarkFileV2Schema>;
 export type ContextBenchmarkRow = z.infer<typeof ContextBenchmarkRowSchema>;
 
 export class ContextBenchmarkFileError extends Error {

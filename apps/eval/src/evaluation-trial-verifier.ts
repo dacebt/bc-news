@@ -195,6 +195,7 @@ export async function verifyEvaluationTrialRetention(): Promise<void> {
 		assertPersistenceSequence(mixedStates);
 		const saved = [...await parseEverySavedArtifact(completeResults), ...await parseEverySavedArtifact(rejectedResults), ...await parseEverySavedArtifact(failureResults), ...await parseEverySavedArtifact(mixedResults)];
 		assertProof(saved.length === 4, "saved_artifact_count", "Verifier did not retain exactly four terminal artifacts");
+		assertProof(saved.every(({ version }) => version === 4), "current_artifact_version", "A newly generated trial did not retain current artifact version 4");
 		assertProof(saved.every(({ lifecycle, harness_outcome }) => lifecycle === "complete" && harness_outcome === "retained"), "harness_outcome_not_retained", "A terminal artifact did not retain a successful harness outcome");
 		assertProof(saved.every(({ provenance }) => JSON.stringify(provenance.output_contracts) === JSON.stringify(evaluationOutputContractProvenance())), "current_contract_provenance", "A newly generated artifact did not retain the current application output contracts and hashes");
 	} catch (error: unknown) {

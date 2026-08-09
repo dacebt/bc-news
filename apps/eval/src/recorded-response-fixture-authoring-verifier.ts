@@ -144,8 +144,15 @@ async function assertRecordedRequests(
 		const request = requests[index];
 		assertProof(request !== undefined, "request_roster_mismatch", `Missing observed request for ${productionStep}`);
 		const record = await parseResponse(join(responseDirectory, `${productionStep}.json`));
+		assertProof("version" in record && record.version === 2, "record_version_mismatch", `Recorded response for ${productionStep} did not use current artifact version 2`);
 		assertProof(record.production_step === productionStep, "record_step_mismatch", `Recorded response for ${productionStep} declared a different production step`);
 		assertProof(record.prompt_sha256 === await modelRequestSha256(request), "record_prompt_mismatch", `Recorded response for ${productionStep} was not stamped from the observed request`);
+		assertProof(
+			record.sampling.adapter === "openai_compatible_hosted"
+				&& record.sampling.posture === "not_applicable",
+			"record_sampling_mismatch",
+			`Recorded hosted response for ${productionStep} did not retain not-applicable sampling evidence`,
+		);
 	}
 }
 
@@ -205,7 +212,7 @@ export async function verifyRecordedResponseFixtureAuthoring(temporaryRoot?: str
 
 if (import.meta.url === `file://${process.argv[1]}`) {
 	verifyRecordedResponseFixtureAuthoring().then(() => {
-		console.log("fixture authoring: four production responses recorded replayed and compared");
+		console.log("fixture authoring: four strict v2 hosted responses retained not-applicable sampling, replayed, and compared");
 	}).catch((error: unknown) => {
 		process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
 		process.exitCode = 1;

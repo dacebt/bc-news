@@ -3,8 +3,12 @@ import { PRODUCTION_MODEL_STEPS } from "@bc-news/generation-core";
 import {
 	CONTEXT_BENCHMARK_LOADS,
 	ContextBenchmarkFileSchema,
+	ContextBenchmarkFileV2Schema,
+	LegacyContextBenchmarkFileSchema,
 	type ContextBenchmarkFile,
+	type ContextBenchmarkFileV2,
 } from "../src/context-benchmark-file";
+import { formatContextBenchmarkReport } from "../src/context-benchmark-report";
 
 const HASH = "a".repeat(64);
 
@@ -50,6 +54,149 @@ function validReport(): ContextBenchmarkFile {
 		completed_at: "2026-08-06T12:01:00.000Z",
 	});
 }
+
+function validV2Report(posture: "provider_default" | "explicit"): ContextBenchmarkFileV2 {
+	const legacy = validReport();
+	if ("version" in legacy) throw new Error("Expected a legacy context result");
+	const sampling = posture === "provider_default"
+		? { adapter: "lmstudio", posture: "provider_default" } as const
+		: {
+			adapter: "lmstudio",
+			posture: "explicit",
+			config: { temperature: 0, top_p: 1, top_k: 40 },
+		} as const;
+	return ContextBenchmarkFileV2Schema.parse({
+		version: 2,
+		...legacy,
+		sampling: {
+			main_story_write: sampling,
+			main_story_copyedit: sampling,
+			announcements_write: sampling,
+			announcements_copyedit: sampling,
+		},
+	});
+}
+
+test("parses an unchanged absent-version context result as strict legacy evidence", () => {
+	const report = validReport();
+
+	expect("version" in report).toBe(false);
+	expect(LegacyContextBenchmarkFileSchema.safeParse(report).success).toBe(true);
+	expect(LegacyContextBenchmarkFileSchema.safeParse({ ...report, sampling: {} }).success).toBe(false);
+});
+
+test.each(["provider_default", "explicit"] as const)(
+	"parses strict version 2 %s sampling evidence for every production step",
+	(posture) => {
+		const report = validV2Report(posture);
+
+		expect(report.version).toBe(2);
+		expect(Object.keys(report.sampling)).toEqual(PRODUCTION_MODEL_STEPS);
+		expect(report.sampling.main_story_write).toEqual(posture === "provider_default"
+			? { adapter: "lmstudio", posture: "provider_default" }
+			: {
+				adapter: "lmstudio",
+				posture: "explicit",
+				config: { temperature: 0, top_p: 1, top_k: 40 },
+			});
+	},
+);
+
+test("rejects incomplete or contradictory version 2 sampling evidence", () => {
+	const explicit = validV2Report("explicit");
+	const missingTopK = {
+		...explicit,
+		sampling: {
+			...explicit.sampling,
+			main_story_write: {
+				adapter: "lmstudio",
+				posture: "explicit",
+				config: { temperature: 0, top_p: 1 },
+			},
+		},
+	};
+	const providerDefault = validV2Report("provider_default");
+	const inventedTuple = {
+		...providerDefault,
+		sampling: {
+			...providerDefault.sampling,
+			main_story_write: {
+				adapter: "lmstudio",
+				posture: "provider_default",
+				config: { temperature: 0, top_p: 1, top_k: 40 },
+			},
+		},
+	};
+
+	expect(ContextBenchmarkFileV2Schema.safeParse(missingTopK).success).toBe(false);
+	expect(ContextBenchmarkFileV2Schema.safeParse(inventedTuple).success).toBe(false);
+});
+
+test("rejects mixed LM Studio sampling postures in one version 2 result", () => {
+	const report = validV2Report("provider_default");
+	const mixedPosture = {
+		...report,
+		sampling: {
+			...report.sampling,
+			main_story_write: {
+				adapter: "lmstudio",
+				posture: "explicit",
+				config: { temperature: 0, top_p: 1, top_k: 40 },
+			},
+		},
+	};
+
+	const parsed = ContextBenchmarkFileV2Schema.safeParse(mixedPosture);
+
+	expect(parsed.success).toBe(false);
+	if (!parsed.success) {
+		expect(parsed.error.issues).toEqual(expect.arrayContaining([
+			expect.objectContaining({
+				path: ["sampling"],
+				message: "all LM Studio production steps must retain one sampling posture",
+			}),
+		]));
+	}
+});
+
+test("enforces the frozen inclusive LM Studio tuple bounds", () => {
+	const report = validV2Report("explicit");
+	const atInclusiveBounds = {
+		...report,
+		sampling: {
+			...report.sampling,
+			main_story_write: {
+				adapter: "lmstudio",
+				posture: "explicit",
+				config: { temperature: 2, top_p: 0, top_k: 0 },
+			},
+		},
+	};
+	const outsideBounds = {
+		...atInclusiveBounds,
+		sampling: {
+			...atInclusiveBounds.sampling,
+			main_story_write: {
+				...atInclusiveBounds.sampling.main_story_write,
+				config: { temperature: 2.01, top_p: 0, top_k: 0 },
+			},
+		},
+	};
+
+	expect(ContextBenchmarkFileV2Schema.safeParse(atInclusiveBounds).success).toBe(true);
+	expect(ContextBenchmarkFileV2Schema.safeParse(outsideBounds).success).toBe(false);
+});
+
+test("reports version 2 sampling posture and exact tuple before measurement rows", () => {
+	const providerDefault = formatContextBenchmarkReport(validV2Report("provider_default"), "context.json");
+	const explicit = formatContextBenchmarkReport(validV2Report("explicit"), "context.json");
+
+	expect(providerDefault).toContain("Sampling:\n  main_story_write: provider_default");
+	expect(explicit).toContain(
+		"Sampling:\n  main_story_write: explicit (temperature=0, top_p=1, top_k=40)",
+	);
+	expect(explicit.indexOf("Sampling:")).toBeLessThan(explicit.indexOf(" load  production step"));
+});
 
 test("rejects rows outside the exact load and production-step order", () => {
 	const report = validReport();

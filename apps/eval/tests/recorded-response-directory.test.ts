@@ -1,7 +1,10 @@
 import { mkdtemp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
-import type { RecordedModelResponseRoster } from "@bc-news/fixtures";
+import type {
+	RecordedModelResponseRoster,
+	RecordedModelResponseV2Roster,
+} from "@bc-news/fixtures";
 import { PRODUCTION_MODEL_STEPS, type ProductionModelStep } from "@bc-news/generation-core";
 import { expect, test } from "vitest";
 import {
@@ -28,9 +31,39 @@ function roster(marker: string): RecordedModelResponseRoster {
 	};
 }
 
+function currentRoster(marker: string): RecordedModelResponseV2Roster {
+	const response = (productionStep: ProductionModelStep) => ({
+		version: 2 as const,
+		production_step: productionStep,
+		provider: `provider-${marker}`,
+		model: `model-${marker}`,
+		prompt_sha256: marker.repeat(64),
+		text: `response-${productionStep}-${marker}`,
+		sampling: {
+			adapter: "lmstudio" as const,
+			posture: "explicit" as const,
+			config: { temperature: 0.5, top_p: 0.9, top_k: 30 },
+		},
+	});
+	return {
+		main_story_write: response("main_story_write"),
+		main_story_copyedit: response("main_story_copyedit"),
+		announcements_write: response("announcements_write"),
+		announcements_copyedit: response("announcements_copyedit"),
+	};
+}
+
 async function writeRoster(directory: string, marker: string, create = true): Promise<void> {
 	if (create) await mkdir(directory);
 	const responses = roster(marker);
+	await Promise.all(PRODUCTION_MODEL_STEPS.map((step) =>
+		writeFile(join(directory, `${step}.json`), `${JSON.stringify(responses[step])}\n`),
+	));
+}
+
+async function writeCurrentRoster(directory: string, marker: string, create = true): Promise<void> {
+	if (create) await mkdir(directory);
+	const responses = currentRoster(marker);
 	await Promise.all(PRODUCTION_MODEL_STEPS.map((step) =>
 		writeFile(join(directory, `${step}.json`), `${JSON.stringify(responses[step])}\n`),
 	));
@@ -159,15 +192,37 @@ test("promotes a validated staging set and removes the superseded backup", async
 	try {
 		await recoverRecordedResponseDirectory(target);
 		const staging = await createRecordedResponseStagingDirectory(target);
-		await writeRoster(staging, "f", false);
+		await writeCurrentRoster(staging, "f", false);
 		await promoteRecordedResponseDirectory({ stagingDirectory: staging, targetDirectory: target });
 
-		expect((await validateRecordedResponseDirectory(target)).announcements_copyedit.provider)
-			.toBe("provider-f");
+		const promoted = (await validateRecordedResponseDirectory(target)).announcements_copyedit;
+		expect(promoted.provider).toBe("provider-f");
+		expect("version" in promoted && promoted.version).toBe(2);
+		expect("sampling" in promoted && promoted.sampling).toEqual({
+			adapter: "lmstudio",
+			posture: "explicit",
+			config: { temperature: 0.5, top_p: 0.9, top_k: 30 },
+		});
 		expect(await readdir(root)).not.toContain("responses.recording-backup");
 	} finally {
 		await lease.release();
 	}
+});
+
+test("rejects mixed LM Studio sampling postures in one version 2 response set", async () => {
+	const root = await mkdtemp(join(tmpdir(), "bc-news-recorded-mixed-posture-"));
+	const directory = join(root, "responses");
+	await writeCurrentRoster(directory, "a");
+	const response = currentRoster("a").main_story_write;
+	await writeFile(join(directory, "main_story_write.json"), `${JSON.stringify({
+		...response,
+		sampling: { adapter: "lmstudio", posture: "provider_default" },
+	})}\n`);
+
+	await expect(validateRecordedResponseDirectory(directory)).rejects.toMatchObject({
+		code: "recorded_response_directory_rejected",
+		message: "All version 2 LM Studio responses must retain one sampling posture",
+	});
 });
 
 test("rejects a second recorder while the live owner holds the lock", async () => {

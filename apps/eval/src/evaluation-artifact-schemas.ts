@@ -6,7 +6,7 @@ import {
 	V1ProductionModelStepSchema,
 	V1Sha256HashSchema,
 	V1TokenUsageSchema,
-	type V1EvalConfig,
+	type V1ProductionModelStep,
 } from "./evaluation-artifact-v1-contracts";
 
 export const EvaluationTimestampSchema = z.iso.datetime({ offset: true });
@@ -30,7 +30,9 @@ export function canonicallyEqual(left: unknown, right: unknown): boolean {
 	return JSON.stringify(canonical(left)) === JSON.stringify(canonical(right));
 }
 
-export function evaluationConfigIdentity(config: V1EvalConfig): string {
+export function evaluationConfigIdentity(config: {
+	readonly production_steps: Record<V1ProductionModelStep, object>;
+}): string {
 	return `config-${sha256Json(config)}`;
 }
 

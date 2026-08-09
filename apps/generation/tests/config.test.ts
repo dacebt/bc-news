@@ -74,11 +74,10 @@ it("resolves a hosted provider only with endpoint and API key bindings", () => {
 	).toThrow(GenerationConfigError);
 });
 
-it("requires a valid LM Studio binding and complete per-step config", () => {
+it("resolves provider-default and complete explicit LM Studio sampling", () => {
 	const local = {
 		adapter: "lmstudio",
 		model: "local-main",
-		sampling: LOCAL_SAMPLING,
 		reasoning_effort: "provider_default",
 	};
 	const modelConfig = { ...recordedConfig(), main_story_write: local };
@@ -93,20 +92,32 @@ it("requires a valid LM Studio binding and complete per-step config", () => {
 		LMSTUDIO_BASE_URL: "http://127.0.0.1:1234/v1",
 		MODEL_CONFIG: JSON.stringify(modelConfig),
 	})).modelProviders.main_story_write).toBeDefined();
+	expect(resolveGenerationPorts(envWith({
+		LMSTUDIO_BASE_URL: "http://127.0.0.1:1234/v1",
+		MODEL_CONFIG: JSON.stringify({
+			...recordedConfig(),
+			main_story_write: { ...local, sampling: LOCAL_SAMPLING },
+		}),
+	})).modelProviders.main_story_write).toBeDefined();
 });
 
-it("rejects incomplete LM Studio model, sampling, and reasoning fields", () => {
+it("rejects incomplete LM Studio model, partial or invalid sampling, and reasoning fields", () => {
 	for (const local of [
 		{ adapter: "lmstudio", sampling: LOCAL_SAMPLING, reasoning_effort: "provider_default" },
-		{ adapter: "lmstudio", model: " \t ", sampling: LOCAL_SAMPLING, reasoning_effort: "provider_default" },
-		{ adapter: "lmstudio", model: "local", sampling: undefined, reasoning_effort: "provider_default" },
+		{ adapter: "lmstudio", model: " \t ", reasoning_effort: "provider_default" },
+		{
+			adapter: "lmstudio",
+			model: "local",
+			sampling: { temperature: 1, top_p: 0.95 },
+			reasoning_effort: "provider_default",
+		},
 		{
 			adapter: "lmstudio",
 			model: "local",
 			sampling: { ...LOCAL_SAMPLING, top_p: 1.1 },
 			reasoning_effort: "provider_default",
 		},
-		{ adapter: "lmstudio", model: "local", sampling: LOCAL_SAMPLING },
+		{ adapter: "lmstudio", model: "local" },
 		{ adapter: "lmstudio", model: "local", sampling: LOCAL_SAMPLING, reasoning_effort: "none" },
 		{ adapter: "lmstudio", model: "local", sampling: LOCAL_SAMPLING, reasoning_effort: "maximum" },
 	]) {

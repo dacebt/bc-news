@@ -28,10 +28,10 @@ import {
 } from "@bc-news/model-adapters";
 import {
 	CONTEXT_BENCHMARK_LOADS,
-	ContextBenchmarkFileSchema,
+	ContextBenchmarkFileV2Schema,
 	generateContextBenchmarkId,
 	saveContextBenchmarkFile,
-	type ContextBenchmarkFile,
+	type ContextBenchmarkFileV2,
 	type ContextBenchmarkRow,
 } from "./context-benchmark-file";
 import {
@@ -191,6 +191,14 @@ function sha256Json(value: unknown): string {
 	return createHash("sha256").update(JSON.stringify(value)).digest("hex");
 }
 
+function retainedSampling(
+	config: LmStudioAdapterConfig,
+): ContextBenchmarkFileV2["sampling"][ProductionModelStep] {
+	return config.sampling === undefined
+		? { adapter: "lmstudio", posture: "provider_default" } as const
+		: { adapter: "lmstudio", posture: "explicit", config: config.sampling } as const;
+}
+
 async function measureCompletion(input: {
 	readonly messageLoad: number;
 	readonly step: ProductionModelStep;
@@ -250,7 +258,7 @@ async function measureCompletion(input: {
 		productionStep: input.step,
 		system: input.prompt.system,
 		user: input.prompt.user,
-		sampling: input.config.sampling,
+		...(input.config.sampling === undefined ? {} : { sampling: input.config.sampling }),
 		structuredOutputContracts: LM_STUDIO_PRODUCTION_STEP_OUTPUT_CONTRACTS,
 	});
 	const contract = LM_STUDIO_PRODUCTION_STEP_OUTPUT_CONTRACTS[input.step];
@@ -322,7 +330,7 @@ async function benchmarkLoad(input: {
 
 export async function runContextBenchmark(
 	options: ContextBenchmarkCommandOptions,
-): Promise<{ readonly path: string; readonly report: ContextBenchmarkFile }> {
+): Promise<{ readonly path: string; readonly report: ContextBenchmarkFileV2 }> {
 	const environment = options.environment ?? process.env;
 	const config = parseLmStudioConfig(environment);
 	lmStudioSdkBaseUrl(config.baseUrl);
@@ -381,7 +389,8 @@ export async function runContextBenchmark(
 	} finally {
 		await runtime.close();
 	}
-	const report = ContextBenchmarkFileSchema.parse({
+	const report = ContextBenchmarkFileV2Schema.parse({
+		version: 2,
 		id: generateContextBenchmarkId(),
 		fixture: {
 			path: relative(WORKSPACE_ROOT, loadedFixture.path),
@@ -396,6 +405,12 @@ export async function runContextBenchmark(
 			display_name: model.displayName,
 			context_length: model.contextLength,
 			measurement_runtime: "lmstudio_sdk_1.5",
+		},
+		sampling: {
+			main_story_write: retainedSampling(config.steps.main_story_write),
+			main_story_copyedit: retainedSampling(config.steps.main_story_copyedit),
+			announcements_write: retainedSampling(config.steps.announcements_write),
+			announcements_copyedit: retainedSampling(config.steps.announcements_copyedit),
 		},
 		rows,
 		started_at: startedAt,
