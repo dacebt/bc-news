@@ -4,19 +4,26 @@ import { lmStudioSamplingPosture } from "./config";
 
 type Trial = BenchmarkRun["trials"][number];
 type Invocation = Trial["invocations"][number];
+type TrackFindings = Trial["tracks"]["main_story"]["findings"];
 
 function increment(counts: Record<string, number>, key: string): void {
 	counts[key] = (counts[key] ?? 0) + 1;
 }
 
-function trackProducts(trial: Trial, trialOrdinal: number) {
+function diagnosticProjection(version: BenchmarkRun["version"], findings: TrackFindings) {
+	return version === 5 ? {
+		diagnostic_count: findings.length,
+		diagnostics: findings,
+	} : {};
+}
+
+function trackProducts(trial: Trial, trialOrdinal: number, version: BenchmarkRun["version"]) {
 	return Object.entries(trial.tracks).flatMap(([track, state]) => state.product === null ? [] : [{
 		trial_ordinal: trialOrdinal,
 		track,
 		track_outcome: state.subject_outcome,
 		product: state.product,
-		diagnostic_count: state.findings.length,
-		diagnostics: state.findings,
+		...diagnosticProjection(version, state.findings),
 	}]);
 }
 
@@ -39,10 +46,14 @@ function invocationEvidence(invocation: Invocation, trialOrdinal: number) {
 export function summarizeBenchmarkRun(run: BenchmarkRun) {
 	const trackOutcomes: Record<string, number> = {};
 	const findingKinds: Record<string, number> = {};
+	const diagnosticKinds: Record<string, number> = {};
 	for (const trial of run.trials) {
 		for (const track of Object.values(trial.tracks)) {
 			increment(trackOutcomes, track.subject_outcome ?? "pending");
-			for (const finding of track.findings) increment(findingKinds, finding.kind);
+			for (const finding of track.findings) {
+				increment(findingKinds, finding.kind);
+				if (run.version === 5) increment(diagnosticKinds, finding.kind);
+			}
 		}
 		for (const invocation of trial.invocations) {
 			if (invocation.transport === "succeeded" && invocation.parse.state === "rejected") {
@@ -84,15 +95,13 @@ export function summarizeBenchmarkRun(run: BenchmarkRun) {
 						lifecycle: trial.tracks.main_story.lifecycle,
 						subject_outcome: trial.tracks.main_story.subject_outcome,
 						terminal_production_step: trial.tracks.main_story.terminal_production_step,
-						diagnostic_count: trial.tracks.main_story.findings.length,
-						diagnostics: trial.tracks.main_story.findings,
+						...diagnosticProjection(run.version, trial.tracks.main_story.findings),
 					},
 					announcements: {
 						lifecycle: trial.tracks.announcements.lifecycle,
 						subject_outcome: trial.tracks.announcements.subject_outcome,
 						terminal_production_step: trial.tracks.announcements.terminal_production_step,
-						diagnostic_count: trial.tracks.announcements.findings.length,
-						diagnostics: trial.tracks.announcements.findings,
+						...diagnosticProjection(run.version, trial.tracks.announcements.findings),
 					},
 				},
 			};
@@ -100,8 +109,8 @@ export function summarizeBenchmarkRun(run: BenchmarkRun) {
 		outcome_counts: run.outcome_counts,
 		track_outcome_counts: trackOutcomes,
 		finding_kind_counts: findingKinds,
-		diagnostic_kind_counts: findingKinds,
-		products: run.trials.flatMap((trial, index) => trackProducts(trial, index + 1)),
+		diagnostic_kind_counts: diagnosticKinds,
+		products: run.trials.flatMap((trial, index) => trackProducts(trial, index + 1, run.version)),
 		invocation_count: run.trials.reduce((count, trial) => count + trial.invocations.length, 0),
 		retry_count: run.trials.reduce(
 			(count, trial) => count + trial.invocations.filter(({ predecessor_invocation_id }) => predecessor_invocation_id !== null).length,

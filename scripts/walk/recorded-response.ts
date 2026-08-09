@@ -21,6 +21,33 @@ export interface RecordedResponse {
 	text: string;
 }
 
+export interface RecordedGenerationEvidence {
+	readonly model_usage: WalkGenerationRunStatus["model_usage"];
+	readonly diagnostics: WalkGenerationRunStatus["diagnostics"];
+}
+
+export function recordedGenerationEvidence(
+	status: WalkGenerationRunStatus,
+): RecordedGenerationEvidence {
+	return {
+		model_usage: status.model_usage,
+		diagnostics: status.diagnostics,
+	};
+}
+
+export function assertRecordedGenerationEvidenceUnchanged(
+	first: RecordedGenerationEvidence,
+	status: WalkGenerationRunStatus,
+): void {
+	const repeated = recordedGenerationEvidence(status);
+	if (JSON.stringify(repeated.model_usage) !== JSON.stringify(first.model_usage)) {
+		throw new Error("model usage changed after repeated scheduled generation");
+	}
+	if (JSON.stringify(repeated.diagnostics) !== JSON.stringify(first.diagnostics)) {
+		throw new Error("editorial diagnostics changed after repeated scheduled generation");
+	}
+}
+
 export const RECORDED_GENERATION_DIAGNOSTICS = [
 	{
 		kind: "preservation",

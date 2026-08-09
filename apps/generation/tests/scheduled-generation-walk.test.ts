@@ -3,6 +3,8 @@ import { parseGenerationRunStatusResponse } from "../../../scripts/walk/generati
 import {
 	RECORDED_GENERATION_DIAGNOSTICS,
 	assertCompletedRecordedGenerationStatus,
+	assertRecordedGenerationEvidenceUnchanged,
+	recordedGenerationEvidence,
 	type RecordedResponse,
 } from "../../../scripts/walk/recorded-response";
 import { assertExplicitNoEvidenceFailure } from "../../../scripts/walk/phases/scheduled-generation";
@@ -139,6 +141,21 @@ it("rejects malformed or drifted recorded-generation diagnostics", () => {
 	expect(() => assertCompletedRecordedGenerationStatus(status, responses)).toThrow(
 		"exact recorded evidence",
 	);
+});
+
+it("rejects diagnostics changed by repeated scheduled generation", () => {
+	const { body } = completeStatus();
+	const first = parseGenerationRunStatusResponse(body, PAIR);
+	const changed = parseGenerationRunStatusResponse(completeStatus({
+		diagnostics: RECORDED_GENERATION_DIAGNOSTICS.map((diagnostic, index) => index === 0
+			? { ...diagnostic, message: `${diagnostic.message} changed` }
+			: diagnostic),
+	}).body, PAIR);
+
+	expect(() => assertRecordedGenerationEvidenceUnchanged(
+		recordedGenerationEvidence(first),
+		changed,
+	)).toThrow("editorial diagnostics changed after repeated scheduled generation");
 });
 
 it("rejects a mismatched pair identity", () => {

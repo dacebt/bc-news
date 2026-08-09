@@ -58,6 +58,16 @@ test("summarizes completed products with retained diagnostics", async () => {
 	expect(summary.diagnostic_kind_counts).toMatchObject({ preservation: 2, final_product: 3 });
 });
 
+test("keeps terminal schema findings out of diagnostic counts", async () => {
+	const { result } = await controlledEvaluation(undefined, 1, {
+		main_story_copyedit: "not json",
+	});
+	const summary = summarizeBenchmarkRun(result.benchmark);
+
+	expect(summary.finding_kind_counts).toMatchObject({ invalid_json: 1 });
+	expect(summary.diagnostic_kind_counts).toEqual({});
+});
+
 test("compares retained diagnostics as behavior", async () => {
 	const baseline = await controlledEvaluation();
 	const diagnostic = await controlledEvaluation(undefined, 1, {
@@ -104,6 +114,9 @@ test("keeps LM Studio sampling configuration and posture in comparison context",
 		invocation.completion.external_billing = { classification: "none", amount_usd: 0, reason: "local_inference" };
 	}
 	const parsedExplicit = V4BenchmarkRunSchema.parse(explicit);
+	const historicalSummary = summarizeBenchmarkRun(parsedExplicit);
+	expect(historicalSummary.diagnostic_kind_counts).toEqual({});
+	expect(historicalSummary.trials[0]?.tracks.main_story).not.toHaveProperty("diagnostics");
 
 	const providerDefault = clone(parsedExplicit);
 	const providerDefaultDeclaration = first(providerDefault.declaration.configurations, "one provider-default declaration");

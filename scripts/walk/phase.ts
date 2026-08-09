@@ -1,9 +1,10 @@
 import type { GenerationRunParams } from "@bc-news/contracts";
 import type { Browser } from "playwright-core";
+import type { RecordedGenerationEvidence } from "./recorded-response";
 
 export interface WalkState {
 	firstServedEditionBody?: string;
-	firstModelUsageBody?: string;
+	firstGenerationRunEvidence?: RecordedGenerationEvidence;
 }
 
 export interface WalkContext {

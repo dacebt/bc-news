@@ -1,4 +1,5 @@
 import { EditionSchema, MainStorySchema, type MainStory } from "@bc-news/contracts";
+import type { WalkModelUsageRecord } from "../generation-run-status";
 import type { WalkContext, WalkPhase } from "../phase";
 import { readRecordedResponse } from "../recorded-response-reader";
 
@@ -105,16 +106,14 @@ async function run(ctx: WalkContext): Promise<void> {
 			"published edition does not match the two recorded copyedited editorial products",
 		);
 	}
-	if (ctx.state.firstModelUsageBody === undefined) {
+	if (ctx.state.firstGenerationRunEvidence === undefined) {
 		throw new Error("editorial-products phase requires operator-status usage evidence");
 	}
-	const usages = JSON.parse(ctx.state.firstModelUsageBody) as {
-		production_step: string;
-		provider: string;
-		model: string;
-	}[];
+	const usages = ctx.state.firstGenerationRunEvidence.model_usage;
 	const usageByStep = new Map(usages.map((usage) => [usage.production_step, usage]));
-	const provenanceFor = (productionStep: string): { provider: string; model: string } => {
+	const provenanceFor = (
+		productionStep: WalkModelUsageRecord["production_step"],
+	): { provider: string; model: string } => {
 		const usage = usageByStep.get(productionStep);
 		if (usage === undefined) {
 			throw new Error(`missing ${productionStep} usage needed to verify edition provenance`);

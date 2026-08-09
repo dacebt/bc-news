@@ -3,6 +3,7 @@ import { fetchGenerationRunStatus } from "../generation-run-status";
 import {
 	RECORDED_PRODUCTION_STEPS,
 	assertCompletedRecordedGenerationStatus,
+	recordedGenerationEvidence,
 } from "../recorded-response";
 import { readRecordedResponse } from "../recorded-response-reader";
 import { POLL_INTERVAL_MS, sleep } from "../timing";
@@ -21,7 +22,7 @@ async function run(ctx: WalkContext): Promise<void> {
 			continue;
 		}
 		assertCompletedRecordedGenerationStatus(status, recordedResponses);
-		ctx.state.firstModelUsageBody = JSON.stringify(status.model_usage);
+		ctx.state.firstGenerationRunEvidence = recordedGenerationEvidence(status);
 		console.log("walk: operator status proved seven steps, four zero-external-billing recorded replays, and four ordered editorial diagnostics");
 		return;
 	}
