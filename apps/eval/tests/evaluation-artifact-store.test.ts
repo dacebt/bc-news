@@ -102,7 +102,13 @@ test("enforces monotonic disk-authoritative transitions", async () => {
 	requestMutation.trials[0]!.invocations.at(-1)!.request_sha256 = sha256Json(requestMutation.trials[0]!.invocations.at(-1)!.request);
 	await rejectsWithoutChangingBytes(inFlightStore, inFlightPath, requestMutation);
 	await rejectsWithoutChangingBytes(inFlightStore, inFlightPath, states[inFlightIndex - 1]!);
-	const shortcut = clone(states[inFlightIndex + 2]!);
+	const inFlightInvocation = inFlight.trials[0]!.invocations.at(-1)!;
+	const shortcutState = states.find((state) => {
+		const candidate = state.trials[0]!.invocations.find(({ id }) => id === inFlightInvocation.id);
+		return candidate?.transport === "succeeded" && candidate.parse.state === "succeeded";
+	});
+	expect(shortcutState).toBeDefined();
+	const shortcut = clone(shortcutState!);
 	await rejectsWithoutChangingBytes(inFlightStore, inFlightPath, shortcut);
 	const classifiedShortcut = clone(inFlight);
 	const classifiedInvocation = classifiedShortcut.trials[0]!.invocations.at(-1)!;

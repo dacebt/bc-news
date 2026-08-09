@@ -20,7 +20,16 @@ export interface ObservedModelRequest {
 export interface RecordLoopbackServer {
 	readonly baseUrl: string;
 	readonly requests: readonly ObservedModelRequest[];
+	readonly waitForRequests: (models: readonly string[]) => Promise<void>;
+	readonly releaseRequests: (models: readonly string[]) => void;
 	readonly close: () => Promise<void>;
+}
+
+interface RequestSignal {
+	readonly observed: Promise<void>;
+	readonly markObserved: () => void;
+	readonly released: Promise<void>;
+	readonly release: () => void;
 }
 
 class LoopbackRequestError extends Error {
@@ -38,6 +47,16 @@ class LoopbackRequestError extends Error {
 function respondJson(response: ServerResponse, status: number, body: unknown): void {
 	response.writeHead(status, { "Content-Type": "application/json" });
 	response.end(JSON.stringify(body));
+}
+
+function requestSignal(held: boolean): RequestSignal {
+	let markObserved = (): void => undefined;
+	const observed = new Promise<void>((resolve) => { markObserved = resolve; });
+	let release = (): void => undefined;
+	const released = held
+		? new Promise<void>((resolve) => { release = resolve; })
+		: Promise.resolve();
+	return { observed, markObserved, released, release };
 }
 
 async function readJsonBody(request: IncomingMessage): Promise<unknown> {
@@ -64,6 +83,7 @@ async function handleRequest(input: {
 	readonly retryableFailureModels: ReadonlySet<string>;
 	readonly transientFailureModels: ReadonlySet<string>;
 	readonly requestCountByModel: Map<string, number>;
+	readonly requestSignals: ReadonlyMap<string, RequestSignal>;
 }): Promise<void> {
 	const url = new URL(input.request.url ?? "/", "http://127.0.0.1");
 	if (
@@ -93,6 +113,10 @@ async function handleRequest(input: {
 		system: parsed.data.messages[0].content,
 		user: parsed.data.messages[1].content,
 	});
+	const signal = input.requestSignals.get(parsed.data.model);
+	if (signal === undefined) throw new LoopbackRequestError(500, "request_signal_missing", "Loopback request has no control signal");
+	signal.markObserved();
+	await signal.released;
 	const requestCount = (input.requestCountByModel.get(parsed.data.model) ?? 0) + 1;
 	input.requestCountByModel.set(parsed.data.model, requestCount);
 	if (input.retryableFailureModels.has(parsed.data.model) || (input.transientFailureModels.has(parsed.data.model) && requestCount === 1)) {
@@ -116,18 +140,24 @@ export function startRecordLoopbackServer(
 	options: {
 		readonly retryableFailureModels?: ReadonlySet<string>;
 		readonly transientFailureModels?: ReadonlySet<string>;
+		readonly heldModels?: ReadonlySet<string>;
 	} = {},
 ): Promise<RecordLoopbackServer> {
 	const observedRequests: ObservedModelRequest[] = [];
 	const retryableFailureModels = options.retryableFailureModels ?? new Set<string>();
 	const transientFailureModels = options.transientFailureModels ?? new Set<string>();
+	const heldModels = options.heldModels ?? new Set<string>();
 	if ([...retryableFailureModels].some((model) => transientFailureModels.has(model))) {
 		return Promise.reject(new Error("A loopback model cannot be configured for both transient and persistent retryable failure"));
 	}
+	const registeredModels = new Set(Object.keys(outputByModel));
+	const unknownHeldModel = [...heldModels].find((model) => !registeredModels.has(model));
+	if (unknownHeldModel !== undefined) return Promise.reject(new Error(`Cannot hold unregistered loopback model ${unknownHeldModel}`));
+	const requestSignals = new Map([...registeredModels].map((model) => [model, requestSignal(heldModels.has(model))]));
 	const requestCountByModel = new Map<string, number>();
 	return new Promise((resolve, reject) => {
 		const server = createServer((request, response) => {
-			void handleRequest({ request, response, outputByModel, observedRequests, retryableFailureModels, transientFailureModels, requestCountByModel }).catch((cause: unknown) => {
+			void handleRequest({ request, response, outputByModel, observedRequests, retryableFailureModels, transientFailureModels, requestCountByModel, requestSignals }).catch((cause: unknown) => {
 				const error = cause instanceof LoopbackRequestError
 					? cause
 					: new LoopbackRequestError(500, "unexpected_failure", "Loopback request failed unexpectedly", { cause });
@@ -146,7 +176,24 @@ export function startRecordLoopbackServer(
 			resolve({
 				baseUrl: `http://127.0.0.1:${String(address.port)}/v1`,
 				requests: observedRequests,
-				close: () => closeServer(server),
+				waitForRequests: async (models) => {
+					await Promise.all(models.map((model) => {
+						const signal = requestSignals.get(model);
+						if (signal === undefined) throw new Error(`Cannot wait for unregistered loopback model ${model}`);
+						return signal.observed;
+					}));
+				},
+				releaseRequests: (models) => {
+					for (const model of models) {
+						const signal = requestSignals.get(model);
+						if (signal === undefined) throw new Error(`Cannot release unregistered loopback model ${model}`);
+						signal.release();
+					}
+				},
+				close: async () => {
+					for (const signal of requestSignals.values()) signal.release();
+					await closeServer(server);
+				},
 			});
 		});
 	});

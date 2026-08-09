@@ -241,8 +241,14 @@ benchmark declaration contains a nonempty ordered list of exact four-step live
 configurations, a positive repetition count, and an explicit transport retry
 limit from zero through three. Recorded adapters and duplicate configuration
 identities reject before artifact creation. Historical run files keep their
-existing directory, schema, and meaning. The eval application owns this
-artifact boundary directly, adding no third domain port.
+existing directory, schema, and meaning. Configuration-order and
+repetition-order roster members execute serially. Within each Evaluation Trial,
+the main-story and announcements writer-to-copyeditor chains dispatch
+concurrently, while each writer remains a prerequisite for its own copyeditor.
+This is application scheduling, not a promise that an underlying model runtime
+processes the requests in parallel. The eval application owns this artifact
+boundary directly, adding no third domain port and changing neither provider
+adapters nor production Workflow scheduling.
 
 Current Benchmark Run artifact version 5 retains each declared LM Studio
 sampling posture and every exact copyedit diagnostic. Provider-default behavior
@@ -253,38 +259,46 @@ artifact creation. Its four subject outcomes are `completed`, `parse_rejected`,
 version-dispatched historical boundaries and keep their frozen semantics.
 
 The artifact is exclusively created in `running` state before any provider
-call. Before transport, it atomically retains the exact assembled
-`{production_step, system, user}` request, request hash, configuration identity,
-ordinal, predecessor link, timestamp, `transport: in_flight`, and
-`parse: pending`. A successful application-facing completion is retained while
-parse remains pending before editorial parsing. A transport failure is retained
-with classification pending and then classified in a separate write. An
-eligible failure may append at most the declared number of retries; each retry
-points to the immediately previous same-step invocation and retains the exact
-same request and request hash. Deterministic transport failures, malformed JSON,
-and strict schema mismatch never retry. Preservation and final-product findings
-complete their track with the schema-valid product and retained diagnostics,
-also without retry. Every
-replacement validates and reparses
-before becoming authoritative. A failed pre-rename replacement always attempts
-to remove its unique temporary file without changing the authoritative bytes.
+call. One ordered application owner allocates every invocation ordinal and
+applies every retained version 5 mutation. Before each transport call, that
+owner atomically retains the exact assembled `{production_step, system, user}`
+request, request hash, configuration identity, ordinal, predecessor link,
+timestamp, `transport: in_flight`, and `parse: pending`. Concurrent track work
+therefore enters one monotonic interleaved history, and the artifact store's
+atomic full-file replacement is never invoked concurrently. A successful
+application-facing completion is retained while parse remains pending before
+editorial parsing. A transport failure is retained with classification pending
+and then classified in a separate write. An eligible failure may append at most
+the declared number of retries; each retry points to the immediately previous
+same-step invocation and retains the exact same request and request hash.
+Deterministic transport failures, malformed JSON, and strict schema mismatch
+never retry. Preservation and final-product findings complete their track with
+the schema-valid product and retained diagnostics, also without retry. Every
+replacement validates and reparses before becoming authoritative. A failed
+pre-rename replacement always attempts to remove its unique temporary file
+without changing the authoritative bytes.
 Cleanup is best-effort: a cleanup failure remains an explicit harness-failure
 detail with the temporary path while the primary error stays classified as
-`write_rejected`. Evidence-write failure
-stops the harness and never claims retention; interruption leaves the last
-strict running artifact inspectable. Ended invocation durations equal their
-retained timestamp endpoints exactly, and trial and benchmark completions
-cannot precede any lifecycle event they contain.
+`write_rejected`. Evidence-write failure stops the harness and never claims
+retention. Validation, persistence, or an unknown harness rejection prevents
+terminal retained completion. Both concurrently dispatched chains quiesce
+before the application attempts terminal trial aggregation, so no sibling can
+mutate evidence after a terminal result is reported. Interruption leaves the
+last strict running artifact inspectable through the same version-dispatched
+benchmark browse boundary. Ended invocation durations equal their retained
+timestamp endpoints exactly, and trial and benchmark completions cannot precede
+any lifecycle event they contain.
 
 Artifact version 2 retains the exact declared configuration-order and
 repetition-order trial roster. Its trials are an append-only prefix: only the
 final retained trial may run, terminal predecessors are immutable, and outcome
 counts exactly reflect every retained terminal trial. Provider exhaustion
-closes only the affected editorial track as infrastructure-incomplete;
-main-story and announcements execute independently, and a rejected or
-infrastructure-incomplete trial does not suppress later roster members. A
-benchmark becomes retained only after every declared trial is terminal.
-Invalid artifact state or persistence stops coordination.
+closes only the affected editorial track as infrastructure-incomplete; expected
+provider exhaustion or subject rejection is track-local and does not suppress
+the concurrently advancing sibling. A rejected or infrastructure-incomplete
+trial does not suppress later serial roster members. A benchmark becomes
+retained only after every declared trial is terminal. Invalid artifact state or
+persistence stops coordination.
 
 Retained Benchmark Runs are browsed through the namespaced `benchmark list`,
 `benchmark show`, `benchmark summary`, and `benchmark compare` eval routes.
@@ -306,12 +320,16 @@ timestamps do not create behavioral differences. This observation boundary
 reports exhaustive paths only; it owns no score, judge, recommendation, or
 acceptance decision.
 
-Main-story and announcements evaluation tracks execute independently. A
-rejection in one does not suppress the other. Preservation and final-product
+Main-story and announcements evaluation tracks dispatch concurrently and
+execute independently as two track-local writer-to-copyeditor chains. A
+rejection or exhausted provider in one does not suppress the other, and both
+chains quiesce before terminal aggregation. Preservation and final-product
 findings are deterministic diagnostics attributed to each track's terminal
 copyedit step; a schema-valid product completes its track with those diagnostics
 retained. Subject outcome describes model behavior, while harness outcome states
-only whether trustworthy evidence was retained.
+only whether trustworthy evidence was retained. This scheduling change does not
+alter the artifact schemas, version 5 subject semantics, or any historical
+version meaning.
 
 Artifact version 1 is a historical-validation boundary, not an alias for the
 current production implementation. Eval-local frozen schemas, parsers, writer
