@@ -5,6 +5,7 @@ import {
 	RecordedModelResponseSchema,
 	type RecordedModelResponse,
 	type RecordedModelResponseV2,
+	type RecordedModelResponseV3,
 	type RecordedModelResponseRoster,
 } from "@bc-news/fixtures";
 import { PRODUCTION_MODEL_STEPS, type ProductionModelStep } from "@bc-news/generation-core";
@@ -121,25 +122,33 @@ async function readRecordedResponse(path: string, productionStep: ProductionMode
 	return result.data;
 }
 
-function isCurrentRecordedResponse(
+function isVersion2RecordedResponse(
 	response: RecordedModelResponse,
 ): response is RecordedModelResponseV2 {
 	return "version" in response && response.version === 2;
 }
 
-function validateRecordedResponseRosterPosture(
+function isVersion3RecordedResponse(
+	response: RecordedModelResponse,
+): response is RecordedModelResponseV3 {
+	return "version" in response && response.version === 3;
+}
+
+function validateRecordedResponseRosterVersion(
 	directory: string,
 	responses: readonly RecordedModelResponse[],
 ): void {
-	const currentResponses = responses.filter(isCurrentRecordedResponse);
-	if (currentResponses.length !== 0 && currentResponses.length !== responses.length) {
+	const version2Responses = responses.filter(isVersion2RecordedResponse);
+	const version3Responses = responses.filter(isVersion3RecordedResponse);
+	const legacyCount = responses.length - version2Responses.length - version3Responses.length;
+	if ([legacyCount, version2Responses.length, version3Responses.length].filter((count) => count > 0).length > 1) {
 		throw new RecordedResponseDirectoryError(
 			"recorded_response_directory_rejected",
 			directory,
-			"Recorded response directory must contain either four legacy responses or four version 2 responses",
+			"Recorded response directory must contain four responses from exactly one artifact version",
 		);
 	}
-	const lmStudioPostures = new Set(currentResponses
+	const lmStudioPostures = new Set(version2Responses
 		.filter(({ sampling }) => sampling.adapter === "lmstudio")
 		.map(({ sampling }) => sampling.posture));
 	if (lmStudioPostures.size > 1) {
@@ -185,7 +194,7 @@ export async function validateRecordedResponseDirectory(
 			"announcements_copyedit",
 		),
 	]);
-	validateRecordedResponseRosterPosture(directory, [
+	validateRecordedResponseRosterVersion(directory, [
 		mainStoryWrite,
 		mainStoryCopyedit,
 		announcementsWrite,

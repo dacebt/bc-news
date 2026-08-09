@@ -54,16 +54,15 @@ this retained evidence. Comparison separates fixture, configuration, and
 provenance context from behavior and reports no score, judge result,
 recommendation, or acceptance decision.
 
-Current Benchmark Run version 5 retains LM Studio sampling posture and exact
-schema-valid copyedit diagnostics as declared evidence. A behavioral production
-baseline omits `sampling` from
-every LM Studio step, which sends no temperature, top-p, or top-k override. A
-deterministic drift, structure, reliability, or completion declaration supplies
-one complete model-specific tuple per step. Partial tuples reject. Explicit
-sampling can support deterministic evidence, but it is never labeled as a
-production-behavior baseline. Version 5 has exactly four subject outcomes:
+Current Benchmark Run version 6 retains every exact per-agent configuration and
+schema-valid copyedit diagnostic as declared evidence. Each role independently
+chooses a provider, model, and optional temperature; omission includes that
+role's provider default as a candidate. Temperature is the only decoding
+control admitted or sent. Model evaluation compares these candidate
+configurations to select production settings; it is not a deterministic test or
+a provider-default quality gate. Version 6 has exactly four subject outcomes:
 `completed`, `parse_rejected`, `contract_rejected`, and
-`infrastructure_incomplete`. Versions 1–4 remain frozen historical contracts.
+`infrastructure_incomplete`. Versions 1–5 remain frozen historical contracts.
 
 Malformed JSON or strict schema mismatch is the only terminal model-output
 failure. Infrastructure failure is classified separately. Every schema-valid
@@ -77,10 +76,11 @@ never causes another model call, rejection, or publication stop.
 replay and comparison. `context benchmark --fixture <path> [--results-dir
 <path>]` writes strict context-measurement results. Neither tool creates a
 Benchmark Run or Run File and neither confers acceptance.
-Current recorded-response version 2 and context-result version 2 artifacts
-retain provider-default omission versus complete explicit sampling. Their
-absent-version predecessors keep their legacy meaning. Either tool may use
-either posture; the declaration, not the command name, determines its purpose.
+Current recorded-response version 3 and context-result version 3 artifacts
+retain every exact per-step configuration and optional temperature. Historical
+versions keep their original meanings. Either tool may independently omit or
+set temperature for each step; the declaration, not the command name,
+determines the experiment.
 
 **Recorded-replay acceptance** uses `acceptance run --fixture <path> [--config
 <path>] [--results-dir <path>]` and `acceptance list/show/compare`. It executes
@@ -148,8 +148,8 @@ failure, and completion retained incrementally`, continuation ends with
 `evaluation: serial benchmark retained
 linked retries and continued later trials`, and browsing ends with `evaluation:
 evidence listed summarized and compared without verdicts`. Fixture proof ends
-with `fixture authoring: four strict v2 hosted responses retained not-applicable
-sampling, replayed, and compared`. Acceptance proof ends with `acceptance: four
+with `fixture authoring: four strict v3 hosted responses retained exact agent
+configurations, replayed, and compared`. Acceptance proof ends with `acceptance: four
 recorded production steps replayed request-linked and deterministic; diagnostics
 retained: 4`. The composed walk prints none
 of those exact verifier observations; it ends with its independent `WALK PASS`.
@@ -242,11 +242,15 @@ proves, tests of glue and framework wiring, tests to satisfy coverage.
   declarations omit all three native SDK properties, explicit declarations
   retain an unchanged complete tuple, partial tuples reject, and versions 1–3
   still validate only against their frozen semantics.
-- Version 5 preserves version 4 sampling semantics and is the current
-  production-aligned contract. It completes schema-valid products with exact
+- Version 5 preserves version 4 sampling semantics as a frozen historical
+  contract. It completes schema-valid products with exact
   preservation and final-product diagnostics and has only `completed`,
   `parse_rejected`, `contract_rejected`, and `infrastructure_incomplete`
   outcomes; versions 1–4 continue through their frozen parsers.
+- Version 6 is current. It retains exact independent configurations for all four
+  production agents, accepts optional temperature as the only decoding control,
+  and rejects obsolete `sampling`, `top_p`, and `top_k` fields. Versions 1–5
+  continue through their frozen parsers.
 - The repository-owned benchmark-browse verifier creates strict retained
   evidence through the loopback provider and invokes the exported eval CLI
   application boundary for all four `benchmark` routes. It proves both the
@@ -264,21 +268,18 @@ proves, tests of glue and framework wiring, tests to satisfy coverage.
 - Copyedit preservation checks can prove only their mechanical invariants:
   announcement identity/order, paragraph count, quotes, numeric literals,
   and protected markdown spans. They cannot prove semantic equivalence or prose
-  quality. Representative provider-default live-model evaluation remains
-  required before model, prompt, or evidence-policy decisions are treated as
-  production-ready. Explicit deterministic evaluation is complementary drift,
-  structure, reliability, or completion evidence rather than a behavioral
-  substitute.
+  quality. Representative live-model evaluation compares candidate model and
+  temperature configurations for each role before production selection;
+  provider defaults are candidates rather than a privileged baseline.
 - Exact context-budget measurement runs through
   `pnpm --filter @bc-news/eval eval -- context benchmark --fixture packages/fixtures`.
   Automated tests use a fake local runtime and fake completion endpoint; they
   never invoke LM Studio. The accepted representative run requires exactly one
   already-loaded local Qwen model, rejects any hosted or mixed-model config,
   and never loads, unloads, or switches model state.
-- Current context-result version 2 tests require the declared sampling posture
-  and any complete explicit tuple to survive write and reparse. Absent-version
-  context results continue through their legacy parser without acquiring a new
-  posture.
+- Current context-result version 3 tests require every per-agent model and
+  optional temperature to survive write and reparse independently. Version 2
+  and absent-version context results continue through their frozen parsers.
 - The representative corpus prepares to 208 messages under the unchanged
   evidence-message sampler, so the truthful representative matrix is 1, 50,
   100, 150, and 208.

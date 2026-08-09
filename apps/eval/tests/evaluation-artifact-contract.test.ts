@@ -183,7 +183,7 @@ test("binds usage and billing evidence to the declared adapter", async () => {
 	localDeclaration.config.production_steps.main_story_write = {
 		adapter: "lmstudio",
 		model: "local/requested-model",
-		sampling: { temperature: 0.2, top_p: 0.95, top_k: 40 },
+		temperature: 0.2,
 		reasoning_effort: "provider_default",
 	};
 	const localIdentity = evaluationConfigIdentity(localDeclaration.config);

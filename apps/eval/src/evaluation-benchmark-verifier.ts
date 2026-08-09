@@ -6,7 +6,7 @@ import { PRODUCTION_MODEL_STEPS, type ProductionModelStep } from "@bc-news/gener
 import { RecordedModelResponseSchema } from "@bc-news/fixtures";
 import { REPRESENTATIVE_FIXTURE_PATH } from "./representative-fixture";
 import { evaluateBenchmarkCommand } from "./evaluation-benchmark-command";
-import { BenchmarkRunSchema, type BenchmarkRun, type V5BenchmarkRun } from "./evaluation-artifact";
+import { BenchmarkRunSchema, type BenchmarkRun, type V6BenchmarkRun } from "./evaluation-artifact";
 import { startRecordLoopbackServer } from "./record-loopback-server";
 
 const RESPONSE_DIRECTORY = new URL("../../../packages/fixtures/model-responses/", import.meta.url).pathname;
@@ -51,11 +51,11 @@ async function retainedOutputs(): Promise<Record<ProductionModelStep, string>> {
 function assertSnapshots(snapshots: readonly BenchmarkRun[]): void {
 	assertProof(snapshots.length > 0, "snapshots_missing", "Benchmark observer retained no incremental snapshots");
 	for (const snapshot of snapshots) assertProof(BenchmarkRunSchema.safeParse(snapshot).success, "snapshot_invalid", "An incremental benchmark snapshot failed strict parsing");
-	assertProof(snapshots.some((snapshot) => snapshot.version === 5 && snapshot.trials.some((trial) => trial.invocations.some(({ transport }) => transport === "in_flight"))), "in_flight_not_observed", "No pre-transport invocation snapshot was retained");
-	assertProof(snapshots.some((snapshot) => snapshot.version === 5 && snapshot.trials.some((trial) => trial.invocations.some((invocation) => invocation.transport === "failed" && invocation.retry_classification.state === "classified"))), "classified_failure_not_observed", "No classified failed invocation snapshot was retained");
+	assertProof(snapshots.some((snapshot) => snapshot.version === 6 && snapshot.trials.some((trial) => trial.invocations.some(({ transport }) => transport === "in_flight"))), "in_flight_not_observed", "No pre-transport invocation snapshot was retained");
+	assertProof(snapshots.some((snapshot) => snapshot.version === 6 && snapshot.trials.some((trial) => trial.invocations.some((invocation) => invocation.transport === "failed" && invocation.retry_classification.state === "classified"))), "classified_failure_not_observed", "No classified failed invocation snapshot was retained");
 }
 
-function assertFinalBenchmark(benchmark: V5BenchmarkRun): void {
+function assertFinalBenchmark(benchmark: V6BenchmarkRun): void {
 	assertProof(benchmark.lifecycle === "complete" && benchmark.harness_outcome === "retained", "benchmark_not_retained", "Serial benchmark did not close as retained");
 	assertProof(benchmark.trials.length === CONFIGURATIONS.length, "later_trials_missing", "Serial benchmark did not retain every declared trial");
 	assertProof(isDeepStrictEqual(benchmark.trial_roster.map(({ trial_id, config_identity, repetition }) => ({ trial_id, config_identity, repetition })), benchmark.trials.map(({ id, config_identity, repetition }) => ({ trial_id: id, config_identity, repetition }))), "roster_order_mismatch", "Retained trials did not follow the exact roster order");
@@ -107,7 +107,7 @@ export async function verifyEvaluationBenchmarkContinuation(temporaryRoot?: stri
 		assertSnapshots(snapshots);
 		assertFinalBenchmark(result.benchmark);
 		const retained = BenchmarkRunSchema.parse(JSON.parse(await readFile(result.path, "utf8")) as unknown);
-		assertProof(retained.version === 5 && isDeepStrictEqual(retained, result.benchmark), "retained_artifact_mismatch", "Returned benchmark did not equal its retained artifact");
+		assertProof(retained.version === 6 && isDeepStrictEqual(retained, result.benchmark), "retained_artifact_mismatch", "Returned benchmark did not equal its retained artifact");
 	} finally {
 		await server.close();
 		if (temporaryRoot === undefined) await rm(root, { recursive: true, force: true });

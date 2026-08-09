@@ -4,9 +4,11 @@ import {
 	CONTEXT_BENCHMARK_LOADS,
 	ContextBenchmarkFileSchema,
 	ContextBenchmarkFileV2Schema,
+	ContextBenchmarkFileV3Schema,
 	LegacyContextBenchmarkFileSchema,
 	type ContextBenchmarkFile,
 	type ContextBenchmarkFileV2,
+	type ContextBenchmarkFileV3,
 } from "../src/context-benchmark-file";
 import { formatContextBenchmarkReport } from "../src/context-benchmark-report";
 
@@ -77,6 +79,21 @@ function validV2Report(posture: "provider_default" | "explicit"): ContextBenchma
 	});
 }
 
+function validV3Report(): ContextBenchmarkFileV3 {
+	const legacy = validReport();
+	if ("version" in legacy) throw new Error("Expected a legacy context result");
+	return ContextBenchmarkFileV3Schema.parse({
+		version: 3,
+		...legacy,
+		agent_configurations: {
+			main_story_write: { adapter: "lmstudio", model: "qwen3-local", temperature: 0.7, reasoning_effort: "provider_default" },
+			main_story_copyedit: { adapter: "lmstudio", model: "qwen3-local", temperature: 0.2, reasoning_effort: "provider_default" },
+			announcements_write: { adapter: "lmstudio", model: "qwen3-local", reasoning_effort: "provider_default" },
+			announcements_copyedit: { adapter: "lmstudio", model: "qwen3-local", temperature: 0.3, reasoning_effort: "provider_default" },
+		},
+	});
+}
+
 test("parses an unchanged absent-version context result as strict legacy evidence", () => {
 	const report = validReport();
 
@@ -101,6 +118,33 @@ test.each(["provider_default", "explicit"] as const)(
 			});
 	},
 );
+
+test("parses strict version 3 independent agent temperatures", () => {
+	const report = validV3Report();
+	expect(report.agent_configurations.main_story_write).toHaveProperty("temperature", 0.7);
+	expect(report.agent_configurations.main_story_copyedit).toHaveProperty("temperature", 0.2);
+	expect(report.agent_configurations.announcements_write).not.toHaveProperty("temperature");
+	expect(ContextBenchmarkFileSchema.parse(report)).toEqual(report);
+
+	for (const configuration of [
+		{ ...report.agent_configurations.main_story_write, temperature: 2.1 },
+		{ ...report.agent_configurations.main_story_write, sampling: { temperature: 0, top_p: 1, top_k: 40 } },
+		{ ...report.agent_configurations.main_story_write, top_p: 1 },
+		{ ...report.agent_configurations.main_story_write, top_k: 40 },
+	]) {
+		expect(ContextBenchmarkFileV3Schema.safeParse({
+			...report,
+			agent_configurations: { ...report.agent_configurations, main_story_write: configuration },
+		}).success).toBe(false);
+	}
+});
+
+test("reports version 3 exact agent temperatures before measurement rows", () => {
+	const output = formatContextBenchmarkReport(validV3Report(), "context.json");
+	expect(output).toContain("Agent configurations:\n  main_story_write: qwen3-local, temperature=0.7");
+	expect(output).toContain("announcements_write: qwen3-local, temperature=provider_default");
+	expect(output.indexOf("Agent configurations:")).toBeLessThan(output.indexOf(" load  production step"));
+});
 
 test("rejects incomplete or contradictory version 2 sampling evidence", () => {
 	const explicit = validV2Report("explicit");

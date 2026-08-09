@@ -6,14 +6,14 @@ import {
 	LmStudioRetryableError,
 	createLmStudioModelProvider,
 	lmStudioSdkBaseUrl,
-	type LmStudioSamplingConfig,
+	type ModelTemperature,
 } from "../src/index";
 
 const sdk = vi.hoisted(() => ({ constructor: vi.fn() }));
 
 vi.mock("@lmstudio/sdk", () => ({ LMStudioClient: sdk.constructor }));
 
-const LOCAL_SAMPLING = { temperature: 1, top_p: 0.95, top_k: 20 } as const;
+const LOCAL_TEMPERATURE = 0.6;
 const request = {
 	productionStep: "main_story_write" as const,
 	system: "system constraints",
@@ -67,12 +67,12 @@ function queueClient(models: readonly FakeModel[], dispose = vi.fn().mockResolve
 }
 
 function provider(
-	options: { readonly sampling?: LmStudioSamplingConfig } = { sampling: LOCAL_SAMPLING },
+	options: { readonly temperature?: ModelTemperature } = { temperature: LOCAL_TEMPERATURE },
 ) {
 	return createLmStudioModelProvider({
 		baseUrl: "http://127.0.0.1:1234/v1",
 		requestedModel: "qwen/qwen3.5-9b",
-		...(options.sampling === undefined ? {} : { sampling: options.sampling }),
+		...(options.temperature === undefined ? {} : { temperature: options.temperature }),
 		reasoningEffort: "provider_default",
 		structuredOutputContracts: LM_STUDIO_PRODUCTION_STEP_OUTPUT_CONTRACTS,
 	});
@@ -96,24 +96,24 @@ it("accepts only provider-default reasoning for current LM Studio configuration"
 	}
 });
 
-it("accepts omitted or complete sampling and rejects partial or invalid sampling", () => {
+it("accepts an optional temperature and rejects obsolete or invalid decoding settings", () => {
 	const candidate = {
 		adapter: "lmstudio",
 		model: "qwen/qwen3.5-9b",
 		reasoning_effort: "provider_default",
 	};
 	expect(LmStudioAdapterConfigSchema.safeParse(candidate).success).toBe(true);
-	expect(LmStudioAdapterConfigSchema.safeParse({ ...candidate, sampling: LOCAL_SAMPLING }).success).toBe(true);
+	expect(LmStudioAdapterConfigSchema.safeParse({ ...candidate, temperature: LOCAL_TEMPERATURE }).success).toBe(true);
 
-	for (const sampling of [
-		{ temperature: 1, top_p: 0.95 },
-		{ temperature: 1, top_k: 20 },
-		{ top_p: 0.95, top_k: 20 },
-		{ temperature: 3, top_p: 0.95, top_k: 20 },
-		{ temperature: 1, top_p: 1.1, top_k: 20 },
-		{ temperature: 1, top_p: 0.95, top_k: -1 },
+	for (const invalid of [
+		{ ...candidate, temperature: -0.1 },
+		{ ...candidate, temperature: 2.1 },
+		{ ...candidate, temperature: Number.NaN },
+		{ ...candidate, sampling: { temperature: 1, top_p: 0.95, top_k: 20 } },
+		{ ...candidate, top_p: 0.95 },
+		{ ...candidate, top_k: 20 },
 	]) {
-		expect(LmStudioAdapterConfigSchema.safeParse({ ...candidate, sampling }).success).toBe(false);
+		expect(LmStudioAdapterConfigSchema.safeParse(invalid).success).toBe(false);
 	}
 });
 
@@ -155,9 +155,7 @@ it("uses the exact loaded model, native structured prediction, truthful evidence
 			{ role: "user", content: "main story prompt" },
 		],
 		expect.objectContaining({
-			temperature: 1,
-			topPSampling: 0.95,
-			topKSampling: 20,
+			temperature: LOCAL_TEMPERATURE,
 			structured: {
 				type: "json",
 				jsonSchema: LM_STUDIO_PRODUCTION_STEP_OUTPUT_CONTRACTS.main_story_write.schema,
@@ -166,16 +164,16 @@ it("uses the exact loaded model, native structured prediction, truthful evidence
 	);
 	const options = model.respond.mock.calls[0]?.[1] as Record<string, unknown>;
 	expect(options.signal).toBeInstanceOf(AbortSignal);
-	expect(options).toHaveProperty("temperature", 1);
-	expect(options).toHaveProperty("topPSampling", 0.95);
-	expect(options).toHaveProperty("topKSampling", 20);
+	expect(options).toHaveProperty("temperature", LOCAL_TEMPERATURE);
+	expect(options).not.toHaveProperty("topPSampling");
+	expect(options).not.toHaveProperty("topKSampling");
 	expect(options).not.toHaveProperty("reasoningEffort");
 	expect(options).not.toHaveProperty("reasoning_effort");
 	expect(options).not.toHaveProperty("raw");
 	expect(client[Symbol.asyncDispose]).toHaveBeenCalledOnce();
 });
 
-it("omits every SDK sampling property for provider-default sampling", async () => {
+it("omits temperature for a provider-default evaluation candidate", async () => {
 	const model = loadedModel();
 	queueClient([model]);
 

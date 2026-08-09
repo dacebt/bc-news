@@ -137,13 +137,35 @@ export const ContextBenchmarkFileV2Schema = z.strictObject({
 	validateContextBenchmarkSamplingPosture(report, context);
 });
 
+const ContextBenchmarkAgentConfigurationSchema = z.strictObject({
+	adapter: z.literal("lmstudio"),
+	model: z.string().trim().min(1),
+	temperature: z.number().finite().min(0).max(2).optional(),
+	reasoning_effort: z.literal("provider_default"),
+});
+
+const ContextBenchmarkConfigurationsByStepSchema = z.strictObject({
+	main_story_write: ContextBenchmarkAgentConfigurationSchema,
+	main_story_copyedit: ContextBenchmarkAgentConfigurationSchema,
+	announcements_write: ContextBenchmarkAgentConfigurationSchema,
+	announcements_copyedit: ContextBenchmarkAgentConfigurationSchema,
+});
+
+export const ContextBenchmarkFileV3Schema = z.strictObject({
+	version: z.literal(3),
+	...ContextBenchmarkFileShape,
+	agent_configurations: ContextBenchmarkConfigurationsByStepSchema,
+}).superRefine(validateContextBenchmarkRows);
+
 export const ContextBenchmarkFileSchema = z.union([
+	ContextBenchmarkFileV3Schema,
 	ContextBenchmarkFileV2Schema,
 	LegacyContextBenchmarkFileSchema,
 ]);
 
 export type ContextBenchmarkFile = z.infer<typeof ContextBenchmarkFileSchema>;
 export type ContextBenchmarkFileV2 = z.infer<typeof ContextBenchmarkFileV2Schema>;
+export type ContextBenchmarkFileV3 = z.infer<typeof ContextBenchmarkFileV3Schema>;
 export type ContextBenchmarkRow = z.infer<typeof ContextBenchmarkRowSchema>;
 
 export class ContextBenchmarkFileError extends Error {

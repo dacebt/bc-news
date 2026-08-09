@@ -3,12 +3,12 @@ export {
 	HostedModelAdapterConfigSchema,
 	LmStudioAdapterConfigSchema,
 	LmStudioReasoningEffortSchema,
-	LmStudioSamplingConfigSchema,
+	ModelTemperatureSchema,
 	type CalculatedBillingConfig,
 	type HostedModelAdapterConfig,
 	type LmStudioAdapterConfig,
 	type LmStudioReasoningEffort,
-	type LmStudioSamplingConfig,
+	type ModelTemperature,
 } from "./config";
 export {
 	OpenAiCompatibleDeterministicError,

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { ExternalBilling, ModelProviderPort } from "@bc-news/generation-core";
-import type { CalculatedBillingConfig } from "./config";
+import type { CalculatedBillingConfig, ModelTemperature } from "./config";
 import {
 	OpenAiCompatibleDeterministicError,
 	OpenAiCompatibleRetryableError,
@@ -52,6 +52,7 @@ export interface OpenAiCompatibleProviderInput {
 	readonly apiKey: string;
 	readonly provider: string;
 	readonly requestedModel: string;
+	readonly temperature?: ModelTemperature;
 	readonly billing: CalculatedBillingConfig;
 }
 
@@ -158,6 +159,7 @@ export function createOpenAiCompatibleModelProvider(
 					},
 					body: JSON.stringify({
 						model: input.requestedModel,
+						...(input.temperature === undefined ? {} : { temperature: input.temperature }),
 						messages: [
 							{ role: "system", content: request.system },
 							{ role: "user", content: request.user },

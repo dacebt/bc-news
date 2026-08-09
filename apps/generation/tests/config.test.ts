@@ -4,8 +4,6 @@ import { PRODUCTION_MODEL_STEPS } from "@bc-news/generation-core";
 import { fixtureEvidenceInput, recordedModelProvider } from "@bc-news/fixtures";
 import { GenerationConfigError, resolveGenerationPorts } from "../src/config";
 
-const LOCAL_SAMPLING = { temperature: 1, top_p: 0.95, top_k: 20 };
-
 function envWith(overrides: Record<string, unknown>): Env {
 	return { ...env, ...overrides };
 }
@@ -74,7 +72,7 @@ it("resolves a hosted provider only with endpoint and API key bindings", () => {
 	).toThrow(GenerationConfigError);
 });
 
-it("resolves provider-default and complete explicit LM Studio sampling", () => {
+it("resolves independent provider-default and explicit LM Studio temperatures", () => {
 	const local = {
 		adapter: "lmstudio",
 		model: "local-main",
@@ -96,30 +94,23 @@ it("resolves provider-default and complete explicit LM Studio sampling", () => {
 		LMSTUDIO_BASE_URL: "http://127.0.0.1:1234/v1",
 		MODEL_CONFIG: JSON.stringify({
 			...recordedConfig(),
-			main_story_write: { ...local, sampling: LOCAL_SAMPLING },
+			main_story_write: { ...local, temperature: 0.6 },
+			main_story_copyedit: { ...local, model: "local-copyedit", temperature: 0.2 },
 		}),
 	})).modelProviders.main_story_write).toBeDefined();
 });
 
-it("rejects incomplete LM Studio model, partial or invalid sampling, and reasoning fields", () => {
+it("rejects incomplete LM Studio model, obsolete decoding controls, invalid temperature, and reasoning fields", () => {
 	for (const local of [
-		{ adapter: "lmstudio", sampling: LOCAL_SAMPLING, reasoning_effort: "provider_default" },
+		{ adapter: "lmstudio", temperature: 0.6, reasoning_effort: "provider_default" },
 		{ adapter: "lmstudio", model: " \t ", reasoning_effort: "provider_default" },
-		{
-			adapter: "lmstudio",
-			model: "local",
-			sampling: { temperature: 1, top_p: 0.95 },
-			reasoning_effort: "provider_default",
-		},
-		{
-			adapter: "lmstudio",
-			model: "local",
-			sampling: { ...LOCAL_SAMPLING, top_p: 1.1 },
-			reasoning_effort: "provider_default",
-		},
+		{ adapter: "lmstudio", model: "local", temperature: 2.1, reasoning_effort: "provider_default" },
+		{ adapter: "lmstudio", model: "local", sampling: { temperature: 1, top_p: 0.95, top_k: 20 }, reasoning_effort: "provider_default" },
+		{ adapter: "lmstudio", model: "local", top_p: 0.95, reasoning_effort: "provider_default" },
+		{ adapter: "lmstudio", model: "local", top_k: 20, reasoning_effort: "provider_default" },
 		{ adapter: "lmstudio", model: "local" },
-		{ adapter: "lmstudio", model: "local", sampling: LOCAL_SAMPLING, reasoning_effort: "none" },
-		{ adapter: "lmstudio", model: "local", sampling: LOCAL_SAMPLING, reasoning_effort: "maximum" },
+		{ adapter: "lmstudio", model: "local", temperature: 0.6, reasoning_effort: "none" },
+		{ adapter: "lmstudio", model: "local", temperature: 0.6, reasoning_effort: "maximum" },
 	]) {
 		expect(() => resolveGenerationPorts(envWith({
 			LMSTUDIO_BASE_URL: "http://127.0.0.1:1234/v1",

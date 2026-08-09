@@ -140,9 +140,10 @@ pricing reference; rates and counts are never guessed. Hosted provider
 provenance is the configured provider id and model provenance is the response
 model.
 
-`MODEL_CONFIG` and eval configuration contain only non-secret adapter identity,
-requested model, optional local sampling and reasoning declarations, provider
-id, and pricing inputs. `LMSTUDIO_BASE_URL`,
+`MODEL_CONFIG` and eval configuration contain one complete independent
+configuration per production agent: non-secret adapter identity, requested
+model, optional temperature, and adapter-specific reasoning or billing
+declarations. `LMSTUDIO_BASE_URL`,
 `HOSTED_MODEL_BASE_URL`, and `HOSTED_MODEL_API_KEY` are environment-only, and a
 base URL containing credentials rejects. Native LM Studio timeout, model
 availability, SDK, and transport failures are retryable by default. Hosted
@@ -193,11 +194,11 @@ For local development, copy `apps/generation/.dev.vars.example` to the ignored
 `MODEL_CONFIG` is strict and contains exactly
 `main_story_write`, `main_story_copyedit`, `announcements_write`, and
 `announcements_copyedit`. Every LM Studio adapter requires
-`reasoning_effort: provider_default`. Sampling is an optional all-or-none tuple:
-omission sends none of the native SDK's temperature, top-p, or top-k properties
-and is the production provider-default posture; an explicit posture requires
-finite `temperature` and `top_p` plus integer `top_k`. Partial or invalid tuples
-reject rather than being completed or approximated by the application. The
+`reasoning_effort: provider_default`. Finite `temperature` from zero through two
+is the only application-owned decoding control and is optional independently on
+every step. Omission sends no temperature override for that agent. `top_p` and
+`top_k` are not admitted or sent. Invalid or obsolete fields reject rather than
+being completed or approximated by the application. The
 native SDK request omits reasoning effort because its public prediction options
 do not expose that control; explicit effort values reject instead of being
 approximated. LM Studio requests use strict inline JSON schemas
@@ -229,11 +230,11 @@ readers. A failed call, validation, staged replay, or comparison leaves the
 previous committed set in place. Recording has no judge, score, threshold,
 byte pin, or source-digest acceptance gate.
 
-Current recorded-response version 2 artifacts retain the declared LM Studio
-sampling posture and the complete tuple only when explicit. Absent-version
-recorded responses keep their legacy meaning and remain parseable. Fixture
-authoring may use either posture; omission is behavioral provider-default
-evidence, while a complete explicit tuple is deterministic evidence.
+Current recorded-response version 3 artifacts retain the exact adapter, model,
+optional temperature, and adapter-specific declarations for each production
+step. Absent-version and version 2 responses keep their historical meaning and
+remain parseable. Fixture authoring may omit or set temperature independently
+for every step; retained configuration is evidence, not a replay instruction.
 
 The model-evaluation command is a separate surface:
 `benchmark run --fixture <path> --config <path> [--results-dir <path>]`. Its strict
@@ -244,12 +245,12 @@ identities reject before artifact creation. Historical run files keep their
 existing directory, schema, and meaning. The eval application owns this
 artifact boundary directly, adding no third domain port.
 
-Current Benchmark Run artifact version 5 retains each declared LM Studio
-sampling posture and every exact copyedit diagnostic. Provider-default behavior
-omits the tuple and all three SDK properties; explicit deterministic evidence
-retains one complete, model-specific tuple. Partial tuples reject before
+Current Benchmark Run artifact version 6 retains every exact per-agent adapter,
+model, optional temperature, and adapter-specific declaration plus every exact
+copyedit diagnostic. Temperature omission and presence are independent
+candidate choices for each role. Obsolete decoding controls reject before
 artifact creation. Its four subject outcomes are `completed`, `parse_rejected`,
-`contract_rejected`, and `infrastructure_incomplete`. Versions 1–4 remain
+`contract_rejected`, and `infrastructure_incomplete`. Versions 1–5 remain
 version-dispatched historical boundaries and keep their frozen semantics.
 
 The artifact is exclusively created in `running` state before any provider
@@ -340,24 +341,23 @@ counts, and benchmark continuation. Version 2 keeps the original prompt and
 copyedit-preservation semantics frozen. Version 3 freezes the corrected writer
 field-purpose contracts and treats leading or trailing whitespace-only
 separators as boundary whitespace while continuing to protect interior
-paragraph structure. Version 4 adds truthful provider-default versus complete
-explicit LM Studio sampling without changing versions 1–3. Version 5 is the
-current production-aligned boundary: it preserves version 4 sampling semantics,
-retains schema-valid preservation and final-product diagnostics with completed
-products, and narrows terminal model-output outcomes to malformed JSON or strict
-schema mismatch. The version-dispatched store rejects a cross-version
-replacement.
+paragraph structure. Version 4 adds its frozen provider-default versus complete
+explicit LM Studio sampling contract without changing versions 1–3. Version 5
+retains that historical sampling contract while adding schema-valid
+preservation and final-product diagnostics with completed products and narrowing
+terminal model-output outcomes to malformed JSON or strict schema mismatch.
+Version 6 is current: it replaces the run-wide sampling posture with exact
+independent per-agent configurations and optional temperature only. The
+version-dispatched store rejects a cross-version replacement.
 
-The representative local deterministic declaration contains, in order,
-`qwen/qwen3.5-9b`, `prism-ml/bonsai-27b`, and `google/gemma-4-e4b`. Each assigns
-one model to all four production steps with
-its complete model-specific sampling tuple and
-`reasoning_effort: provider_default`; the declaration uses one repetition and a
-transport retry limit of one. The separate behavioral declaration omits
-sampling from all four steps to match production. These remain ignored local evidence, run
-serially through `benchmark run`, and are inspected through `benchmark summary`.
-The summary must retain every actual trial outcome, sampling posture, and exact
-configuration identity; it does not decide quality or acceptance.
+Model evaluation declarations assign an exact configuration to every role and
+may vary model and temperature independently across those roles. Omitting
+temperature for one role includes that provider default as a candidate without
+affecting the other three. Declarations retain repetition and transport retry
+limits as run-level experiment and infrastructure controls. Results are
+inspected through `benchmark summary`; the summary retains every actual trial
+outcome and exact configuration identity but does not decide quality or
+acceptance.
 
 Settled — edition identity enforcement, three layers with the SQL layer
 authoritative: (1) the trigger derives a deterministic Workflow instance
@@ -477,10 +477,11 @@ its configured context length. The live command requires exactly one loaded
 Qwen model and the same model id across all four production-step configs; it
 never loads, switches, unloads, or contacts a hosted model.
 
-Current context-result version 2 artifacts retain provider-default omission or
-the complete explicit tuple; absent-version context results retain their legacy
-meaning. Context measurement may use either posture, and its declaration—not
-the command name—determines whether the result is behavioral or deterministic.
+Current context-result version 3 artifacts retain the exact four independent LM
+Studio agent configurations and optional temperatures. Version 2 and
+absent-version context results retain their historical meanings. The command
+requires one loaded model because it measures one runtime context, but each role
+still retains and uses its own temperature choice.
 
 The representative evidence corpus produces 208 prepared messages under the
 unchanged evidence-message sampler, so its fixed measurement matrix is 1, 50,

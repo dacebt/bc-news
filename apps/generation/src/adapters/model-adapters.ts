@@ -53,7 +53,7 @@ export function resolveModelProvider(
 			return construct(() => createLmStudioModelProvider({
 				baseUrl,
 				model: config.model,
-				...(config.sampling === undefined ? {} : { sampling: config.sampling }),
+				...(config.temperature === undefined ? {} : { temperature: config.temperature }),
 				reasoningEffort: config.reasoning_effort,
 			}));
 		}
@@ -71,6 +71,7 @@ export function resolveModelProvider(
 				apiKey,
 				provider: config.provider,
 				requestedModel: config.model,
+				...(config.temperature === undefined ? {} : { temperature: config.temperature }),
 				billing: config.billing,
 			}));
 		}

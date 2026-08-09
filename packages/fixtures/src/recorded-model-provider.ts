@@ -13,6 +13,7 @@ import {
 	RecordedModelResponseSchema,
 	type RecordedModelResponse,
 	type RecordedModelResponseV2,
+	type RecordedModelResponseV3,
 } from "./recorded-response";
 
 export type RecordedModelResponseRoster = Readonly<
@@ -21,6 +22,10 @@ export type RecordedModelResponseRoster = Readonly<
 
 export type RecordedModelResponseV2Roster = Readonly<
 	Record<ProductionModelStep, RecordedModelResponseV2>
+>;
+
+export type RecordedModelResponseV3Roster = Readonly<
+	Record<ProductionModelStep, RecordedModelResponseV3>
 >;
 
 const committedRecordedModelResponses: RecordedModelResponseRoster = {

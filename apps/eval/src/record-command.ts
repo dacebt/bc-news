@@ -3,10 +3,10 @@ import { join } from "node:path";
 import {
 	createRecordedModelProvider,
 	modelRequestSha256,
-	type RecordedModelResponseV2,
-	type RecordedModelResponseV2Roster,
+	type RecordedModelConfiguration,
+	type RecordedModelResponseV3,
+	type RecordedModelResponseV3Roster,
 	type RecordedModelResponseRoster,
-	type RecordedModelSampling,
 } from "@bc-news/fixtures";
 import {
 	PRODUCTION_MODEL_STEPS,
@@ -42,7 +42,7 @@ export interface RecordCommandOptions {
 
 export interface RecordCommandResult {
 	readonly responseDirectory: string;
-	readonly recordedResponses: RecordedModelResponseV2Roster;
+	readonly recordedResponses: RecordedModelResponseV3Roster;
 	readonly liveProducts: EvalProducts;
 	readonly liveDiagnostics: readonly EditorialDiagnostic[];
 	readonly replayProducts: EvalProducts;
@@ -69,24 +69,8 @@ export class RecordCommandError extends Error {
 type ProviderRoster = Readonly<Record<ProductionModelStep, ModelProviderPort>>;
 type LiveModelConfig = RecorderConfig["production_steps"][ProductionModelStep];
 
-function recordedSampling(config: LiveModelConfig): RecordedModelSampling {
-	switch (config.adapter) {
-		case "lmstudio":
-			if (config.sampling === undefined) {
-				return { adapter: "lmstudio", posture: "provider_default" };
-			}
-			return {
-				adapter: "lmstudio",
-				posture: "explicit",
-				config: {
-					temperature: config.sampling.temperature,
-					top_p: config.sampling.top_p,
-					top_k: config.sampling.top_k,
-				},
-			};
-		case "openai_compatible_hosted":
-			return { adapter: "openai_compatible_hosted", posture: "not_applicable" };
-	}
+function recordedConfiguration(config: LiveModelConfig): RecordedModelConfiguration {
+	return structuredClone(config);
 }
 
 function resolveRecorderProviders(
@@ -130,7 +114,7 @@ async function recordedResponse(
 	expectedStep: ProductionModelStep,
 	observation: ProductionStepObservation | undefined,
 	config: LiveModelConfig,
-): Promise<RecordedModelResponseV2> {
+): Promise<RecordedModelResponseV3> {
 	if (observation === undefined || observation.request.productionStep !== expectedStep) {
 		throw new RecordCommandError(
 			"observation_roster_mismatch",
@@ -139,20 +123,20 @@ async function recordedResponse(
 		);
 	}
 	return {
-		version: 2,
+		version: 3,
 		production_step: expectedStep,
 		provider: observation.completion.provider,
 		model: observation.completion.model,
 		prompt_sha256: await modelRequestSha256(observation.request),
 		text: observation.completion.text,
-		sampling: recordedSampling(config),
+		configuration: recordedConfiguration(config),
 	};
 }
 
 async function recordedResponseRoster(
 	config: RecorderConfig,
 	observations: readonly ProductionStepObservation[],
-): Promise<RecordedModelResponseV2Roster> {
+): Promise<RecordedModelResponseV3Roster> {
 	if (observations.length !== PRODUCTION_MODEL_STEPS.length) {
 		throw new RecordCommandError(
 			"observation_roster_mismatch",

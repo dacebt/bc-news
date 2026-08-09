@@ -12,13 +12,19 @@ export function formatContextBenchmarkReport(report: ContextBenchmarkFile, outpu
 		`Context length: ${report.model.context_length}`,
 		`Canonical prepared ceiling: ${report.fixture.prepared_message_ceiling}`,
 	];
-	if ("version" in report) {
+	if ("version" in report && report.version === 3) {
+		lines.push("Agent configurations:");
+		for (const step of PRODUCTION_MODEL_STEPS) {
+			const configuration = report.agent_configurations[step];
+			lines.push(`  ${step}: ${configuration.model}, temperature=${configuration.temperature === undefined ? "provider_default" : String(configuration.temperature)}`);
+		}
+	} else if ("version" in report) {
 		lines.push("Sampling:");
 		for (const step of PRODUCTION_MODEL_STEPS) {
 			const sampling = report.sampling[step];
 			lines.push(sampling.posture === "provider_default"
 				? `  ${step}: provider_default`
-				: `  ${step}: explicit (temperature=${sampling.config.temperature}, top_p=${sampling.config.top_p}, top_k=${sampling.config.top_k})`);
+				: `  ${step}: explicit (temperature=${String(sampling.config.temperature)}, top_p=${String(sampling.config.top_p)}, top_k=${String(sampling.config.top_k)})`);
 		}
 	} else {
 		lines.push("Sampling: not retained (legacy context result)");

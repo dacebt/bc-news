@@ -7,15 +7,13 @@ import {
 } from "../src/adapters/lmstudio-model-provider";
 import { failNonRetryablyOnDeterministicErrors } from "../src/non-retryable";
 
-const LOCAL_SAMPLING = { temperature: 1, top_p: 0.95, top_k: 20 } as const;
-
 it("uses the shared strict native LM Studio base URL", () => {
 	expect(lmStudioNativeBaseUrl("http://127.0.0.1:1234/v1")).toBe("ws://127.0.0.1:1234");
 	expect(() => lmStudioNativeBaseUrl("http://127.0.0.1:1234/proxy/v1"))
 		.toThrow(LmStudioDeterministicError);
 });
 
-it("constructs the production native provider with provider-default sampling", () => {
+it("constructs the production native provider with provider-default temperature", () => {
 	expect(createLmStudioModelProvider({
 		baseUrl: "http://127.0.0.1:1234/v1",
 		model: "qwen/qwen3.5-9b",
@@ -23,11 +21,11 @@ it("constructs the production native provider with provider-default sampling", (
 	})).toBeDefined();
 });
 
-it("constructs the production native provider with complete explicit sampling", () => {
+it("constructs the production native provider with an explicit temperature", () => {
 	expect(createLmStudioModelProvider({
 		baseUrl: "http://127.0.0.1:1234/v1",
 		model: "qwen/qwen3.5-9b",
-		sampling: LOCAL_SAMPLING,
+		temperature: 0.6,
 		reasoningEffort: "provider_default",
 	})).toBeDefined();
 });

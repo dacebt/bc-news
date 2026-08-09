@@ -23,7 +23,7 @@ function hostedProviderConfig() {
 	};
 }
 
-function hostedProvider() {
+function hostedProvider(temperature?: number) {
 	const config = hostedProviderConfig();
 	return createOpenAiCompatibleModelProvider({
 		execution: "hosted_inference",
@@ -32,18 +32,37 @@ function hostedProvider() {
 		provider: config.provider,
 		requestedModel: config.model,
 		billing: config.billing,
+		...(temperature === undefined ? {} : { temperature }),
 	});
 }
 
-it("accepts only complete non-secret hosted configuration", () => {
+it("accepts only complete non-secret hosted configuration with optional temperature", () => {
 	const candidate = hostedProviderConfig();
 	expect(HostedModelAdapterConfigSchema.safeParse(candidate).success).toBe(true);
+	expect(HostedModelAdapterConfigSchema.safeParse({ ...candidate, temperature: 0.6 }).success).toBe(true);
 	expect(HostedModelAdapterConfigSchema.safeParse({ ...candidate, api_key: "secret" }).success).toBe(false);
 	expect(HostedModelAdapterConfigSchema.safeParse({ ...candidate, provider: " " }).success).toBe(false);
+	expect(HostedModelAdapterConfigSchema.safeParse({ ...candidate, temperature: 2.1 }).success).toBe(false);
+	expect(HostedModelAdapterConfigSchema.safeParse({ ...candidate, top_p: 0.95 }).success).toBe(false);
+	expect(HostedModelAdapterConfigSchema.safeParse({ ...candidate, top_k: 20 }).success).toBe(false);
 	expect(HostedModelAdapterConfigSchema.safeParse({
 		...candidate,
 		billing: { ...candidate.billing, input_usd_per_million_tokens: -1 },
 	}).success).toBe(false);
+});
+
+it("sends only the configured temperature decoding control", async () => {
+	const fetchCall = vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({
+		model: "returned-model",
+		choices: [{ message: { content: "completion" } }],
+		usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+	}));
+	await hostedProvider(0.6).complete({ productionStep: "main_story_write", system: "system", user: "prompt" });
+	const body = fetchCall.mock.calls[0]?.[1]?.body;
+	if (typeof body !== "string") throw new Error("Expected request body to be JSON text");
+	expect(JSON.parse(body) as unknown).toMatchObject({ temperature: 0.6 });
+	expect(JSON.parse(body) as Record<string, unknown>).not.toHaveProperty("top_p");
+	expect(JSON.parse(body) as Record<string, unknown>).not.toHaveProperty("top_k");
 });
 
 it("maps strict hosted provenance, usage, and calculated billing", async () => {

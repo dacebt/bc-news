@@ -4,6 +4,7 @@ import { basename, join } from "node:path";
 import type {
 	RecordedModelResponseRoster,
 	RecordedModelResponseV2Roster,
+	RecordedModelResponseV3Roster,
 } from "@bc-news/fixtures";
 import { PRODUCTION_MODEL_STEPS, type ProductionModelStep } from "@bc-news/generation-core";
 import { expect, test } from "vitest";
@@ -31,7 +32,30 @@ function roster(marker: string): RecordedModelResponseRoster {
 	};
 }
 
-function currentRoster(marker: string): RecordedModelResponseV2Roster {
+function currentRoster(marker: string): RecordedModelResponseV3Roster {
+	const response = (productionStep: ProductionModelStep) => ({
+		version: 3 as const,
+		production_step: productionStep,
+		provider: `provider-${marker}`,
+		model: `model-${marker}`,
+		prompt_sha256: marker.repeat(64),
+		text: `response-${productionStep}-${marker}`,
+		configuration: {
+			adapter: "lmstudio" as const,
+			model: `model-${marker}-${productionStep}`,
+			temperature: productionStep === "main_story_write" ? 0.7 : 0.2,
+			reasoning_effort: "provider_default" as const,
+		},
+	});
+	return {
+		main_story_write: response("main_story_write"),
+		main_story_copyedit: response("main_story_copyedit"),
+		announcements_write: response("announcements_write"),
+		announcements_copyedit: response("announcements_copyedit"),
+	};
+}
+
+function historicalV2Roster(marker: string): RecordedModelResponseV2Roster {
 	const response = (productionStep: ProductionModelStep) => ({
 		version: 2 as const,
 		production_step: productionStep,
@@ -197,11 +221,12 @@ test("promotes a validated staging set and removes the superseded backup", async
 
 		const promoted = (await validateRecordedResponseDirectory(target)).announcements_copyedit;
 		expect(promoted.provider).toBe("provider-f");
-		expect("version" in promoted && promoted.version).toBe(2);
-		expect("sampling" in promoted && promoted.sampling).toEqual({
+		expect("version" in promoted && promoted.version).toBe(3);
+		expect("configuration" in promoted && promoted.configuration).toEqual({
 			adapter: "lmstudio",
-			posture: "explicit",
-			config: { temperature: 0.5, top_p: 0.9, top_k: 30 },
+			model: "model-f-announcements_copyedit",
+			temperature: 0.2,
+			reasoning_effort: "provider_default",
 		});
 		expect(await readdir(root)).not.toContain("responses.recording-backup");
 	} finally {
@@ -212,8 +237,12 @@ test("promotes a validated staging set and removes the superseded backup", async
 test("rejects mixed LM Studio sampling postures in one version 2 response set", async () => {
 	const root = await mkdtemp(join(tmpdir(), "bc-news-recorded-mixed-posture-"));
 	const directory = join(root, "responses");
-	await writeCurrentRoster(directory, "a");
-	const response = currentRoster("a").main_story_write;
+	await mkdir(directory);
+	const historical = historicalV2Roster("a");
+	await Promise.all(PRODUCTION_MODEL_STEPS.map((step) =>
+		writeFile(join(directory, `${step}.json`), `${JSON.stringify(historical[step])}\n`),
+	));
+	const response = historical.main_story_write;
 	await writeFile(join(directory, "main_story_write.json"), `${JSON.stringify({
 		...response,
 		sampling: { adapter: "lmstudio", posture: "provider_default" },

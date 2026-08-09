@@ -83,18 +83,19 @@ pnpm --filter @bc-news/eval eval -- benchmark run \
   --results-dir path/to/evaluation-results
 ```
 
-Each LM Studio step uses one of two sampling postures. Omit `sampling` for
-provider-default behavior: the application sends no temperature, top-p, or
-top-k override. This is the production posture and the only posture that
-constitutes a behavioral production baseline. Supply all three fields as one
-complete, model-specific tuple for deterministic drift, structure, reliability,
-or completion evidence. Partial tuples reject, and explicit sampling evidence
-is never presented as a production-behavior baseline.
+Each of the four production agents has its own complete adapter configuration:
+provider or adapter, model, optional `temperature`, and the adapter-specific
+reasoning or billing declaration. Temperature is the only decoding control the
+application admits or sends. Omitting it measures that agent's provider-default
+candidate; supplying it measures that exact candidate. `top_p` and `top_k` are
+not current configuration fields. A benchmark is an experiment used to compare
+candidate configurations for each role and select the configuration that will
+be deployed; it is not a deterministic test or a provider-default quality gate.
 
 The command incrementally retains every Evaluation Trial and Step Invocation in
-a versioned Benchmark Run. The current version 5 artifact preserves version 4
-sampling semantics and retains exact schema-valid copyedit diagnostics;
-versions 1–4 keep their frozen historical semantics. Its four subject outcomes
+a versioned Benchmark Run. The current version 6 artifact retains every exact
+per-agent configuration and schema-valid copyedit diagnostic; versions 1–5
+keep their frozen historical semantics. Its four subject outcomes
 are `completed`, `parse_rejected`, `contract_rejected`, and
 `infrastructure_incomplete`, separate from whether the harness retained
 trustworthy evidence. Malformed JSON or strict schema mismatch is the only
@@ -151,15 +152,14 @@ pnpm --filter @bc-news/eval eval -- context benchmark \
 ```
 
 Fixture authoring defaults to `packages/fixtures/model-responses` and accepts
-`--response-dir`. Its current recorded-response version 2 artifacts retain the
-declared sampling posture; absent-version recorded responses retain their legacy
-meaning. Context measurement defaults to `apps/eval/context-results` and
-accepts `--results-dir`. Current context-result version 2 artifacts retain the
-same distinction, while absent-version context results retain their legacy
-meaning. Either tool can use provider-default or explicit sampling; the
-declaration determines its purpose. Explicit paths are resolved relative to
-the invoking workspace. The old bare `evaluate`, `run`, `record`, `context`,
-`list`, `show`, and `compare` routes do not exist.
+`--response-dir`. Current recorded-response version 3 artifacts retain the
+exact configuration of their production step. Context measurement defaults to
+`apps/eval/context-results` and accepts `--results-dir`. Current context-result
+version 3 artifacts retain all four exact agent configurations. Historical
+versions keep their original meaning. Either tool may omit or independently set
+temperature for each step; the declaration determines the experiment. Explicit
+paths are resolved relative to the invoking workspace. The old bare `evaluate`,
+`run`, `record`, `context`, `list`, `show`, and `compare` routes do not exist.
 
 Repository-owned runtime proofs are direct package commands:
 
@@ -179,21 +179,18 @@ respectively end with
 and
 `evaluation: evidence listed summarized and compared without verdicts`.
 Fixture proof prints
-`fixture authoring: four strict v2 hosted responses retained not-applicable sampling, replayed, and compared`;
+`fixture authoring: four strict v3 hosted responses retained exact agent configurations, replayed, and compared`;
 recorded-replay proof prints
 `acceptance: four recorded production steps replayed request-linked and deterministic; diagnostics retained: 4`.
 None of these commands prints or confers `WALK PASS`.
 
-The representative deterministic local benchmark uses one ignored declaration
-with these three configurations, in order: `qwen/qwen3.5-9b`,
-`prism-ml/bonsai-27b`, and `google/gemma-4-e4b`. Every
-configuration assigns its one model to all four production steps with a
-complete model-specific `temperature`, `top_p`, and `top_k` tuple plus
-`reasoning_effort: provider_default`; the declaration uses one repetition and a
-transport retry limit of one. A separate behavioral declaration omits sampling
-on every LM Studio step to match production. Run declarations serially through
-`benchmark run`, then inspect each returned id through `benchmark summary`. The
-retained actual trial outcomes are observations, not quality failures or
+Local benchmark declarations may compare Qwen, Bonsai, Gemma, or other loaded
+models and independent temperatures for each of the four roles. A declaration
+may also omit temperature for any role to include its provider default as one
+candidate. Run declarations through `benchmark run`, inspect each returned id
+through `benchmark summary`, and use the retained products, diagnostics, usage,
+and infrastructure evidence to choose each production agent's configuration.
+Trial outcomes are observations, not grammar-based quality failures or
 acceptance verdicts.
 
 The frozen v1 (`bc-news-worker` and siblings, in the parent directory) is

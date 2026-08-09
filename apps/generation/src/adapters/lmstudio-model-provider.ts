@@ -5,7 +5,7 @@ import {
 	createLmStudioModelProvider as createSharedLmStudioModelProvider,
 	lmStudioSdkBaseUrl,
 	type LmStudioReasoningEffort,
-	type LmStudioSamplingConfig,
+	type ModelTemperature,
 } from "@bc-news/model-adapters";
 
 export { LmStudioDeterministicError, LmStudioRetryableError };
@@ -14,13 +14,13 @@ export const lmStudioNativeBaseUrl = lmStudioSdkBaseUrl;
 export function createLmStudioModelProvider(input: {
 	baseUrl: string;
 	model: string;
-	sampling?: LmStudioSamplingConfig;
+	temperature?: ModelTemperature;
 	reasoningEffort: LmStudioReasoningEffort;
 }) {
 	return createSharedLmStudioModelProvider({
 		baseUrl: input.baseUrl,
 		requestedModel: input.model,
-		...(input.sampling === undefined ? {} : { sampling: input.sampling }),
+		...(input.temperature === undefined ? {} : { temperature: input.temperature }),
 		reasoningEffort: input.reasoningEffort,
 		structuredOutputContracts: LM_STUDIO_PRODUCTION_STEP_OUTPUT_CONTRACTS,
 	});

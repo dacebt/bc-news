@@ -52,24 +52,21 @@ while still publishing the copyedited product. Their provider and model labels
 make that provenance visible rather than implying a live re-record occurred.
 
 Committed absent-version records remain the strict legacy response contract
-and replay unchanged. The current recorder writes strict response version 2.
-Every v2 response retains adapter-specific sampling evidence from the accepted
-configuration for that exact production step:
+and replay unchanged. Version 2 remains a frozen historical contract with its
+former provider-default or complete `temperature`/`top_p`/`top_k` sampling
+evidence. The current recorder writes strict response version 3. Every v3
+response retains the exact adapter configuration accepted for that production
+step: provider, model, optional temperature, reasoning declaration, and hosted
+billing evidence where applicable.
 
-- LM Studio provider-default sampling is
-  `{"adapter":"lmstudio","posture":"provider_default"}` and carries no
-  application sampling tuple.
-- LM Studio explicit sampling is
-  `{"adapter":"lmstudio","posture":"explicit","config":{...}}`; `config`
-  contains the exact complete `temperature`, `top_p`, and `top_k` tuple.
-- Hosted sampling is
-  `{"adapter":"openai_compatible_hosted","posture":"not_applicable"}`
-  because the fixture recorder does not apply LM Studio decoding controls to a
-  hosted adapter.
+Temperature omission means that exact agent used its provider default for that
+run. Temperature presence records the exact value sent. Current configuration
+does not admit or send `top_p` or `top_k`, and there is no run-wide sampling
+posture: every production step is independently configurable.
 
-Partial tuples, contradictory posture fields, extra fields, and unknown
-versions reject at the response boundary. Sampling is retained evidence; the
-recorded provider never applies it during replay.
+Obsolete decoding fields, invalid temperatures, extra fields, and unknown
+versions reject at the current response boundary. Configuration is retained
+evidence; the recorded provider never applies it during replay.
 
 `prompt_sha256` binds a record to the exact `{system, user}` request rebuilt
 from current builders and dependent upstream output. Replay selection remains
@@ -78,11 +75,11 @@ The hash is request provenance, not proof that a named model authored text.
 
 The eval recorder requires an explicit live four-step configuration. It makes
 the four dependent production calls, writes each exact
-`(production_step, prompt_sha256)` association and v2 sampling evidence into a
+`(production_step, prompt_sha256)` association and v3 agent configuration into a
 same-filesystem staging directory, validates and replays the complete staged
 roster, and compares only the final main-story and announcements products
 before recoverable all-or-none directory promotion. The command report lists
-each production step's retained posture and exact explicit tuple when present.
+each production step's retained model and optional temperature.
 Promotion does not promise continuous visibility to concurrent readers. There
 is no judge, threshold, byte pin, or source-digest acceptance gate.
 

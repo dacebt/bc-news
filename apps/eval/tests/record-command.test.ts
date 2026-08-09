@@ -2,7 +2,7 @@ import { mkdtemp, mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
-	RecordedModelResponseV2Schema,
+	RecordedModelResponseV3Schema,
 	modelRequestSha256,
 	type RecordedModelResponseRoster,
 } from "@bc-news/fixtures";
@@ -89,26 +89,21 @@ vi.mock("../src/model-adapters", async (importOriginal) => {
 
 const FIXTURE_PATH = new URL("../../../packages/fixtures", import.meta.url).pathname;
 
-const EXPLICIT_SAMPLING = { temperature: 0, top_p: 1, top_k: 40 } as const;
-
-function localAdapterConfig(sampling?: {
-	readonly temperature: number;
-	readonly top_p: number;
-	readonly top_k: number;
-}) {
+function localAdapterConfig(temperature?: number) {
 	const config = {
 		adapter: "lmstudio",
 		model: "memory-model",
 		reasoning_effort: "provider_default",
 	} as const;
-	return sampling === undefined ? config : { ...config, sampling };
+	return temperature === undefined ? config : { ...config, temperature };
 }
 
-function hostedAdapterConfig() {
+function hostedAdapterConfig(temperature?: number) {
 	return {
 		adapter: "openai_compatible_hosted",
 		provider: "memory-hosted",
 		model: "memory-model",
+		...(temperature === undefined ? {} : { temperature }),
 		billing: {
 			method: "calculated",
 			input_usd_per_million_tokens: 0,
@@ -120,10 +115,10 @@ function hostedAdapterConfig() {
 
 function explicitProductionSteps() {
 	return {
-		main_story_write: localAdapterConfig(EXPLICIT_SAMPLING),
-		main_story_copyedit: localAdapterConfig(EXPLICIT_SAMPLING),
-		announcements_write: localAdapterConfig(EXPLICIT_SAMPLING),
-		announcements_copyedit: localAdapterConfig(EXPLICIT_SAMPLING),
+		main_story_write: localAdapterConfig(0.7),
+		main_story_copyedit: localAdapterConfig(0.2),
+		announcements_write: localAdapterConfig(0.6),
+		announcements_copyedit: localAdapterConfig(0.3),
 	};
 }
 
@@ -240,15 +235,11 @@ test("binds every retained response to the exact dependent live request", async 
 	expect(providerState.requests.map((request) => request.productionStep)).toEqual(PRODUCTION_MODEL_STEPS);
 	const retained = await validateRecordedResponseDirectory(responseDirectory);
 	for (const request of providerState.requests) {
-		const response = RecordedModelResponseV2Schema.parse(retained[request.productionStep]);
+		const response = RecordedModelResponseV3Schema.parse(retained[request.productionStep]);
 		expect(response.prompt_sha256).toBe(await modelRequestSha256(request));
 		expect(response.provider).toBe(`memory-${request.productionStep}`);
 		expect(response.model).toBe("memory-model");
-		expect(response.sampling).toEqual({
-			adapter: "lmstudio",
-			posture: "explicit",
-			config: EXPLICIT_SAMPLING,
-		});
+		expect(response.configuration).toEqual(explicitProductionSteps()[request.productionStep]);
 	}
 	expect(result.responseDirectory).toBe(responseDirectory);
 	expect(result.comparison.differences).toEqual([]);
@@ -261,20 +252,22 @@ test("binds every retained response to the exact dependent live request", async 
 			code: "forbidden_marker",
 		}),
 	]));
-	expect(formatRecordSummary(result)).toContain("Artifact version: 2");
-	expect(formatRecordSummary(result)).toContain("lmstudio/explicit(temperature=0, top_p=1, top_k=40)");
+	expect(formatRecordSummary(result)).toContain("Artifact version: 3");
+	expect(formatRecordSummary(result)).toContain("main_story_write: lmstudio/memory-model/temperature=0.7");
+	expect(formatRecordSummary(result)).not.toContain("top_p");
+	expect(formatRecordSummary(result)).not.toContain("top_k");
 	expect(formatRecordSummary(result)).toContain("Live diagnostics:");
 	expect(formatRecordSummary(result)).toContain("Replay diagnostics:");
 });
 
-test("retains provider-default and hosted sampling truth per production step", async () => {
+test("retains independent provider-default and explicit temperature truth per production step", async () => {
 	const root = await mkdtemp(join(tmpdir(), "bc-news-record-sampling-"));
 	const responseDirectory = join(root, "responses");
 	const configPath = await writeConfig(root, {
 		main_story_write: localAdapterConfig(),
-		main_story_copyedit: localAdapterConfig(),
-		announcements_write: hostedAdapterConfig(),
-		announcements_copyedit: localAdapterConfig(),
+		main_story_copyedit: localAdapterConfig(0.2),
+		announcements_write: hostedAdapterConfig(0.8),
+		announcements_copyedit: localAdapterConfig(0.3),
 	});
 
 	const result = await recordCommand({
@@ -284,20 +277,17 @@ test("retains provider-default and hosted sampling truth per production step", a
 		environment: {},
 	});
 	const retained = await validateRecordedResponseDirectory(responseDirectory);
-	const mainStoryWrite = RecordedModelResponseV2Schema.parse(retained.main_story_write);
-	const mainStoryCopyedit = RecordedModelResponseV2Schema.parse(retained.main_story_copyedit);
-	const announcementsWrite = RecordedModelResponseV2Schema.parse(retained.announcements_write);
-	const announcementsCopyedit = RecordedModelResponseV2Schema.parse(retained.announcements_copyedit);
+	const mainStoryWrite = RecordedModelResponseV3Schema.parse(retained.main_story_write);
+	const mainStoryCopyedit = RecordedModelResponseV3Schema.parse(retained.main_story_copyedit);
+	const announcementsWrite = RecordedModelResponseV3Schema.parse(retained.announcements_write);
+	const announcementsCopyedit = RecordedModelResponseV3Schema.parse(retained.announcements_copyedit);
 
-	expect(mainStoryWrite.sampling).toEqual({ adapter: "lmstudio", posture: "provider_default" });
-	expect(mainStoryCopyedit.sampling).toEqual({ adapter: "lmstudio", posture: "provider_default" });
-	expect(announcementsWrite.sampling).toEqual({
-		adapter: "openai_compatible_hosted",
-		posture: "not_applicable",
-	});
-	expect(announcementsCopyedit.sampling).toEqual({ adapter: "lmstudio", posture: "provider_default" });
-	expect(formatRecordSummary(result)).toContain("main_story_write: lmstudio/provider_default");
-	expect(formatRecordSummary(result)).toContain("announcements_write: openai_compatible_hosted/not_applicable");
+	expect(mainStoryWrite.configuration).toEqual(localAdapterConfig());
+	expect(mainStoryCopyedit.configuration).toEqual(localAdapterConfig(0.2));
+	expect(announcementsWrite.configuration).toEqual(hostedAdapterConfig(0.8));
+	expect(announcementsCopyedit.configuration).toEqual(localAdapterConfig(0.3));
+	expect(formatRecordSummary(result)).toContain("main_story_write: lmstudio/memory-model/temperature=provider_default");
+	expect(formatRecordSummary(result)).toContain("announcements_write: openai_compatible_hosted/memory-model/temperature=0.8");
 });
 
 test("leaves the prior response set unchanged when live output is rejected", async () => {

@@ -41,13 +41,44 @@ export const RecordedModelResponseV2Schema = z.strictObject({
 	sampling: RecordedModelSamplingSchema,
 });
 
+const RecordedModelTemperatureSchema = z.number().finite().min(0).max(2);
+const RecordedModelConfigurationSchema = z.discriminatedUnion("adapter", [
+	z.strictObject({
+		adapter: z.literal("lmstudio"),
+		model: z.string().trim().min(1),
+		temperature: RecordedModelTemperatureSchema.optional(),
+		reasoning_effort: z.literal("provider_default"),
+	}),
+	z.strictObject({
+		adapter: z.literal("openai_compatible_hosted"),
+		provider: z.string().trim().min(1),
+		model: z.string().trim().min(1),
+		temperature: RecordedModelTemperatureSchema.optional(),
+		billing: z.strictObject({
+			method: z.literal("calculated"),
+			input_usd_per_million_tokens: z.number().finite().nonnegative(),
+			output_usd_per_million_tokens: z.number().finite().nonnegative(),
+			pricing_reference: z.string().trim().min(1),
+		}),
+	}),
+]);
+
+export const RecordedModelResponseV3Schema = z.strictObject({
+	version: z.literal(3),
+	...RecordedModelResponseShape,
+	configuration: RecordedModelConfigurationSchema,
+});
+
 export const RecordedModelResponseSchema = z.union([
+	RecordedModelResponseV3Schema,
 	RecordedModelResponseV2Schema,
 	LegacyRecordedModelResponseSchema,
 ]);
 
 export type RecordedModelSampling = z.infer<typeof RecordedModelSamplingSchema>;
+export type RecordedModelConfiguration = z.infer<typeof RecordedModelConfigurationSchema>;
 export type RecordedModelResponseV2 = z.infer<typeof RecordedModelResponseV2Schema>;
+export type RecordedModelResponseV3 = z.infer<typeof RecordedModelResponseV3Schema>;
 export type RecordedModelResponse = z.infer<typeof RecordedModelResponseSchema>;
 
 type RecordedModelProviderErrorCode =

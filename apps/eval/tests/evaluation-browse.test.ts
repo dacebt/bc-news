@@ -50,8 +50,7 @@ test("summarizes completed products with retained diagnostics", async () => {
 		expect.objectContaining({ kind: "final_product", code: "forbidden_marker" }),
 	]));
 	const summary = summarizeBenchmarkRun(result.benchmark);
-	expect(result.benchmark.version).toBe(5);
-	expect(summary.configurations[0]?.lm_studio_sampling_posture).toBe("not_applicable");
+	expect(result.benchmark.version).toBe(6);
 	expect(summary.products).toEqual(expect.arrayContaining([
 		expect.objectContaining({ track: "main_story", track_outcome: "completed", diagnostic_count: 5 }),
 	]));
@@ -79,7 +78,7 @@ test("compares retained diagnostics as behavior", async () => {
 	]));
 });
 
-test("keeps LM Studio sampling configuration and posture in comparison context", async () => {
+test("keeps historical LM Studio sampling configuration in comparison context", async () => {
 	const retainedStates: BenchmarkRun[] = [];
 	await controlledEvaluation((artifact) => { retainedStates.push(artifact); });
 	const initialRetainedState = first(retainedStates, "initial retained benchmark state");
@@ -134,7 +133,6 @@ test("keeps LM Studio sampling configuration and posture in comparison context",
 	const comparison = compareBenchmarkRuns(parsedExplicit, parsedProviderDefault);
 	expect(comparison.contextDifferences).toEqual(expect.arrayContaining([
 		expect.stringContaining("sampling"),
-		expect.stringContaining("lm_studio_sampling_postures"),
 	]));
 	expect(comparison.behavioralDifferences).toEqual([]);
 });

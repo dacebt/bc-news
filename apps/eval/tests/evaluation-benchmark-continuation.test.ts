@@ -5,11 +5,9 @@ import { expect, test } from "vitest";
 import {
 	EvalConfigSchema,
 	LiveBenchmarkConfigSchema,
-	lmStudioSamplingPosture,
 	loadLiveBenchmarkConfig,
 } from "../src/config";
 import { BenchmarkRunSchema } from "../src/evaluation-artifact";
-import { V4EvalConfigSchema } from "../src/evaluation-artifact-v4";
 import { verifyEvaluationBenchmarkContinuation } from "../src/evaluation-benchmark-verifier";
 import { clone, temporaryRoot } from "./evaluation-artifact-test-support";
 
@@ -29,8 +27,8 @@ test("retains retries and continues independent tracks and later trials", async 
 	await verifyEvaluationBenchmarkContinuation(root);
 	const [artifactName] = await readdir(join(root, "results"));
 	const benchmark = BenchmarkRunSchema.parse(JSON.parse(await readFile(join(root, "results", artifactName!), "utf8")) as unknown);
-	expect(benchmark.version).toBe(5);
-	if (benchmark.version !== 5) throw new Error("expected version 5 benchmark");
+	expect(benchmark.version).toBe(6);
+	if (benchmark.version !== 6) throw new Error("expected version 6 benchmark");
 
 	const prematureExhaustion = clone(benchmark);
 	const exhaustedTrial = prematureExhaustion.trials.find(({ subject_outcome }) => subject_outcome === "infrastructure_incomplete");
@@ -62,47 +60,44 @@ test("rejects ambiguous or unbounded benchmark declarations", () => {
 	expect(LiveBenchmarkConfigSchema.safeParse({ configurations: [configuration], repetition_count: 1, transport_retry_limit: 1, extra: true }).success).toBe(false);
 });
 
-test("derives one consistent LM Studio sampling posture per configuration", () => {
+test("retains independent temperature choices for every LM Studio production step", () => {
 	type LocalConfiguration = {
 		adapter: "lmstudio";
 		model: string;
 		reasoning_effort: "provider_default";
-		sampling?: { temperature: number; top_p: number; top_k: number };
+		temperature?: number;
 	};
-	const localConfiguration = (sampling?: LocalConfiguration["sampling"]) => ({
+	const localConfiguration = () => ({
 		production_steps: Object.fromEntries(PRODUCTION_MODEL_STEPS.map((step): [typeof step, LocalConfiguration] => [step, {
 			adapter: "lmstudio",
 			model: `local/${step}`,
 			reasoning_effort: "provider_default",
-			...(sampling === undefined ? {} : { sampling }),
 		}])) as Record<(typeof PRODUCTION_MODEL_STEPS)[number], LocalConfiguration>,
 	});
-	const providerDefault = EvalConfigSchema.parse(localConfiguration());
-	const explicit = EvalConfigSchema.parse(localConfiguration({ temperature: 0, top_p: 1, top_k: 1 }));
-	expect(V4EvalConfigSchema.safeParse(providerDefault).success).toBe(true);
-	expect(V4EvalConfigSchema.safeParse(explicit).success).toBe(true);
-	expect(lmStudioSamplingPosture(providerDefault)).toBe("provider_default");
-	expect(lmStudioSamplingPosture(explicit)).toBe("explicit");
-	expect(lmStudioSamplingPosture(EvalConfigSchema.parse(hostedConfiguration("hosted")))).toBe("not_applicable");
+	const independent = localConfiguration();
+	independent.production_steps.main_story_write = {
+		...independent.production_steps.main_story_write,
+		temperature: 0.7,
+	};
+	independent.production_steps.main_story_copyedit = {
+		...independent.production_steps.main_story_copyedit,
+		temperature: 0.2,
+	};
+	const parsed = EvalConfigSchema.parse(independent);
+	expect(parsed.production_steps.main_story_write).toHaveProperty("temperature", 0.7);
+	expect(parsed.production_steps.main_story_copyedit).toHaveProperty("temperature", 0.2);
+	expect(parsed.production_steps.announcements_write).not.toHaveProperty("temperature");
 
-	const inconsistent = localConfiguration();
-	inconsistent.production_steps.main_story_write = {
-		...inconsistent.production_steps.main_story_write,
-		sampling: { temperature: 0, top_p: 1, top_k: 1 },
-	};
-	expect(EvalConfigSchema.safeParse(inconsistent).success).toBe(false);
-	expect(V4EvalConfigSchema.safeParse(inconsistent).success).toBe(false);
-	const partialBase = localConfiguration();
-	const partial = {
-		production_steps: {
-			...partialBase.production_steps,
-			main_story_write: {
-				...partialBase.production_steps.main_story_write,
-				sampling: { temperature: 0, top_p: 1 },
-			},
-		},
-	};
-	expect(EvalConfigSchema.safeParse(partial).success).toBe(false);
+	for (const invalidStep of [
+		{ ...independent.production_steps.main_story_write, temperature: 2.1 },
+		{ ...independent.production_steps.main_story_write, sampling: { temperature: 0, top_p: 1, top_k: 1 } },
+		{ ...independent.production_steps.main_story_write, top_p: 1 },
+		{ ...independent.production_steps.main_story_write, top_k: 1 },
+	]) {
+		expect(EvalConfigSchema.safeParse({
+			production_steps: { ...independent.production_steps, main_story_write: invalidStep },
+		}).success).toBe(false);
+	}
 });
 
 test("rejects recorded adapters before serial artifact creation", async () => {

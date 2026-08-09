@@ -16,6 +16,7 @@ import {
 import {
 	RecordedModelResponseSchema,
 	RecordedModelResponseV2Schema,
+	RecordedModelResponseV3Schema,
 	createRecordedModelProvider,
 	fixtureEvidenceInput,
 	modelRequestSha256,
@@ -102,6 +103,29 @@ test("rejects partial, contradictory, and extra v2 sampling evidence", () => {
 		version: 3,
 		sampling: { adapter: "lmstudio", posture: "provider_default" },
 	}).success).toBe(false);
+});
+
+test("accepts strict v3 independent agent configuration and rejects obsolete decoding controls", () => {
+	const response = RecordedModelResponseV3Schema.parse({
+		...mainStoryWriteResponseJson,
+		version: 3,
+		configuration: {
+			adapter: "lmstudio",
+			model: "local/main-story-writer",
+			temperature: 0.7,
+			reasoning_effort: "provider_default",
+		},
+	});
+	expect(response.configuration).toHaveProperty("temperature", 0.7);
+	expect(RecordedModelResponseSchema.parse(response)).toEqual(response);
+	for (const configuration of [
+		{ ...response.configuration, temperature: 2.1 },
+		{ ...response.configuration, sampling: { temperature: 0, top_p: 1, top_k: 40 } },
+		{ ...response.configuration, top_p: 1 },
+		{ ...response.configuration, top_k: 40 },
+	]) {
+		expect(RecordedModelResponseV3Schema.safeParse({ ...response, configuration }).success).toBe(false);
+	}
 });
 
 async function canonicalPreparedEvidence() {
@@ -277,4 +301,25 @@ test("replays v2 response text without treating sampling evidence as an instruct
 	expect(completion.text).toBe(mainStoryWriteResponseJson.text);
 	expect(completion.provider).toBe(mainStoryWriteResponseJson.provider);
 	expect(completion.model).toBe(mainStoryWriteResponseJson.model);
+});
+
+test("replays v3 response text without treating retained configuration as an instruction", async () => {
+	const preparedEvidence = await canonicalPreparedEvidence();
+	const currentResponse = RecordedModelResponseV3Schema.parse({
+		...mainStoryWriteResponseJson,
+		version: 3,
+		configuration: {
+			adapter: "lmstudio",
+			model: "local/main-story-writer",
+			temperature: 0.7,
+			reasoning_effort: "provider_default",
+		},
+	});
+	const provider = createRecordedModelProvider({ ...committedRoster, main_story_write: currentResponse });
+	const completion = await provider.complete({
+		productionStep: "main_story_write",
+		system: WRITER_SYSTEM_CONSTRAINTS,
+		user: buildMainStoryWriterPrompt(preparedEvidence),
+	});
+	expect(completion.text).toBe(mainStoryWriteResponseJson.text);
 });

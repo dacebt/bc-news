@@ -1,6 +1,5 @@
 import type { BenchmarkRun } from "./evaluation-artifact";
 import type { BenchmarkComparison } from "./evaluation-comparison";
-import { lmStudioSamplingPosture } from "./config";
 
 type Trial = BenchmarkRun["trials"][number];
 type Invocation = Trial["invocations"][number];
@@ -11,7 +10,7 @@ function increment(counts: Record<string, number>, key: string): void {
 }
 
 function diagnosticProjection(version: BenchmarkRun["version"], findings: TrackFindings) {
-	return version === 5 ? {
+	return version === 5 || version === 6 ? {
 		diagnostic_count: findings.length,
 		diagnostics: findings,
 	} : {};
@@ -52,7 +51,7 @@ export function summarizeBenchmarkRun(run: BenchmarkRun) {
 			increment(trackOutcomes, track.subject_outcome ?? "pending");
 			for (const finding of track.findings) {
 				increment(findingKinds, finding.kind);
-				if (run.version === 5) increment(diagnosticKinds, finding.kind);
+				if (run.version === 5 || run.version === 6) increment(diagnosticKinds, finding.kind);
 			}
 		}
 		for (const invocation of trial.invocations) {
@@ -72,7 +71,6 @@ export function summarizeBenchmarkRun(run: BenchmarkRun) {
 		configurations: run.declaration.configurations.map(({ identity, config }, index) => ({
 			ordinal: index + 1,
 			identity,
-			lm_studio_sampling_posture: lmStudioSamplingPosture(config),
 			production_steps: config.production_steps,
 		})),
 		policy: {

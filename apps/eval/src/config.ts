@@ -2,24 +2,12 @@ import { readFile } from "node:fs/promises";
 import { z } from "zod";
 import { ModelAdapterConfigSchema } from "./model-adapters";
 
-const ProductionStepsConfigBaseSchema = z.strictObject({
+/** One independent adapter configuration for every production model step. */
+export const ProductionStepsConfigSchema = z.strictObject({
 	main_story_write: ModelAdapterConfigSchema,
 	main_story_copyedit: ModelAdapterConfigSchema,
 	announcements_write: ModelAdapterConfigSchema,
 	announcements_copyedit: ModelAdapterConfigSchema,
-});
-
-/** One required adapter configuration for every production model step. */
-export const ProductionStepsConfigSchema = ProductionStepsConfigBaseSchema.superRefine((steps, context) => {
-	const lmStudioSteps = Object.entries(steps).filter(([, config]) => config.adapter === "lmstudio");
-	if (lmStudioSteps.length === 0) return;
-	const explicitSteps = lmStudioSteps.filter(([, config]) => config.adapter === "lmstudio" && config.sampling !== undefined);
-	if (explicitSteps.length !== 0 && explicitSteps.length !== lmStudioSteps.length) {
-		context.addIssue({
-			code: "custom",
-			message: "all LM Studio production steps must consistently omit sampling or provide a complete explicit tuple",
-		});
-	}
 });
 
 export const EvalConfigSchema = z.strictObject({
@@ -27,19 +15,6 @@ export const EvalConfigSchema = z.strictObject({
 });
 
 export type EvalConfig = z.infer<typeof EvalConfigSchema>;
-
-export type LmStudioSamplingPosture = "provider_default" | "explicit" | "not_applicable";
-
-export function lmStudioSamplingPosture(config: {
-	readonly production_steps: Record<string, { readonly adapter: string; readonly sampling?: unknown }>;
-}): LmStudioSamplingPosture {
-	const lmStudioSteps = Object.values(config.production_steps).filter(({ adapter }) => adapter === "lmstudio");
-	if (lmStudioSteps.length === 0) return "not_applicable";
-	const explicitCount = lmStudioSteps.filter(({ sampling }) => sampling !== undefined).length;
-	if (explicitCount === 0) return "provider_default";
-	if (explicitCount === lmStudioSteps.length) return "explicit";
-	throw new Error("LM Studio sampling posture is inconsistent across production steps");
-}
 
 export const LiveBenchmarkConfigSchema = z.strictObject({
 	configurations: z.array(EvalConfigSchema).min(1),
