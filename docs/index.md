@@ -11,3 +11,4 @@ okf_version: "0.2"
 - [v1 reference map](v1-reference.md) — Descriptive map of the frozen predecessor repos — which copies to read, where the proven ingest, prompt, schema, and client material lives, and what made v1's orchestration fragile.
 - [Investigations](investigations/index.md) — Read-only evidence reports that trace current behavior and architecture before future work is shaped.
 - [Direction](direction/index.md) — WSD session shapes and capability maps: declared boundaries, cadence, and the carve of in-flight work.
+- [Active thickening](thickenings/active.md) — Complete every schema-valid paper after one copyedit pass while retaining all non-schema findings as diagnostics.
