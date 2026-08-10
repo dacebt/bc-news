@@ -502,7 +502,7 @@ it("classifies timeout-driven user stop as retryable", async () => {
 	const rejection = expect(provider().complete(request)).rejects.toMatchObject({
 		code: "lmstudio_timeout",
 	});
-	await vi.advanceTimersByTimeAsync(600_000);
+	await vi.advanceTimersByTimeAsync(1_800_000);
 	await rejection;
 });
 
@@ -518,7 +518,7 @@ it("classifies a completion that resolves successfully after abort as timed out"
 	const rejection = expect(provider().complete(request)).rejects.toMatchObject({
 		code: "lmstudio_timeout",
 	});
-	await vi.advanceTimersByTimeAsync(600_000);
+	await vi.advanceTimersByTimeAsync(1_800_000);
 	await rejection;
 });
 

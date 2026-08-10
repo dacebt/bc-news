@@ -15,7 +15,7 @@ import {
 import type { LmStudioStructuredOutputContracts } from "./lmstudio-structured-output";
 import { lmStudioRuntimeEvidence, observeLmStudioAuxiliary } from "./lmstudio-runtime-evidence";
 
-const COMPLETION_TIMEOUT_MS = 600_000;
+const COMPLETION_TIMEOUT_MS = 1_800_000;
 const SUCCESSFUL_STOP_REASONS = new Set(["eosFound", "stopStringFound"]);
 
 export interface LmStudioProviderInput {
