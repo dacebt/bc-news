@@ -1,0 +1,17 @@
+{
+	"version": 1,
+	"fixture_id": "unresolved-location",
+	"evidence_sha256": "6177adf07e76d5ebe6abee8fdfcbbb2c78fd830442d3fbbad7ab8eaedd48788f",
+	"claims": [],
+	"events": [],
+	"ambiguities": [
+		{"id":"old-tower-identity","witnesses":[{"message_id":"location-01","field":"text","excerpt":"near the old tower"},{"message_id":"location-02","field":"text","excerpt":"the east tower or the flooded tower"},{"message_id":"location-03","field":"text","excerpt":"did not specify which old tower"}]}
+	],
+	"noteworthy_candidates": [],
+	"entities": [
+		{"id":"nell","kind":"person","value":"Nell","witnesses":[{"message_id":"location-01","field":"text","excerpt":"Nell"}]}
+	],
+	"numbers": [],
+	"event_relationships": [],
+	"irrelevant_message_ids": []
+}

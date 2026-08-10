@@ -1,0 +1,11 @@
+{
+	"active_region_id": "26",
+	"evidence_date": "2026-06-01",
+	"messages": [
+		{"id":"campfire-01","ts":1780311600000,"author_id":"r26/iris","author_name":"Iris","text":"The campfire circle has 5 spare bedrolls."},
+		{"id":"campfire-02","ts":1780311660000,"author_id":"r26/jory","author_name":"Jory","text":"I moved the bedrolls under the awning."},
+		{"id":"campfire-03","ts":1780311720000,"author_id":"r26/iris","author_name":"Iris","text":"My soup needs more pepper."},
+		{"id":"campfire-04","ts":1780311780000,"author_id":"r26/jory","author_name":"Jory","text":"That frog is loud tonight."},
+		{"id":"campfire-05","ts":1780311840000,"author_id":"r26/iris","author_name":"Iris","text":"I like the orange tent."}
+	]
+}

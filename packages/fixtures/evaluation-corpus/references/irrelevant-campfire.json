@@ -1,0 +1,19 @@
+{
+	"version": 1,
+	"fixture_id": "irrelevant-campfire",
+	"evidence_sha256": "73322cd5ea13ad096b422507724299f046c827598662d70d210ea22321d6149c",
+	"claims": [
+		{"id":"spare-bedroll-count","status":"established","supporting_witnesses":[{"message_id":"campfire-01","field":"text","excerpt":"The campfire circle has 5 spare bedrolls."}],"opposing_witnesses":[],"unresolved_witnesses":[]}
+	],
+	"events": [],
+	"ambiguities": [],
+	"noteworthy_candidates": [],
+	"entities": [
+		{"id":"campfire-circle","kind":"place","value":"campfire circle","witnesses":[{"message_id":"campfire-01","field":"text","excerpt":"campfire circle"}]}
+	],
+	"numbers": [
+		{"id":"bedroll-count","raw":"5","witnesses":[{"message_id":"campfire-01","field":"text","excerpt":"5 spare bedrolls"}]}
+	],
+	"event_relationships": [],
+	"irrelevant_message_ids": ["campfire-03","campfire-04","campfire-05"]
+}

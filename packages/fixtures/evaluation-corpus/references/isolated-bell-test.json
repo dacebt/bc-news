@@ -1,0 +1,22 @@
+{
+	"version": 1,
+	"fixture_id": "isolated-bell-test",
+	"evidence_sha256": "efa56257d72f41bfeb003153595363e3bf1104fe8abf9c9f0af39bd98fd7ed3a",
+	"claims": [],
+	"events": [
+		{"id":"harbor-bell-test","status":"established","supporting_witnesses":[{"message_id":"bell-01","field":"text","excerpt":"The harbor bell test finished at 10:00 UTC."},{"message_id":"bell-02","field":"text","excerpt":"All 3 bell strikes sounded clearly."}],"opposing_witnesses":[],"unresolved_witnesses":[]},
+		{"id":"orchard-pruning-start","status":"established","supporting_witnesses":[{"message_id":"bell-03","field":"text","excerpt":"The orchard crew started pruning at 12:00 UTC."}],"opposing_witnesses":[],"unresolved_witnesses":[]}
+	],
+	"ambiguities": [],
+	"noteworthy_candidates": [],
+	"entities": [
+		{"id":"kira","kind":"person","value":"Kira","witnesses":[{"message_id":"bell-01","field":"author_name","excerpt":"Kira"}]}
+	],
+	"numbers": [
+		{"id":"bell-strike-count","raw":"3","witnesses":[{"message_id":"bell-02","field":"text","excerpt":"3 bell strikes"}]}
+	],
+	"event_relationships": [
+		{"id":"bell-test-isolated","kind":"isolated","event_ids":["harbor-bell-test"]}
+	],
+	"irrelevant_message_ids": []
+}

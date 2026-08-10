@@ -1,0 +1,19 @@
+{
+	"version": 1,
+	"fixture_id": "contested-closure",
+	"evidence_sha256": "3aa36a1171f703739e9e7c2ee506ecde15d79f218be50611331c15f1552443a2",
+	"claims": [],
+	"events": [
+		{"id":"north-quarry-closure","status":"contested","supporting_witnesses":[{"message_id":"closure-01","field":"text","excerpt":"The north quarry closed at 20:00 UTC."},{"message_id":"closure-03","field":"text","excerpt":"The closure notice is posted at the office."}],"opposing_witnesses":[{"message_id":"closure-02","field":"text","excerpt":"The north quarry gate is still admitting carts."},{"message_id":"closure-04","field":"text","excerpt":"Two loaded carts entered after 20:00 UTC."}],"unresolved_witnesses":[]}
+	],
+	"ambiguities": [],
+	"noteworthy_candidates": [
+		{"id":"closure-notice","kind":"notice","witnesses":[{"message_id":"closure-03","field":"text","excerpt":"The closure notice is posted at the office."}]}
+	],
+	"entities": [
+		{"id":"north-quarry","kind":"place","value":"north quarry","witnesses":[{"message_id":"closure-01","field":"text","excerpt":"north quarry"}]}
+	],
+	"numbers": [],
+	"event_relationships": [],
+	"irrelevant_message_ids": []
+}

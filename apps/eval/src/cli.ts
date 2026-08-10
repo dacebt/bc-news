@@ -24,6 +24,8 @@ import {
 } from "./report";
 import { listRunFiles, loadRunFile } from "./run-file";
 import { runCommand } from "./run-command";
+import { loadEvaluationReferenceCorpus } from "./evaluation-reference-corpus";
+import { formatEvaluationReferenceCorpusReport } from "./evaluation-reference-corpus-report";
 
 export const EVAL_CLI_USAGE = `Usage:
   pnpm --filter @bc-news/eval eval -- benchmark run --fixture <path> --config <path> [--results-dir <path>]
@@ -36,7 +38,8 @@ export const EVAL_CLI_USAGE = `Usage:
   pnpm --filter @bc-news/eval eval -- acceptance show <run-id> [--results-dir <path>]
   pnpm --filter @bc-news/eval eval -- acceptance compare <left-id> <right-id> [--results-dir <path>]
   pnpm --filter @bc-news/eval eval -- fixture record-responses --fixture <path> --config <path> [--response-dir <path>]
-  pnpm --filter @bc-news/eval eval -- context benchmark --fixture <path> [--results-dir <path>]`;
+  pnpm --filter @bc-news/eval eval -- context benchmark --fixture <path> [--results-dir <path>]
+  pnpm --filter @bc-news/eval eval -- corpus show --corpus <manifest-path>`;
 
 export interface EvalCliApplicationOptions {
 	readonly argv: readonly string[];
@@ -56,6 +59,7 @@ export function evalCliFailurePrefix(argv: readonly string[]): string {
 	if (namespace === "acceptance") return "acceptance failed:";
 	if (namespace === "fixture") return "fixture authoring failed:";
 	if (namespace === "context") return "context benchmark failed:";
+	if (namespace === "corpus") return "corpus failed:";
 	return "command failed:";
 }
 
@@ -159,6 +163,10 @@ export async function runEvalCliApplication(options: EvalCliApplicationOptions):
 			environment: options.environment,
 		});
 		writeLine(formatRecordSummary(result));
+		return;
+	}
+	if (command.command === "corpus-show") {
+		writeLine(formatEvaluationReferenceCorpusReport(await loadEvaluationReferenceCorpus(resolve(cwd, command.corpusPath))));
 		return;
 	}
 

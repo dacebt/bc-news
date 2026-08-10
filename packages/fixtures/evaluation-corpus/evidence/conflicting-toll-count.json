@@ -1,0 +1,10 @@
+{
+	"active_region_id": "24",
+	"evidence_date": "2026-06-01",
+	"messages": [
+		{"id":"toll-01","ts":1780297200000,"author_id":"r24/dera","author_name":"Dera","text":"The Stone Gate toll is 8 copper today."},
+		{"id":"toll-02","ts":1780297260000,"author_id":"r24/fenn","author_name":"Fenn","text":"The posted Stone Gate toll says 10 copper."},
+		{"id":"toll-03","ts":1780297320000,"author_id":"r24/dera","author_name":"Dera","text":"I paid 8 copper this morning."},
+		{"id":"toll-04","ts":1780297380000,"author_id":"r24/fenn","author_name":"Fenn","text":"I have not seen the gatekeeper confirm either amount."}
+	]
+}

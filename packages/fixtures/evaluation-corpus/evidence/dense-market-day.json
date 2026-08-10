@@ -1,0 +1,30 @@
+{
+	"active_region_id": "21",
+	"evidence_date": "2026-06-01",
+	"messages": [
+		{"id":"dense-01","ts":1780275600000,"author_id":"r21/mara","author_name":"Mara","text":"The east market opened at 09:00 UTC."},
+		{"id":"dense-02","ts":1780275660000,"author_id":"r21/ivo","author_name":"Ivo","text":"I counted 18 cedar bundles at the east stall."},
+		{"id":"dense-03","ts":1780275720000,"author_id":"r21/niko","author_name":"Niko","text":"The north stall has 7 iron bars."},
+		{"id":"dense-04","ts":1780275780000,"author_id":"r21/mara","author_name":"Mara","text":"Lio is checking the bridge inventory."},
+		{"id":"dense-05","ts":1780275840000,"author_id":"r21/ivo","author_name":"Ivo","text":"Two carts reached Pine Crossing."},
+		{"id":"dense-06","ts":1780275900000,"author_id":"r21/niko","author_name":"Niko","text":"The dye table is beside the fountain."},
+		{"id":"dense-07","ts":1780275960000,"author_id":"r21/mara","author_name":"Mara","text":"The copper order contains 12 crates."},
+		{"id":"dense-08","ts":1780276020000,"author_id":"r21/ivo","author_name":"Ivo","text":"I left a lantern at the west gate."},
+		{"id":"dense-09","ts":1780276080000,"author_id":"r21/niko","author_name":"Niko","text":"The stone counter closes at 11:30 UTC."},
+		{"id":"dense-10","ts":1780276140000,"author_id":"r21/mara","author_name":"Mara","text":"Sena collected 4 repair kits."},
+		{"id":"dense-11","ts":1780276200000,"author_id":"r21/ivo","author_name":"Ivo","text":"The south path is clear."},
+		{"id":"dense-12","ts":1780276260000,"author_id":"r21/niko","author_name":"Niko","text":"A bell rang near Cedar Hall."},
+		{"id":"dense-13","ts":1780279200000,"author_id":"r21/mara","author_name":"Mara","text":"The tool shelf holds 9 hammers."},
+		{"id":"dense-14","ts":1780279260000,"author_id":"r21/ivo","author_name":"Ivo","text":"Rin moved the seed sacks indoors."},
+		{"id":"dense-15","ts":1780279320000,"author_id":"r21/niko","author_name":"Niko","text":"The river dock has one empty berth."},
+		{"id":"dense-16","ts":1780279380000,"author_id":"r21/mara","author_name":"Mara","text":"I saw 6 clay jars by the kiln."},
+		{"id":"dense-17","ts":1780279440000,"author_id":"r21/ivo","author_name":"Ivo","text":"The orchard gate is unlocked."},
+		{"id":"dense-18","ts":1780279500000,"author_id":"r21/niko","author_name":"Niko","text":"Vale requested rope at the depot."},
+		{"id":"dense-19","ts":1780279560000,"author_id":"r21/mara","author_name":"Mara","text":"The meal cart serves until noon."},
+		{"id":"dense-20","ts":1780279620000,"author_id":"r21/ivo","author_name":"Ivo","text":"I found 3 blue ribbons."},
+		{"id":"dense-21","ts":1780279680000,"author_id":"r21/niko","author_name":"Niko","text":"The plaza clock is running."},
+		{"id":"dense-22","ts":1780279740000,"author_id":"r21/mara","author_name":"Mara","text":"Good morning everyone."},
+		{"id":"dense-23","ts":1780279800000,"author_id":"r21/ivo","author_name":"Ivo","text":"My tea is still warm."},
+		{"id":"dense-24","ts":1780279860000,"author_id":"r21/niko","author_name":"Niko","text":"That cloud looks like a boot."}
+	]
+}

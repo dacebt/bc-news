@@ -1,0 +1,174 @@
+{
+	"version": 1,
+	"id": "bcn-evaluation-reference-corpus-v1",
+	"fixtures": [
+		{
+			"ordinal": 1,
+			"id": "dense-market-day",
+			"evidence_path": "evaluation-corpus/evidence/dense-market-day.json",
+			"evidence_sha256": "c172a11bdfa9274ffcce4b8277d452df019730a5735e5b9c365c7ce5e6ac527d",
+			"reference_path": "evaluation-corpus/references/dense-market-day.json",
+			"reference_sha256": "4b0557970be5517614945a84fe471c56787a0210a0455b7c64bad2d0f0a90fac",
+			"variation_tags": ["dense","names","numbers","irrelevant_chatter"],
+			"variation_witnesses": [
+				{"tag":"dense","reference_ids":[],"message_ids":["dense-01","dense-02","dense-03","dense-04","dense-05","dense-06","dense-07","dense-08","dense-09","dense-10","dense-11","dense-12","dense-13","dense-14","dense-15","dense-16","dense-17","dense-18","dense-19","dense-20","dense-21","dense-22","dense-23","dense-24"]},
+				{"tag":"names","reference_ids":["entity:mara"],"message_ids":["dense-01"]},
+				{"tag":"numbers","reference_ids":["number:cedar-bundle-count"],"message_ids":["dense-02"]},
+				{"tag":"irrelevant_chatter","reference_ids":[],"message_ids":["dense-22","dense-23","dense-24"]}
+			]
+		},
+		{
+			"ordinal": 2,
+			"id": "sparse-repair-update",
+			"evidence_path": "evaluation-corpus/evidence/sparse-repair-update.json",
+			"evidence_sha256": "ccf4add496f3d0804cb472da84f0446491af1aef58946320d2fbd3a36e6652a6",
+			"reference_path": "evaluation-corpus/references/sparse-repair-update.json",
+			"reference_sha256": "51968515654e63a3acd9dc808448de0153c3f84f5dc9c4c6bf51276ae40c20c3",
+			"variation_tags": ["sparse","isolated_event","announcement_candidates","names","numbers"],
+			"variation_witnesses": [
+				{"tag":"sparse","reference_ids":[],"message_ids":["repair-01","repair-02","repair-03","repair-04"]},
+				{"tag":"isolated_event","reference_ids":["relationship:repair-isolated","event:moss-bridge-repair"],"message_ids":["repair-01","repair-03"]},
+				{"tag":"announcement_candidates","reference_ids":["noteworthy:bridge-open-notice"],"message_ids":["repair-03"]},
+				{"tag":"names","reference_ids":["entity:tova"],"message_ids":["repair-01"]},
+				{"tag":"numbers","reference_ids":["number:oak-plank-count"],"message_ids":["repair-02"]}
+			]
+		},
+		{
+			"ordinal": 3,
+			"id": "overlapping-deliveries",
+			"evidence_path": "evaluation-corpus/evidence/overlapping-deliveries.json",
+			"evidence_sha256": "d14e0ecf6605d754e25c66e8e4630e5a556c37edd9b15d5236606245abc5ee1b",
+			"reference_path": "evaluation-corpus/references/overlapping-deliveries.json",
+			"reference_sha256": "a28deaeae54653cc43e9580949076f74a3d9730ffc539b6ec50ca07d8f5942c5",
+			"variation_tags": ["overlapping_events","numbers","names"],
+			"variation_witnesses": [
+				{"tag":"overlapping_events","reference_ids":["relationship:depot-arrivals-overlap","event:grain-cart-arrival","event:timber-wagon-arrival"],"message_ids":["overlap-01","overlap-03"]},
+				{"tag":"numbers","reference_ids":["number:grain-sack-count"],"message_ids":["overlap-02"]},
+				{"tag":"names","reference_ids":["entity:river-depot"],"message_ids":["overlap-01"]}
+			]
+		},
+		{
+			"ordinal": 4,
+			"id": "conflicting-toll-count",
+			"evidence_path": "evaluation-corpus/evidence/conflicting-toll-count.json",
+			"evidence_sha256": "c5caf0f1bc9f996eef709e1cb11bb828153c01723c82c34229dbdf854bb8486b",
+			"reference_path": "evaluation-corpus/references/conflicting-toll-count.json",
+			"reference_sha256": "2be94ba85f72cef9fb4bb47b5f30c0983e697bef055c69d3205b7d82efe385b1",
+			"variation_tags": ["contradiction","numbers","names"],
+			"variation_witnesses": [
+				{"tag":"contradiction","reference_ids":["claim:stone-gate-toll"],"message_ids":["toll-01","toll-02","toll-03"]},
+				{"tag":"numbers","reference_ids":["number:reported-toll-eight","number:posted-toll-ten"],"message_ids":["toll-01","toll-02"]},
+				{"tag":"names","reference_ids":["entity:dera"],"message_ids":["toll-01"]}
+			]
+		},
+		{
+			"ordinal": 5,
+			"id": "unresolved-location",
+			"evidence_path": "evaluation-corpus/evidence/unresolved-location.json",
+			"evidence_sha256": "6177adf07e76d5ebe6abee8fdfcbbb2c78fd830442d3fbbad7ab8eaedd48788f",
+			"reference_path": "evaluation-corpus/references/unresolved-location.json",
+			"reference_sha256": "35046faa0cae0bf161282de38524af10b3e778d47cff38503b15f36619137539",
+			"variation_tags": ["sparse","unresolved_ambiguity","names"],
+			"variation_witnesses": [
+				{"tag":"sparse","reference_ids":[],"message_ids":["location-01","location-02","location-03"]},
+				{"tag":"unresolved_ambiguity","reference_ids":["ambiguity:old-tower-identity"],"message_ids":["location-01","location-02","location-03"]},
+				{"tag":"names","reference_ids":["entity:nell"],"message_ids":["location-01"]}
+			]
+		},
+		{
+			"ordinal": 6,
+			"id": "irrelevant-campfire",
+			"evidence_path": "evaluation-corpus/evidence/irrelevant-campfire.json",
+			"evidence_sha256": "73322cd5ea13ad096b422507724299f046c827598662d70d210ea22321d6149c",
+			"reference_path": "evaluation-corpus/references/irrelevant-campfire.json",
+			"reference_sha256": "69df310cd5e95278a58fba47914f6a159d7eadc1cd8d5129b70a4207d9d08b40",
+			"variation_tags": ["sparse","irrelevant_chatter","numbers"],
+			"variation_witnesses": [
+				{"tag":"sparse","reference_ids":[],"message_ids":["campfire-01","campfire-02","campfire-03","campfire-04","campfire-05"]},
+				{"tag":"irrelevant_chatter","reference_ids":[],"message_ids":["campfire-03","campfire-04","campfire-05"]},
+				{"tag":"numbers","reference_ids":["number:bedroll-count"],"message_ids":["campfire-01"]}
+			]
+		},
+		{
+			"ordinal": 7,
+			"id": "isolated-bell-test",
+			"evidence_path": "evaluation-corpus/evidence/isolated-bell-test.json",
+			"evidence_sha256": "efa56257d72f41bfeb003153595363e3bf1104fe8abf9c9f0af39bd98fd7ed3a",
+			"reference_path": "evaluation-corpus/references/isolated-bell-test.json",
+			"reference_sha256": "218f418f5011dbda3a7583fe599844344b9551fa7c5a94912f64d68cd1dc39bf",
+			"variation_tags": ["isolated_event","numbers","names"],
+			"variation_witnesses": [
+				{"tag":"isolated_event","reference_ids":["relationship:bell-test-isolated","event:harbor-bell-test"],"message_ids":["bell-01","bell-02"]},
+				{"tag":"numbers","reference_ids":["number:bell-strike-count"],"message_ids":["bell-02"]},
+				{"tag":"names","reference_ids":["entity:kira"],"message_ids":["bell-01"]}
+			]
+		},
+		{
+			"ordinal": 8,
+			"id": "lantern-festival-notice",
+			"evidence_path": "evaluation-corpus/evidence/lantern-festival-notice.json",
+			"evidence_sha256": "bf84bee734015b2ff12c075c3bdc8cc50e88491b2815e7cb89fc3d680511cdc4",
+			"reference_path": "evaluation-corpus/references/lantern-festival-notice.json",
+			"reference_sha256": "12df3d9edee5308aad28b51f14931468ddb89f8386e0d76ae255fc15a0c0c81f",
+			"variation_tags": ["announcement_candidates","numbers","names","isolated_event"],
+			"variation_witnesses": [
+				{"tag":"announcement_candidates","reference_ids":["noteworthy:festival-start-notice","noteworthy:jar-return-request"],"message_ids":["festival-01","festival-05"]},
+				{"tag":"numbers","reference_ids":["number:lantern-count"],"message_ids":["festival-02"]},
+				{"tag":"names","reference_ids":["entity:pax","entity:amber-square"],"message_ids":["festival-01","festival-03"]},
+				{"tag":"isolated_event","reference_ids":["relationship:festival-start-isolated","event:lantern-festival-start"],"message_ids":["festival-01"]}
+			]
+		},
+		{
+			"ordinal": 9,
+			"id": "supply-counts",
+			"evidence_path": "evaluation-corpus/evidence/supply-counts.json",
+			"evidence_sha256": "7739777f364c60963e4b1eb3896c6053ed2645443097f4f8226fe6c24fd318db",
+			"reference_path": "evaluation-corpus/references/supply-counts.json",
+			"reference_sha256": "a29978b19e992e95d90cf6c558c7e52aa377475a313292c0025cf4883a211d62",
+			"variation_tags": ["numbers","names"],
+			"variation_witnesses": [
+				{"tag":"numbers","reference_ids":["number:flour-count","number:salt-count"],"message_ids":["supply-01","supply-02"]},
+				{"tag":"names","reference_ids":["entity:western-storehouse"],"message_ids":["supply-01"]}
+			]
+		},
+		{
+			"ordinal": 10,
+			"id": "named-rangers",
+			"evidence_path": "evaluation-corpus/evidence/named-rangers.json",
+			"evidence_sha256": "218e38a93f1f6c00d20d23c1e12696741b3aa37741ab187f0160a6121f4315f5",
+			"reference_path": "evaluation-corpus/references/named-rangers.json",
+			"reference_sha256": "af2e9b6ffdda30018c455bfa61cbadf446e744bac8836cfb6d2bcdaccdf10fe9",
+			"variation_tags": ["names"],
+			"variation_witnesses": [
+				{"tag":"names","reference_ids":["entity:suri","entity:tomas","entity:birch-watch"],"message_ids":["rangers-01"]}
+			]
+		},
+		{
+			"ordinal": 11,
+			"id": "contested-closure",
+			"evidence_path": "evaluation-corpus/evidence/contested-closure.json",
+			"evidence_sha256": "3aa36a1171f703739e9e7c2ee506ecde15d79f218be50611331c15f1552443a2",
+			"reference_path": "evaluation-corpus/references/contested-closure.json",
+			"reference_sha256": "39f96db8bc60f82aef8de4041421e8e9521b90be53be9ccc9e72e31116a01802",
+			"variation_tags": ["contradiction","announcement_candidates"],
+			"variation_witnesses": [
+				{"tag":"contradiction","reference_ids":["event:north-quarry-closure"],"message_ids":["closure-01","closure-02","closure-03","closure-04"]},
+				{"tag":"announcement_candidates","reference_ids":["noteworthy:closure-notice"],"message_ids":["closure-03"]}
+			]
+		},
+		{
+			"ordinal": 12,
+			"id": "unresolved-departure",
+			"evidence_path": "evaluation-corpus/evidence/unresolved-departure.json",
+			"evidence_sha256": "f52b74054f3a43fa5a344ea3256c3b4dcd86c6ba5ff9a436ba15be7801dd1faa",
+			"reference_path": "evaluation-corpus/references/unresolved-departure.json",
+			"reference_sha256": "781d06d1990343c05376fa958dd0d2fe2837df518c53d3d4e5ce563c3b4d523c",
+			"variation_tags": ["unresolved_ambiguity","announcement_candidates","names"],
+			"variation_witnesses": [
+				{"tag":"unresolved_ambiguity","reference_ids":["ambiguity:second-bell-time","event:survey-departure"],"message_ids":["departure-01","departure-02"]},
+				{"tag":"announcement_candidates","reference_ids":["noteworthy:departure-time-notice"],"message_ids":["departure-03"]},
+				{"tag":"names","reference_ids":["entity:yori","entity:reed-camp"],"message_ids":["departure-03","departure-04"]}
+			]
+		}
+	]
+}

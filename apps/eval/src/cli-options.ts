@@ -13,9 +13,10 @@ export type EvalCliCommand =
 	| { command: "acceptance-show"; runId: string; resultsDirectory?: string }
 	| { command: "acceptance-compare"; leftRunId: string; rightRunId: string; resultsDirectory?: string }
 	| { command: "fixture-record-responses"; fixturePath: string; configPath: string; responseDirectory?: string }
-	| { command: "context-benchmark"; fixturePath: string; resultsDirectory?: string };
+	| { command: "context-benchmark"; fixturePath: string; resultsDirectory?: string }
+	| { command: "corpus-show"; corpusPath: string };
 
-const ALL_OPTIONS = ["fixture", "config", "results-dir", "response-dir"] as const;
+const ALL_OPTIONS = ["fixture", "config", "results-dir", "response-dir", "corpus"] as const;
 
 export class CliOptionsError extends Error {
 	readonly code = "invalid_cli_options";
@@ -53,6 +54,7 @@ function runParseArgs(argv: readonly string[]) {
 			config: { type: "string" },
 			"results-dir": { type: "string" },
 			"response-dir": { type: "string" },
+			corpus: { type: "string" },
 		},
 	});
 }
@@ -189,5 +191,11 @@ export function parseEvalCliCommand(argv: readonly string[]): EvalCliCommand {
 			...optionalResultsDirectory(values["results-dir"]),
 		};
 	}
-	throw new CliOptionsError("Expected the benchmark, acceptance, fixture, or context namespace");
+	if (namespace === "corpus") {
+		if (positionals[1] !== "show") throw new CliOptionsError("Expected corpus show");
+		exactPositionals(positionals, 2, "corpus show");
+		rejectUnknownOptions(values, ["corpus"], "corpus show");
+		return { command: "corpus-show", corpusPath: requireStringOption(values.corpus, "corpus") };
+	}
+	throw new CliOptionsError("Expected the benchmark, acceptance, fixture, context, or corpus namespace");
 }

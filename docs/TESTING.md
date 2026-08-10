@@ -29,6 +29,7 @@ outcome or silently substitutes for it.
 |---|---|---|---|
 | Deterministic tests | `pnpm test` | Isolated warranted invariants, reproduced defects, and high-risk state transitions | Test pass or hard test failure; never a retained model attempt |
 | Model evaluation | `benchmark run/list/show/summary/compare` | Strict versioned Benchmark Runs under `apps/eval/evaluation-results` | Retained model subject and harness outcomes with `evaluation:` observations; never a score or acceptance verdict |
+| Evaluation reference corpus | `corpus show --corpus <manifest-path>` and its direct verifier | Ordered synthetic fixture bytes and separate exact source-witness references | Auditable source truth and objective variation coverage; never a model result, score, or acceptance verdict |
 | Fixture and context tooling | `fixture record-responses` and `context benchmark` | Four request-linked recorded responses, or strict context results | Fixture-authoring or context-measurement tooling result; never acceptance or a walk |
 | Recorded-replay acceptance | `acceptance run/list/show/compare` and its direct verifier | Historical Run Files under `apps/eval/results` | `acceptance:` result over controlled replay; never a Benchmark Run outcome |
 | Composed skeleton walk | `pnpm walk` | The running local ingest, generation, persistence, API, status, and browser product | Walk-owned `walk:` observations followed by independent terminal `WALK PASS` |
@@ -95,6 +96,17 @@ versions keep their original meanings. Either tool may independently omit or
 set temperature for each step; the declaration, not the command name,
 determines the experiment.
 
+**The evaluation reference corpus** is a deterministic input-evidence domain,
+not a model evaluation result. `corpus show --corpus <manifest-path>` explicitly
+selects a strict ordered manifest whose exact hashes pair each synthetic chat
+with one separate reference. References retain exact source excerpts and
+closed classifications only; every cited message and excerpt must survive the
+real evidence-preparation path. Objective witnesses prove every declared
+variation tag, and closed directories reject unlisted evidence. This domain
+supplies future measurements with auditable denominators without prescribing a
+target article, angle, wording, score, or verdict. Existing commands do not
+accept `--corpus` and do not silently select a corpus entry.
+
 **Recorded-replay acceptance** uses `acceptance run --fixture <path> [--config
 <path>] [--results-dir <path>]` and `acceptance list/show/compare`. It executes
 the four dependent production steps twice. Results must be identical apart from
@@ -140,6 +152,7 @@ pnpm --filter @bc-news/eval verify:evaluation-trial-retention
 pnpm --filter @bc-news/eval verify:evaluation-benchmark-continuation
 pnpm --filter @bc-news/eval verify:evaluation-browse
 pnpm --filter @bc-news/eval verify:benchmark-runtime-evidence
+pnpm --filter @bc-news/eval verify:evaluation-reference-corpus
 pnpm --filter @bc-news/eval verify:recorded-response-fixture-authoring
 pnpm --filter @bc-news/eval verify:recorded-replay-acceptance
 pnpm test
@@ -152,8 +165,8 @@ The command-contract tests additionally exercise every namespaced CLI route,
 option ownership, namespace-specific failure prefix, and rejection of the old
 bare `evaluate`, `run`, `record`, `context`, `list`, `show`, and `compare`
 routes. After a namespace is recognized, failures begin with `benchmark
-failed:`, `acceptance failed:`, `fixture authoring failed:`, or `context
-benchmark failed:`. Failures before namespace recognition begin with `command
+failed:`, `acceptance failed:`, `fixture authoring failed:`, `context
+benchmark failed:`, or `corpus failed:`. Failures before namespace recognition begin with `command
 failed:`; `eval failed:` is forbidden.
 
 The three evaluation verifiers print `evaluation:` observations. Trial
@@ -165,7 +178,10 @@ linked retries and continued later trials`, and browsing ends with `evaluation:
 evidence listed summarized and compared without verdicts`. Runtime-evidence
 verification exercises the real
 command, store, reader, projection, and summary path with controlled providers
-and ends exactly with `BENCHMARK RUNTIME EVIDENCE VERIFIED`. Fixture proof ends
+and ends exactly with `BENCHMARK RUNTIME EVIDENCE VERIFIED`. Reference-corpus
+verification loads the committed corpus through the production reader, runs
+the complete corruption matrix, and ends exactly with `EVALUATION REFERENCE
+CORPUS VERIFIED`. Fixture proof ends
 with `fixture authoring: four strict v3 hosted responses retained exact agent
 configurations, replayed, and compared`. Acceptance proof ends with `acceptance: four
 recorded production steps replayed request-linked and deterministic; diagnostics

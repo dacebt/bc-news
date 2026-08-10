@@ -13,7 +13,7 @@ generated:
 # Domain Model: bc-news evaluation and verification
 
 **Last updated:** 2026-08-10
-**Update reason:** observable model runtime evidence — separate comparable execution context from volatile prediction observation.
+**Update reason:** auditable evaluation reference corpus — separate source truth from model output and future measurement.
 
 ## Ubiquitous Language
 
@@ -36,6 +36,9 @@ generated:
 | Execution context | Normalized runtime observations that identify what comparable model environment executed an invocation. | Prediction observation |
 | Prediction observation | Volatile response behavior such as stop reason, timing, throughput, speculative counts, and reasoning-content presence. | Execution context |
 | Runtime observation | One strict field state: observed, unknown with a reason, or externally controlled with a reason. | A guessed provider setting |
+| Evaluation reference corpus | One explicitly selected ordered set of synthetic conversations, each byte-paired with separate source-witness reference evidence. | A Benchmark Run or target article |
+| Source witness | An exact excerpt from a named raw message field that remains under the same identity after evidence preparation. | A free-form summary or model output |
+| Variation witness | Qualified reference ids and prepared message ids that mechanically prove one closed corpus variation tag. | A descriptive fixture label |
 
 ## Bounded Contexts
 
@@ -46,6 +49,7 @@ generated:
 | Acceptance verification | Recorded replay and explicit policies that accept or reject evidence. | It consumes evidence; it does not create a quality verdict. |
 | Composed product verification | The canonical local skeleton walk through deployable entrypoints. | Walking proves composition, not model quality. |
 | Deterministic testing | Isolated assertions over contracts, lifecycle, persistence, and comparison logic. | Tests do not substitute for a live evaluation or walk. |
+| Evaluation source evidence | Strict selection, preparation, linkage, and browsing of the synthetic reference corpus. | It owns source truth and variation coverage, never generated prose, a score, or a verdict. |
 
 ## Aggregates
 
@@ -55,6 +59,7 @@ generated:
 | Benchmark Run | The lifecycle, invocation history, and complete runtime-evidence roster for one declared model experiment. |
 | Evaluation Trial | One configuration's two-track behavior and terminal subject outcome within a benchmark. |
 | Step Invocation | Immutable request, response or transport outcome, timing, findings, and retry linkage for one model call. |
+| Evaluation Reference Corpus | Ordered manifest, byte-bound synthetic fixtures, exact source-witness references, and objective variation witnesses. |
 
 ## Notes
 

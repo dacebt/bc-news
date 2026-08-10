@@ -1,0 +1,11 @@
+{
+	"active_region_id": "28",
+	"evidence_date": "2026-06-01",
+	"messages": [
+		{"id":"festival-01","ts":1780322400000,"author_id":"r28/nora","author_name":"Nora","text":"The Lantern Festival begins at 19:00 UTC in Amber Square."},
+		{"id":"festival-02","ts":1780322460000,"author_id":"r28/oren","author_name":"Oren","text":"Volunteers placed 40 lanterns around Amber Square."},
+		{"id":"festival-03","ts":1780322520000,"author_id":"r28/nora","author_name":"Nora","text":"Pax will open the east entrance."},
+		{"id":"festival-04","ts":1780322580000,"author_id":"r28/oren","author_name":"Oren","text":"The west entrance stays closed."},
+		{"id":"festival-05","ts":1780322640000,"author_id":"r28/nora","author_name":"Nora","text":"Bring empty jars to the return table."}
+	]
+}

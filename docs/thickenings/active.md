@@ -1,16 +1,16 @@
 ---
 type: thickening
 title: >-
-  Thickening: observable model runtime evidence
+  Thickening: auditable evaluation reference corpus
 description: >-
-  Active WSD thickening for browsing a truthful normalized runtime fingerprint on every retained benchmark invocation.
+  Active WSD thickening for selecting and browsing an ordered varied synthetic chat corpus with separate source-grounded reference evidence.
 tags: [wsd, thickening, active]
 status: stable
 generated:
   by: ebt-wsd/okf-v0.2
-  at: "2026-08-10T04:20:42Z"
+  at: "2026-08-10T06:19:25Z"
 ---
-# Thickening: observable model runtime evidence
+# Thickening: auditable evaluation reference corpus
 
 **Started:** 2026-08-10
 **Git strategy:** commit this coherent thickening directly to local `main`; no push
@@ -18,39 +18,37 @@ generated:
 
 ## Dimension
 
-Model-invocation evidence at the existing provider and strict Benchmark Run boundary.
+Evaluation source-evidence corpus and independently auditable reference truth.
 
 ## Observable delta
 
-- before: an evaluator can inspect the declared model and returned identifier, token usage, application latency, and billing class, but cannot tell which observable runtime state produced an invocation.
-- after: an evaluator runs and browses one benchmark whose every invocation has lifecycle-matched normalized runtime evidence; successful invocations capture a comparable execution-context fingerprint plus separate volatile prediction observations, with every unavailable field explicitly unknown or externally controlled.
+- before: an evaluator can load only one repository chat fixture at a time, and the repository has no separate contract describing what that conversation establishes.
+- after: an evaluator selects and browses one ordered, deliberately varied synthetic multi-fixture corpus whose strict reference records use exact prepared-evidence-surviving excerpts to identify claims, events, ambiguities, names, numbers, and noteworthy candidates without containing novel article prose, a preferred angle, or prescribed wording.
 
 ## Minimum surface
 
-- The existing `ModelCompletion` result and local, hosted, and controlled-provider adapters, with one normalized application-owned runtime-evidence vocabulary rather than raw SDK configuration blobs; published model-usage records remain an explicit legacy-field projection.
-- A new current strict Benchmark Run version and its construction, transitions, readers, observation/comparison projection, and summary/detail surfaces while versions 1–6 remain frozen. Its top-level roster is ordered by trial roster then invocation ordinal and identifies trial, invocation, configuration, production step, and ordinal.
-- Atomic roster transitions: an appended in-flight invocation appends `pending`; failed transport resolves only to `unavailable`; successful transport resolves only to `captured`; resolved entries are immutable and cannot detach, duplicate, reorder, or change independently of their invocation.
-- LM Studio SDK observation at the already-open client/model/result seam, including a verified pinned SDK release constant, LM Studio version/build, distinct selected-model and response-model identities, context, prediction timing/stop statistics, and observable reasoning state. Auxiliary observation failures produce canonical unknown fields and never turn successful inference into transport failure.
-- Field-specific normalization for nonblank strings, nonnegative or positive integers, finite nonnegative measurements, speculative count relations, and a closed reason vocabulary so invalid values or prose do not become false evidence or artificial context drift.
-- A repository-owned direct verifier and focused unit/contract tests that exercise observed, unknown, and externally controlled states without requiring live inference.
-- Binding architecture, testing, README, and WSD vocabulary updates needed to describe the new evidence truthfully.
+- A versioned strict corpus manifest that owns deterministic order and links every synthetic chat fixture to exactly one separate reference record through byte identities rather than directory guessing.
+- A deliberately varied committed fixture collection covering dense and sparse conversations, overlapping and isolated events, contradictory or unresolved statements, names and numeric claims, announcement candidates, and explicitly identified irrelevant chatter while remaining valid raw `EvidenceFixtureSchema` evidence and surviving the real preparation path.
+- Versioned strict reference records whose status-shaped witnesses are exact excerpts from source-message fields, whose cited identities and grounding survive prepared evidence, and whose closed variation tags carry objective witnesses; dangling, duplicate, reordered, mismatched, unlisted, extra-field, or falsely grounded evidence is rejected.
+- Eval-owned manifest/reference readers, fixture-level browse and summary output, and CLI routing that select the corpus explicitly while preserving every existing valid single-fixture command, artifact, and output; CLI help may name the new namespace.
+- A repository-owned direct verifier plus focused schema, linkage, ordering, hashing, and rejection tests; README, architecture, testing, and evaluation-domain vocabulary updated only where this capability changes the truth.
 
 ## Verification path
 
-`pnpm --filter @bc-news/eval verify:benchmark-runtime-evidence` creates and reparses a controlled current-version Benchmark Run through the real application boundary, browses its summary, and ends with `BENCHMARK RUNTIME EVIDENCE VERIFIED` only when all four invocation records are captured, context and prediction projections are separate, representative versions 1–6 still parse, injected runtime evidence in a V6 completion is strictly rejected, and V7 legacy completion objects contain no leaked runtime field. The project-level typecheck, lint, test suite, and `/Users/epicbadtiming/.codex/plugins/cache/ebt-plugins/ebt-wsd/0.12.2/bin/wsd-walk --require-probe --expect "WALK PASS"` then prove the provider/evaluation changes did not regress the composed product.
+`pnpm --filter @bc-news/eval verify:evaluation-reference-corpus` loads the committed manifest through the real readers, prepares every fixture through the production evidence path, browses the ordered corpus summary, proves exact source excerpts and every objective variety witness, rejects corrupted linkage, directory closure, grounding, status, relationship, and target-article-shaped extra fields, and ends exactly with `EVALUATION REFERENCE CORPUS VERIFIED`. Root separately audits the committed synthetic chat/excerpt prose for editorial instructions. The project-level typecheck, lint, test suite, and `/Users/epicbadtiming/.codex/plugins/cache/ebt-plugins/ebt-wsd/0.12.2/bin/wsd-walk --require-probe --expect "WALK PASS"` then prove the new evaluation evidence boundary did not regress the composed product.
 
 ## Residual risks
 
-- Non-invariant: future SDK releases may expose additional stable observables; the normalized contract can gain them only through a later artifact version.
-- Non-invariant: hosted providers may report fewer runtime details than LM Studio and will honestly retain externally controlled or unknown states.
-- Non-invariant: runtime fingerprints make later cohorts comparable but do not themselves score quality or establish a baseline.
+- Non-invariant: the synthetic corpus establishes controlled source truth but does not claim to reproduce the eventual frequency distribution of production chat; later locally authorized fixtures can extend the versioned corpus through the same contract.
+- Non-invariant: the committed corpus increases repository and verification volume; storage or test-runtime optimization is warranted only after observed cost.
+- Non-invariant: this capability exposes reference evidence but does not yet calculate per-agent measurements or accept manual qualitative reviews; those are separate actor-visible capabilities 3 and 4 on the approved map.
 
 ## Notes
 
-Do not retain deprecated raw `loadConfig` or `predictionConfig` objects. Normalize only reviewed fields. `execution_context` owns client SDK, provider runtime, selected and response model identities, context length, requested/effective reasoning posture, and speculative draft-model identity. `prediction_observation` owns stop reason, timing, throughput, speculative token counts, and reasoning-content presence. Only `execution_context` participates in context comparison. Reasoning evidence describes what was observable in the response and what the application declared; it must not guess an LM Studio UI setting.
+Chat fixtures remain the model's only source evidence. Reference records use exact source excerpts and closed classifications rather than novel summaries; they may not supply article prose, narrative structure, editorial angle, model output, a quality score, or an acceptance verdict. Strict parsing proves the structural boundary, while root's prose audit owns the content judgment. No live inference, external dataset acquisition, or production data is part of this thickening.
 
 ## Context
 
 - governed by the [longitudinal scorecard shape](../direction/2026-08-10-longitudinal-model-evaluation-scorecards.shape.md)
-- implements capability 1 of the [longitudinal scorecard map](../direction/2026-08-10-longitudinal-model-evaluation-scorecards.map.md)
+- implements capability 2 of the [longitudinal scorecard map](../direction/2026-08-10-longitudinal-model-evaluation-scorecards.map.md)
 - uses the established vocabulary in the [evaluation and verification model](../direction/bc-news.model.md)

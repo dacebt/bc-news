@@ -62,6 +62,7 @@ result in another.
 |---|---|---|---|
 | Deterministic tests | `pnpm test` | Isolated invariants, reproduced defects, and high-risk state transitions | Test pass or hard test failure |
 | Model evaluation | `pnpm --filter @bc-news/eval eval -- benchmark run ...` and `benchmark list/show/summary/compare` | Strict versioned Benchmark Runs in `apps/eval/evaluation-results` | Retained model behavior and harness outcome; no score or acceptance verdict |
+| Evaluation reference corpus | `corpus show --corpus packages/fixtures/evaluation-corpus/manifest.json` | Ordered synthetic chats plus separate exact source-witness records | Auditable source truth and variation coverage; no target article, score, or verdict |
 | Fixture and context tooling | `fixture record-responses ...` and `context benchmark ...` | Four request-linked recorded responses, or strict context-measurement results | Fixture-authoring or context-measurement tooling result, never a walk or acceptance result |
 | Recorded-replay acceptance | `acceptance run/list/show/compare` and `verify:recorded-replay-acceptance` | Historical Run Files in `apps/eval/results` | `acceptance: four recorded production steps replayed request-linked and deterministic; diagnostics retained: 4` |
 | Composed skeleton walk | `pnpm walk` | The deployed local ingest, generation, D1, API, status, and browser path using committed recorded adapters | Independent `walk:` observations and terminal `WALK PASS` |
@@ -147,6 +148,24 @@ speculative counts, and reasoning-content presence remain behavior. Missing or
 provider-owned fields are explicit unknown or externally controlled observations;
 raw provider configuration blobs are never retained.
 
+The committed evaluation reference corpus is an explicit source-evidence
+surface, separate from model output:
+
+```sh
+pnpm --filter @bc-news/eval eval -- corpus show \
+  --corpus packages/fixtures/evaluation-corpus/manifest.json
+```
+
+Its strict manifest orders twelve synthetic conversations and byte-binds each
+one to a separate reference record. Reference claims, events, ambiguities,
+entities, numbers, and noteworthy candidates use exact excerpts from message
+fields that survive the real evidence-preparation path. Closed variation tags
+carry objective witnesses for dense and sparse chats, overlapping and isolated
+events, contradictions, unresolved ambiguity, names, numbers, announcement
+candidates, and explicitly identified irrelevant chatter. The corpus contains
+no target article, preferred angle, model output, score, or acceptance verdict;
+existing benchmark and tooling commands remain single-fixture boundaries.
+
 The historical artifact is a **Run File**, not a Benchmark Run. Recorded-replay
 acceptance alone owns it and its separate default directory:
 
@@ -194,6 +213,7 @@ pnpm --filter @bc-news/eval verify:evaluation-trial-retention
 pnpm --filter @bc-news/eval verify:evaluation-benchmark-continuation
 pnpm --filter @bc-news/eval verify:evaluation-browse
 pnpm --filter @bc-news/eval verify:benchmark-runtime-evidence
+pnpm --filter @bc-news/eval verify:evaluation-reference-corpus
 pnpm --filter @bc-news/eval verify:recorded-response-fixture-authoring
 pnpm --filter @bc-news/eval verify:recorded-replay-acceptance
 ```
@@ -207,6 +227,10 @@ and
 `evaluation: evidence listed summarized and compared without verdicts`.
 Runtime-evidence verification ends with
 `BENCHMARK RUNTIME EVIDENCE VERIFIED`.
+Reference-corpus verification ends with
+`EVALUATION REFERENCE CORPUS VERIFIED` after the committed manifest, hashes,
+prepared source witnesses, directory closure, and objective variation rules
+pass their positive and corruption proofs.
 Fixture proof prints
 `fixture authoring: four strict v3 hosted responses retained exact agent configurations, replayed, and compared`;
 recorded-replay proof prints

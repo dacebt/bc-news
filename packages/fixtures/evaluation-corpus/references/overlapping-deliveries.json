@@ -1,0 +1,23 @@
+{
+	"version": 1,
+	"fixture_id": "overlapping-deliveries",
+	"evidence_sha256": "d14e0ecf6605d754e25c66e8e4630e5a556c37edd9b15d5236606245abc5ee1b",
+	"claims": [],
+	"events": [
+		{"id":"grain-cart-arrival","status":"established","supporting_witnesses":[{"message_id":"overlap-01","field":"text","excerpt":"The grain cart arrived at River Depot."}],"opposing_witnesses":[],"unresolved_witnesses":[]},
+		{"id":"timber-wagon-arrival","status":"established","supporting_witnesses":[{"message_id":"overlap-03","field":"text","excerpt":"The timber wagon reached River Depot."}],"opposing_witnesses":[],"unresolved_witnesses":[]}
+	],
+	"ambiguities": [],
+	"noteworthy_candidates": [],
+	"entities": [
+		{"id":"river-depot","kind":"place","value":"River Depot","witnesses":[{"message_id":"overlap-01","field":"text","excerpt":"River Depot"}]}
+	],
+	"numbers": [
+		{"id":"grain-sack-count","raw":"20","witnesses":[{"message_id":"overlap-02","field":"text","excerpt":"20 grain sacks"}]},
+		{"id":"pine-beam-count","raw":"14","witnesses":[{"message_id":"overlap-04","field":"text","excerpt":"14 pine beams"}]}
+	],
+	"event_relationships": [
+		{"id":"depot-arrivals-overlap","kind":"overlaps","event_ids":["grain-cart-arrival","timber-wagon-arrival"]}
+	],
+	"irrelevant_message_ids": []
+}

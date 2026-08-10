@@ -1,0 +1,24 @@
+{
+	"version": 1,
+	"fixture_id": "sparse-repair-update",
+	"evidence_sha256": "ccf4add496f3d0804cb472da84f0446491af1aef58946320d2fbd3a36e6652a6",
+	"claims": [],
+	"events": [
+		{"id":"moss-bridge-repair","status":"established","supporting_witnesses":[{"message_id":"repair-01","field":"text","excerpt":"Repairs at Moss Bridge finished at 11:00 UTC."},{"message_id":"repair-03","field":"text","excerpt":"Moss Bridge is open again."}],"opposing_witnesses":[],"unresolved_witnesses":[]}
+	],
+	"ambiguities": [],
+	"noteworthy_candidates": [
+		{"id":"bridge-open-notice","kind":"notice","witnesses":[{"message_id":"repair-03","field":"text","excerpt":"Moss Bridge is open again."}]}
+	],
+	"entities": [
+		{"id":"moss-bridge","kind":"place","value":"Moss Bridge","witnesses":[{"message_id":"repair-01","field":"text","excerpt":"Moss Bridge"}]},
+		{"id":"tova","kind":"person","value":"Tova","witnesses":[{"message_id":"repair-01","field":"author_name","excerpt":"Tova"}]}
+	],
+	"numbers": [
+		{"id":"oak-plank-count","raw":"6","witnesses":[{"message_id":"repair-02","field":"text","excerpt":"6 oak planks"}]}
+	],
+	"event_relationships": [
+		{"id":"repair-isolated","kind":"isolated","event_ids":["moss-bridge-repair"]}
+	],
+	"irrelevant_message_ids": []
+}

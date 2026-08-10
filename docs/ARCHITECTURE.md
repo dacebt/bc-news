@@ -184,13 +184,14 @@ judge call, score, verdict, or automatic revision loop in production.
 
 ### Verification ownership
 
-Verification has five independent owners. Their artifacts and terminal
+Verification has six independent owners. Their artifacts and terminal
 observations do not cross domain boundaries.
 
 | Owner | Command surface | Evidence | Outcome owner |
 |---|---|---|---|
 | Deterministic tests | `pnpm test` | Isolated invariants, reproduced defects, and high-risk state transitions | Test pass or hard test failure |
 | Model evaluation | `benchmark run/list/show/summary/compare` | Strict versioned Benchmark Runs under `apps/eval/evaluation-results` | Model subject outcome and evidence-retention harness outcome, reported as `evaluation:` observations |
+| Evaluation reference corpus | `corpus show --corpus <manifest-path>` | Strict ordered synthetic fixtures and exact source-witness references | Auditable source truth and objective variation coverage; no model result or verdict |
 | Fixture and context tooling | `fixture record-responses` and `context benchmark` | Request-linked response files or strict context-result artifacts | Fixture-authoring or context-measurement tooling observations |
 | Recorded-replay acceptance | `acceptance run/list/show/compare` | Historical Run Files under `apps/eval/results` | `acceptance:` gate result over controlled recorded evidence |
 | Composed skeleton walk | `pnpm walk` | Running local ingest, generation, D1, API, status, and browser product | Walk-owned `walk:` observations and terminal `WALK PASS` |
@@ -259,6 +260,26 @@ This is application scheduling, not a promise that an underlying model runtime
 processes the requests in parallel. The eval application owns this artifact
 boundary directly, adding no third domain port and changing neither provider
 adapters nor production Workflow scheduling.
+
+The evaluation reference corpus is selected only through `corpus show
+--corpus <manifest-path>`. Its V1 manifest owns positional order, canonical
+fixture/reference paths, exact byte hashes, and closed variation tags with
+objective witnesses. The committed corpus contains twelve synthetic
+conversations. Each separate strict reference uses exact excerpts from named
+message fields for claims, events, ambiguities, noteworthy candidates,
+entities, and raw numeric text; status shapes distinguish established,
+contested, and unresolved evidence without supplying replacement prose.
+
+Loading runs every fixture through `EvidenceFixtureSchema` and the real
+`prepareEvidence` path. Every cited identity and excerpt must survive under the
+same message id. Directory contents must exactly match the manifest, and
+canonicalization, realpath containment, symlink rejection, and exact hashes
+prevent implicit selection or unowned evidence. Dense/sparse thresholds,
+event-time relationships, contradiction roles, unresolved records, grounded
+names/numbers, announcement candidates, and explicit irrelevant-message ids
+make variation tags auditable rather than decorative. Existing valid
+single-fixture commands, artifacts, and outputs remain unchanged; no existing
+namespace accepts `--corpus`.
 
 Current Benchmark Run artifact version 7 retains every exact per-agent adapter,
 model, optional temperature, and adapter-specific declaration plus every exact
@@ -519,8 +540,9 @@ request stamps recomputed from current builders and each step's actual input,
 ordered diagnostics, and a final assembled edition equal to the two copyedited
 products. Current Run Files require diagnostics; historical files without that
 field report diagnostic evidence as unknown rather than an empty observation.
-The evidence fixture remains identified by workspace-relative path and current
-bytes.
+The legacy single evidence fixture remains identified by workspace-relative
+path and current bytes. The nested evaluation reference corpus is a separate
+explicitly selected boundary and is never an implicit replacement for it.
 Recorded-replay acceptance has no model judge, quality threshold, byte pin, or source
 digest gate; retained output and source fingerprints remain human comparison
 evidence. Its direct verifier prints

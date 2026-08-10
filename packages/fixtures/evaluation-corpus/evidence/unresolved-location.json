@@ -1,0 +1,9 @@
+{
+	"active_region_id": "25",
+	"evidence_date": "2026-06-01",
+	"messages": [
+		{"id":"location-01","ts":1780304400000,"author_id":"r25/gia","author_name":"Gia","text":"Nell left the supply chest near the old tower."},
+		{"id":"location-02","ts":1780304460000,"author_id":"r25/hale","author_name":"Hale","text":"Do you mean the east tower or the flooded tower?"},
+		{"id":"location-03","ts":1780304520000,"author_id":"r25/gia","author_name":"Gia","text":"Nell did not specify which old tower."}
+	]
+}
