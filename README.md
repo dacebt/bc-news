@@ -64,6 +64,7 @@ result in another.
 | Model evaluation | `pnpm --filter @bc-news/eval eval -- benchmark run ...` and `benchmark list/show/summary/compare` | Strict versioned Benchmark Runs in `apps/eval/evaluation-results` | Retained model behavior and harness outcome; no score or acceptance verdict |
 | Evaluation reference corpus | `corpus show --corpus packages/fixtures/evaluation-corpus/manifest.json` | Ordered synthetic chats plus separate exact source-witness records | Auditable source truth and variation coverage; no target article, score, or verdict |
 | Evaluation scorecards | `scorecard build --input <declaration-path>` and `scorecard show <scorecard-id>` | Exact retained runs, corpus bytes, human annotations, and human qualitative reviews | Four transparent role-specific evidence reports; no aggregate score, ranking, recommendation, or acceptance verdict |
+| Longitudinal evaluation scorecards | `longitudinal build --input <declaration-path>` and `longitudinal show <series-id>` | Ordered exact scorecard audit packs split into an earlier baseline and later subject observations | Four role-specific context, sufficiency, baseline-variation, or potential-drift classifications; never a judge or production gate |
 | Fixture and context tooling | `fixture record-responses ...` and `context benchmark ...` | Four request-linked recorded responses, or strict context-measurement results | Fixture-authoring or context-measurement tooling result, never a walk or acceptance result |
 | Recorded-replay acceptance | `acceptance run/list/show/compare` and `verify:recorded-replay-acceptance` | Historical Run Files in `apps/eval/results` | `acceptance: four recorded production steps replayed request-linked and deterministic; diagnostics retained: 4` |
 | Composed skeleton walk | `pnpm walk` | The deployed local ingest, generation, D1, API, status, and browser path using committed recorded adapters | Independent `walk:` observations and terminal `WALK PASS` |
@@ -190,6 +191,46 @@ voice retain their named human annotator or reviewer evidence; the application
 does not infer those judgments. A scorecard is not a weighted model-wide score,
 winner, threshold, recommendation, acceptance gate, or production decision.
 
+Retain selected scorecard audit packs as one durable longitudinal series:
+
+```sh
+pnpm --filter @bc-news/eval eval -- longitudinal build \
+  --input path/to/longitudinal-input.json \
+  --results-dir path/to/longitudinal-scorecard-results
+pnpm --filter @bc-news/eval eval -- longitudinal show <series-id> \
+  --results-dir path/to/longitudinal-scorecard-results
+```
+
+Without `--results-dir`, series are stored under
+`apps/eval/longitudinal-scorecard-results`, which is deliberately not ignored:
+repository history is the durable audit boundary for selected packs. Every
+series embeds the exact capability-3 scorecard bytes and reconstructs them on
+read. Underlying Benchmark Run rosters must be disjoint; copying one scorecard
+under a new id does not increase the evidence count.
+
+Each role first compares a stable cohort identity over corpus and references,
+prepared evidence, prompt and output contracts, exact code commit, declared
+role configuration and retry policy, model/runtime identity, and normalized
+execution context. Generated ids, timestamps, realized retries, token and
+latency values, and prediction observations are behavior rather than context.
+A genuine mismatch is `context_changed`. An unchanged cohort needs at least
+three earlier baseline packs and two later subject packs plus one eligible
+quantitative measurement; otherwise it is `insufficient_evidence`. Measured
+rates pool exact numerators and denominators and signal only when their 95%
+Wilson intervals are strictly disjoint. Each token and latency dimension stays
+separate and signals only when observed ranges are strictly disjoint. Any such
+named witness yields `potential_drift`; otherwise the role is
+`within_baseline`. Qualitative histories remain visible, categorical human
+evidence and never drive the classifier.
+
+These labels are conservative observations, not causality, equivalence,
+quality, model ranking, recommendation, retry behavior, acceptance, or a
+production decision. Exact commit identity means even an unrelated commit is
+changed context; copyeditor prompt hashes also include the variable writer
+draft. Counted units within one output may be correlated, range checks can be
+masked by baseline extremes, inspecting several named metrics has multiplicity
+risk, and human evidence may vary without proving model drift.
+
 The historical artifact is a **Run File**, not a Benchmark Run. Recorded-replay
 acceptance alone owns it and its separate default directory:
 
@@ -239,6 +280,7 @@ pnpm --filter @bc-news/eval verify:evaluation-browse
 pnpm --filter @bc-news/eval verify:benchmark-runtime-evidence
 pnpm --filter @bc-news/eval verify:evaluation-reference-corpus
 pnpm --filter @bc-news/eval verify:evaluation-scorecards
+pnpm --filter @bc-news/eval verify:evaluation-longitudinal-scorecards
 pnpm --filter @bc-news/eval verify:recorded-response-fixture-authoring
 pnpm --filter @bc-news/eval verify:recorded-replay-acceptance
 ```
@@ -259,6 +301,11 @@ pass their positive and corruption proofs.
 Scorecard verification ends with `EVALUATION SCORECARDS VERIFIED` after the
 real builder, strict store/read path, report, both CLI routes, exact context and
 denominator calculations, human-evidence linkage, and corruption matrix pass.
+Longitudinal verification ends with
+`EVALUATION LONGITUDINAL SCORECARDS VERIFIED` after the committed 3+2 audit
+pack, stable cohort normalization, all four classifications, independent
+pooled-statistic calculations, exact store/read/report/CLI path, and corruption
+matrix pass.
 Fixture proof prints
 `fixture authoring: four strict v3 hosted responses retained exact agent configurations, replayed, and compared`;
 recorded-replay proof prints

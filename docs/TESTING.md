@@ -31,6 +31,7 @@ outcome or silently substitutes for it.
 | Model evaluation | `benchmark run/list/show/summary/compare` | Strict versioned Benchmark Runs under `apps/eval/evaluation-results` | Retained model subject and harness outcomes with `evaluation:` observations; never a score or acceptance verdict |
 | Evaluation reference corpus | `corpus show --corpus <manifest-path>` and its direct verifier | Ordered synthetic fixture bytes and separate exact source-witness references | Auditable source truth and objective variation coverage; never a model result, score, or acceptance verdict |
 | Evaluation scorecards | `scorecard build/show` and `verify:evaluation-scorecards` | Complete retained V7 runs, exact corpus sources, human annotations, and human qualitative reviews | Four transparent role-specific measurements with named uncertainty; never an aggregate score, ranking, recommendation, or acceptance verdict |
+| Longitudinal evaluation scorecards | `longitudinal build/show` and `verify:evaluation-longitudinal-scorecards` | Exact ordered scorecard audit packs, stable role cohorts, and baseline/subject histories | Four role-specific context, sufficiency, baseline-variation, or potential-drift observations; never a judge or product gate |
 | Fixture and context tooling | `fixture record-responses` and `context benchmark` | Four request-linked recorded responses, or strict context results | Fixture-authoring or context-measurement tooling result; never acceptance or a walk |
 | Recorded-replay acceptance | `acceptance run/list/show/compare` and its direct verifier | Historical Run Files under `apps/eval/results` | `acceptance:` result over controlled replay; never a Benchmark Run outcome |
 | Composed skeleton walk | `pnpm walk` | The running local ingest, generation, persistence, API, status, and browser product | Walk-owned `walk:` observations followed by independent terminal `WALK PASS` |
@@ -136,6 +137,37 @@ the human judgment that included material is worth reporting without requiring
 one target angle; and `voice` is adherence to the declared in-world,
 straightforward editorial voice.
 
+**Longitudinal evaluation scorecards** consume exact capability-3 scorecard
+audit packs without changing their version 1 meaning. `longitudinal build
+--input <declaration-path> [--results-dir <path>]` requires ordered, unique,
+path-contained source bytes with pairwise-disjoint underlying Benchmark Run ids
+and hashes. Baseline packs are all earlier than subject packs. `longitudinal
+show <series-id> [--results-dir <path>]` reloads every embedded scorecard through
+the existing public reader and recomputes all cohorts, histories, statistics,
+and classifications. Default artifacts live under
+`apps/eval/longitudinal-scorecard-results` and are deliberately commit-eligible;
+repository history is the durable audit boundary.
+
+Classification is per production role and follows fixed precedence. Any exact
+stable-context mismatch is `context_changed`. Unknown context, fewer than three
+baseline packs, fewer than two subject packs, or no eligible quantitative
+measurement is `insufficient_evidence`. Only an unchanged sufficiently observed
+cohort can be `potential_drift` when a named quantitative witness is strictly
+separated, or `within_baseline` otherwise. Rates pool exact numerators and
+denominators and compare recomputed 95% Wilson intervals. Tokens and every
+latency metric remain separate raw distributions and compare strict observed
+ranges. Not-applicable and unavailable values never become zero. Human
+qualitative histories remain categorical and descriptive and do not drive the
+classifier.
+
+These four labels are model-evaluation observations only. They do not establish
+causality, equivalence, editorial quality, model rank, recommendation, retry,
+acceptance, or production action. Exact code commit equality is required even
+for unrelated changes; copyeditor prompt identity includes the upstream writer
+draft. Counted units can be correlated, baseline extremes can mask range
+movement, multiple named metrics raise multiplicity risk, and human annotations
+or reviews can vary without proving model drift.
+
 **Recorded-replay acceptance** uses `acceptance run --fixture <path> [--config
 <path>] [--results-dir <path>]` and `acceptance list/show/compare`. It executes
 the four dependent production steps twice. Results must be identical apart from
@@ -183,6 +215,7 @@ pnpm --filter @bc-news/eval verify:evaluation-browse
 pnpm --filter @bc-news/eval verify:benchmark-runtime-evidence
 pnpm --filter @bc-news/eval verify:evaluation-reference-corpus
 pnpm --filter @bc-news/eval verify:evaluation-scorecards
+pnpm --filter @bc-news/eval verify:evaluation-longitudinal-scorecards
 pnpm --filter @bc-news/eval verify:recorded-response-fixture-authoring
 pnpm --filter @bc-news/eval verify:recorded-replay-acceptance
 pnpm test
@@ -196,7 +229,8 @@ option ownership, namespace-specific failure prefix, and rejection of the old
 bare `evaluate`, `run`, `record`, `context`, `list`, `show`, and `compare`
 routes. After a namespace is recognized, failures begin with `benchmark
 failed:`, `acceptance failed:`, `fixture authoring failed:`, `context
-benchmark failed:`, `corpus failed:`, or `scorecard failed:`. Failures before namespace recognition begin with `command
+benchmark failed:`, `corpus failed:`, `scorecard failed:`, or `longitudinal
+scorecard failed:`. Failures before namespace recognition begin with `command
 failed:`; `eval failed:` is forbidden.
 
 The three evaluation verifiers print `evaluation:` observations. Trial
@@ -215,7 +249,12 @@ CORPUS VERIFIED`. Scorecard verification assembles controlled complete version
 7 runs for the committed corpus through the real input, builder, store, reader,
 report, and CLI paths; proves the exact counts, contexts, rates, intervals,
 distributions, human-evidence linkage, and corruption matrix; and ends exactly
-with `EVALUATION SCORECARDS VERIFIED`. Fixture proof ends
+with `EVALUATION SCORECARDS VERIFIED`. Longitudinal verification loads
+the committed controlled 3+2 audit pack, independently recomputes stable cohort
+normalization, pooled rates, Wilson intervals, raw token/latency distributions,
+all four classifications, store/read/report/CLI behavior, and its full
+corruption matrix, then ends exactly with
+`EVALUATION LONGITUDINAL SCORECARDS VERIFIED`. Fixture proof ends
 with `fixture authoring: four strict v3 hosted responses retained exact agent
 configurations, replayed, and compared`. Acceptance proof ends with `acceptance: four
 recorded production steps replayed request-linked and deterministic; diagnostics

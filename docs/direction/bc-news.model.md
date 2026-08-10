@@ -13,7 +13,7 @@ generated:
 # Domain Model: bc-news evaluation and verification
 
 **Last updated:** 2026-08-10
-**Update reason:** explicit per-agent scorecards — bind retained model behavior to transparent measurements and declared human review.
+**Update reason:** durable longitudinal scorecard series — compare repeated exact role evidence without turning variation or drift into a verdict.
 
 ## Ubiquitous Language
 
@@ -44,6 +44,12 @@ generated:
 | Qualitative review | A separate human review of coherence, usefulness, newsworthiness, and voice with rationale and uncertainty. | A numeric score or model judge |
 | Scorecard context identity | The exact corpus, provenance, role configuration, ordered requests, and observed execution context to which one role's measurements belong. | Model identity alone |
 | Wilson score interval | The declared 95% interval attached to one observed counted rate and its denominator. | A longitudinal drift classification or production threshold |
+| Longitudinal scorecard series | One ordered durable audit pack containing an earlier baseline partition and later subject partition of exact Evaluation Scorecards. | A list of rendered summaries without their source evidence |
+| Stable cohort identity | A role-specific comparable-context identity normalized away from generated run/trial locators while retaining corpus, request, contract, code, role configuration, retry policy, and execution context. | The capability-3 scorecard context hash or model name alone |
+| Baseline partition | The explicitly declared earlier scorecard audit packs used to expose ordinary observed variation; at least three pairwise-disjoint packs are required for sufficient longitudinal evidence. | A preferred model, acceptance baseline, or byte-pinned product fixture |
+| Subject partition | The explicitly declared later scorecard audit packs compared with one exact baseline cohort; at least two pairwise-disjoint packs are required for sufficient longitudinal evidence. | A challenger model or production candidate |
+| Longitudinal classification | One of context-changed, insufficient-evidence, within-baseline, or potential-drift for one production role. | Causality, equivalence, quality, pass/fail, or production action |
+| Potential drift | A named quantitative observation whose later evidence is strictly separated from its unchanged-context baseline under the declared policy. | A regression verdict, model rank, or recommendation |
 
 ## Bounded Contexts
 
@@ -56,6 +62,7 @@ generated:
 | Deterministic testing | Isolated assertions over contracts, lifecycle, persistence, and comparison logic. | Tests do not substitute for a live evaluation or walk. |
 | Evaluation source evidence | Strict selection, preparation, linkage, and browsing of the synthetic reference corpus. | It owns source truth and variation coverage, never generated prose, a score, or a verdict. |
 | Evaluation measurement | Strict construction and browsing of role-specific scorecards from complete retained runs, corpus sources, output annotations, and qualitative reviews. | It calculates transparent quantities and retains human judgments; it does not rank models or decide acceptance. |
+| Longitudinal evaluation measurement | Strict reconstruction and temporal comparison of selected scorecard audit packs inside stable role cohorts. | It classifies evidence and retains uncertainty; it does not judge quality, infer causality, or trigger product behavior. |
 
 ## Aggregates
 
@@ -67,6 +74,7 @@ generated:
 | Step Invocation | Immutable request, response or transport outcome, timing, findings, and retry linkage for one model call. |
 | Evaluation Reference Corpus | Ordered manifest, byte-bound synthetic fixtures, exact source-witness references, and objective variation witnesses. |
 | Evaluation Scorecard | Exact embedded source payloads plus four role-specific contexts, sample counts, rates, distributions, and qualitative evidence summaries. |
+| Longitudinal Evaluation Scorecard Series | Exact embedded scorecard audit packs plus four stable cohort histories, baseline/subject summaries, signal witnesses, and evidence classifications. |
 
 ## Notes
 

@@ -184,7 +184,7 @@ judge call, score, verdict, or automatic revision loop in production.
 
 ### Verification ownership
 
-Verification has seven independent owners. Their artifacts and terminal
+Verification has eight independent owners. Their artifacts and terminal
 observations do not cross domain boundaries.
 
 | Owner | Command surface | Evidence | Outcome owner |
@@ -193,11 +193,12 @@ observations do not cross domain boundaries.
 | Model evaluation | `benchmark run/list/show/summary/compare` | Strict versioned Benchmark Runs under `apps/eval/evaluation-results` | Model subject outcome and evidence-retention harness outcome, reported as `evaluation:` observations |
 | Evaluation reference corpus | `corpus show --corpus <manifest-path>` | Strict ordered synthetic fixtures and exact source-witness references | Auditable source truth and objective variation coverage; no model result or verdict |
 | Evaluation scorecards | `scorecard build/show` | Exact retained Benchmark Runs, corpus sources, human annotations, and human qualitative reviews | Four role-specific transparent evidence reports; no aggregate score, ranking, recommendation, or acceptance verdict |
+| Longitudinal evaluation scorecards | `longitudinal build/show` | Exact ordered scorecard audit packs, stable cohort projections, and baseline/subject histories | Four role-specific evidence classifications; no model judge, acceptance verdict, or production decision |
 | Fixture and context tooling | `fixture record-responses` and `context benchmark` | Request-linked response files or strict context-result artifacts | Fixture-authoring or context-measurement tooling observations |
 | Recorded-replay acceptance | `acceptance run/list/show/compare` | Historical Run Files under `apps/eval/results` | `acceptance:` gate result over controlled recorded evidence |
 | Composed skeleton walk | `pnpm walk` | Running local ingest, generation, D1, API, status, and browser product | Walk-owned `walk:` observations and terminal `WALK PASS` |
 
-Strict TypeScript and lint are supporting static guarantees, not an eighth
+Strict TypeScript and lint are supporting static guarantees, not a ninth
 runtime result and not a substitute for any row.
 
 For local development, copy `apps/generation/.dev.vars.example` to the ignored
@@ -303,6 +304,44 @@ grounding, attribution, event coverage, announcement relevance, coherence,
 usefulness, newsworthiness, and voice remain visibly human-authored evidence.
 There is no weighted or combined score, model rank, winner, threshold,
 recommendation, acceptance verdict, retry trigger, or production selection.
+
+Longitudinal evaluation remains inside that same eval-owned filesystem evidence
+boundary and adds no domain port. `longitudinal build --input
+<declaration-path> [--results-dir <path>]` consumes an ordered declaration of
+exact capability-3 scorecard bytes split into an earlier baseline and later
+subject partition. `longitudinal show <series-id> [--results-dir <path>]`
+strictly reloads the resulting version 1 series. The store exclusively creates
+each artifact, embeds the declaration and every scorecard audit pack, and
+reconstructs the nested scorecards and all derived histories before accepting
+it. Internal hashes detect inconsistent bytes and derivations; repository
+commit history, not a self-contained digest, is the durable trust boundary.
+Underlying Benchmark Run ids and byte hashes are pairwise disjoint, so a
+repackaged scorecard cannot manufacture repetitions.
+
+Each production role owns a separate stable longitudinal cohort projection.
+It retains corpus/reference and prepared-evidence identities, ordered prompt
+hashes normalized away from generated run/trial locators, output-contract and
+exact code provenance, exact role adapter/model/sampling configuration,
+declared transport retry policy, and normalized execution context. Generated
+ids and timestamps, realized retry attempts, outputs, human assessments,
+tokens, latency, and volatile prediction observations remain behavior. Exact
+context mismatch produces `context_changed`; unknown context, fewer than three
+baseline packs, fewer than two later packs, or no eligible quantitative metric
+produces `insufficient_evidence`.
+
+Only an unchanged sufficiently observed cohort reaches quantitative signal
+inspection. Rate histories pool numerators and denominators and recompute 95%
+Wilson intervals; strict interval disjointness is a named signal. Tokens and
+each application/provider latency dimension retain separate raw descriptive
+distributions; strict observed-range disjointness is a named signal. At least
+one signal yields `potential_drift`, otherwise the role is `within_baseline`.
+Categorical qualitative histories retain reviewer and rubric evidence but do
+not drive the classifier. The rule deliberately makes exact commit changes
+new context, treats variable upstream drafts as copyeditor request context, and
+exposes correlation, range-extreme, multiplicity, human-variation, and
+non-causality limits. It adds no overall score, judge, rank, recommendation,
+quality threshold, verdict, retry action, publication decision, or production
+selection.
 
 Current Benchmark Run artifact version 7 retains every exact per-agent adapter,
 model, optional temperature, and adapter-specific declaration plus every exact

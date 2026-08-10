@@ -31,6 +31,13 @@ import { buildEvaluationScorecard } from "./evaluation-scorecard-builder";
 import { loadEvaluationScorecardInput } from "./evaluation-scorecard-input";
 import { formatEvaluationScorecardReport } from "./evaluation-scorecard-report";
 import { createEvaluationScorecardArtifact, loadEvaluationScorecardArtifact } from "./evaluation-scorecard-store";
+import { buildEvaluationLongitudinalScorecard } from "./evaluation-longitudinal-scorecard-builder";
+import { loadEvaluationLongitudinalInput } from "./evaluation-longitudinal-scorecard-input";
+import { formatEvaluationLongitudinalScorecardReport } from "./evaluation-longitudinal-scorecard-report";
+import {
+	createEvaluationLongitudinalScorecardArtifact,
+	loadEvaluationLongitudinalScorecardArtifact,
+} from "./evaluation-longitudinal-scorecard-store";
 import { safeEvaluationId } from "./evaluation-trial-support";
 
 export const EVAL_CLI_USAGE = `Usage:
@@ -47,7 +54,9 @@ export const EVAL_CLI_USAGE = `Usage:
   pnpm --filter @bc-news/eval eval -- context benchmark --fixture <path> [--results-dir <path>]
   pnpm --filter @bc-news/eval eval -- corpus show --corpus <manifest-path>
   pnpm --filter @bc-news/eval eval -- scorecard build --input <declaration-path> [--results-dir <path>]
-  pnpm --filter @bc-news/eval eval -- scorecard show <scorecard-id> [--results-dir <path>]`;
+  pnpm --filter @bc-news/eval eval -- scorecard show <scorecard-id> [--results-dir <path>]
+  pnpm --filter @bc-news/eval eval -- longitudinal build --input <declaration-path> [--results-dir <path>]
+  pnpm --filter @bc-news/eval eval -- longitudinal show <series-id> [--results-dir <path>]`;
 
 export interface EvalCliApplicationOptions {
 	readonly argv: readonly string[];
@@ -69,6 +78,7 @@ export function evalCliFailurePrefix(argv: readonly string[]): string {
 	if (namespace === "context") return "context benchmark failed:";
 	if (namespace === "corpus") return "corpus failed:";
 	if (namespace === "scorecard") return "scorecard failed:";
+	if (namespace === "longitudinal") return "longitudinal scorecard failed:";
 	return "command failed:";
 }
 
@@ -103,6 +113,12 @@ export async function runEvalCliApplication(options: EvalCliApplicationOptions):
 	function scorecardResultsDirectoryFor(resultsDirectory: string | undefined): string {
 		return resultsDirectory === undefined
 			? resolve(appDirectory, "scorecard-results")
+			: resolve(cwd, resultsDirectory);
+	}
+
+	function longitudinalResultsDirectoryFor(resultsDirectory: string | undefined): string {
+		return resultsDirectory === undefined
+			? resolve(appDirectory, "longitudinal-scorecard-results")
 			: resolve(cwd, resultsDirectory);
 	}
 
@@ -200,6 +216,28 @@ export async function runEvalCliApplication(options: EvalCliApplicationOptions):
 	if (command.command === "scorecard-show") {
 		writeLine(formatEvaluationScorecardReport(
 			await loadEvaluationScorecardArtifact(command.scorecardId, scorecardResultsDirectoryFor(command.resultsDirectory)),
+		));
+		return;
+	}
+	if (command.command === "longitudinal-build") {
+		const resultsDirectory = longitudinalResultsDirectoryFor(command.resultsDirectory);
+		await mkdir(resultsDirectory, { recursive: true });
+		const input = await loadEvaluationLongitudinalInput(resolve(cwd, command.inputPath));
+		const artifact = buildEvaluationLongitudinalScorecard(input, {
+			id: safeEvaluationId("longitudinal-scorecard"),
+			createdAt: new Date().toISOString(),
+		});
+		await createEvaluationLongitudinalScorecardArtifact(join(resultsDirectory, `${artifact.id}.json`), artifact);
+		const saved = await loadEvaluationLongitudinalScorecardArtifact(artifact.id, resultsDirectory);
+		writeLine(formatEvaluationLongitudinalScorecardReport(saved));
+		return;
+	}
+	if (command.command === "longitudinal-show") {
+		writeLine(formatEvaluationLongitudinalScorecardReport(
+			await loadEvaluationLongitudinalScorecardArtifact(
+				command.seriesId,
+				longitudinalResultsDirectoryFor(command.resultsDirectory),
+			),
 		));
 		return;
 	}

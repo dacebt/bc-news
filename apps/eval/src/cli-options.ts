@@ -16,7 +16,9 @@ export type EvalCliCommand =
 	| { command: "context-benchmark"; fixturePath: string; resultsDirectory?: string }
 	| { command: "corpus-show"; corpusPath: string }
 	| { command: "scorecard-build"; inputPath: string; resultsDirectory?: string }
-	| { command: "scorecard-show"; scorecardId: string; resultsDirectory?: string };
+	| { command: "scorecard-show"; scorecardId: string; resultsDirectory?: string }
+	| { command: "longitudinal-build"; inputPath: string; resultsDirectory?: string }
+	| { command: "longitudinal-show"; seriesId: string; resultsDirectory?: string };
 
 const ALL_OPTIONS = ["fixture", "config", "results-dir", "response-dir", "corpus", "input"] as const;
 
@@ -78,6 +80,12 @@ function benchmarkId(value: string): string {
 function scorecardId(value: string): string {
 	const parsed = EvaluationIdSchema.safeParse(value);
 	if (!parsed.success) throw new CliOptionsError(`Invalid evaluation scorecard id: ${value}`);
+	return parsed.data;
+}
+
+function longitudinalSeriesId(value: string): string {
+	const parsed = EvaluationIdSchema.safeParse(value);
+	if (!parsed.success) throw new CliOptionsError(`Invalid longitudinal scorecard series id: ${value}`);
 	return parsed.data;
 }
 
@@ -228,5 +236,27 @@ export function parseEvalCliCommand(argv: readonly string[]): EvalCliCommand {
 		}
 		throw new CliOptionsError("Expected scorecard build or show");
 	}
-	throw new CliOptionsError("Expected the benchmark, acceptance, fixture, context, corpus, or scorecard namespace");
+	if (namespace === "longitudinal") {
+		const route = positionals[1];
+		if (route === "build") {
+			exactPositionals(positionals, 2, "longitudinal build");
+			rejectUnknownOptions(values, ["input", "results-dir"], "longitudinal build");
+			return {
+				command: "longitudinal-build",
+				inputPath: requireStringOption(values.input, "input"),
+				...optionalResultsDirectory(values["results-dir"]),
+			};
+		}
+		if (route === "show") {
+			exactPositionals(positionals, 3, "longitudinal show");
+			rejectUnknownOptions(values, ["results-dir"], "longitudinal show");
+			return {
+				command: "longitudinal-show",
+				seriesId: longitudinalSeriesId(positionals[2] ?? ""),
+				...optionalResultsDirectory(values["results-dir"]),
+			};
+		}
+		throw new CliOptionsError("Expected longitudinal build or show");
+	}
+	throw new CliOptionsError("Expected the benchmark, acceptance, fixture, context, corpus, scorecard, or longitudinal namespace");
 }
