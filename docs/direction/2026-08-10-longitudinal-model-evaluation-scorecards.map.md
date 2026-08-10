@@ -8,7 +8,7 @@ tags: [wsd, direction, capability-map, evaluation, scorecards, drift]
 status: stable
 generated:
   by: ebt-wsd/okf-v0.2
-  at: "2026-08-10T04:16:59Z"
+  at: "2026-08-10T04:27:40Z"
 ---
 # Capability map: longitudinal per-agent model evaluation scorecards
 
@@ -17,7 +17,7 @@ generated:
 
 ## New conventions
 
-- Runtime fingerprints are normalized application-owned observations with explicit observed, unknown, or externally controlled state; raw provider configuration blobs are not historical evidence contracts.
+- Runtime evidence is normalized and application-owned, with explicit observed, unknown, or externally controlled state; raw provider configuration blobs are not historical evidence contracts. The comparable execution-context fingerprint excludes volatile prediction observations such as latency, throughput, stop reason, speculative counts, and reasoning-content presence.
 - Chat fixtures remain the model's source evidence. Separate reference records identify facts, events, ambiguities, and noteworthy candidates without prescribing prose, angle, structure, or voice.
 - Reviews declare rubric version, reviewer identity, rationale, and uncertainty. Deterministic measurements and qualitative judgment never masquerade as each other.
 - Every scorecard value is role-specific and names its metric, unit, denominator, sample count, and exact comparable-context identity. There is no weighted model-wide score.
@@ -27,7 +27,7 @@ generated:
 
 ## Capabilities
 
-1. **An evaluator runs one benchmark and can inspect a truthful runtime fingerprint for every model invocation.** — Introduces the next strict Benchmark Run version, normalized LM Studio/runtime observations, explicit unknown and externally controlled states, and current browse surfaces while preserving versions 1–6.
+1. **An evaluator runs one benchmark and can inspect truthful normalized runtime evidence for every model invocation.** — Introduces the next strict Benchmark Run version, a comparable execution-context fingerprint separated from volatile prediction observations, explicit unknown and externally controlled states, and current browse surfaces while preserving versions 1–6.
 2. **An evaluator selects an ordered varied corpus and can audit what each conversation establishes without being handed a target article.** — Adds the manifest, synthetic chat fixtures, separate claim/event/ambiguity/noteworthy reference records, strict readers, and fixture-level browsing needed to evaluate creative outputs against known source evidence.
 3. **An evaluator reviews retained output and receives four explicit per-agent scorecards.** — Connects exact invocations to deterministic schema, preservation, grounding, attribution, coverage, relevance, token, and latency measurements plus declared manual qualitative reviews, always with visible units and denominators.
 4. **An evaluator compares durable repeated scorecards over time and sees whether the context changed, evidence is insufficient, behavior remains within its baseline, or potential drift is observable.** — Adds committed audit packs, exact cohort identity, sample distributions and uncertainty, longitudinal browsing, and the final documentation and verification boundary without creating a judge or quality gate.

@@ -8,7 +8,7 @@ tags: [wsd, direction, shape, evaluation, scorecards, drift]
 status: stable
 generated:
   by: ebt-wsd/okf-v0.2
-  at: "2026-08-10T04:16:59Z"
+  at: "2026-08-10T04:27:40Z"
 ---
 # Shape: longitudinal per-agent model evaluation scorecards
 
@@ -18,7 +18,7 @@ generated:
 
 ## In scope
 
-- Extend the current strict Benchmark Run contract with a new historical-version-safe evidence version that retains a normalized, observable runtime fingerprint for every model invocation and represents unavailable settings as unknown or externally controlled.
+- Extend the current strict Benchmark Run contract with a new historical-version-safe evidence version that retains normalized runtime evidence for every model invocation and represents unavailable settings as unknown or externally controlled. Its execution-context fingerprint is distinct from volatile per-prediction behavior such as latency, throughput, stop reason, speculative counts, and reasoning-content presence.
 - Introduce a repository-authored, deliberately varied synthetic chat corpus with separate versioned reference evidence for facts, source events, ambiguities, names, numbers, and noteworthy candidates. Reference evidence constrains factual evaluation without prescribing one target article.
 - Retain explicit manual qualitative reviews with declared reviewer identity, rubric version, rationale, and uncertainty alongside deterministic claim, event, relevance, preservation, schema, token, and latency measurements.
 - Produce durable scorecards for `main_story_write`, `main_story_copyedit`, `announcements_write`, and `announcements_copyedit`. Every metric names its unit, denominator, sample count, and experimental context; tokens and latency remain separate dimensions.
@@ -45,11 +45,11 @@ generated:
 
 ## Success signal
 
-A repository-owned command loads a committed multi-fixture corpus and retained comparable observations, validates their runtime, reference, review, and provenance contracts, and renders four per-agent longitudinal scorecards with named units, denominators, sample counts, uncertainty, separate token and latency distributions, and an explicit `context_changed`, `insufficient_evidence`, `within_baseline`, or `potential_drift` classification. The supporting evidence is directly auditable, historical artifact versions keep their meanings, the strongest direct eval verifiers pass, and the independently composed product still ends in `WALK PASS`.
+A repository-owned command loads a committed multi-fixture corpus and retained comparable observations, validates their execution-context fingerprints, prediction observations, reference, review, and provenance contracts, and renders four per-agent longitudinal scorecards with named units, denominators, sample counts, uncertainty, separate token and latency distributions, and an explicit `context_changed`, `insufficient_evidence`, `within_baseline`, or `potential_drift` classification. The supporting evidence is directly auditable, historical artifact versions keep their meanings, the strongest direct eval verifiers pass, and the independently composed product still ends in `WALK PASS`.
 
 ## Notes
 
-The corpus is synthetic and test-only: each conversation establishes its own ground truth through separate reference records. Models remain free to choose angle, wording, structure, and voice, including under different per-agent temperatures. Rate intervals use a declared 95% method; tokens and latency expose descriptive distributions rather than being folded into editorial quality. Potential drift is an observation under an exactly comparable context, never a production verdict.
+The corpus is synthetic and test-only: each conversation establishes its own ground truth through separate reference records. Models remain free to choose angle, wording, structure, and voice, including under different per-agent temperatures. Runtime comparison uses only normalized execution context; prediction timing, throughput, stop reason, speculative counts, and reasoning-content presence remain behavior. Rate intervals use a declared 95% method; tokens and latency expose descriptive distributions rather than being folded into editorial quality. Potential drift is an observation under an exactly comparable context, never a production verdict.
 
 ## Related documentation
 
