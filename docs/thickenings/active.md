@@ -1,16 +1,16 @@
 ---
 type: thickening
 title: >-
-  Thickening: auditable evaluation reference corpus
+  Thickening: explicit per-agent evaluation scorecards
 description: >-
-  Active WSD thickening for selecting and browsing an ordered varied synthetic chat corpus with separate source-grounded reference evidence.
+  Active WSD thickening for turning retained run, source-reference, annotation, and manual-review evidence into four auditable role-specific scorecards.
 tags: [wsd, thickening, active]
 status: stable
 generated:
   by: ebt-wsd/okf-v0.2
-  at: "2026-08-10T06:19:25Z"
+  at: "2026-08-10T13:20:08Z"
 ---
-# Thickening: auditable evaluation reference corpus
+# Thickening: explicit per-agent evaluation scorecards
 
 **Started:** 2026-08-10
 **Git strategy:** commit this coherent thickening directly to local `main`; no push
@@ -18,37 +18,38 @@ generated:
 
 ## Dimension
 
-Evaluation source-evidence corpus and independently auditable reference truth.
+Role-specific measurement evidence and declared human review at the existing Benchmark Run and reference-corpus boundaries.
 
 ## Observable delta
 
-- before: an evaluator can load only one repository chat fixture at a time, and the repository has no separate contract describing what that conversation establishes.
-- after: an evaluator selects and browses one ordered, deliberately varied synthetic multi-fixture corpus whose strict reference records use exact prepared-evidence-surviving excerpts to identify claims, events, ambiguities, names, numbers, and noteworthy candidates without containing novel article prose, a preferred angle, or prescribed wording.
+- before: an evaluator can browse exact per-invocation model/runtime evidence and separately audit what each synthetic conversation establishes, but has no strict contract connecting retained output to named measurements or human review.
+- after: an evaluator explicitly supplies retained comparable runs plus source-linked annotations and declared manual reviews, then receives four separate scorecards for `main_story_write`, `main_story_copyedit`, `announcements_write`, and `announcements_copyedit`; every value exposes its metric, unit, denominator, sample count, evidence identity, and applicability without producing an overall score, winner, threshold, or verdict.
 
 ## Minimum surface
 
-- A versioned strict corpus manifest that owns deterministic order and links every synthetic chat fixture to exactly one separate reference record through byte identities rather than directory guessing.
-- A deliberately varied committed fixture collection covering dense and sparse conversations, overlapping and isolated events, contradictory or unresolved statements, names and numeric claims, announcement candidates, and explicitly identified irrelevant chatter while remaining valid raw `EvidenceFixtureSchema` evidence and surviving the real preparation path.
-- Versioned strict reference records whose status-shaped witnesses are exact excerpts from source-message fields, whose cited identities and grounding survive prepared evidence, and whose closed variation tags carry objective witnesses; dangling, duplicate, reordered, mismatched, unlisted, extra-field, or falsely grounded evidence is rejected.
-- Eval-owned manifest/reference readers, fixture-level browse and summary output, and CLI routing that select the corpus explicitly while preserving every existing valid single-fixture command, artifact, and output; CLI help may name the new namespace.
-- A repository-owned direct verifier plus focused schema, linkage, ordering, hashing, and rejection tests; README, architecture, testing, and evaluation-domain vocabulary updated only where this capability changes the truth.
+- A versioned strict scorecard-input contract that binds every accepted run and annotation to exact Benchmark Run, configuration, trial, invocation, fixture, corpus-manifest, output, and runtime-evidence identities; detached, duplicate, incomplete, or fabricated inputs reject rather than being skipped.
+- Exact output-span and qualified corpus-reference annotations from which the application deterministically calculates claim grounding and attribution, event coverage, and announcement-candidate relevance. Human semantic annotation remains visible evidence; calculated rates never masquerade as automatic understanding of creative prose.
+- Role-appropriate deterministic measurements for invocation schema reliability, copyedit preservation, factual grounding/attribution, event coverage, announcement relevance, input/output tokens, application latency, and provider prediction timing. Every rate names numerator, denominator, denominator unit, sample count, comparable-context identity, and a 95% Wilson interval; tokens and latency remain separate descriptive dimensions; inapplicable or unavailable measurements are explicit.
+- A separate versioned manual qualitative-review contract with reviewer identity, rubric version, criterion-level assessment, rationale, uncertainty, exact reviewed-output identity, and no hidden weighting. Coherence, usefulness, newsworthiness, and voice remain declared judgment rather than deterministic findings or model-generated review.
+- Eval-owned build/read/report and explicit CLI routes that render exactly four role scorecards while leaving Benchmark Run versions 1–7, acceptance Run Files, production generation, retry behavior, prompts, and the reference corpus unchanged.
+- A repository-owned direct verifier plus focused identity, completeness, denominator, annotation-linkage, metric, applicability, and review-rejection tests; binding testing and architecture prose deliberately narrowed only to permit transparent named scorecards while continuing to forbid opaque aggregate scores and acceptance verdicts.
 
 ## Verification path
 
-`pnpm --filter @bc-news/eval verify:evaluation-reference-corpus` loads the committed manifest through the real readers, prepares every fixture through the production evidence path, browses the ordered corpus summary, proves exact source excerpts and every objective variety witness, rejects corrupted linkage, directory closure, grounding, status, relationship, and target-article-shaped extra fields, and ends exactly with `EVALUATION REFERENCE CORPUS VERIFIED`. Root separately audits the committed synthetic chat/excerpt prose for editorial instructions. The project-level typecheck, lint, test suite, and `/Users/epicbadtiming/.codex/plugins/cache/ebt-plugins/ebt-wsd/0.12.2/bin/wsd-walk --require-probe --expect "WALK PASS"` then prove the new evaluation evidence boundary did not regress the composed product.
+`pnpm --filter @bc-news/eval verify:evaluation-scorecards` assembles controlled retained V7 invocation evidence for committed corpus fixtures through the real scorecard builder, reader, and report path; proves four role-specific outputs and exact named units, denominators, sample-count equations, comparable-context identities, 95% Wilson intervals, token/latency dimensions, annotation-derived rates, and manual-review identity; rejects missing roster members, detached spans/references, duplicate or incomplete denominators, fabricated runtime/usage values, review/output mismatch, hidden weighting, and overall verdict fields; and ends exactly with `EVALUATION SCORECARDS VERIFIED`. Project typecheck, lint, the full test suite, and `/Users/epicbadtiming/.codex/plugins/cache/ebt-plugins/ebt-wsd/0.12.2/bin/wsd-walk --require-probe --expect "WALK PASS"` then prove that the new evaluation-reporting boundary did not regress the composed product.
 
 ## Residual risks
 
-- Non-invariant: the synthetic corpus establishes controlled source truth but does not claim to reproduce the eventual frequency distribution of production chat; later locally authorized fixtures can extend the versioned corpus through the same contract.
-- Non-invariant: the committed corpus increases repository and verification volume; storage or test-runtime optimization is warranted only after observed cost.
-- Non-invariant: this capability exposes reference evidence but does not yet calculate per-agent measurements or accept manual qualitative reviews; those are separate actor-visible capabilities 3 and 4 on the approved map.
+- Non-invariant: this capability gives every observed rate its declared 95% Wilson interval but does not yet define a committed longitudinal baseline, baseline distribution, or drift classification; capability 4 owns those temporal policies.
+- Non-invariant: source-linked factual and relevance annotations require declared human semantic work because creative paraphrase cannot be truthfully classified by substring matching alone.
+- Non-invariant: one controlled verification pack proves the contracts and calculations, not the quality of any particular live model or temperature candidate; live, remote, and paid inference remain outside this run.
 
 ## Notes
 
-Chat fixtures remain the model's only source evidence. Reference records use exact source excerpts and closed classifications rather than novel summaries; they may not supply article prose, narrative structure, editorial angle, model output, a quality score, or an acceptance verdict. Strict parsing proves the structural boundary, while root's prose audit owns the content judgment. No live inference, external dataset acquisition, or production data is part of this thickening.
+The application calculates transparent quantities from retained evidence; it does not invent semantic labels. Manual factual/relevance annotations and qualitative reviews are separate strict inputs with visible authorship and rationale. A scorecard is a role-specific evidence report, never a weighted model-wide score, automatic judge, recommendation, acceptance decision, production gate, or retry trigger.
 
 ## Context
 
 - governed by the [longitudinal scorecard shape](../direction/2026-08-10-longitudinal-model-evaluation-scorecards.shape.md)
-- implements capability 2 of the [longitudinal scorecard map](../direction/2026-08-10-longitudinal-model-evaluation-scorecards.map.md)
+- implements capability 3 of the [longitudinal scorecard map](../direction/2026-08-10-longitudinal-model-evaluation-scorecards.map.md)
 - uses the established vocabulary in the [evaluation and verification model](../direction/bc-news.model.md)

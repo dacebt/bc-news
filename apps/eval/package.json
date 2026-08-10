@@ -18,6 +18,7 @@
 		"verify:evaluation-browse": "tsx src/evaluation-browse-verifier.ts",
 		"verify:benchmark-runtime-evidence": "tsx src/benchmark-runtime-evidence-verifier.ts",
 		"verify:evaluation-reference-corpus": "tsx src/evaluation-reference-corpus-verifier.ts",
+		"verify:evaluation-scorecards": "tsx src/evaluation-scorecard-verifier.ts",
 		"verify:recorded-replay-acceptance": "tsx src/recorded-replay-acceptance-verifier.ts",
 		"verify:recorded-response-fixture-authoring": "tsx src/recorded-response-fixture-authoring-verifier.ts"
 	},

@@ -184,7 +184,7 @@ judge call, score, verdict, or automatic revision loop in production.
 
 ### Verification ownership
 
-Verification has six independent owners. Their artifacts and terminal
+Verification has seven independent owners. Their artifacts and terminal
 observations do not cross domain boundaries.
 
 | Owner | Command surface | Evidence | Outcome owner |
@@ -192,11 +192,12 @@ observations do not cross domain boundaries.
 | Deterministic tests | `pnpm test` | Isolated invariants, reproduced defects, and high-risk state transitions | Test pass or hard test failure |
 | Model evaluation | `benchmark run/list/show/summary/compare` | Strict versioned Benchmark Runs under `apps/eval/evaluation-results` | Model subject outcome and evidence-retention harness outcome, reported as `evaluation:` observations |
 | Evaluation reference corpus | `corpus show --corpus <manifest-path>` | Strict ordered synthetic fixtures and exact source-witness references | Auditable source truth and objective variation coverage; no model result or verdict |
+| Evaluation scorecards | `scorecard build/show` | Exact retained Benchmark Runs, corpus sources, human annotations, and human qualitative reviews | Four role-specific transparent evidence reports; no aggregate score, ranking, recommendation, or acceptance verdict |
 | Fixture and context tooling | `fixture record-responses` and `context benchmark` | Request-linked response files or strict context-result artifacts | Fixture-authoring or context-measurement tooling observations |
 | Recorded-replay acceptance | `acceptance run/list/show/compare` | Historical Run Files under `apps/eval/results` | `acceptance:` gate result over controlled recorded evidence |
 | Composed skeleton walk | `pnpm walk` | Running local ingest, generation, D1, API, status, and browser product | Walk-owned `walk:` observations and terminal `WALK PASS` |
 
-Strict TypeScript and lint are supporting static guarantees, not a sixth
+Strict TypeScript and lint are supporting static guarantees, not an eighth
 runtime result and not a substitute for any row.
 
 For local development, copy `apps/generation/.dev.vars.example` to the ignored
@@ -280,6 +281,28 @@ names/numbers, announcement candidates, and explicit irrelevant-message ids
 make variation tags auditable rather than decorative. Existing valid
 single-fixture commands, artifacts, and outputs remain unchanged; no existing
 namespace accepts `--corpus`.
+
+Evaluation scorecards are a separate eval-owned evidence boundary selected only
+through `scorecard build --input <declaration-path> [--results-dir <path>]` and
+`scorecard show <scorecard-id> [--results-dir <path>]`. A declaration binds one
+exact configuration to the complete ordered reference corpus, every complete
+retained version 7 Benchmark Run for that corpus, exact human output
+annotations, and separate human qualitative reviews. No Benchmark Run, corpus
+entry, production prompt, retry policy, generation path, or historical artifact
+is changed by scorecard construction, and this boundary adds no domain port.
+
+Each strict scorecard artifact embeds the exact declaration, manifest,
+fixture/reference pairs, Benchmark Runs, annotation bundle, and qualitative
+review bundle. Loading reconstructs the real corpus boundary in an isolated
+temporary root and recomputes every source hash, output identity, context
+identity, count, rate, 95% Wilson interval, distribution, and qualitative
+summary before accepting the artifact. Reports contain exactly four separate
+production-role sections. Deterministic measurements expose named units,
+denominators, sample counts, and unavailable or inapplicable states. Semantic
+grounding, attribution, event coverage, announcement relevance, coherence,
+usefulness, newsworthiness, and voice remain visibly human-authored evidence.
+There is no weighted or combined score, model rank, winner, threshold,
+recommendation, acceptance verdict, retry trigger, or production selection.
 
 Current Benchmark Run artifact version 7 retains every exact per-agent adapter,
 model, optional temperature, and adapter-specific declaration plus every exact

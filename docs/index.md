@@ -4,7 +4,7 @@ okf_version: "0.2"
 
 # bc-news documentation
 
-- [Active thickening: auditable evaluation reference corpus](thickenings/active.md) — Active WSD thickening for selecting and browsing an ordered varied synthetic chat corpus with separate source-grounded reference evidence.
+- [Active thickening: explicit per-agent evaluation scorecards](thickenings/active.md) — Active WSD thickening for turning retained run, source-reference, annotation, and manual-review evidence into four auditable role-specific scorecards.
 - [Product requirements](PRD.md) — Binding high-level product direction for rebuilding the regional BitCraft newspaper on Cloudflare with durable generation, replaceable models, and evaluation-led development.
 - [Structural discipline](ARCHITECTURE.md) — The binding architecture posture for bc-news v2 — TypeScript throughout, exactly two ports (model provider, evidence input), functional core with zod-validated rejecting boundaries, and deliberate Cloudflare coupling everywhere else.
 - [Domain model](DOMAIN.md) — The binding domain vocabulary and identity rules for bc-news v2 — what an edition is, what identifies a generation run, and which domain questions remain deliberately open for planning.

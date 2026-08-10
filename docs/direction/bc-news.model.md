@@ -13,7 +13,7 @@ generated:
 # Domain Model: bc-news evaluation and verification
 
 **Last updated:** 2026-08-10
-**Update reason:** auditable evaluation reference corpus — separate source truth from model output and future measurement.
+**Update reason:** explicit per-agent scorecards — bind retained model behavior to transparent measurements and declared human review.
 
 ## Ubiquitous Language
 
@@ -39,6 +39,11 @@ generated:
 | Evaluation reference corpus | One explicitly selected ordered set of synthetic conversations, each byte-paired with separate source-witness reference evidence. | A Benchmark Run or target article |
 | Source witness | An exact excerpt from a named raw message field that remains under the same identity after evidence preparation. | A free-form summary or model output |
 | Variation witness | Qualified reference ids and prepared message ids that mechanically prove one closed corpus variation tag. | A descriptive fixture label |
+| Evaluation scorecard | One auditable report for a single exact configuration across the complete selected corpus, containing four separate production-role scorecards. | A weighted model-wide score or acceptance gate |
+| Output annotation | A human-authored, exact-span and source-reference-linked classification of factual claims, attribution, event coverage, and announcement relevance. | Automatic semantic judgment |
+| Qualitative review | A separate human review of coherence, usefulness, newsworthiness, and voice with rationale and uncertainty. | A numeric score or model judge |
+| Scorecard context identity | The exact corpus, provenance, role configuration, ordered requests, and observed execution context to which one role's measurements belong. | Model identity alone |
+| Wilson score interval | The declared 95% interval attached to one observed counted rate and its denominator. | A longitudinal drift classification or production threshold |
 
 ## Bounded Contexts
 
@@ -50,6 +55,7 @@ generated:
 | Composed product verification | The canonical local skeleton walk through deployable entrypoints. | Walking proves composition, not model quality. |
 | Deterministic testing | Isolated assertions over contracts, lifecycle, persistence, and comparison logic. | Tests do not substitute for a live evaluation or walk. |
 | Evaluation source evidence | Strict selection, preparation, linkage, and browsing of the synthetic reference corpus. | It owns source truth and variation coverage, never generated prose, a score, or a verdict. |
+| Evaluation measurement | Strict construction and browsing of role-specific scorecards from complete retained runs, corpus sources, output annotations, and qualitative reviews. | It calculates transparent quantities and retains human judgments; it does not rank models or decide acceptance. |
 
 ## Aggregates
 
@@ -60,6 +66,7 @@ generated:
 | Evaluation Trial | One configuration's two-track behavior and terminal subject outcome within a benchmark. |
 | Step Invocation | Immutable request, response or transport outcome, timing, findings, and retry linkage for one model call. |
 | Evaluation Reference Corpus | Ordered manifest, byte-bound synthetic fixtures, exact source-witness references, and objective variation witnesses. |
+| Evaluation Scorecard | Exact embedded source payloads plus four role-specific contexts, sample counts, rates, distributions, and qualitative evidence summaries. |
 
 ## Notes
 
@@ -68,4 +75,5 @@ The binding product vocabulary remains in `docs/DOMAIN.md`; this model adds the 
 ## Related documentation
 
 - [Binding domain model](../DOMAIN.md) — authoritative production vocabulary and identity rules.
-- [Current shape](2026-08-06-real-model-evaluation-harness.shape.md) — session boundary that introduced this operational model.
+- [Current shape](2026-08-10-longitudinal-model-evaluation-scorecards.shape.md) — session boundary for auditable longitudinal per-role evaluation.
+- [Capability map](2026-08-10-longitudinal-model-evaluation-scorecards.map.md) — risk-ordered delivery sequence for retained evidence, corpus truth, scorecards, and longitudinal classification.

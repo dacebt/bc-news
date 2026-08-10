@@ -3,7 +3,7 @@ type: doc
 title: >-
   bc-news test and verification posture
 description: >-
-  The binding evidence discipline for bc-news v2 — what proves a change works, what the recorded replay proves, and what still requires representative model evaluation.
+  The binding evidence discipline for bc-news v2 — what proves a change works, how model evidence is retained and measured, and what recorded replay accepts.
 tags: [documentation, testing, verification, evaluation]
 status: stable
 generated:
@@ -30,6 +30,7 @@ outcome or silently substitutes for it.
 | Deterministic tests | `pnpm test` | Isolated warranted invariants, reproduced defects, and high-risk state transitions | Test pass or hard test failure; never a retained model attempt |
 | Model evaluation | `benchmark run/list/show/summary/compare` | Strict versioned Benchmark Runs under `apps/eval/evaluation-results` | Retained model subject and harness outcomes with `evaluation:` observations; never a score or acceptance verdict |
 | Evaluation reference corpus | `corpus show --corpus <manifest-path>` and its direct verifier | Ordered synthetic fixture bytes and separate exact source-witness references | Auditable source truth and objective variation coverage; never a model result, score, or acceptance verdict |
+| Evaluation scorecards | `scorecard build/show` and `verify:evaluation-scorecards` | Complete retained V7 runs, exact corpus sources, human annotations, and human qualitative reviews | Four transparent role-specific measurements with named uncertainty; never an aggregate score, ranking, recommendation, or acceptance verdict |
 | Fixture and context tooling | `fixture record-responses` and `context benchmark` | Four request-linked recorded responses, or strict context results | Fixture-authoring or context-measurement tooling result; never acceptance or a walk |
 | Recorded-replay acceptance | `acceptance run/list/show/compare` and its direct verifier | Historical Run Files under `apps/eval/results` | `acceptance:` result over controlled replay; never a Benchmark Run outcome |
 | Composed skeleton walk | `pnpm walk` | The running local ingest, generation, persistence, API, status, and browser product | Walk-owned `walk:` observations followed by independent terminal `WALK PASS` |
@@ -107,6 +108,34 @@ supplies future measurements with auditable denominators without prescribing a
 target article, angle, wording, score, or verdict. Existing commands do not
 accept `--corpus` and do not silently select a corpus entry.
 
+**Evaluation scorecards** consume, but never alter, complete retained version 7
+Benchmark Runs and the full ordered reference corpus. `scorecard build --input
+<declaration-path> [--results-dir <path>]` requires one exact configuration,
+every corpus fixture in order, every selected trial and invocation attempt,
+exact source-linked human annotations for every parse-success output, and a
+separate exact human qualitative review for every such output. `scorecard show
+<scorecard-id> [--results-dir <path>]` reloads the embedded source bytes and
+recomputes the artifact before reporting it.
+
+The four production roles remain separate. Rates expose their exact numerator,
+denominator, denominator unit, sample count, comparable-context identity, and a
+95% Wilson score interval. Token usage, application latency, and provider timing
+remain separate descriptive distributions, with unavailable observations never
+converted to zero. Coherence, usefulness, newsworthiness, and voice remain
+nonnumeric human assessments with reviewer identity, rationale, and uncertainty.
+Grounding, attribution, event coverage, and announcement relevance likewise
+retain the human annotation that supplies their semantic classification. These
+transparent named measurements are not a weighted overall score, automatic
+judge, model ranking, recommendation, quality threshold, acceptance verdict,
+retry trigger, or production-selection decision.
+
+The version 1 qualitative rubric uses these fixed meanings: `coherence` is
+internally understandable organization and relationships; `usefulness` is
+useful source-grounded information for a regional reader; `newsworthiness` is
+the human judgment that included material is worth reporting without requiring
+one target angle; and `voice` is adherence to the declared in-world,
+straightforward editorial voice.
+
 **Recorded-replay acceptance** uses `acceptance run --fixture <path> [--config
 <path>] [--results-dir <path>]` and `acceptance list/show/compare`. It executes
 the four dependent production steps twice. Results must be identical apart from
@@ -153,6 +182,7 @@ pnpm --filter @bc-news/eval verify:evaluation-benchmark-continuation
 pnpm --filter @bc-news/eval verify:evaluation-browse
 pnpm --filter @bc-news/eval verify:benchmark-runtime-evidence
 pnpm --filter @bc-news/eval verify:evaluation-reference-corpus
+pnpm --filter @bc-news/eval verify:evaluation-scorecards
 pnpm --filter @bc-news/eval verify:recorded-response-fixture-authoring
 pnpm --filter @bc-news/eval verify:recorded-replay-acceptance
 pnpm test
@@ -166,7 +196,7 @@ option ownership, namespace-specific failure prefix, and rejection of the old
 bare `evaluate`, `run`, `record`, `context`, `list`, `show`, and `compare`
 routes. After a namespace is recognized, failures begin with `benchmark
 failed:`, `acceptance failed:`, `fixture authoring failed:`, `context
-benchmark failed:`, or `corpus failed:`. Failures before namespace recognition begin with `command
+benchmark failed:`, `corpus failed:`, or `scorecard failed:`. Failures before namespace recognition begin with `command
 failed:`; `eval failed:` is forbidden.
 
 The three evaluation verifiers print `evaluation:` observations. Trial
@@ -181,7 +211,11 @@ command, store, reader, projection, and summary path with controlled providers
 and ends exactly with `BENCHMARK RUNTIME EVIDENCE VERIFIED`. Reference-corpus
 verification loads the committed corpus through the production reader, runs
 the complete corruption matrix, and ends exactly with `EVALUATION REFERENCE
-CORPUS VERIFIED`. Fixture proof ends
+CORPUS VERIFIED`. Scorecard verification assembles controlled complete version
+7 runs for the committed corpus through the real input, builder, store, reader,
+report, and CLI paths; proves the exact counts, contexts, rates, intervals,
+distributions, human-evidence linkage, and corruption matrix; and ends exactly
+with `EVALUATION SCORECARDS VERIFIED`. Fixture proof ends
 with `fixture authoring: four strict v3 hosted responses retained exact agent
 configurations, replayed, and compared`. Acceptance proof ends with `acceptance: four
 recorded production steps replayed request-linked and deterministic; diagnostics
@@ -326,8 +360,10 @@ proves, tests of glue and framework wiring, tests to satisfy coverage.
   validated 40-character commit SHA, and `dirty: false`. Strict validation
   rejects missing, malformed, or extra provenance fields rather than retaining
   a redundant workspace hash.
-- The active generator and recorded-replay acceptance have no automatic model judge,
-  score, verdict, quality floor, threshold, or byte-pinned baseline.
+- The active generator and recorded-replay acceptance have no automatic model
+  judge, score, verdict, quality floor, threshold, or byte-pinned baseline.
+  Evaluation scorecards add only transparent named role measurements and
+  declared human assessments; they add no opaque aggregate or acceptance gate.
 - Copyedit preservation checks can prove only their mechanical invariants:
   announcement identity/order, paragraph count, quotes, numeric literals,
   and protected markdown spans. They cannot prove semantic equivalence or prose

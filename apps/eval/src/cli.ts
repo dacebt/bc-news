@@ -1,4 +1,5 @@
-import { dirname, resolve } from "node:path";
+import { mkdir } from "node:fs/promises";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { compareRuns } from "./compare";
 import { parseEvalCliCommand } from "./cli-options";
@@ -26,6 +27,11 @@ import { listRunFiles, loadRunFile } from "./run-file";
 import { runCommand } from "./run-command";
 import { loadEvaluationReferenceCorpus } from "./evaluation-reference-corpus";
 import { formatEvaluationReferenceCorpusReport } from "./evaluation-reference-corpus-report";
+import { buildEvaluationScorecard } from "./evaluation-scorecard-builder";
+import { loadEvaluationScorecardInput } from "./evaluation-scorecard-input";
+import { formatEvaluationScorecardReport } from "./evaluation-scorecard-report";
+import { createEvaluationScorecardArtifact, loadEvaluationScorecardArtifact } from "./evaluation-scorecard-store";
+import { safeEvaluationId } from "./evaluation-trial-support";
 
 export const EVAL_CLI_USAGE = `Usage:
   pnpm --filter @bc-news/eval eval -- benchmark run --fixture <path> --config <path> [--results-dir <path>]
@@ -39,7 +45,9 @@ export const EVAL_CLI_USAGE = `Usage:
   pnpm --filter @bc-news/eval eval -- acceptance compare <left-id> <right-id> [--results-dir <path>]
   pnpm --filter @bc-news/eval eval -- fixture record-responses --fixture <path> --config <path> [--response-dir <path>]
   pnpm --filter @bc-news/eval eval -- context benchmark --fixture <path> [--results-dir <path>]
-  pnpm --filter @bc-news/eval eval -- corpus show --corpus <manifest-path>`;
+  pnpm --filter @bc-news/eval eval -- corpus show --corpus <manifest-path>
+  pnpm --filter @bc-news/eval eval -- scorecard build --input <declaration-path> [--results-dir <path>]
+  pnpm --filter @bc-news/eval eval -- scorecard show <scorecard-id> [--results-dir <path>]`;
 
 export interface EvalCliApplicationOptions {
 	readonly argv: readonly string[];
@@ -60,6 +68,7 @@ export function evalCliFailurePrefix(argv: readonly string[]): string {
 	if (namespace === "fixture") return "fixture authoring failed:";
 	if (namespace === "context") return "context benchmark failed:";
 	if (namespace === "corpus") return "corpus failed:";
+	if (namespace === "scorecard") return "scorecard failed:";
 	return "command failed:";
 }
 
@@ -88,6 +97,12 @@ export async function runEvalCliApplication(options: EvalCliApplicationOptions):
 	function evaluationResultsDirectoryFor(resultsDirectory: string | undefined): string {
 		return resultsDirectory === undefined
 			? resolve(appDirectory, "evaluation-results")
+			: resolve(cwd, resultsDirectory);
+	}
+
+	function scorecardResultsDirectoryFor(resultsDirectory: string | undefined): string {
+		return resultsDirectory === undefined
+			? resolve(appDirectory, "scorecard-results")
 			: resolve(cwd, resultsDirectory);
 	}
 
@@ -167,6 +182,25 @@ export async function runEvalCliApplication(options: EvalCliApplicationOptions):
 	}
 	if (command.command === "corpus-show") {
 		writeLine(formatEvaluationReferenceCorpusReport(await loadEvaluationReferenceCorpus(resolve(cwd, command.corpusPath))));
+		return;
+	}
+	if (command.command === "scorecard-build") {
+		const resultsDirectory = scorecardResultsDirectoryFor(command.resultsDirectory);
+		await mkdir(resultsDirectory, { recursive: true });
+		const input = await loadEvaluationScorecardInput(resolve(cwd, command.inputPath));
+		const artifact = buildEvaluationScorecard(input, {
+			id: safeEvaluationId("scorecard"),
+			createdAt: new Date().toISOString(),
+		});
+		await createEvaluationScorecardArtifact(join(resultsDirectory, `${artifact.id}.json`), artifact);
+		const saved = await loadEvaluationScorecardArtifact(artifact.id, resultsDirectory);
+		writeLine(formatEvaluationScorecardReport(saved));
+		return;
+	}
+	if (command.command === "scorecard-show") {
+		writeLine(formatEvaluationScorecardReport(
+			await loadEvaluationScorecardArtifact(command.scorecardId, scorecardResultsDirectoryFor(command.resultsDirectory)),
+		));
 		return;
 	}
 

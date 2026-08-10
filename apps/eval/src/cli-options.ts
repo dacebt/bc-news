@@ -14,9 +14,11 @@ export type EvalCliCommand =
 	| { command: "acceptance-compare"; leftRunId: string; rightRunId: string; resultsDirectory?: string }
 	| { command: "fixture-record-responses"; fixturePath: string; configPath: string; responseDirectory?: string }
 	| { command: "context-benchmark"; fixturePath: string; resultsDirectory?: string }
-	| { command: "corpus-show"; corpusPath: string };
+	| { command: "corpus-show"; corpusPath: string }
+	| { command: "scorecard-build"; inputPath: string; resultsDirectory?: string }
+	| { command: "scorecard-show"; scorecardId: string; resultsDirectory?: string };
 
-const ALL_OPTIONS = ["fixture", "config", "results-dir", "response-dir", "corpus"] as const;
+const ALL_OPTIONS = ["fixture", "config", "results-dir", "response-dir", "corpus", "input"] as const;
 
 export class CliOptionsError extends Error {
 	readonly code = "invalid_cli_options";
@@ -55,6 +57,7 @@ function runParseArgs(argv: readonly string[]) {
 			"results-dir": { type: "string" },
 			"response-dir": { type: "string" },
 			corpus: { type: "string" },
+			input: { type: "string" },
 		},
 	});
 }
@@ -69,6 +72,12 @@ function requireStringOption(value: string | undefined, option: string): string 
 function benchmarkId(value: string): string {
 	const parsed = EvaluationIdSchema.safeParse(value);
 	if (!parsed.success) throw new CliOptionsError(`Invalid Benchmark Run id: ${value}`);
+	return parsed.data;
+}
+
+function scorecardId(value: string): string {
+	const parsed = EvaluationIdSchema.safeParse(value);
+	if (!parsed.success) throw new CliOptionsError(`Invalid evaluation scorecard id: ${value}`);
 	return parsed.data;
 }
 
@@ -197,5 +206,27 @@ export function parseEvalCliCommand(argv: readonly string[]): EvalCliCommand {
 		rejectUnknownOptions(values, ["corpus"], "corpus show");
 		return { command: "corpus-show", corpusPath: requireStringOption(values.corpus, "corpus") };
 	}
-	throw new CliOptionsError("Expected the benchmark, acceptance, fixture, context, or corpus namespace");
+	if (namespace === "scorecard") {
+		const route = positionals[1];
+		if (route === "build") {
+			exactPositionals(positionals, 2, "scorecard build");
+			rejectUnknownOptions(values, ["input", "results-dir"], "scorecard build");
+			return {
+				command: "scorecard-build",
+				inputPath: requireStringOption(values.input, "input"),
+				...optionalResultsDirectory(values["results-dir"]),
+			};
+		}
+		if (route === "show") {
+			exactPositionals(positionals, 3, "scorecard show");
+			rejectUnknownOptions(values, ["results-dir"], "scorecard show");
+			return {
+				command: "scorecard-show",
+				scorecardId: scorecardId(positionals[2] ?? ""),
+				...optionalResultsDirectory(values["results-dir"]),
+			};
+		}
+		throw new CliOptionsError("Expected scorecard build or show");
+	}
+	throw new CliOptionsError("Expected the benchmark, acceptance, fixture, context, corpus, or scorecard namespace");
 }

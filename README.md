@@ -63,6 +63,7 @@ result in another.
 | Deterministic tests | `pnpm test` | Isolated invariants, reproduced defects, and high-risk state transitions | Test pass or hard test failure |
 | Model evaluation | `pnpm --filter @bc-news/eval eval -- benchmark run ...` and `benchmark list/show/summary/compare` | Strict versioned Benchmark Runs in `apps/eval/evaluation-results` | Retained model behavior and harness outcome; no score or acceptance verdict |
 | Evaluation reference corpus | `corpus show --corpus packages/fixtures/evaluation-corpus/manifest.json` | Ordered synthetic chats plus separate exact source-witness records | Auditable source truth and variation coverage; no target article, score, or verdict |
+| Evaluation scorecards | `scorecard build --input <declaration-path>` and `scorecard show <scorecard-id>` | Exact retained runs, corpus bytes, human annotations, and human qualitative reviews | Four transparent role-specific evidence reports; no aggregate score, ranking, recommendation, or acceptance verdict |
 | Fixture and context tooling | `fixture record-responses ...` and `context benchmark ...` | Four request-linked recorded responses, or strict context-measurement results | Fixture-authoring or context-measurement tooling result, never a walk or acceptance result |
 | Recorded-replay acceptance | `acceptance run/list/show/compare` and `verify:recorded-replay-acceptance` | Historical Run Files in `apps/eval/results` | `acceptance: four recorded production steps replayed request-linked and deterministic; diagnostics retained: 4` |
 | Composed skeleton walk | `pnpm walk` | The deployed local ingest, generation, D1, API, status, and browser path using committed recorded adapters | Independent `walk:` observations and terminal `WALK PASS` |
@@ -166,6 +167,29 @@ candidates, and explicitly identified irrelevant chatter. The corpus contains
 no target article, preferred angle, model output, score, or acceptance verdict;
 existing benchmark and tooling commands remain single-fixture boundaries.
 
+Build an auditable scorecard only from a complete declaration that binds one
+configuration across the full corpus, retained version 7 Benchmark Runs, exact
+human output annotations, and separate human qualitative reviews:
+
+```sh
+pnpm --filter @bc-news/eval eval -- scorecard build \
+  --input path/to/scorecard-input.json \
+  --results-dir path/to/scorecard-results
+pnpm --filter @bc-news/eval eval -- scorecard show <scorecard-id> \
+  --results-dir path/to/scorecard-results
+```
+
+Without `--results-dir`, scorecards are stored under
+`apps/eval/scorecard-results`. Each artifact embeds the exact source bytes and
+recomputes its identities, sample counts, context, rates, Wilson intervals,
+token and latency distributions, and qualitative summaries when read. The
+report keeps `main_story_write`, `main_story_copyedit`, `announcements_write`,
+and `announcements_copyedit` separate. Factual grounding, attribution, event
+coverage, announcement relevance, coherence, usefulness, newsworthiness, and
+voice retain their named human annotator or reviewer evidence; the application
+does not infer those judgments. A scorecard is not a weighted model-wide score,
+winner, threshold, recommendation, acceptance gate, or production decision.
+
 The historical artifact is a **Run File**, not a Benchmark Run. Recorded-replay
 acceptance alone owns it and its separate default directory:
 
@@ -214,6 +238,7 @@ pnpm --filter @bc-news/eval verify:evaluation-benchmark-continuation
 pnpm --filter @bc-news/eval verify:evaluation-browse
 pnpm --filter @bc-news/eval verify:benchmark-runtime-evidence
 pnpm --filter @bc-news/eval verify:evaluation-reference-corpus
+pnpm --filter @bc-news/eval verify:evaluation-scorecards
 pnpm --filter @bc-news/eval verify:recorded-response-fixture-authoring
 pnpm --filter @bc-news/eval verify:recorded-replay-acceptance
 ```
@@ -231,6 +256,9 @@ Reference-corpus verification ends with
 `EVALUATION REFERENCE CORPUS VERIFIED` after the committed manifest, hashes,
 prepared source witnesses, directory closure, and objective variation rules
 pass their positive and corruption proofs.
+Scorecard verification ends with `EVALUATION SCORECARDS VERIFIED` after the
+real builder, strict store/read path, report, both CLI routes, exact context and
+denominator calculations, human-evidence linkage, and corruption matrix pass.
 Fixture proof prints
 `fixture authoring: four strict v3 hosted responses retained exact agent configurations, replayed, and compared`;
 recorded-replay proof prints
