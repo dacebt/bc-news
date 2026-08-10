@@ -1,5 +1,7 @@
 # Direction
 
+- [Shape: longitudinal per-agent model evaluation scorecards](2026-08-10-longitudinal-model-evaluation-scorecards.shape.md) — Session boundaries, cadence, and success signal for auditable role-specific model evaluation across a varied reference corpus and comparable runs.
+- [Capability map: longitudinal per-agent model evaluation scorecards](2026-08-10-longitudinal-model-evaluation-scorecards.map.md) — Risk-ordered vertical capabilities and feature conventions for observable runtime evidence, reference-backed review, and honest longitudinal comparison.
 - [Shape: parallel evaluation tracks](2026-08-09-parallel-evaluation-tracks.shape.md) — Session boundaries, cadence, and success signal for concurrent within-trial evaluation tracks with one truthful retained-state history.
 - [Shape: Schema-only model-output failures](2026-08-09-schema-only-model-output-failures.shape.md) — Session boundaries, cadence, and success signal for making every schema-valid editorial finding diagnostic rather than terminal.
 - [Shape: LM Studio sampling postures](2026-08-08-lm-studio-sampling-postures.shape.md) — Session boundaries, cadence, and success signal for aligning production and evaluation sampling intent.

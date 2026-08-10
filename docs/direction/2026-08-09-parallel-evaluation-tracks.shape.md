@@ -5,10 +5,10 @@ title: >-
 description: >-
   Session boundaries, cadence, and success signal for concurrent within-trial evaluation tracks with one truthful retained-state history.
 tags: [wsd, direction, shape, evaluation, concurrency]
-status: stable
+status: deprecated
 generated:
   by: ebt-wsd/okf-v0.2
-  at: "2026-08-09T18:16:15Z"
+  at: "2026-08-10T04:16:59Z"
 ---
 # Shape: parallel evaluation tracks
 
