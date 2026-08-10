@@ -224,7 +224,7 @@ export async function verifyEvaluationTrialRetention(): Promise<void> {
 		assertProof(writerInterruptionId !== undefined, "writer_interruption_missing", "Concurrent writer dispatch retained no observable artifact");
 		const writerInterruption = await loadBenchmarkRun(writerInterruptionId, completeResults);
 		const writerTrial = writerInterruption.trials[0]!;
-		assertProof(writerInterruption.version === 6 && writerInterruption.lifecycle === "running", "writer_interruption_invalid", "Concurrent writer interruption was not a strict running v6 artifact");
+		assertProof(writerInterruption.version === 7 && writerInterruption.lifecycle === "running", "writer_interruption_invalid", "Concurrent writer interruption was not a strict running v7 artifact");
 		assertProof(writerTrial.tracks.main_story.lifecycle === "running" && writerTrial.tracks.announcements.lifecycle === "running", "tracks_not_running_together", "Both tracks were not durably running together");
 		for (const writerStep of ["main_story_write", "announcements_write"] as const) {
 			const invocation = writerTrial.invocations.find(({ production_step }) => production_step === writerStep);
@@ -296,7 +296,7 @@ export async function verifyEvaluationTrialRetention(): Promise<void> {
 		const harnessFailure = await harnessFailureSettlement;
 		assertProof(harnessFailure.status === "rejected" && harnessFailure.reason instanceof AggregateError, "harness_failure_not_propagated", "Failure-sticky coordination did not reject after both tracks quiesced");
 		const interruptedHarnessArtifact = await loadBenchmarkRun(harnessFailureId, harnessFailureResults);
-		assertProof(interruptedHarnessArtifact.version === 6 && interruptedHarnessArtifact.lifecycle === "running" && interruptedHarnessArtifact.harness_outcome === "pending", "harness_failure_not_running", "Harness failure did not leave a strict running v6 artifact");
+		assertProof(interruptedHarnessArtifact.version === 7 && interruptedHarnessArtifact.lifecycle === "running" && interruptedHarnessArtifact.harness_outcome === "pending", "harness_failure_not_running", "Harness failure did not leave a strict running v7 artifact");
 		assertProof(interruptedHarnessArtifact.completed_at === null && Object.values(interruptedHarnessArtifact.outcome_counts).every((count) => count === 0), "harness_failure_aggregated", "Harness failure retained terminal aggregation or changed outcome counts");
 		assertProof(interruptedHarnessArtifact.trials[0]!.lifecycle === "running", "harness_failure_trial_terminal", "Harness failure terminally completed the retained trial");
 		const harnessFailureSummary = summarizeBenchmarkRun(interruptedHarnessArtifact);
@@ -363,7 +363,7 @@ export async function verifyEvaluationTrialRetention(): Promise<void> {
 		assertPersistenceSequence(mixedStates);
 		const saved = [...await parseEverySavedArtifact(completeResults), ...await parseEverySavedArtifact(diagnosticResults), ...await parseEverySavedArtifact(contractResults), ...await parseEverySavedArtifact(failureResults), ...await parseEverySavedArtifact(mixedResults)];
 		assertProof(saved.length === 5, "saved_artifact_count", "Verifier did not retain exactly five terminal artifacts");
-		assertProof(saved.every(({ version }) => version === 6), "current_artifact_version", "A newly generated trial did not retain current artifact version 6");
+		assertProof(saved.every(({ version }) => version === 7), "current_artifact_version", "A newly generated trial did not retain current artifact version 7");
 		assertProof(saved.every(({ lifecycle, harness_outcome }) => lifecycle === "complete" && harness_outcome === "retained"), "harness_outcome_not_retained", "A terminal artifact did not retain a successful harness outcome");
 		assertProof(saved.every(({ provenance }) => JSON.stringify(provenance.output_contracts) === JSON.stringify(evaluationOutputContractProvenance())), "current_contract_provenance", "A newly generated artifact did not retain the current application output contracts and hashes");
 	} catch (error: unknown) {

@@ -156,9 +156,11 @@ test("rejects cross-version artifact replacement", async () => {
 	const states: BenchmarkRun[] = [];
 	await controlledEvaluation((artifact) => { states.push(artifact); });
 	const current = states[0]!;
-	expect(current.version).toBe(6);
+	expect(current.version).toBe(7);
+	const historicalCandidate = clone(current) as unknown as Record<string, unknown>;
+	delete historicalCandidate.runtime_evidence;
 	const historical = BenchmarkRunSchema.parse({
-		...clone(current),
+		...historicalCandidate,
 		version: 4,
 		outcome_counts: { ...current.outcome_counts, preservation_rejected: 0, final_product_rejected: 0 },
 	});

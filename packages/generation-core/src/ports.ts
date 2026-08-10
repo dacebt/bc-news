@@ -1,4 +1,5 @@
 import type { EvidenceMessage } from "@bc-news/contracts";
+import type { ModelRuntimeEvidence } from "./runtime-evidence";
 
 export type EditorialProduct = "main_story" | "announcements";
 
@@ -34,6 +35,7 @@ export interface ModelCompletion {
 	execution: "recorded_replay" | "local_inference" | "hosted_inference";
 	token_usage: TokenUsage;
 	external_billing: ExternalBilling;
+	runtime_evidence?: ModelRuntimeEvidence;
 }
 
 export interface ModelProviderRequest {
@@ -42,9 +44,14 @@ export interface ModelProviderRequest {
 	readonly user: string;
 }
 
-export type ModelUsageRecord = Omit<ModelCompletion, "text"> & {
+export interface ModelUsageRecord {
 	production_step: ProductionModelStep;
-};
+	provider: string;
+	model: string;
+	execution: ModelCompletion["execution"];
+	token_usage: TokenUsage;
+	external_billing: ExternalBilling;
+}
 
 export interface EvidenceInputPort {
 	loadEvidence(request: {

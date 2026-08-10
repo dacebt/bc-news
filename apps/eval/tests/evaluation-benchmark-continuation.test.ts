@@ -27,8 +27,8 @@ test("retains retries and continues independent tracks and later trials", async 
 	await verifyEvaluationBenchmarkContinuation(root);
 	const [artifactName] = await readdir(join(root, "results"));
 	const benchmark = BenchmarkRunSchema.parse(JSON.parse(await readFile(join(root, "results", artifactName!), "utf8")) as unknown);
-	expect(benchmark.version).toBe(6);
-	if (benchmark.version !== 6) throw new Error("expected version 6 benchmark");
+	expect(benchmark.version).toBe(7);
+	if (benchmark.version !== 7) throw new Error("expected version 7 benchmark");
 
 	const prematureExhaustion = clone(benchmark);
 	const exhaustedTrial = prematureExhaustion.trials.find(({ subject_outcome }) => subject_outcome === "infrastructure_incomplete");
@@ -50,7 +50,7 @@ test("retains retries and continues independent tracks and later trials", async 
 	if (!identityResult.success) {
 		expect(identityResult.error.issues.some(({ path }) => path.join(".") === "trials.2.invocations.0.config_identity")).toBe(true);
 	}
-});
+}, 10_000);
 
 test("rejects ambiguous or unbounded benchmark declarations", () => {
 	const configuration = hostedConfiguration("test/configuration");

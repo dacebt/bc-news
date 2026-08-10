@@ -153,7 +153,7 @@ export async function verifyEvaluationBenchmarkBrowsing(temporaryRoot?: string):
 			sourceProvenance: FIRST_PROVENANCE,
 		});
 		const evaluated = BenchmarkRunSchema.parse(result.benchmark);
-		assertProof(evaluated.version === 6, "current_artifact_version", "Browse proof did not produce current artifact version 6");
+		assertProof(evaluated.version === 7, "current_artifact_version", "Browse proof did not produce current artifact version 7");
 		await unlink(result.path);
 		const newer = withArtifactIdentity(evaluated, "a-chronologically-newer", evaluated.started_at);
 		const older = withArtifactIdentity(

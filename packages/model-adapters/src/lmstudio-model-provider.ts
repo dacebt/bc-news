@@ -1,6 +1,7 @@
 import { LMStudioClient, type LLM, type LLMPredictionStats, type PredictionResult } from "@lmstudio/sdk";
 import type {
 	ModelCompletion,
+	ModelRuntimeEvidence,
 	ModelProviderPort,
 	ModelProviderRequest,
 	ProductionModelStep,
@@ -12,6 +13,7 @@ import {
 	LmStudioRetryableError,
 } from "./lmstudio-errors";
 import type { LmStudioStructuredOutputContracts } from "./lmstudio-structured-output";
+import { lmStudioRuntimeEvidence, observeLmStudioAuxiliary } from "./lmstudio-runtime-evidence";
 
 const COMPLETION_TIMEOUT_MS = 600_000;
 const SUCCESSFUL_STOP_REASONS = new Set(["eosFound", "stopStringFound"]);
@@ -129,7 +131,12 @@ function tokenUsage(stats: LLMPredictionStats): ModelCompletion["token_usage"] {
 	};
 }
 
-function completionFromResult(result: PredictionResult, timeoutFired: boolean): ModelCompletion {
+function completionFromResult(input: {
+	readonly result: PredictionResult;
+	readonly timeoutFired: boolean;
+	readonly evidence: ModelRuntimeEvidence;
+}): ModelCompletion {
+	const { result, timeoutFired } = input;
 	if (timeoutFired) {
 		throw new LmStudioRetryableError(
 			"lmstudio_timeout",
@@ -161,6 +168,7 @@ function completionFromResult(result: PredictionResult, timeoutFired: boolean): 
 		execution: "local_inference",
 		token_usage: tokenUsage(result.stats),
 		external_billing: { classification: "none", amount_usd: 0, reason: "local_inference" },
+		runtime_evidence: input.evidence,
 	};
 }
 
@@ -233,6 +241,9 @@ export function createLmStudioModelProvider(input: LmStudioProviderInput): Model
 			let operationFailure: LmStudioClassifiedError | undefined;
 			try {
 				const model = resolveLoadedModel(await client.llm.listLoaded(), input.requestedModel);
+				const versionObservation = observeLmStudioAuxiliary(() => client.system.getLMStudioVersion());
+				const modelInfoObservation = observeLmStudioAuxiliary(() => model.getModelInfo());
+				const contextLengthObservation = observeLmStudioAuxiliary(() => model.getContextLength());
 				const controller = new AbortController();
 				let timeoutFired = false;
 				const timeout = setTimeout(() => {
@@ -263,7 +274,19 @@ export function createLmStudioModelProvider(input: LmStudioProviderInput): Model
 						}
 						throw cause;
 					});
-					completion = completionFromResult(result, timeoutFired);
+					completion = completionFromResult({
+						result,
+						timeoutFired,
+						evidence: lmStudioRuntimeEvidence({
+							result,
+							model,
+							requestedModel: input.requestedModel,
+							reasoningEffort: input.reasoningEffort,
+							version: await versionObservation,
+							modelInfo: await modelInfoObservation,
+							contextLength: await contextLengthObservation,
+						}),
+					});
 				} finally {
 					clearTimeout(timeout);
 				}

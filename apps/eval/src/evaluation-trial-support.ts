@@ -5,15 +5,15 @@ import {
 	type ProductionModelStep,
 } from "@bc-news/generation-core";
 import type { EvalConfig } from "./config";
-import type { EvaluationFinding, V5SubjectOutcome, V6BenchmarkRun, V6EvaluationTrial } from "./evaluation-artifact";
+import type { EvaluationFinding, V5SubjectOutcome, V7BenchmarkRun, V7EvaluationTrial } from "./evaluation-artifact";
 import { resolveModelProvider, type ModelProviderEnvironment } from "./model-adapters";
 
 export function sha256Json(value: unknown): string { return createHash("sha256").update(JSON.stringify(value)).digest("hex"); }
 export function safeEvaluationId(prefix: string): string { return `${prefix}-${new Date().toISOString().replace(/[:.]/gu, "-")}-${randomUUID()}`; }
-export function emptyOutcomeCounts(): V6BenchmarkRun["outcome_counts"] {
+export function emptyOutcomeCounts(): V7BenchmarkRun["outcome_counts"] {
 	return { completed: 0, parse_rejected: 0, contract_rejected: 0, infrastructure_incomplete: 0 };
 }
-export function emptyTrack(): V6EvaluationTrial["tracks"]["main_story"] {
+export function emptyTrack(): V7EvaluationTrial["tracks"]["main_story"] {
 	return { lifecycle: "pending", subject_outcome: null, terminal_production_step: null, product: null, findings: [] };
 }
 export function transportErrorIdentity(error: unknown): { code: string; message: string } {
@@ -24,7 +24,7 @@ export function parseFinding(error: unknown): EvaluationFinding | undefined {
 	if (error instanceof EditorialOutputContractError) return { kind: error.code, production_step: error.productionStep, code: error.code, message: error.message };
 	return undefined;
 }
-export function terminalCurrentTrackOutcome(trial: V6EvaluationTrial, track: "main_story" | "announcements"): V5SubjectOutcome {
+export function terminalCurrentTrackOutcome(trial: V7EvaluationTrial, track: "main_story" | "announcements"): V5SubjectOutcome {
 	const writerStep = track === "main_story" ? "main_story_write" : "announcements_write";
 	const copyeditStep = track === "main_story" ? "main_story_copyedit" : "announcements_copyedit";
 	const terminalStep = trial.invocations.some(({ production_step }) => production_step === copyeditStep) ? copyeditStep : writerStep;

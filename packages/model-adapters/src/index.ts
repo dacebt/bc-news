@@ -22,6 +22,8 @@ export {
 	type OpenAiCompatibleProviderInput,
 } from "./openai-compatible-model-provider";
 export { lmStudioSdkBaseUrl } from "./lmstudio-base-url";
+export { LM_STUDIO_SDK_RELEASE } from "./lmstudio-sdk-release";
+export { LM_STUDIO_AUXILIARY_OBSERVATION_TIMEOUT_MS } from "./lmstudio-runtime-evidence";
 export {
 	LmStudioDeterministicError,
 	LmStudioRetryableError,

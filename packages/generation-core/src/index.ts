@@ -68,6 +68,35 @@ export {
 } from "./editorial-diagnostics";
 export { assembleEdition } from "./assemble-edition";
 export {
+	ModelExecutionContextSchema,
+	ModelPredictionObservationSchema,
+	ModelRuntimeEvidenceSchema,
+	ModelRuntimeIdentitySchema,
+	RUNTIME_OBSERVATION_REASONS,
+	RuntimeBooleanObservationSchema,
+	RuntimeMeasurementObservationSchema,
+	RuntimeNonnegativeIntegerObservationSchema,
+	RuntimeObservationReasonSchema,
+	RuntimePositiveIntegerObservationSchema,
+	RuntimeStringObservationSchema,
+	observedMeasurement,
+	observedNonnegativeInteger,
+	observedPositiveInteger,
+	observedString,
+} from "./runtime-evidence";
+export type {
+	ModelExecutionContext,
+	ModelPredictionObservation,
+	ModelRuntimeEvidence,
+	ModelRuntimeIdentity,
+	RuntimeBooleanObservation,
+	RuntimeMeasurementObservation,
+	RuntimeNonnegativeIntegerObservation,
+	RuntimeObservationReason,
+	RuntimePositiveIntegerObservation,
+	RuntimeStringObservation,
+} from "./runtime-evidence";
+export {
 	EditorialProductSchema,
 	ExternalBillingSchema,
 	ModelUsageRecordSchema,

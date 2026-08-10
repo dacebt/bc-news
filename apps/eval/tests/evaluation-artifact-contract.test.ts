@@ -36,6 +36,19 @@ test("accepts recovered retry evidence without classifying the trial as infrastr
 	});
 	for (const [index, invocation] of trial.invocations.entries()) invocation.ordinal = index + 1;
 	selectedWriter.predecessor_invocation_id = failedWriterId;
+	recovered.runtime_evidence.unshift({
+		trial_id: trial.id,
+		invocation_id: failedWriterId,
+		config_identity: trial.config_identity,
+		production_step: "main_story_write",
+		ordinal: 1,
+		state: "unavailable",
+		reason: "transport_failed",
+	});
+	for (const evidence of recovered.runtime_evidence) {
+		const invocation = trial.invocations.find(({ id }) => id === evidence.invocation_id);
+		if (invocation !== undefined) evidence.ordinal = invocation.ordinal;
+	}
 	expect(BenchmarkRunSchema.safeParse(recovered).success).toBe(true);
 	const misclassified = clone(recovered);
 	misclassified.trials[0]!.subject_outcome = "infrastructure_incomplete";
@@ -160,8 +173,26 @@ test("accepts truthful resolved model provenance distinct from the requested mod
 	const requested = first(resolved.declaration.configurations, "one declaration").config.production_steps.main_story_write;
 	if (requested.adapter !== "openai_compatible_hosted") throw new Error("expected hosted declaration");
 	invocation.completion.model = "canonical/resolved-main-story-model";
+	const runtimeEvidence = resolved.runtime_evidence.find(({ invocation_id }) => invocation_id === invocation.id);
+	if (runtimeEvidence?.state !== "captured") throw new Error("expected captured runtime evidence");
+	runtimeEvidence.evidence.execution_context.response_model.identifier = {
+		state: "observed",
+		value: invocation.completion.model,
+	};
 	expect(invocation.completion.model).not.toBe(requested.model);
 	expect(BenchmarkRunSchema.safeParse(resolved).success).toBe(true);
+});
+
+test("binds captured runtime evidence to the admissible provider-default reasoning posture", async () => {
+	const { result } = await controlledEvaluation();
+	const mutation = clone(result.benchmark);
+	const runtimeEvidence = mutation.runtime_evidence.find(({ state }) => state === "captured");
+	if (runtimeEvidence?.state !== "captured") throw new Error("expected captured runtime evidence");
+	runtimeEvidence.evidence.execution_context.requested_reasoning_posture = {
+		state: "observed",
+		value: "high",
+	};
+	expect(BenchmarkRunSchema.safeParse(mutation).success).toBe(false);
 });
 
 test("binds usage and billing evidence to the declared adapter", async () => {
@@ -196,7 +227,14 @@ test("binds usage and billing evidence to the declared adapter", async () => {
 	first(local.trial_roster, "one local roster member").config_identity = localIdentity;
 	local.trials[0]!.config_identity = localIdentity;
 	for (const invocation of local.trials[0]!.invocations) invocation.config_identity = localIdentity;
+	for (const evidence of local.runtime_evidence) evidence.config_identity = localIdentity;
 	const localInvocation = local.trials[0]!.invocations[0]!;
+	const localRuntime = local.runtime_evidence.find(({ invocation_id }) => invocation_id === localInvocation.id);
+	if (localRuntime?.state !== "captured") throw new Error("expected local captured runtime evidence");
+	localRuntime.evidence.execution_context.selected_model.requested_identity = {
+		state: "observed",
+		value: "local/requested-model",
+	};
 	if (localInvocation.transport !== "succeeded") throw new Error("expected local completion");
 	localInvocation.completion.execution = "local_inference";
 	localInvocation.completion.provider = "lmstudio";

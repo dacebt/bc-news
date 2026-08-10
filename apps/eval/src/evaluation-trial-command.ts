@@ -2,7 +2,7 @@ import { mkdir } from "node:fs/promises";
 import { basename, join, relative } from "node:path";
 import { prepareEvidence } from "@bc-news/generation-core";
 import { loadLiveEvaluationConfig } from "./config";
-import { EvaluationCodeProvenanceSchema, V6BenchmarkRunSchema, evaluationConfigIdentity, evaluationOutputContractProvenance, type BenchmarkRun, type V6BenchmarkRun } from "./evaluation-artifact";
+import { EvaluationCodeProvenanceSchema, V7BenchmarkRunSchema, evaluationConfigIdentity, evaluationOutputContractProvenance, type BenchmarkRun, type V7BenchmarkRun } from "./evaluation-artifact";
 import { EvaluationArtifactStore, type EvaluationArtifactObserver } from "./evaluation-artifact-store";
 import { loadFixture } from "./evidence-fixture";
 import { codeProvenance } from "./evaluation-provenance";
@@ -21,7 +21,7 @@ export interface EvaluateTrialCommandOptions {
 	readonly sourceProvenance?: BenchmarkRun["provenance"]["code"];
 }
 
-export interface EvaluateTrialCommandResult { readonly path: string; readonly benchmark: V6BenchmarkRun; }
+export interface EvaluateTrialCommandResult { readonly path: string; readonly benchmark: V7BenchmarkRun; }
 
 export async function evaluateTrialCommand(options: EvaluateTrialCommandOptions): Promise<EvaluateTrialCommandResult> {
 	const config = await loadLiveEvaluationConfig(options.configPath);
@@ -40,8 +40,8 @@ export async function evaluateTrialCommand(options: EvaluateTrialCommandOptions)
 	const trialId = `${benchmarkId}-trial-1`;
 	const startedAt = new Date().toISOString();
 	const transportRetryLimit = 1;
-	const benchmark = V6BenchmarkRunSchema.parse({
-		version: 6, id: benchmarkId, lifecycle: "running", started_at: startedAt, completed_at: null,
+	const benchmark = V7BenchmarkRunSchema.parse({
+		version: 7, id: benchmarkId, lifecycle: "running", started_at: startedAt, completed_at: null,
 		declaration: { configurations: [{ identity: configIdentity, config }], repetition_count: 1, transport_retry_limit: transportRetryLimit },
 		fixture: { path: relative(WORKSPACE_ROOT, options.fixturePath), fixture_sha256: loadedFixture.fixtureSha256 },
 		prepared_evidence: { identity_sha256: sha256Json(preparedEvidence), active_region_id: preparedEvidence.active_region_id, publication_date: preparedEvidence.publication_date, original_count: preparedEvidence.raw_count, final_count: preparedEvidence.final_count, snapshot: preparedEvidence },
@@ -50,6 +50,7 @@ export async function evaluateTrialCommand(options: EvaluateTrialCommandOptions)
 		trials: [{ id: trialId, config_identity: configIdentity, repetition: 1, lifecycle: "running", started_at: startedAt,
 			completed_at: null, subject_outcome: null, tracks: { main_story: emptyTrack(), announcements: emptyTrack() },
 			selected_invocation_ids: { main_story_write: null, main_story_copyedit: null, announcements_write: null, announcements_copyedit: null }, invocations: [] }],
+		runtime_evidence: [],
 		outcome_counts: emptyOutcomeCounts(), harness_outcome: "pending",
 	});
 	const path = join(options.resultsDirectory, `${basename(benchmark.id)}.json`);
@@ -62,14 +63,14 @@ export async function evaluateTrialCommand(options: EvaluateTrialCommandOptions)
 		configIdentity,
 		transportRetryLimit,
 	});
-	if (executed.version !== 6) throw new Error("Single-trial evaluation changed artifact version");
-	const completed = V6BenchmarkRunSchema.parse({
+	if (executed.version !== 7) throw new Error("Single-trial evaluation changed artifact version");
+	const completed = V7BenchmarkRunSchema.parse({
 		...executed,
 		lifecycle: "complete",
 		completed_at: new Date().toISOString(),
 		harness_outcome: "retained",
 	});
-	if (completed.version !== 6) throw new Error("Single-trial evaluation completion changed artifact version");
+	if (completed.version !== 7) throw new Error("Single-trial evaluation completion changed artifact version");
 	await store.replace(completed);
 	return { path, benchmark: completed };
 }

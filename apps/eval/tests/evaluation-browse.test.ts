@@ -50,7 +50,7 @@ test("summarizes completed products with retained diagnostics", async () => {
 		expect.objectContaining({ kind: "final_product", code: "forbidden_marker" }),
 	]));
 	const summary = summarizeBenchmarkRun(result.benchmark);
-	expect(result.benchmark.version).toBe(6);
+	expect(result.benchmark.version).toBe(7);
 	expect(summary.products).toEqual(expect.arrayContaining([
 		expect.objectContaining({ track: "main_story", track_outcome: "completed", diagnostic_count: 5 }),
 	]));
@@ -82,8 +82,10 @@ test("keeps historical LM Studio sampling configuration in comparison context", 
 	const retainedStates: BenchmarkRun[] = [];
 	await controlledEvaluation((artifact) => { retainedStates.push(artifact); });
 	const initialRetainedState = first(retainedStates, "initial retained benchmark state");
+	const historicalCandidate = clone(initialRetainedState) as unknown as Record<string, unknown>;
+	delete historicalCandidate.runtime_evidence;
 	const explicit = clone(V4BenchmarkRunSchema.parse({
-		...initialRetainedState,
+		...historicalCandidate,
 		version: 4,
 		outcome_counts: {
 			...initialRetainedState.outcome_counts,

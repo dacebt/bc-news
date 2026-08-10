@@ -16,6 +16,7 @@
 		"verify:evaluation-trial-retention": "tsx src/evaluation-trial-verifier.ts",
 		"verify:evaluation-benchmark-continuation": "tsx src/evaluation-benchmark-verifier.ts",
 		"verify:evaluation-browse": "tsx src/evaluation-browse-verifier.ts",
+		"verify:benchmark-runtime-evidence": "tsx src/benchmark-runtime-evidence-verifier.ts",
 		"verify:recorded-replay-acceptance": "tsx src/recorded-replay-acceptance-verifier.ts",
 		"verify:recorded-response-fixture-authoring": "tsx src/recorded-response-fixture-authoring-verifier.ts"
 	},
@@ -24,7 +25,7 @@
 		"@bc-news/fixtures": "workspace:*",
 		"@bc-news/generation-core": "workspace:*",
 		"@bc-news/model-adapters": "workspace:*",
-		"@lmstudio/sdk": "^1.5.0",
+		"@lmstudio/sdk": "1.5.0",
 		"zod": "^4.4.3"
 	},
 	"devDependencies": {

@@ -1,5 +1,6 @@
 # Investigations
 
+- [Evaluation benchmark continuation timeout](2026-08-10-evaluation-benchmark-continuation-timeout.md) — Runtime measurements identifying why the benchmark-continuation integration test intermittently crosses Vitest's five-second deadline.
 - [Parallel evaluation-track landscape](2026-08-09-parallel-evaluation-track-landscape.md) — Multi-pass trace of trial scheduling, retained-artifact ownership, concurrency constraints, proof surfaces, and documentation authority for BCN-005.
 - [LM Studio thinking-mode response handling](2026-08-08-lm-studio-thinking-mode-response-handling.md) — Direct SDK and HTTP evidence tracing why thinking-enabled LM Studio calls produced zero parsed outputs.
 - [Current runtime model instruction contracts](2026-08-06-runtime-model-instruction-contracts.md) — Evidence-backed trace of how bc-news assembles, constrains, validates, and executes the four runtime model instructions.

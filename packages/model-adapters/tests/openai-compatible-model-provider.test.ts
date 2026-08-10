@@ -72,17 +72,66 @@ it("maps strict hosted provenance, usage, and calculated billing", async () => {
 		usage: { prompt_tokens: 100, completion_tokens: 25, total_tokens: 125 },
 	}));
 
-	await expect(hostedProvider().complete({
+	const completion = await hostedProvider().complete({
 		productionStep: "main_story_write",
 		system: "system",
 		user: "prompt",
-	})).resolves.toEqual({
+	});
+	expect(completion).toMatchObject({
 		text: "completion",
 		provider: "verify-hosted",
 		model: "returned-model",
 		execution: "hosted_inference",
 		token_usage: { measurement: "reported", input_tokens: 100, output_tokens: 25, total_tokens: 125 },
 		external_billing: { classification: "calculated", amount_usd: 0.0004, pricing_reference: "verify-prices" },
+	});
+	expect(completion.runtime_evidence).toMatchObject({
+		execution_context: {
+			client_sdk_release: { state: "unknown", reason: "not_applicable" },
+			provider_runtime_identity: { state: "unknown", reason: "not_reported" },
+			provider_runtime_version: { state: "externally_controlled", reason: "provider_controlled" },
+			provider_service_tier: { state: "unknown", reason: "not_reported" },
+			selected_model: {
+				requested_identity: { state: "observed", value: "requested-model" },
+				identifier: { state: "externally_controlled", reason: "provider_controlled" },
+				model_key: { state: "externally_controlled", reason: "provider_controlled" },
+				architecture: { state: "externally_controlled", reason: "provider_controlled" },
+			},
+			response_model: {
+				requested_identity: { state: "observed", value: "requested-model" },
+				identifier: { state: "observed", value: "returned-model" },
+				model_key: { state: "externally_controlled", reason: "provider_controlled" },
+				architecture: { state: "externally_controlled", reason: "provider_controlled" },
+			},
+			context_length: { state: "externally_controlled", reason: "provider_controlled" },
+		},
+		prediction_observation: {
+			provider_response_id: { state: "unknown", reason: "not_reported" },
+			stop_reason: { state: "unknown", reason: "not_reported" },
+			time_to_first_token_ms: { state: "unknown", reason: "not_reported" },
+			reasoning_content_present: { state: "unknown", reason: "not_reported" },
+		},
+	});
+	const hostedContext = completion.runtime_evidence!.execution_context;
+	expect(hostedContext.selected_model).toEqual({
+		requested_identity: { state: "observed", value: "requested-model" },
+		identifier: { state: "externally_controlled", reason: "provider_controlled" },
+		model_key: { state: "externally_controlled", reason: "provider_controlled" },
+		path: { state: "externally_controlled", reason: "provider_controlled" },
+		display_name: { state: "externally_controlled", reason: "provider_controlled" },
+		format: { state: "externally_controlled", reason: "provider_controlled" },
+		instance_reference: { state: "externally_controlled", reason: "provider_controlled" },
+		size_bytes: { state: "externally_controlled", reason: "provider_controlled" },
+		architecture: { state: "externally_controlled", reason: "provider_controlled" },
+		parameter_count_description: { state: "externally_controlled", reason: "provider_controlled" },
+		quantization_name: { state: "externally_controlled", reason: "provider_controlled" },
+		quantization_bits: { state: "externally_controlled", reason: "provider_controlled" },
+		vision_capable: { state: "externally_controlled", reason: "provider_controlled" },
+		trained_for_tool_use: { state: "externally_controlled", reason: "provider_controlled" },
+	});
+	expect(hostedContext.response_model).toEqual({
+		...hostedContext.selected_model,
+		identifier: { state: "observed", value: "returned-model" },
 	});
 	const body = fetchCall.mock.calls[0]?.[1]?.body;
 	if (typeof body !== "string") throw new Error("Expected request body to be JSON text");
@@ -122,7 +171,21 @@ it("accepts an ordinary OpenAI-compatible completion envelope", async () => {
 		productionStep: "main_story_write",
 		system: "system",
 		user: "prompt",
-	})).resolves.toMatchObject({ text: "completion", model: "returned-model" });
+	})).resolves.toMatchObject({
+		text: "completion",
+		model: "returned-model",
+			runtime_evidence: {
+			execution_context: {
+				provider_runtime_identity: { state: "observed", value: "fp_verify" },
+				provider_service_tier: { state: "observed", value: "default" },
+			},
+			prediction_observation: {
+				provider_response_id: { state: "observed", value: "chatcmpl-verify" },
+				stop_reason: { state: "observed", value: "stop" },
+				reasoning_content_present: { state: "unknown", reason: "not_reported" },
+			},
+		},
+	});
 });
 
 it("keeps hosted completion text byte-for-byte", async () => {

@@ -1,4 +1,4 @@
-import type { BenchmarkRun, EvaluationTrial, StepInvocation } from "./evaluation-artifact";
+import type { BenchmarkRun, EvaluationTrial, RuntimeEvidenceRecord, StepInvocation, V7BenchmarkRun } from "./evaluation-artifact";
 
 function equal(left: unknown, right: unknown): boolean {
 	return JSON.stringify(left) === JSON.stringify(right);
@@ -95,6 +95,30 @@ function validateTrialTransition(current: EvaluationTrial, next: EvaluationTrial
 	validateTrackTransition(current.tracks.announcements, next.tracks.announcements, "announcements");
 }
 
+function validateRuntimeEvidenceTransition(current: V7BenchmarkRun, next: V7BenchmarkRun): void {
+	if (next.runtime_evidence.length < current.runtime_evidence.length
+		|| next.runtime_evidence.length > current.runtime_evidence.length + 1) {
+		throw new Error("runtime evidence may append exactly one pending entry and may never be removed");
+	}
+	for (const [index, evidence] of current.runtime_evidence.entries()) {
+		const nextEvidence = next.runtime_evidence[index]!;
+		const identity = (record: RuntimeEvidenceRecord) => ({
+			trial_id: record.trial_id,
+			invocation_id: record.invocation_id,
+			config_identity: record.config_identity,
+			production_step: record.production_step,
+			ordinal: record.ordinal,
+		});
+		requireEqual(identity(evidence), identity(nextEvidence), `runtime evidence ${evidence.invocation_id} identity`);
+		if (evidence.state === "pending" && (nextEvidence.state === "captured" || nextEvidence.state === "unavailable")) continue;
+		requireEqual(evidence, nextEvidence, `resolved runtime evidence ${evidence.invocation_id}`);
+	}
+	if (next.runtime_evidence.length === current.runtime_evidence.length + 1) {
+		const appended = next.runtime_evidence.at(-1)!;
+		if (appended.state !== "pending") throw new Error("appended runtime evidence must begin pending");
+	}
+}
+
 export function validateBenchmarkRunTransition(current: BenchmarkRun, next: BenchmarkRun): void {
 	if (current.lifecycle === "complete") throw new Error("complete benchmark artifacts are immutable");
 	requireEqual(
@@ -130,7 +154,7 @@ export function validateBenchmarkRunTransition(current: BenchmarkRun, next: Benc
 		validateTrialTransition(current.trials[0]!, next.trials[0]!);
 		return;
 	}
-	if (current.version !== next.version || (current.version !== 2 && current.version !== 3 && current.version !== 4 && current.version !== 5 && current.version !== 6)) {
+	if (current.version !== next.version || (current.version !== 2 && current.version !== 3 && current.version !== 4 && current.version !== 5 && current.version !== 6 && current.version !== 7)) {
 		throw new Error("benchmark artifact version is immutable");
 	}
 	if (next.trials.length < current.trials.length || next.trials.length > current.trials.length + 1) throw new Error("trials may append exactly one roster member and may never be removed");
@@ -140,4 +164,5 @@ export function validateBenchmarkRunTransition(current: BenchmarkRun, next: Benc
 		const appended = next.trials.at(-1)!;
 		if (appended.lifecycle !== "running" || appended.invocations.length !== 0) throw new Error("an appended trial must begin running without invocations");
 	}
+	if (current.version === 7 && next.version === 7) validateRuntimeEvidenceTransition(current, next);
 }

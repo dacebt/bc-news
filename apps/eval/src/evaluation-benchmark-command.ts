@@ -4,11 +4,11 @@ import { prepareEvidence } from "@bc-news/generation-core";
 import { EvalConfigSchema, loadLiveBenchmarkConfig } from "./config";
 import {
 	EvaluationCodeProvenanceSchema,
-	V6BenchmarkRunSchema,
+	V7BenchmarkRunSchema,
 	evaluationConfigIdentity,
 	evaluationOutputContractProvenance,
 	type BenchmarkRun,
-	type V6BenchmarkRun,
+	type V7BenchmarkRun,
 } from "./evaluation-artifact";
 import { EvaluationArtifactStore, type EvaluationArtifactObserver } from "./evaluation-artifact-store";
 import { loadFixture } from "./evidence-fixture";
@@ -28,7 +28,7 @@ export interface EvaluateBenchmarkCommandOptions {
 	readonly sourceProvenance?: BenchmarkRun["provenance"]["code"];
 }
 
-export interface EvaluateBenchmarkCommandResult { readonly path: string; readonly benchmark: V6BenchmarkRun; }
+export interface EvaluateBenchmarkCommandResult { readonly path: string; readonly benchmark: V7BenchmarkRun; }
 
 export async function evaluateBenchmarkCommand(options: EvaluateBenchmarkCommandOptions): Promise<EvaluateBenchmarkCommandResult> {
 	const declared = await loadLiveBenchmarkConfig(options.configPath);
@@ -55,8 +55,8 @@ export async function evaluateBenchmarkCommand(options: EvaluateBenchmarkCommand
 		})),
 	);
 	const startedAt = new Date().toISOString();
-	let benchmark = V6BenchmarkRunSchema.parse({
-		version: 6,
+	let benchmark = V7BenchmarkRunSchema.parse({
+		version: 7,
 		id: benchmarkId,
 		lifecycle: "running",
 		started_at: startedAt,
@@ -78,10 +78,11 @@ export async function evaluateBenchmarkCommand(options: EvaluateBenchmarkCommand
 		provenance,
 		trial_roster: trialRoster,
 		trials: [],
+		runtime_evidence: [],
 		outcome_counts: emptyOutcomeCounts(),
 		harness_outcome: "pending",
 	});
-	if (benchmark.version !== 6) throw new Error("Serial benchmark creation did not produce artifact version 6");
+	if (benchmark.version !== 7) throw new Error("Serial benchmark creation did not produce artifact version 7");
 	const path = join(options.resultsDirectory, `${basename(benchmark.id)}.json`);
 	const store = await EvaluationArtifactStore.create(path, benchmark, options.artifactObserver);
 
@@ -89,7 +90,7 @@ export async function evaluateBenchmarkCommand(options: EvaluateBenchmarkCommand
 		const configuration = benchmark.declaration.configurations.find(({ identity }) => identity === roster.config_identity);
 		if (configuration === undefined) throw new Error(`Trial ${roster.trial_id} references an undeclared configuration`);
 		const trialStartedAt = new Date().toISOString();
-		benchmark = V6BenchmarkRunSchema.parse({
+		benchmark = V7BenchmarkRunSchema.parse({
 			...benchmark,
 			trials: [...benchmark.trials, {
 				id: roster.trial_id,
@@ -117,12 +118,12 @@ export async function evaluateBenchmarkCommand(options: EvaluateBenchmarkCommand
 			trialId: roster.trial_id,
 			transportRetryLimit: declared.transport_retry_limit,
 		});
-		if (benchmark.version !== 6) throw new Error("Serial benchmark execution changed artifact version");
+		if (benchmark.version !== 7) throw new Error("Serial benchmark execution changed artifact version");
 	}
 
 	const completedAt = new Date().toISOString();
-	benchmark = V6BenchmarkRunSchema.parse({ ...benchmark, lifecycle: "complete", completed_at: completedAt, harness_outcome: "retained" });
-	if (benchmark.version !== 6) throw new Error("Serial benchmark completion changed artifact version");
+	benchmark = V7BenchmarkRunSchema.parse({ ...benchmark, lifecycle: "complete", completed_at: completedAt, harness_outcome: "retained" });
+	if (benchmark.version !== 7) throw new Error("Serial benchmark completion changed artifact version");
 	await store.replace(benchmark);
 	return { path, benchmark };
 }

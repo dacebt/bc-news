@@ -42,9 +42,10 @@ retained model-evaluation attempt.
 roster serially. Within each Evaluation Trial, the main-story and announcements
 writer-to-copyeditor chains dispatch concurrently, with each writer preceding
 its own copyeditor. One ordered application owner allocates invocations and
-applies every retained version 6 transition, retaining each invocation before
-its provider transport. This produces one truthful interleaved history while the
-artifact store's atomic full-file replacement never races. Its strict Benchmark
+applies every retained version 7 transition, retaining each invocation and its
+pending runtime-evidence record before provider transport. This produces one
+truthful interleaved history while the artifact store's atomic full-file
+replacement never races. Its strict Benchmark
 Run retains every reached Step Invocation before transport and before parsing.
 Malformed JSON, strict schema mismatch, and infrastructure-incomplete execution
 are distinct typed subject outcomes and can coexist with `harness_outcome:
@@ -55,22 +56,26 @@ judge, score, or acceptance verdict. Eligible transport failures receive only
 the declared bounded retries, with each attempt retained and linked. Provider
 exhaustion or schema rejection closes its dependent track without suppressing
 the independent editorial track or later declared trials. Both tracks quiesce
-before terminal aggregation; interruption leaves a strict running version 6
+before terminal aggregation; interruption leaves a strict running version 7
 artifact browseable through `benchmark list`, `benchmark show`, `benchmark
 summary`, and `benchmark compare`. Concurrent dispatch proves harness
 scheduling, not parallel processing inside a selected model runtime. Comparison
 separates fixture, configuration, and provenance context from behavior and
 reports no score, judge result, recommendation, or acceptance decision.
 
-Current Benchmark Run version 6 retains every exact per-agent configuration and
-schema-valid copyedit diagnostic as declared evidence. Each role independently
+Current Benchmark Run version 7 retains every exact per-agent configuration,
+schema-valid copyedit diagnostic, and a lifecycle-matched runtime-evidence
+record for every invocation. Each role independently
 chooses a provider, model, and optional temperature; omission includes that
 role's provider default as a candidate. Temperature is the only decoding
 control admitted or sent. Model evaluation compares these candidate
 configurations to select production settings; it is not a deterministic test or
-a provider-default quality gate. Version 6 has exactly four subject outcomes:
-`completed`, `parse_rejected`, `contract_rejected`, and
-`infrastructure_incomplete`. Versions 1–5 remain frozen historical contracts.
+a provider-default quality gate. Version 7 preserves version 6's four subject
+outcomes: `completed`, `parse_rejected`, `contract_rejected`, and
+`infrastructure_incomplete`. Runtime evidence separates comparable execution
+context from volatile prediction observation and represents every unavailable
+field as an explicit unknown or externally controlled state. Versions 1–6
+remain frozen historical contracts.
 
 Malformed JSON or strict schema mismatch is the only terminal model-output
 failure. Infrastructure failure is classified separately. Every schema-valid
@@ -134,6 +139,7 @@ composed walk:
 pnpm --filter @bc-news/eval verify:evaluation-trial-retention
 pnpm --filter @bc-news/eval verify:evaluation-benchmark-continuation
 pnpm --filter @bc-news/eval verify:evaluation-browse
+pnpm --filter @bc-news/eval verify:benchmark-runtime-evidence
 pnpm --filter @bc-news/eval verify:recorded-response-fixture-authoring
 pnpm --filter @bc-news/eval verify:recorded-replay-acceptance
 pnpm test
@@ -156,7 +162,10 @@ progress, diagnostics, schema rejection, infrastructure failure, interruption
 evidence, and completion`, continuation ends with
 `evaluation: serial benchmark retained
 linked retries and continued later trials`, and browsing ends with `evaluation:
-evidence listed summarized and compared without verdicts`. Fixture proof ends
+evidence listed summarized and compared without verdicts`. Runtime-evidence
+verification exercises the real
+command, store, reader, projection, and summary path with controlled providers
+and ends exactly with `BENCHMARK RUNTIME EVIDENCE VERIFIED`. Fixture proof ends
 with `fixture authoring: four strict v3 hosted responses retained exact agent
 configurations, replayed, and compared`. Acceptance proof ends with `acceptance: four
 recorded production steps replayed request-linked and deterministic; diagnostics
@@ -256,10 +265,19 @@ proves, tests of glue and framework wiring, tests to satisfy coverage.
   preservation and final-product diagnostics and has only `completed`,
   `parse_rejected`, `contract_rejected`, and `infrastructure_incomplete`
   outcomes; versions 1–4 continue through their frozen parsers.
-- Version 6 is current. It retains exact independent configurations for all four
+- Version 6 retains exact independent configurations for all four
   production agents, accepts optional temperature as the only decoding control,
   and rejects obsolete `sampling`, `top_p`, and `top_k` fields. Versions 1–5
   continue through their frozen parsers.
+- Version 7 is current. Its top-level runtime-evidence roster must match trial
+  order then invocation ordinal exactly. Invocation append and pending evidence
+  append are atomic; failed transport resolves only to an unavailable record;
+  successful transport resolves only to captured normalized evidence; resolved
+  evidence is immutable through parsing and terminal transitions. Tests reject
+  missing, duplicate, reordered, detached, prematurely resolved, or mutated
+  records, and prove versions 1–6 still parse without accepting runtime evidence
+  inside their strict completion objects. Each representative historical parser
+  proof includes at least one successful completion.
 - The repository-owned trial-retention verifier controls provider release and
   directly observes both writer invocations durably `in_flight` before either
   completes. It then observes deliberate cross-track interleaving, each
@@ -268,7 +286,7 @@ proves, tests of glue and framework wiring, tests to satisfy coverage.
   A controlled observer rejection after both writers dispatch proves that an
   unexpected harness failure waits for the held sibling, propagates without
   terminal aggregation or changed outcome counts, and leaves a strict browseable
-  running version 6 interruption artifact. The verifier also proves normal
+  running version 7 interruption artifact. The verifier also proves normal
   terminal completion before printing `evaluation: concurrent tracks retained
   interleaved progress, diagnostics, schema rejection, infrastructure failure,
   interruption evidence, and completion`. This proves concurrent harness
@@ -281,6 +299,13 @@ proves, tests of glue and framework wiring, tests to satisfy coverage.
   timestamp noise, keeps commit-only drift in context, and observes completion
   evidence drift in behavior before printing `evaluation: evidence listed
   summarized and compared without verdicts`.
+- The runtime-evidence verifier uses controlled hosted responses for all four
+  production roles and requires observed, unknown, and externally controlled
+  fields. It proves execution context is comparison context, prediction
+  observation is behavior, independently generated run/trial/invocation
+  identities do not create comparison differences, V7 legacy completions do not
+  gain a runtime key, and the strict roster survives store and reader round trips before printing
+  `BENCHMARK RUNTIME EVIDENCE VERIFIED`.
 - V1 code provenance is the clean repository commit itself: repository name,
   validated 40-character commit SHA, and `dirty: false`. Strict validation
   rejects missing, malformed, or extra provenance fields rather than retaining

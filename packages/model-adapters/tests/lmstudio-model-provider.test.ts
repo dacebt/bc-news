@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import {
 	LM_STUDIO_PRODUCTION_STEP_OUTPUT_CONTRACTS,
+	LM_STUDIO_AUXILIARY_OBSERVATION_TIMEOUT_MS,
 	LmStudioAdapterConfigSchema,
 	LmStudioDeterministicError,
 	LmStudioRetryableError,
@@ -25,6 +26,12 @@ interface FakeModel {
 	modelKey: string;
 	path: string;
 	displayName: string;
+	format: string;
+	sizeBytes: number;
+	vision: boolean;
+	trainedForToolUse: boolean;
+	getModelInfo: ReturnType<typeof vi.fn>;
+	getContextLength: ReturnType<typeof vi.fn>;
 	respond: ReturnType<typeof vi.fn>;
 }
 
@@ -33,9 +40,25 @@ function result(overrides: Record<string, unknown> = {}) {
 		content: '{"title":"native"}',
 		reasoningContent: "",
 		nonReasoningContent: '{"title":"native"}',
-		modelInfo: { identifier: "loaded-qwen" },
+		modelInfo: {
+			identifier: "response-qwen",
+			modelKey: "qwen/qwen3.5-9b",
+			path: "qwen/qwen3.5-9b",
+			displayName: "Qwen 3.5 9B",
+			format: "gguf",
+			instanceReference: "response-instance",
+			sizeBytes: 9_000,
+			architecture: "qwen3",
+			paramsString: "9B",
+			quantization: { name: "Q4_K_M", bits: 4.5 },
+			vision: true,
+			trainedForToolUse: true,
+		},
 		stats: {
 			stopReason: "eosFound",
+			timeToFirstTokenSec: 0.125,
+			totalTimeSec: 1.5,
+			tokensPerSecond: 16.5,
 			promptTokensCount: 100,
 			predictedTokensCount: 25,
 			totalTokensCount: 125,
@@ -50,14 +73,39 @@ function loadedModel(overrides: Partial<FakeModel> = {}): FakeModel {
 		modelKey: "qwen/qwen3.5-9b",
 		path: "qwen/qwen3.5-9b",
 		displayName: "Qwen 3.5 9B",
+		format: "gguf",
+		sizeBytes: 9_000,
+		vision: true,
+		trainedForToolUse: true,
+		getModelInfo: vi.fn().mockResolvedValue({
+			identifier: "loaded-qwen",
+			modelKey: "qwen/qwen3.5-9b",
+			path: "qwen/qwen3.5-9b",
+			displayName: "Qwen 3.5 9B",
+			format: "gguf",
+			instanceReference: "selected-instance",
+			sizeBytes: 9_000,
+			contextLength: 32_768,
+			architecture: "qwen3",
+			paramsString: "9B",
+			quantization: { name: "Q4_K_M", bits: 4.5 },
+			vision: true,
+			trainedForToolUse: true,
+		}),
+		getContextLength: vi.fn().mockResolvedValue(32_768),
 		respond: vi.fn().mockResolvedValue(result()),
 		...overrides,
 	};
 }
 
-function queueClient(models: readonly FakeModel[], dispose = vi.fn().mockResolvedValue(undefined)) {
+function queueClient(
+	models: readonly FakeModel[],
+	dispose = vi.fn().mockResolvedValue(undefined),
+	version = vi.fn().mockResolvedValue({ version: "0.3.24", build: 11 }),
+) {
 	const client = {
 		llm: { listLoaded: vi.fn().mockResolvedValue(models) },
+		system: { getLMStudioVersion: version },
 		[Symbol.asyncDispose]: dispose,
 	};
 	sdk.constructor.mockImplementationOnce(function () {
@@ -139,13 +187,71 @@ it("uses the exact loaded model, native structured prediction, truthful evidence
 	const model = loadedModel();
 	const client = queueClient([model]);
 
-	await expect(provider().complete(request)).resolves.toEqual({
+	const completion = await provider().complete(request);
+	expect(completion).toMatchObject({
 		text: '{"title":"native"}',
 		provider: "lmstudio",
-		model: "loaded-qwen",
+		model: "response-qwen",
 		execution: "local_inference",
 		token_usage: { measurement: "reported", input_tokens: 100, output_tokens: 25, total_tokens: 125 },
 		external_billing: { classification: "none", amount_usd: 0, reason: "local_inference" },
+	});
+	expect(completion.runtime_evidence).toEqual({
+		execution_context: {
+			client_sdk_release: { state: "observed", value: "1.5.0" },
+			provider_runtime_identity: { state: "unknown", reason: "not_reported" },
+			provider_runtime_version: { state: "observed", value: "0.3.24" },
+			provider_runtime_build: { state: "observed", value: 11 },
+			provider_service_tier: { state: "unknown", reason: "not_applicable" },
+			selected_model: {
+				requested_identity: { state: "observed", value: "qwen/qwen3.5-9b" },
+				identifier: { state: "observed", value: "loaded-qwen" },
+				model_key: { state: "observed", value: "qwen/qwen3.5-9b" },
+				path: { state: "observed", value: "qwen/qwen3.5-9b" },
+				display_name: { state: "observed", value: "Qwen 3.5 9B" },
+				format: { state: "observed", value: "gguf" },
+				instance_reference: { state: "observed", value: "selected-instance" },
+				size_bytes: { state: "observed", value: 9_000 },
+				architecture: { state: "observed", value: "qwen3" },
+				parameter_count_description: { state: "observed", value: "9B" },
+				quantization_name: { state: "observed", value: "Q4_K_M" },
+				quantization_bits: { state: "observed", value: 4.5 },
+				vision_capable: { state: "observed", value: true },
+				trained_for_tool_use: { state: "observed", value: true },
+			},
+			response_model: {
+				requested_identity: { state: "observed", value: "qwen/qwen3.5-9b" },
+				identifier: { state: "observed", value: "response-qwen" },
+				model_key: { state: "observed", value: "qwen/qwen3.5-9b" },
+				path: { state: "observed", value: "qwen/qwen3.5-9b" },
+				display_name: { state: "observed", value: "Qwen 3.5 9B" },
+				format: { state: "observed", value: "gguf" },
+				instance_reference: { state: "observed", value: "response-instance" },
+				size_bytes: { state: "observed", value: 9_000 },
+				architecture: { state: "observed", value: "qwen3" },
+				parameter_count_description: { state: "observed", value: "9B" },
+				quantization_name: { state: "observed", value: "Q4_K_M" },
+				quantization_bits: { state: "observed", value: 4.5 },
+				vision_capable: { state: "observed", value: true },
+				trained_for_tool_use: { state: "observed", value: true },
+			},
+			context_length: { state: "observed", value: 32_768 },
+			requested_reasoning_posture: { state: "observed", value: "provider_default" },
+			effective_reasoning_setting: { state: "externally_controlled", reason: "provider_controlled" },
+			speculative_draft_model_identity: { state: "unknown", reason: "not_reported" },
+		},
+		prediction_observation: {
+			provider_response_id: { state: "unknown", reason: "not_applicable" },
+			stop_reason: { state: "observed", value: "eosFound" },
+			time_to_first_token_ms: { state: "observed", value: 125 },
+			total_time_ms: { state: "observed", value: 1_500 },
+			tokens_per_second: { state: "observed", value: 16.5 },
+			speculative_total_tokens: { state: "unknown", reason: "not_reported" },
+			speculative_accepted_tokens: { state: "unknown", reason: "not_reported" },
+			speculative_rejected_tokens: { state: "unknown", reason: "not_reported" },
+			speculative_ignored_tokens: { state: "unknown", reason: "not_reported" },
+			reasoning_content_present: { state: "observed", value: false },
+		},
 	});
 	expect(sdk.constructor).toHaveBeenCalledWith({ baseUrl: "ws://127.0.0.1:1234" });
 	expect(client.llm.listLoaded).toHaveBeenCalledOnce();
@@ -171,6 +277,124 @@ it("uses the exact loaded model, native structured prediction, truthful evidence
 	expect(options).not.toHaveProperty("reasoning_effort");
 	expect(options).not.toHaveProperty("raw");
 	expect(client[Symbol.asyncDispose]).toHaveBeenCalledOnce();
+});
+
+it.each(["version", "model_info", "context_length"] as const)(
+	"isolates %s observation failure from successful inference",
+	async (failure) => {
+		const model = loadedModel({
+			...(failure === "model_info" ? { getModelInfo: vi.fn().mockRejectedValue(new Error("info unavailable")) } : {}),
+			...(failure === "context_length" ? { getContextLength: vi.fn().mockRejectedValue(new Error("context unavailable")) } : {}),
+		});
+		queueClient(
+			[model],
+			vi.fn().mockResolvedValue(undefined),
+			failure === "version"
+				? vi.fn().mockRejectedValue(new Error("version unavailable"))
+				: vi.fn().mockResolvedValue({ version: "0.3.24", build: 11 }),
+		);
+		const completion = await provider().complete(request);
+		expect(completion.model).toBe("response-qwen");
+		const context = completion.runtime_evidence!.execution_context;
+		expect(context.provider_runtime_version).toEqual(failure === "version"
+			? { state: "unknown", reason: "observation_failed" }
+			: { state: "observed", value: "0.3.24" });
+		expect(context.selected_model.instance_reference).toEqual(failure === "model_info"
+			? { state: "unknown", reason: "observation_failed" }
+			: { state: "observed", value: "selected-instance" });
+		expect(context.selected_model.architecture).toEqual(failure === "model_info"
+			? { state: "unknown", reason: "observation_failed" }
+			: { state: "observed", value: "qwen3" });
+		expect(context.context_length).toEqual(failure === "context_length"
+			? { state: "unknown", reason: "observation_failed" }
+			: { state: "observed", value: 32_768 });
+	},
+);
+
+it("bounds auxiliary observations without changing successful inference", async () => {
+	vi.useFakeTimers();
+	const never = vi.fn(() => new Promise<never>(() => undefined));
+	const model = loadedModel({
+		getModelInfo: never,
+		getContextLength: never,
+	});
+	queueClient([model], vi.fn().mockResolvedValue(undefined), never);
+	const completionPromise = provider().complete(request);
+	await vi.advanceTimersByTimeAsync(LM_STUDIO_AUXILIARY_OBSERVATION_TIMEOUT_MS);
+	const completion = await completionPromise;
+	expect(completion.model).toBe("response-qwen");
+	expect(completion.runtime_evidence?.execution_context).toMatchObject({
+		provider_runtime_version: { state: "unknown", reason: "observation_failed" },
+		provider_runtime_build: { state: "unknown", reason: "observation_failed" },
+		selected_model: {
+			instance_reference: { state: "unknown", reason: "observation_failed" },
+			architecture: { state: "unknown", reason: "observation_failed" },
+			parameter_count_description: { state: "unknown", reason: "observation_failed" },
+			quantization_name: { state: "unknown", reason: "observation_failed" },
+			quantization_bits: { state: "unknown", reason: "observation_failed" },
+		},
+		context_length: { state: "unknown", reason: "observation_failed" },
+	});
+});
+
+it("normalizes invalid and missing runtime observations instead of retaining false precision", async () => {
+	const model = loadedModel({
+		displayName: " ",
+		sizeBytes: -1,
+		respond: vi.fn().mockResolvedValue(result({
+			modelInfo: {
+				identifier: "response-qwen",
+				modelKey: " ",
+				path: "qwen/qwen3.5-9b",
+				displayName: "Qwen",
+				format: "gguf",
+				instanceReference: "response-instance",
+				sizeBytes: Number.NaN,
+			},
+			stats: {
+				stopReason: "eosFound",
+				promptTokensCount: 1,
+				predictedTokensCount: 1,
+				totalTokensCount: 2,
+				timeToFirstTokenSec: Number.NaN,
+				totalTimeSec: -1,
+				tokensPerSecond: Number.POSITIVE_INFINITY,
+				totalDraftTokensCount: 5,
+				acceptedDraftTokensCount: 1,
+				rejectedDraftTokensCount: 1,
+				ignoredDraftTokensCount: 1,
+			},
+		})),
+	});
+	queueClient([model], vi.fn().mockResolvedValue(undefined), vi.fn().mockResolvedValue({ version: " ", build: -1 }));
+	const evidence = (await provider().complete(request)).runtime_evidence!;
+	expect(evidence.execution_context).toMatchObject({
+		provider_runtime_version: { state: "unknown", reason: "not_reported" },
+		provider_runtime_build: { state: "unknown", reason: "not_reported" },
+		selected_model: {
+			display_name: { state: "unknown", reason: "not_reported" },
+			size_bytes: { state: "unknown", reason: "not_reported" },
+		},
+		response_model: {
+			model_key: { state: "unknown", reason: "not_reported" },
+			size_bytes: { state: "unknown", reason: "not_reported" },
+			architecture: { state: "unknown", reason: "not_reported" },
+			parameter_count_description: { state: "unknown", reason: "not_reported" },
+			quantization_name: { state: "unknown", reason: "not_reported" },
+			quantization_bits: { state: "unknown", reason: "not_reported" },
+			vision_capable: { state: "unknown", reason: "not_reported" },
+			trained_for_tool_use: { state: "unknown", reason: "not_reported" },
+		},
+	});
+	expect(evidence.prediction_observation).toMatchObject({
+		time_to_first_token_ms: { state: "unknown", reason: "not_reported" },
+		total_time_ms: { state: "unknown", reason: "not_reported" },
+		tokens_per_second: { state: "unknown", reason: "not_reported" },
+		speculative_total_tokens: { state: "unknown", reason: "not_reported" },
+		speculative_accepted_tokens: { state: "unknown", reason: "not_reported" },
+		speculative_rejected_tokens: { state: "unknown", reason: "not_reported" },
+		speculative_ignored_tokens: { state: "unknown", reason: "not_reported" },
+	});
 });
 
 it("omits temperature for a provider-default evaluation candidate", async () => {

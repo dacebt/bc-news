@@ -7,43 +7,59 @@ import {
 	parseMainStoryCopyeditOutputWithDiagnostics, parseMainStoryWriterOutput,
 	type AnnouncementsDraft, type AnnouncementsProduct, type MainStoryDraft, type MainStoryProduct,
 	type EditorialDiagnostic,
-	type ModelCompletion, type ModelProviderPort, type ModelProviderRequest, type PreparedEvidence, type ProductionModelStep,
+	type ModelCompletion, type ModelProviderPort, type ModelProviderRequest, type ModelRuntimeEvidence, type PreparedEvidence, type ProductionModelStep,
 } from "@bc-news/generation-core";
 import {
 	LmStudioRetryableError,
 	OpenAiCompatibleRetryableError,
 } from "@bc-news/model-adapters";
-import { V6BenchmarkRunSchema, type V6BenchmarkRun, type V6EvaluationTrial } from "./evaluation-artifact";
+import { V7BenchmarkRunSchema, type V7BenchmarkRun, type V7EvaluationTrial } from "./evaluation-artifact";
 import { EvaluationArtifactStore } from "./evaluation-artifact-store";
 import { deriveVersion5TrialOutcome } from "./evaluation-artifact-v5-trial-refinement";
 import { parseFinding, sha256Json, terminalCurrentTrackOutcome, transportErrorIdentity } from "./evaluation-trial-support";
 
+export class EvaluationRuntimeEvidenceError extends Error {
+	readonly code = "evaluator_runtime_evidence_missing";
+	constructor(productionStep: ProductionModelStep) {
+		super(`Live provider returned no runtime evidence for ${productionStep}`);
+		this.name = "EvaluationRuntimeEvidenceError";
+	}
+}
+
+export function requireRuntimeEvidence(
+	completion: ModelCompletion,
+	productionStep: ProductionModelStep,
+): ModelRuntimeEvidence {
+	if (completion.runtime_evidence === undefined) throw new EvaluationRuntimeEvidenceError(productionStep);
+	return completion.runtime_evidence;
+}
+
 export async function executeEvaluationTrial(input: {
-	benchmark: V6BenchmarkRun;
+	benchmark: V7BenchmarkRun;
 	store: EvaluationArtifactStore;
 	preparedEvidence: PreparedEvidence;
 	providers: Record<ProductionModelStep, ModelProviderPort>;
 	configIdentity: string;
 	trialId?: string;
 	transportRetryLimit?: number;
-}): Promise<V6BenchmarkRun> {
+}): Promise<V7BenchmarkRun> {
 	let benchmark = input.benchmark;
 	const trialId = input.trialId ?? benchmark.trials[0]!.id;
 	let mutationTail = Promise.resolve();
 	let mutationFailed = false;
 	let mutationFailure: unknown;
 
-	function retainedTrial(retainedBenchmark: V6BenchmarkRun): V6EvaluationTrial {
+	function retainedTrial(retainedBenchmark: V7BenchmarkRun): V7EvaluationTrial {
 		const retained = retainedBenchmark.trials.find(({ id }) => id === trialId);
 		if (retained === undefined || retainedBenchmark.trials.at(-1)?.id !== trialId) throw new Error(`Evaluation trial ${trialId} is not the final running trial`);
 		return retained;
 	}
-	function enqueueMutation<T>(derive: (current: V6BenchmarkRun) => { readonly next: V6BenchmarkRun; readonly result: T }): Promise<T> {
+	function enqueueMutation<T>(derive: (current: V7BenchmarkRun) => { readonly next: V7BenchmarkRun; readonly result: T }): Promise<T> {
 		const operation = mutationTail.then(async () => {
 			if (mutationFailed) throw mutationFailure;
 			try {
 				const mutation = derive(benchmark);
-				const next = V6BenchmarkRunSchema.parse(mutation.next);
+				const next = V7BenchmarkRunSchema.parse(mutation.next);
 				await input.store.replace(next);
 				benchmark = next;
 				return mutation.result;
@@ -56,7 +72,7 @@ export async function executeEvaluationTrial(input: {
 		mutationTail = operation.then(() => undefined, () => undefined);
 		return operation;
 	}
-	function updateTrial<T>(derive: (current: V6EvaluationTrial) => { readonly next: V6EvaluationTrial; readonly result: T }): Promise<T> {
+	function updateTrial<T>(derive: (current: V7EvaluationTrial) => { readonly next: V7EvaluationTrial; readonly result: T }): Promise<T> {
 		return enqueueMutation((currentBenchmark) => {
 			const mutation = derive(retainedTrial(currentBenchmark));
 			return {
@@ -77,27 +93,55 @@ export async function executeEvaluationTrial(input: {
 		let predecessorInvocationId: string | null = null;
 		let completion: ModelCompletion;
 		for (let attempt = 0; ; attempt += 1) {
-			const allocation = await updateTrial((current) => {
+			const allocation = await enqueueMutation((currentBenchmark) => {
+				const current = retainedTrial(currentBenchmark);
 				const ordinal = current.invocations.length + 1;
 				const invocationId = `${current.id}-invocation-${ordinal}`;
 				const startedAt = new Date();
+				const invocation = {
+					id: invocationId, production_step: stepInput.productionStep, config_identity: input.configIdentity,
+					ordinal, predecessor_invocation_id: predecessorInvocationId, request: retainedRequest, request_sha256: sha256Json(retainedRequest),
+					started_at: startedAt.toISOString(), transport: "in_flight" as const, parse: { state: "pending" as const },
+				};
 				return {
-					next: { ...current, invocations: [...current.invocations, {
-						id: invocationId, production_step: stepInput.productionStep, config_identity: input.configIdentity,
-						ordinal, predecessor_invocation_id: predecessorInvocationId, request: retainedRequest, request_sha256: sha256Json(retainedRequest),
-						started_at: startedAt.toISOString(), transport: "in_flight", parse: { state: "pending" },
-					}] },
+					next: {
+						...currentBenchmark,
+						trials: currentBenchmark.trials.map((candidate) => candidate.id === trialId
+							? { ...current, invocations: [...current.invocations, invocation] }
+							: candidate),
+						runtime_evidence: [...currentBenchmark.runtime_evidence, {
+							trial_id: current.id,
+							invocation_id: invocationId,
+							config_identity: input.configIdentity,
+							production_step: stepInput.productionStep,
+							ordinal,
+							state: "pending" as const,
+						}],
+					},
 					result: { invocationId, startedAt },
 				};
 			});
 			const { invocationId, startedAt } = allocation;
-			try { completion = await input.providers[stepInput.productionStep].complete(request); }
+			try {
+				completion = await input.providers[stepInput.productionStep].complete(request);
+			}
 			catch (error: unknown) {
 				const endedAt = new Date();
-				await updateTrial((current) => ({ next: { ...current, invocations: current.invocations.map((candidate) => candidate.id === invocationId ? {
-					...candidate, transport: "failed" as const, failure: transportErrorIdentity(error), ended_at: endedAt.toISOString(),
-					duration_ms: Math.max(0, endedAt.getTime() - startedAt.getTime()), retry_classification: { state: "pending" as const }, parse: { state: "pending" as const },
-				} : candidate) }, result: undefined }));
+				await enqueueMutation((currentBenchmark) => {
+					const current = retainedTrial(currentBenchmark);
+					return { next: {
+						...currentBenchmark,
+						trials: currentBenchmark.trials.map((trial) => trial.id === trialId ? { ...current, invocations: current.invocations.map((candidate) => candidate.id === invocationId ? {
+							...candidate, transport: "failed" as const, failure: transportErrorIdentity(error), ended_at: endedAt.toISOString(),
+							duration_ms: Math.max(0, endedAt.getTime() - startedAt.getTime()), retry_classification: { state: "pending" as const }, parse: { state: "pending" as const },
+						} : candidate) } : trial),
+						runtime_evidence: currentBenchmark.runtime_evidence.map((candidate) => candidate.invocation_id === invocationId ? {
+							...candidate,
+							state: "unavailable" as const,
+							reason: "transport_failed" as const,
+						} : candidate),
+					}, result: undefined };
+				});
 				const eligible =
 					error instanceof OpenAiCompatibleRetryableError
 					|| error instanceof LmStudioRetryableError;
@@ -110,11 +154,31 @@ export async function executeEvaluationTrial(input: {
 				continue;
 			}
 
+			const runtimeEvidence = requireRuntimeEvidence(completion, stepInput.productionStep);
+			const retainedCompletion = {
+				text: completion.text,
+				provider: completion.provider,
+				model: completion.model,
+				execution: completion.execution,
+				token_usage: completion.token_usage,
+				external_billing: completion.external_billing,
+			};
 			const endedAt = new Date();
-			await updateTrial((current) => ({ next: { ...current, invocations: current.invocations.map((candidate) => candidate.id === invocationId ? {
-			...candidate, transport: "succeeded" as const, completion, ended_at: endedAt.toISOString(),
-			duration_ms: Math.max(0, endedAt.getTime() - startedAt.getTime()), parse: { state: "pending" as const },
-			} : candidate) }, result: undefined }));
+			await enqueueMutation((currentBenchmark) => {
+				const current = retainedTrial(currentBenchmark);
+				return { next: {
+					...currentBenchmark,
+					trials: currentBenchmark.trials.map((trial) => trial.id === trialId ? { ...current, invocations: current.invocations.map((candidate) => candidate.id === invocationId ? {
+						...candidate, transport: "succeeded" as const, completion: retainedCompletion, ended_at: endedAt.toISOString(),
+						duration_ms: Math.max(0, endedAt.getTime() - startedAt.getTime()), parse: { state: "pending" as const },
+					} : candidate) } : trial),
+					runtime_evidence: currentBenchmark.runtime_evidence.map((candidate) => candidate.invocation_id === invocationId ? {
+						...candidate,
+						state: "captured" as const,
+						evidence: runtimeEvidence,
+					} : candidate),
+				}, result: undefined };
+			});
 			try {
 				const output = stepInput.parse(completion);
 				await updateTrial((current) => ({ next: { ...current, invocations: current.invocations.map((candidate) => candidate.id === invocationId && candidate.transport === "succeeded" ? {
@@ -132,7 +196,7 @@ export async function executeEvaluationTrial(input: {
 		}
 	}
 
-	async function setTrack(track: "main_story" | "announcements", state: V6EvaluationTrial["tracks"][typeof track]): Promise<void> {
+	async function setTrack(track: "main_story" | "announcements", state: V7EvaluationTrial["tracks"][typeof track]): Promise<void> {
 		await updateTrial((current) => ({ next: { ...current, tracks: { ...current.tracks, [track]: state } }, result: undefined }));
 	}
 

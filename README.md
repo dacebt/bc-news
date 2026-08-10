@@ -96,18 +96,20 @@ be deployed; it is not a deterministic test or a provider-default quality gate.
 
 The command incrementally retains every Evaluation Trial and Step Invocation in
 a versioned Benchmark Run. One ordered application owner allocates invocation
-ordinals and applies every version 6 transition, retaining each invocation
-before its provider transport. The two concurrently dispatched chains therefore
-form one truthful interleaved history, and the artifact store's atomic full-file
-replacement never races. Each writer still precedes its own copyeditor. Expected
+ordinals and applies every version 7 transition, retaining each invocation and
+its pending runtime-evidence record before provider transport. The two
+concurrently dispatched chains therefore form one truthful interleaved history,
+and the artifact store's atomic full-file replacement never races. Each writer
+still precedes its own copyeditor. Expected
 schema rejection or provider exhaustion closes only its track without
 suppressing the sibling; both tracks quiesce before terminal aggregation.
 Validation, persistence, or an unknown harness rejection prevents terminal
 retained completion, leaving the last strict running artifact inspectable
 through the benchmark browse routes.
 
-The current version 6 artifact retains every exact per-agent configuration and
-schema-valid copyedit diagnostic; versions 1–5 keep their frozen historical
+The current version 7 artifact retains every exact per-agent configuration,
+schema-valid copyedit diagnostic, and one lifecycle-matched normalized runtime
+record per invocation; versions 1–6 keep their frozen historical
 semantics. Its four subject outcomes are `completed`,
 `parse_rejected`, `contract_rejected`, and `infrastructure_incomplete`, separate
 from whether the harness retained trustworthy evidence. Malformed JSON or
@@ -135,6 +137,15 @@ Each route accepts `--results-dir`; otherwise it reads
 schema-invalid, or filename-mismatched evidence. Comparison reports input and
 provenance context separately from behavioral differences and produces no
 score, judge result, or acceptance decision.
+
+Runtime evidence is visible in `benchmark show`, `benchmark summary`, and
+`benchmark compare`. Comparable execution context includes the client/provider
+runtime, distinct selected and response model identities with reported architecture,
+parameter-count, quantization, vision, and tool-use capabilities, context/load identity,
+and declared reasoning posture. Stop reason, prediction timing and throughput,
+speculative counts, and reasoning-content presence remain behavior. Missing or
+provider-owned fields are explicit unknown or externally controlled observations;
+raw provider configuration blobs are never retained.
 
 The historical artifact is a **Run File**, not a Benchmark Run. Recorded-replay
 acceptance alone owns it and its separate default directory:
@@ -182,6 +193,7 @@ Repository-owned runtime proofs are direct package commands:
 pnpm --filter @bc-news/eval verify:evaluation-trial-retention
 pnpm --filter @bc-news/eval verify:evaluation-benchmark-continuation
 pnpm --filter @bc-news/eval verify:evaluation-browse
+pnpm --filter @bc-news/eval verify:benchmark-runtime-evidence
 pnpm --filter @bc-news/eval verify:recorded-response-fixture-authoring
 pnpm --filter @bc-news/eval verify:recorded-replay-acceptance
 ```
@@ -193,6 +205,8 @@ completion`; the continuation and browse proofs respectively end with
 `evaluation: serial benchmark retained linked retries and continued later trials`
 and
 `evaluation: evidence listed summarized and compared without verdicts`.
+Runtime-evidence verification ends with
+`BENCHMARK RUNTIME EVIDENCE VERIFIED`.
 Fixture proof prints
 `fixture authoring: four strict v3 hosted responses retained exact agent configurations, replayed, and compared`;
 recorded-replay proof prints

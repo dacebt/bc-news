@@ -140,6 +140,15 @@ pricing reference; rates and counts are never guessed. Hosted provider
 provenance is the configured provider id and model provenance is the response
 model.
 
+The provider-facing `ModelCompletion` may also carry normalized runtime
+evidence for evaluation. Published `ModelUsageRecord` remains an explicit
+legacy-field projection of provider, returned model, execution, token usage,
+and billing, so runtime evidence cannot enter Edition or generation-status
+contracts accidentally. The native SDK dependency and the exported application
+release constant are pinned exactly to `@lmstudio/sdk` 1.5.0; a test-only
+metadata-resolution proof verifies the installed package without making
+production code traverse package internals.
+
 `MODEL_CONFIG` and eval configuration contain one complete independent
 configuration per production agent: non-secret adapter identity, requested
 model, optional temperature, and adapter-specific reasoning or billing
@@ -251,25 +260,31 @@ processes the requests in parallel. The eval application owns this artifact
 boundary directly, adding no third domain port and changing neither provider
 adapters nor production Workflow scheduling.
 
-Current Benchmark Run artifact version 6 retains every exact per-agent adapter,
+Current Benchmark Run artifact version 7 retains every exact per-agent adapter,
 model, optional temperature, and adapter-specific declaration plus every exact
-copyedit diagnostic. Temperature omission and presence are independent
+copyedit diagnostic and a top-level runtime-evidence record for every reached
+invocation. Temperature omission and presence are independent
 candidate choices for each role. Obsolete decoding controls reject before
 artifact creation. Its four subject outcomes are `completed`, `parse_rejected`,
 `contract_rejected`, and `infrastructure_incomplete`. Versions 1–5 remain
-version-dispatched historical boundaries and keep their frozen semantics.
+version-dispatched historical boundaries, version 6 retains the prior
+per-agent configuration contract without runtime evidence, and all versions
+1–6 keep their frozen semantics.
 
 The artifact is exclusively created in `running` state before any provider
 call. One ordered application owner allocates every invocation ordinal and
-applies every retained version 6 mutation. Before each transport call, that
+applies every retained version 7 mutation. Before each transport call, that
 owner atomically retains the exact assembled `{production_step, system, user}`
 request, request hash, configuration identity, ordinal, predecessor link,
-timestamp, `transport: in_flight`, and `parse: pending`. Concurrent track work
+timestamp, `transport: in_flight`, and `parse: pending` together with an
+identity-matched `runtime_evidence: pending` record. Concurrent track work
 therefore enters one monotonic interleaved history, and the artifact store's
 atomic full-file replacement is never invoked concurrently. A successful
-application-facing completion is retained while parse remains pending before
-editorial parsing. A transport failure is retained with classification pending
-and then classified in a separate write. An eligible failure may append at most
+application-facing completion is retained without its optional provider-facing
+runtime field while its roster record atomically becomes `captured` and parse
+remains pending before editorial parsing. A transport failure atomically makes
+its runtime record `unavailable: transport_failed` and is retained with
+classification pending and then classified in a separate write. An eligible failure may append at most
 the declared number of retries; each retry points to the immediately previous
 same-step invocation and retains the exact same request and request hash.
 Deterministic transport failures, malformed JSON, and strict schema mismatch
@@ -289,6 +304,29 @@ last strict running artifact inspectable through the same version-dispatched
 benchmark browse boundary. Ended invocation durations equal their retained
 timestamp endpoints exactly, and trial and benchmark completions cannot precede
 any lifecycle event they contain.
+
+Runtime evidence uses application-owned strict observations rather than raw
+provider configuration. Every field is `observed`, `unknown`, or
+`externally_controlled` with a closed reason; invalid strings, counts, context
+lengths, timing, throughput, or speculative-token relations become canonical
+unknowns rather than nulls, non-finite JSON, or guessed descriptions. The
+execution context owns the pinned client SDK release, provider runtime,
+distinct selected and response model identities including reported architecture,
+parameter-count, quantization, vision, and tool-use capabilities, load/context identity,
+requested and effective reasoning posture, and speculative draft-model
+identity. Prediction observation owns stop reason, first-token and total time,
+throughput, speculative counts, and reasoning-content presence. LM Studio uses
+only stable public SDK observations; deprecated raw load and prediction config
+objects and the SDK's incorrect GPU-layer statistic are not retained. Auxiliary
+version, model-info, or context observation failure or observation timeout does
+not turn successful inference into a transport failure. Hosted adapters retain
+the identities and stable response observations they receive without treating a
+requested alias as an observed selected identity, and explicitly mark
+provider-owned or unreported runtime fields. A successful live completion
+without runtime evidence is an evaluator evidence failure that leaves the
+provider-success attempt represented by an in-flight invocation with pending
+evidence in the last strict running artifact rather than fabricating a transport
+failure.
 
 Artifact version 2 retains the exact declared configuration-order and
 repetition-order trial roster. Its trials are an append-only prefix: only the
@@ -313,11 +351,12 @@ relabeled as Benchmark Runs.
 
 Benchmark comparison projects context and behavior independently. Context owns
 the exact fixture and prepared evidence, configuration and retry/repetition
-policy, and code/output-contract provenance. Behavior owns lifecycle and
+policy, code/output-contract provenance, and version 7 execution-context
+evidence. Behavior owns lifecycle and
 harness outcome, ordered trial and track outcomes, findings, products,
 requests, completions or failures, usage, billing, duration, and stable
-retry/selection relationships. Run, trial, and invocation ids plus absolute
-timestamps do not create behavioral differences. This observation boundary
+retry/selection relationships plus version 7 prediction observations. Run,
+trial, and invocation ids plus absolute timestamps do not create behavioral differences. This observation boundary
 reports exhaustive paths only; it owns no score, judge, recommendation, or
 acceptance decision.
 
@@ -329,8 +368,8 @@ findings are deterministic diagnostics attributed to each track's terminal
 copyedit step; a schema-valid product completes its track with those diagnostics
 retained. Subject outcome describes model behavior, while harness outcome states
 only whether trustworthy evidence was retained. This scheduling change does not
-alter the version 6 artifact schema, its inherited version 5 subject semantics,
-or any historical version meaning.
+alter the frozen version 6 artifact schema, its inherited version 5 subject
+semantics, or any historical version meaning.
 
 Artifact version 1 is a historical-validation boundary, not an alias for the
 current production implementation. Eval-local frozen schemas, parsers, writer
@@ -364,8 +403,10 @@ explicit LM Studio sampling contract without changing versions 1–3. Version 5
 retains that historical sampling contract while adding schema-valid
 preservation and final-product diagnostics with completed products and narrowing
 terminal model-output outcomes to malformed JSON or strict schema mismatch.
-Version 6 is current: it replaces the run-wide sampling posture with exact
-independent per-agent configurations and optional temperature only. The
+Version 6 replaces the run-wide sampling posture with exact independent
+per-agent configurations and optional temperature only. Version 7 is current:
+it preserves those declarations and adds the lifecycle-matched normalized
+runtime-evidence roster while keeping legacy completion objects unchanged. The
 version-dispatched store rejects a cross-version replacement.
 
 Model evaluation declarations assign an exact configuration to every role and

@@ -8,12 +8,12 @@ tags: [wsd, direction, domain-model, evaluation, verification]
 status: stable
 generated:
   by: ebt-wsd/okf-v0.2
-  at: "2026-08-06T18:45:48Z"
+  at: "2026-08-10T04:53:07Z"
 ---
 # Domain Model: bc-news evaluation and verification
 
-**Last updated:** 2026-08-09
-**Update reason:** schema-valid editorial completion — separate terminal model-output contracts from retained non-terminal diagnostics.
+**Last updated:** 2026-08-10
+**Update reason:** observable model runtime evidence — separate comparable execution context from volatile prediction observation.
 
 ## Ubiquitous Language
 
@@ -32,13 +32,17 @@ generated:
 | Editorial diagnostic | A retained non-terminal preservation or final-product finding on schema-valid copyedit output. | Model-output contract failure |
 | Model-output contract failure | Malformed JSON or strict schema mismatch; the only terminal model-output failure. | Infrastructure failure or editorial diagnostic |
 | Production model step | One of the four configured writer or copyeditor calls in a generation run or evaluation trial. | Step invocation |
+| Runtime evidence record | One top-level Benchmark Run record whose identity and lifecycle exactly match one Step Invocation. | Model usage record |
+| Execution context | Normalized runtime observations that identify what comparable model environment executed an invocation. | Prediction observation |
+| Prediction observation | Volatile response behavior such as stop reason, timing, throughput, speculative counts, and reasoning-content presence. | Execution context |
+| Runtime observation | One strict field state: observed, unknown with a reason, or externally controlled with a reason. | A guessed provider setting |
 
 ## Bounded Contexts
 
 | Context | Scope | Vocabulary notes |
 |---|---|---|
 | Production generation | Creation and publication of one edition through four production model steps, with diagnostics retained separately from the edition. | Model-output contract or infrastructure failure is terminal; every schema-valid editorial finding is diagnostic and publication continues. |
-| Model evaluation | Durable observation of real model behavior across declared benchmark runs and trials. | Parse rejection, contract rejection, and infrastructure incompletion are subject outcomes; lost evidence is a harness failure. |
+| Model evaluation | Durable observation of real model behavior across declared benchmark runs and trials. | Parse rejection, contract rejection, and infrastructure incompletion are subject outcomes; lost invocation or runtime evidence is a harness failure. |
 | Acceptance verification | Recorded replay and explicit policies that accept or reject evidence. | It consumes evidence; it does not create a quality verdict. |
 | Composed product verification | The canonical local skeleton walk through deployable entrypoints. | Walking proves composition, not model quality. |
 | Deterministic testing | Isolated assertions over contracts, lifecycle, persistence, and comparison logic. | Tests do not substitute for a live evaluation or walk. |
@@ -48,7 +52,7 @@ generated:
 | Aggregate | What it is (one line) |
 |---|---|
 | Generation Run | Production work that creates one edition for an active region and publication date. |
-| Benchmark Run | The lifecycle and complete evidence roster for one declared model experiment. |
+| Benchmark Run | The lifecycle, invocation history, and complete runtime-evidence roster for one declared model experiment. |
 | Evaluation Trial | One configuration's two-track behavior and terminal subject outcome within a benchmark. |
 | Step Invocation | Immutable request, response or transport outcome, timing, findings, and retry linkage for one model call. |
 
