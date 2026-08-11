@@ -1,92 +1,93 @@
 import { createHash } from "node:crypto";
-import { mkdir, mkdtemp, readFile, rm, unlink, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
+import { readFile, unlink, writeFile } from "node:fs/promises";
+import { basename, dirname, join } from "node:path";
 import { isDeepStrictEqual } from "node:util";
 import { EvaluationIdSchema } from "./evaluation-artifact-schemas";
 import { buildEvaluationLongitudinalScorecard } from "./evaluation-longitudinal-scorecard-builder";
-import { loadEvaluationLongitudinalInput } from "./evaluation-longitudinal-scorecard-input";
+import { loadEvaluationLongitudinalInputAtReference } from "./evaluation-longitudinal-scorecard-input";
 import {
-	EvaluationLongitudinalDeclarationSchema, EvaluationLongitudinalError,
-	EvaluationLongitudinalScorecardArtifactSchema, type EvaluationLongitudinalScorecardArtifact,
+	EvaluationLongitudinalError,
+	EvaluationLongitudinalScorecardArtifactSchema,
+	type AnyEvaluationLongitudinalScorecardArtifact,
+	type EvaluationLongitudinalScorecardArtifact,
 } from "./evaluation-longitudinal-scorecard";
+import {
+	EvaluationLongitudinalDeclarationV1Schema,
+	EvaluationLongitudinalScorecardArtifactV1Schema,
+	type EvaluationLongitudinalScorecardArtifactV1,
+} from "./evaluation-longitudinal-scorecard-v1";
+import { reconstructEvaluationScorecardArtifactV1 } from "./evaluation-scorecard-store";
+import { evaluationFreshness, type EvaluationFreshness } from "./evaluation-repository-reference";
 
 function fail(code: EvaluationLongitudinalError["code"], path: string, message: string, cause?: unknown): never {
 	throw new EvaluationLongitudinalError(code, path, message, cause === undefined ? undefined : { cause });
 }
+
 function hash(bytes: Uint8Array): string { return createHash("sha256").update(bytes).digest("hex"); }
-function decode(encoded: string, path: string): Uint8Array {
-	const decoded = Buffer.from(encoded, "base64");
-	if (decoded.toString("base64") !== encoded) fail("series_artifact_tampered", path, "Embedded payload is not canonical base64");
-	return decoded;
+function decodeV1(encoded: string, path: string): Uint8Array {
+	const bytes = Buffer.from(encoded, "base64");
+	if (bytes.toString("base64") !== encoded) fail("series_artifact_tampered", path, "Historical payload is not canonical base64");
+	return bytes;
 }
-function parseEmbedded(bytes: Uint8Array, path: string): unknown {
+function parseV1(bytes: Uint8Array, path: string): unknown {
 	try { return JSON.parse(Buffer.from(bytes).toString("utf8")) as unknown; }
-	catch (cause) { return fail("series_artifact_tampered", path, "Embedded longitudinal source is malformed JSON", cause); }
+	catch (cause) { return fail("series_artifact_tampered", path, "Historical embedded source is malformed JSON", cause); }
 }
-function inside(root: string, target: string): boolean { const fromRoot = relative(root, target); return fromRoot !== ".." && !fromRoot.startsWith(`..${sep}`) && !isAbsolute(fromRoot); }
 
-async function recompute(candidate: EvaluationLongitudinalScorecardArtifact, sourcePath: string): Promise<EvaluationLongitudinalScorecardArtifact> {
-	const declarationBytes = decode(candidate.source_payloads.declaration_base64, sourcePath);
-	if (hash(declarationBytes) !== candidate.declaration_sha256) fail("series_artifact_tampered", sourcePath, "Embedded declaration hash changed");
-	const declarationResult = EvaluationLongitudinalDeclarationSchema.safeParse(parseEmbedded(declarationBytes, sourcePath));
-	if (!declarationResult.success) fail("series_artifact_tampered", sourcePath, "Embedded declaration contract changed", declarationResult.error);
+export function reconstructEvaluationLongitudinalScorecardArtifactV1(candidate: unknown, path: string): EvaluationLongitudinalScorecardArtifactV1 {
+	const result = EvaluationLongitudinalScorecardArtifactV1Schema.safeParse(candidate);
+	if (!result.success) fail("series_invalid", path, `Historical longitudinal contract rejected: ${result.error.message}`, result.error);
+	const artifact = result.data; const declarationBytes = decodeV1(artifact.source_payloads.declaration_base64, path);
+	if (hash(declarationBytes) !== artifact.declaration_sha256) fail("series_artifact_tampered", path, "Historical longitudinal declaration hash changed");
+	const declarationResult = EvaluationLongitudinalDeclarationV1Schema.safeParse(parseV1(declarationBytes, path));
+	if (!declarationResult.success) fail("series_artifact_tampered", path, "Historical longitudinal declaration contract changed", declarationResult.error);
 	const declaration = declarationResult.data;
-	if (candidate.source_payloads.scorecards.length !== declaration.scorecards.length || candidate.scorecard_hashes.length !== declaration.scorecards.length) fail("series_artifact_tampered", sourcePath, "Embedded scorecard roster length changed");
-	const virtualRoot = resolve(sep, "bc-news-longitudinal-isolated-root"); const destinations = new Set([resolve(virtualRoot, "declaration.json")]);
-	const prepared = declaration.scorecards.map((descriptor, index) => {
-		const embedded = candidate.source_payloads.scorecards[index]; const listed = candidate.scorecard_hashes[index];
-		if (embedded === undefined || listed === undefined || embedded.ordinal !== descriptor.ordinal || embedded.phase !== descriptor.phase || embedded.scorecard_id !== descriptor.scorecard_id
-			|| listed.ordinal !== descriptor.ordinal || listed.phase !== descriptor.phase || listed.scorecard_id !== descriptor.scorecard_id || listed.scorecard_sha256 !== descriptor.scorecard_sha256) fail("series_artifact_tampered", sourcePath, "Embedded scorecard roster changed");
-		if (basename(descriptor.path) !== `${descriptor.scorecard_id}.json`) fail("series_artifact_tampered", sourcePath, "Embedded scorecard path is detached from its declared id");
-		const virtualDestination = resolve(virtualRoot, descriptor.path);
-		if (!inside(virtualRoot, virtualDestination) || [...destinations].some((existing) => existing === virtualDestination || inside(existing, virtualDestination) || inside(virtualDestination, existing))) fail("series_artifact_tampered", sourcePath, "Embedded scorecard path escapes or collides inside reconstruction root");
-		destinations.add(virtualDestination);
-		const bytes = decode(embedded.bytes_base64, sourcePath);
-		if (hash(bytes) !== descriptor.scorecard_sha256) fail("series_artifact_tampered", sourcePath, "Embedded scorecard hash changed");
-		return { descriptor, bytes };
-	});
-	const root = await mkdtemp(join(tmpdir(), "bc-news-longitudinal-read-")); let cleanupFailure: unknown;
-	try {
-		for (const { descriptor, bytes } of prepared) {
-			const destination = resolve(root, descriptor.path);
-			if (!inside(root, destination)) fail("series_artifact_tampered", sourcePath, "Resolved reconstruction destination escaped its isolated root");
-			await mkdir(dirname(destination), { recursive: true }); await writeFile(destination, bytes, { flag: "wx" });
-		}
-		const declarationPath = join(root, "declaration.json"); await writeFile(declarationPath, declarationBytes, { flag: "wx" });
-		let loaded;
-		try { loaded = await loadEvaluationLongitudinalInput(declarationPath); }
-		catch (cause) { return fail("series_artifact_tampered", sourcePath, "Embedded scorecard evidence no longer validates", cause); }
-		const rebuilt = buildEvaluationLongitudinalScorecard(loaded, { id: candidate.id, createdAt: candidate.created_at });
-		if (!isDeepStrictEqual(rebuilt, candidate)) fail("series_artifact_tampered", sourcePath, "Longitudinal derived evidence does not reconstruct exactly");
-		return rebuilt;
-	} finally {
-		try { await rm(root, { recursive: true }); } catch (cause) { cleanupFailure = cause; }
-		if (cleanupFailure !== undefined) fail("series_invalid", sourcePath, `Could not clean longitudinal reconstruction root ${root}`, cleanupFailure);
+	if (artifact.source_payloads.scorecards.length !== declaration.scorecards.length || artifact.scorecard_hashes.length !== declaration.scorecards.length) fail("series_artifact_tampered", path, "Historical longitudinal source roster length changed");
+	let previousCreatedAt = Number.NEGATIVE_INFINITY;
+	for (const [index, descriptor] of declaration.scorecards.entries()) {
+		const embedded = artifact.source_payloads.scorecards[index]; const listed = artifact.scorecard_hashes[index];
+		if (embedded === undefined || listed === undefined || embedded.ordinal !== descriptor.ordinal || embedded.phase !== descriptor.phase || embedded.scorecard_id !== descriptor.scorecard_id || listed.ordinal !== descriptor.ordinal || listed.phase !== descriptor.phase || listed.scorecard_id !== descriptor.scorecard_id || listed.scorecard_sha256 !== descriptor.scorecard_sha256) fail("series_artifact_tampered", path, "Historical longitudinal scorecard roster changed");
+		const bytes = decodeV1(embedded.bytes_base64, path);
+		if (hash(bytes) !== descriptor.scorecard_sha256) fail("series_artifact_tampered", path, "Historical embedded scorecard hash changed");
+		const scorecard = reconstructEvaluationScorecardArtifactV1(parseV1(bytes, path), path);
+		if (scorecard.id !== descriptor.scorecard_id || scorecard.created_at !== listed.created_at || Date.parse(scorecard.created_at) <= previousCreatedAt) fail("series_artifact_tampered", path, "Historical embedded scorecard identity or chronology changed");
+		previousCreatedAt = Date.parse(scorecard.created_at);
 	}
+	return artifact;
 }
 
-async function validateForCreate(candidate: EvaluationLongitudinalScorecardArtifact, path: string): Promise<EvaluationLongitudinalScorecardArtifact> {
+async function recompute(candidate: EvaluationLongitudinalScorecardArtifact, repositoryRoot: string, sourcePath: string): Promise<EvaluationLongitudinalScorecardArtifact> {
+	let input;
+	try { input = await loadEvaluationLongitudinalInputAtReference(repositoryRoot, candidate.source_reference); }
+	catch (cause) { return fail("series_artifact_tampered", sourcePath, "Recorded longitudinal evidence cannot be resolved", cause); }
+	return buildEvaluationLongitudinalScorecard(input, { id: candidate.id, createdAt: candidate.created_at });
+}
+
+async function validated(candidate: unknown, path: string, repositoryRoot: string, code: "series_invalid" | "series_create_rejected"): Promise<EvaluationLongitudinalScorecardArtifact> {
 	const result = EvaluationLongitudinalScorecardArtifactSchema.safeParse(candidate);
-	if (!result.success) fail("series_create_rejected", path, `Longitudinal artifact contract rejected: ${result.error.message}`, result.error);
-	try { return await recompute(result.data, path); }
-	catch (cause) { return fail("series_create_rejected", path, "Longitudinal artifact reconstruction failed", cause); }
+	if (!result.success) fail(code, path, `Longitudinal artifact contract rejected: ${result.error.message}`, result.error);
+	const rebuilt = await recompute(result.data, repositoryRoot, path);
+	if (!isDeepStrictEqual(rebuilt, result.data)) fail(code === "series_create_rejected" ? code : "series_artifact_tampered", path, "Longitudinal derived evidence does not reconstruct exactly");
+	return result.data;
 }
 
-export async function createEvaluationLongitudinalScorecardArtifact(path: string, artifact: EvaluationLongitudinalScorecardArtifact): Promise<EvaluationLongitudinalScorecardArtifact> {
+export async function createEvaluationLongitudinalScorecardArtifact(path: string, artifact: EvaluationLongitudinalScorecardArtifact, repositoryRoot: string): Promise<EvaluationLongitudinalScorecardArtifact>;
+export async function createEvaluationLongitudinalScorecardArtifact(path: string, artifact: EvaluationLongitudinalScorecardArtifactV1, repositoryRoot?: string): Promise<EvaluationLongitudinalScorecardArtifactV1>;
+export async function createEvaluationLongitudinalScorecardArtifact(path: string, artifact: AnyEvaluationLongitudinalScorecardArtifact, repositoryRoot?: string): Promise<AnyEvaluationLongitudinalScorecardArtifact> {
 	if (basename(path) !== `${artifact.id}.json`) fail("series_create_rejected", path, "Longitudinal artifact path must use its id as filename");
-	const candidate = await validateForCreate(artifact, path);
+	const candidate = artifact.version === 1
+		? reconstructEvaluationLongitudinalScorecardArtifactV1(artifact, path)
+		: await validated(artifact, path, repositoryRoot ?? fail("series_create_rejected", path, "Repository root is required for current longitudinal reconstruction"), "series_create_rejected");
 	try { await writeFile(path, `${JSON.stringify(candidate, null, 2)}\n`, { encoding: "utf8", flag: "wx" }); }
 	catch (cause) { return fail("series_create_rejected", path, "Could not exclusively create longitudinal artifact", cause); }
-	try { return await loadEvaluationLongitudinalScorecardArtifact(candidate.id, dirname(path)); }
+	try { return await loadEvaluationLongitudinalScorecardArtifact(candidate.id, dirname(path), repositoryRoot); }
 	catch (cause) {
-		try { await unlink(path); }
-		catch (cleanupCause) { return fail("series_create_rejected", path, "Longitudinal read-after-write failure could not remove the new artifact", cleanupCause); }
+		try { await unlink(path); } catch { /* primary create failure remains authoritative */ }
 		return fail("series_create_rejected", path, "Longitudinal read-after-write validation failed", cause);
 	}
 }
 
-export async function loadEvaluationLongitudinalScorecardArtifact(id: string, directory: string): Promise<EvaluationLongitudinalScorecardArtifact> {
+export async function loadEvaluationLongitudinalScorecardArtifact(id: string, directory: string, repositoryRoot?: string): Promise<AnyEvaluationLongitudinalScorecardArtifact> {
 	const idResult = EvaluationIdSchema.safeParse(id);
 	if (!idResult.success) fail("invalid_series_id", directory, `Invalid longitudinal series id: ${id}`, idResult.error);
 	const path = join(directory, `${idResult.data}.json`); let raw: Uint8Array;
@@ -95,15 +96,23 @@ export async function loadEvaluationLongitudinalScorecardArtifact(id: string, di
 	let candidate: unknown;
 	try { candidate = JSON.parse(Buffer.from(raw).toString("utf8")) as unknown; }
 	catch (cause) { return fail("series_malformed", path, "Malformed longitudinal artifact JSON", cause); }
-	const result = EvaluationLongitudinalScorecardArtifactSchema.safeParse(candidate);
-	if (!result.success) fail("series_invalid", path, `Longitudinal artifact contract rejected: ${result.error.message}`, result.error);
-	let rebuilt: EvaluationLongitudinalScorecardArtifact;
-	try { rebuilt = await recompute(result.data, path); }
-	catch (cause) {
-		if (cause instanceof EvaluationLongitudinalError && cause.code === "series_invalid") throw cause;
-		return fail("series_artifact_tampered", path, "Longitudinal artifact source or derivation changed", cause);
-	}
-	if (!isDeepStrictEqual(rebuilt, result.data)) fail("series_artifact_tampered", path, "Longitudinal artifact does not reconstruct exactly");
-	if (rebuilt.id !== idResult.data) fail("series_filename_mismatch", path, "Longitudinal artifact filename identity mismatch");
-	return rebuilt;
+	const artifact = typeof candidate === "object" && candidate !== null && "version" in candidate && candidate.version === 1
+		? reconstructEvaluationLongitudinalScorecardArtifactV1(candidate, path)
+		: await validated(candidate, path, repositoryRoot ?? fail("series_invalid", path, "Repository root is required for current longitudinal reconstruction"), "series_invalid");
+	if (artifact.id !== idResult.data) fail("series_filename_mismatch", path, "Longitudinal artifact filename identity mismatch");
+	return artifact;
+}
+
+export interface LongitudinalFreshness {
+	readonly scorecard_id: string;
+	readonly source_reference: EvaluationLongitudinalScorecardArtifact["scorecard_references"][number]["source_reference"];
+	readonly code: EvaluationFreshness;
+}
+
+export async function evaluationLongitudinalFreshness(artifact: EvaluationLongitudinalScorecardArtifact, repositoryRoot: string): Promise<readonly LongitudinalFreshness[]> {
+	return Promise.all(artifact.scorecard_references.map(async (source) => ({
+		scorecard_id: source.scorecard_id,
+		source_reference: source.source_reference,
+		code: await evaluationFreshness(repositoryRoot, source.evaluated_code_commit_sha),
+	})));
 }

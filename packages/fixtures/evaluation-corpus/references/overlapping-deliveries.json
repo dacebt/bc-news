@@ -1,7 +1,6 @@
 {
-	"version": 1,
+	"version": 2,
 	"fixture_id": "overlapping-deliveries",
-	"evidence_sha256": "d14e0ecf6605d754e25c66e8e4630e5a556c37edd9b15d5236606245abc5ee1b",
 	"claims": [],
 	"events": [
 		{"id":"grain-cart-arrival","status":"established","supporting_witnesses":[{"message_id":"overlap-01","field":"text","excerpt":"The grain cart arrived at River Depot."}],"opposing_witnesses":[],"unresolved_witnesses":[]},

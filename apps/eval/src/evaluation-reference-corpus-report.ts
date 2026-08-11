@@ -18,7 +18,7 @@ export function formatEvaluationReferenceCorpusReport(corpus: LoadedEvaluationRe
 	const coverage = [...new Set(corpus.manifest.fixtures.flatMap(({ variation_tags }) => variation_tags))];
 	return [
 		`Evaluation reference corpus v${corpus.manifest.version}: ${corpus.manifest.id}`,
-		`Manifest SHA-256: ${corpus.manifestSha256}`,
+		`Source: ${corpus.sourceReference.commit_sha}:${corpus.sourceReference.path}`,
 		`Fixtures: ${corpus.entries.length}`,
 		`Messages: raw=${rawTotal} prepared=${preparedTotal}`,
 		`Variation coverage: ${coverage.join(", ")}`,

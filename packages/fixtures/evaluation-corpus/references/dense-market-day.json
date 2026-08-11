@@ -1,7 +1,6 @@
 {
-	"version": 1,
+	"version": 2,
 	"fixture_id": "dense-market-day",
-	"evidence_sha256": "c172a11bdfa9274ffcce4b8277d452df019730a5735e5b9c365c7ce5e6ac527d",
 	"claims": [
 		{"id":"market-opened","status":"established","supporting_witnesses":[{"message_id":"dense-01","field":"text","excerpt":"The east market opened at 09:00 UTC."}],"opposing_witnesses":[],"unresolved_witnesses":[]}
 	],

@@ -192,7 +192,7 @@ observations do not cross domain boundaries.
 | Deterministic tests | `pnpm test` | Isolated invariants, reproduced defects, and high-risk state transitions | Test pass or hard test failure |
 | Model evaluation | `benchmark run/list/show/summary/compare` | Strict versioned Benchmark Runs under `apps/eval/evaluation-results` | Model subject outcome and evidence-retention harness outcome, reported as `evaluation:` observations |
 | Evaluation reference corpus | `corpus show --corpus <manifest-path>` | Strict ordered synthetic fixtures and exact source-witness references | Auditable source truth and objective variation coverage; no model result or verdict |
-| Evaluation scorecards | `scorecard build/show` | Exact retained Benchmark Runs, corpus sources, human annotations, and human qualitative reviews | Four role-specific transparent evidence reports; no aggregate score, ranking, recommendation, or acceptance verdict |
+| Evaluation scorecards | `scorecard build/show` | Commit-addressed retained Benchmark Runs, corpus sources, Codex annotations, and Codex qualitative reviews | Four role-specific transparent evidence reports plus current/outdated checkout information; no aggregate score, ranking, recommendation, or acceptance verdict |
 | Longitudinal evaluation scorecards | `longitudinal build/show` | Exact ordered scorecard audit packs, stable cohort projections, and baseline/subject histories | Four role-specific evidence classifications; no model judge, acceptance verdict, or production decision |
 | Fixture and context tooling | `fixture record-responses` and `context benchmark` | Request-linked response files or strict context-result artifacts | Fixture-authoring or context-measurement tooling observations |
 | Recorded-replay acceptance | `acceptance run/list/show/compare` | Historical Run Files under `apps/eval/results` | `acceptance:` gate result over controlled recorded evidence |
@@ -264,9 +264,11 @@ boundary directly, adding no third domain port and changing neither provider
 adapters nor production Workflow scheduling.
 
 The evaluation reference corpus is selected only through `corpus show
---corpus <manifest-path>`. Its V1 manifest owns positional order, canonical
-fixture/reference paths, exact byte hashes, and closed variation tags with
-objective witnesses. The committed corpus contains twelve synthetic
+--corpus <manifest-path>`. Its current version 2 manifest owns positional
+order, canonical repository-relative fixture/reference paths, and closed
+variation tags with objective witnesses. A Git commit plus one contained path
+owns cross-file identity; the manifest does not duplicate child-file hashes.
+The committed corpus contains twelve synthetic
 conversations. Each separate strict reference uses exact excerpts from named
 message fields for claims, events, ambiguities, noteworthy candidates,
 entities, and raw numeric text; status shapes distinguish established,
@@ -274,9 +276,9 @@ contested, and unresolved evidence without supplying replacement prose.
 
 Loading runs every fixture through `EvidenceFixtureSchema` and the real
 `prepareEvidence` path. Every cited identity and excerpt must survive under the
-same message id. Directory contents must exactly match the manifest, and
-canonicalization, realpath containment, symlink rejection, and exact hashes
-prevent implicit selection or unowned evidence. Dense/sparse thresholds,
+same message id. The committed tree beneath the corpus path must exactly match
+the manifest, and strict contained POSIX paths prevent implicit selection or
+unowned evidence. Dense/sparse thresholds,
 event-time relationships, contradiction roles, unresolved records, grounded
 names/numbers, announcement candidates, and explicit irrelevant-message ids
 make variation tags auditable rather than decorative. Existing valid
@@ -287,35 +289,40 @@ Evaluation scorecards are a separate eval-owned evidence boundary selected only
 through `scorecard build --input <declaration-path> [--results-dir <path>]` and
 `scorecard show <scorecard-id> [--results-dir <path>]`. A declaration binds one
 exact configuration to the complete ordered reference corpus, every complete
-retained version 7 Benchmark Run for that corpus, exact human output
-annotations, and separate human qualitative reviews. No Benchmark Run, corpus
+retained version 7 Benchmark Run for that corpus, exact Codex output
+annotations, and separate Codex qualitative reviews. Version 1 human evidence
+retains its historical schema and is not rewritten. No Benchmark Run, corpus
 entry, production prompt, retry policy, generation path, or historical artifact
 is changed by scorecard construction, and this boundary adds no domain port.
 
-Each strict scorecard artifact embeds the exact declaration, manifest,
-fixture/reference pairs, Benchmark Runs, annotation bundle, and qualitative
-review bundle. Loading reconstructs the real corpus boundary in an isolated
-temporary root and recomputes every source hash, output identity, context
+Each current version 2 scorecard artifact stores one source declaration
+reference `{ repository, commit_sha, path }` plus compact semantic source
+descriptors. Loading reads the declaration and every named child with `git
+show` from the recorded commit and recomputes every output identity, context
 identity, count, rate, 95% Wilson interval, distribution, and qualitative
 summary before accepting the artifact. Reports contain exactly four separate
 production-role sections. Deterministic measurements expose named units,
 denominators, sample counts, and unavailable or inapplicable states. Semantic
 grounding, attribution, event coverage, announcement relevance, coherence,
-usefulness, newsworthiness, and voice remain visibly human-authored evidence.
+usefulness, newsworthiness, and voice remain visibly Codex-authored evidence.
 There is no weighted or combined score, model rank, winner, threshold,
 recommendation, acceptance verdict, retry trigger, or production selection.
+The corpus source reference is normalized to the last commit that changed its
+closed corpus subtree, so later evidence-storage commits do not manufacture a
+context change; a real corpus revision changes that explicit commit-and-path
+identity. Public readers continue to dispatch and reconstruct frozen version 1
+embedded-source artifacts without adding byte ownership to version 2.
 
 Longitudinal evaluation remains inside that same eval-owned filesystem evidence
 boundary and adds no domain port. `longitudinal build --input
 <declaration-path> [--results-dir <path>]` consumes an ordered declaration of
-exact capability-3 scorecard bytes split into an earlier baseline and later
+commit-addressed capability-3 scorecards split into an earlier baseline and later
 subject partition. `longitudinal show <series-id> [--results-dir <path>]`
-strictly reloads the resulting version 1 series. The store exclusively creates
-each artifact, embeds the declaration and every scorecard audit pack, and
-reconstructs the nested scorecards and all derived histories before accepting
-it. Internal hashes detect inconsistent bytes and derivations; repository
-commit history, not a self-contained digest, is the durable trust boundary.
-Underlying Benchmark Run ids and byte hashes are pairwise disjoint, so a
+strictly reloads the resulting version 2 series. The store exclusively creates
+each artifact, resolves its declaration and each scorecard through recorded
+Git references, and reconstructs all derived histories before accepting it.
+Repository commit history is the durable audit boundary. Underlying Benchmark
+Run ids are pairwise disjoint, so a
 repackaged scorecard cannot manufacture repetitions.
 
 Each production role owns a separate stable longitudinal cohort projection.
@@ -323,7 +330,7 @@ It retains corpus/reference and prepared-evidence identities, ordered prompt
 hashes normalized away from generated run/trial locators, output-contract and
 exact code provenance, exact role adapter/model/sampling configuration,
 declared transport retry policy, and normalized execution context. Generated
-ids and timestamps, realized retry attempts, outputs, human assessments,
+ids and timestamps, realized retry attempts, outputs, Codex assessments,
 tokens, latency, and volatile prediction observations remain behavior. Exact
 context mismatch produces `context_changed`; unknown context, fewer than three
 baseline packs, fewer than two later packs, or no eligible quantitative metric
@@ -336,12 +343,18 @@ each application/provider latency dimension retain separate raw descriptive
 distributions; strict observed-range disjointness is a named signal. At least
 one signal yields `potential_drift`, otherwise the role is `within_baseline`.
 Categorical qualitative histories retain reviewer and rubric evidence but do
-not drive the classifier. The rule deliberately makes exact commit changes
-new context, treats variable upstream drafts as copyeditor request context, and
-exposes correlation, range-extreme, multiplicity, human-variation, and
+not drive the classifier. The rule deliberately makes exact corpus-source or
+evaluated-code commit changes new context, treats variable upstream drafts as copyeditor request context, and
+exposes correlation, range-extreme, multiplicity, evaluator-variation, and
 non-causality limits. It adds no overall score, judge, rank, recommendation,
 quality threshold, verdict, retry action, publication decision, or production
 selection.
+
+Scorecard and longitudinal reports separately compare every evaluated code
+commit with the explicitly resolved repository-root `HEAD`. `current` and
+`outdated` are information only. A different checkout commit never rejects a
+source reference, prevents reconstruction, blocks a build/show command, or
+decides whether another evaluation may run.
 
 Current Benchmark Run artifact version 7 retains every exact per-agent adapter,
 model, optional temperature, and adapter-specific declaration plus every exact

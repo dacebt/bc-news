@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
 import { PRODUCTION_MODEL_STEPS, type ModelExecutionContext, type ProductionModelStep } from "@bc-news/generation-core";
 import { canonical, sha256Json } from "./evaluation-artifact-schemas";
@@ -9,8 +8,8 @@ import { validateLoadedEvaluationScorecardInput, type LoadedEvaluationScorecardI
 const RATE_DEFINITIONS = [
 	["schema_reliability", "terminal_provider_success_invocation"],
 	["copyedit_preservation", "parse_success_copyedit_output"],
-	["claim_grounding", "human_annotated_factual_claim"],
-	["required_attribution", "human_annotated_required_attribution_claim"],
+	["claim_grounding", "codex_annotated_factual_claim"],
+	["required_attribution", "codex_annotated_required_attribution_claim"],
 	["event_coverage", "source_event_output_pair"],
 	["announcement_relevance", "parsed_announcement"],
 ] as const;
@@ -19,8 +18,6 @@ const CRITERIA = ["coherence", "usefulness", "newsworthiness", "voice"] as const
 const Z95 = 1.959963984540054;
 
 function fail(code: EvaluationScorecardError["code"], path: string, message: string): never { throw new EvaluationScorecardError(code, path, message); }
-function base64(bytes: Uint8Array): string { return Buffer.from(bytes).toString("base64"); }
-function hash(bytes: Uint8Array): string { return createHash("sha256").update(bytes).digest("hex"); }
 function track(step: ProductionModelStep): "main_story" | "announcements" { return step.startsWith("main_story") ? "main_story" : "announcements"; }
 
 function roleEvidence(input: LoadedEvaluationScorecardInput, step: ProductionModelStep) {
@@ -42,11 +39,13 @@ function contextFor(input: LoadedEvaluationScorecardInput, step: ProductionModel
 	const firstRun = input.runs[0]?.run; const config = firstRun?.declaration.configurations.find(({ identity }) => identity === input.declaration.configuration_identity)?.config;
 	if (firstRun === undefined || config === undefined) fail("configuration_mismatch", input.declarationPath, "Selected configuration is missing");
 	const projection = {
-		corpus_manifest_id: input.corpus.manifest.id, corpus_manifest_sha256: input.corpus.manifestSha256,
-		fixture_prepared_identities: input.runs.map(({ run, declaration }) => ({ fixture_id: declaration.corpus_fixture_id, fixture_sha256: run.fixture.fixture_sha256, prepared_evidence_identity_sha256: run.prepared_evidence.identity_sha256 })),
+		corpus_manifest_id: input.corpus.manifest.id,
+		corpus_source_reference: input.corpus.sourceReference,
+		fixture_prepared_identities: input.runs.map(({ run, declaration }) => ({ fixture_id: declaration.corpus_fixture_id, prepared_evidence_identity_sha256: run.prepared_evidence.identity_sha256 })),
 		code_provenance: firstRun.provenance.code,
 		output_contract_provenance: firstRun.provenance.output_contracts,
 		adapter: config.production_steps[step],
+		declared_transport_retry_limit: firstRun.declaration.transport_retry_limit,
 		request_hashes: evidence.flatMap(({ loaded, trial, invocations }) => invocations.map(({ request_sha256 }) => ({ run_id: loaded.run.id, trial_id: trial.id, request_sha256 }))),
 		execution_context: captured[0]!,
 	};
@@ -128,7 +127,7 @@ function qualitative(input: LoadedEvaluationScorecardInput, step: ProductionMode
 			const assessment = review.criteria[criterionIndex]!;
 			return { review_id: review.review_id, output: review.output, assessment: assessment.assessment, rationale: assessment.rationale, uncertainty: assessment.uncertainty };
 		});
-		return { criterion, unit: "review_assessment" as const, sample_unit: "human_reviewed_output" as const, scorecard_context: context, sample_count: evidence.length, counts: { meets: evidence.filter(({ assessment }) => assessment === "meets").length, partly_meets: evidence.filter(({ assessment }) => assessment === "partly_meets").length, does_not_meet: evidence.filter(({ assessment }) => assessment === "does_not_meet").length, uncertain: evidence.filter(({ assessment }) => assessment === "uncertain").length }, evidence };
+		return { criterion, unit: "review_assessment" as const, sample_unit: "codex_reviewed_output" as const, scorecard_context: context, sample_count: evidence.length, counts: { meets: evidence.filter(({ assessment }) => assessment === "meets").length, partly_meets: evidence.filter(({ assessment }) => assessment === "partly_meets").length, does_not_meet: evidence.filter(({ assessment }) => assessment === "does_not_meet").length, uncertain: evidence.filter(({ assessment }) => assessment === "uncertain").length }, evidence };
 	});
 }
 
@@ -146,12 +145,16 @@ export function buildEvaluationScorecard(input: LoadedEvaluationScorecardInput, 
 	const firstRun = input.runs[0]?.run; const config = firstRun?.declaration.configurations.find(({ identity }) => identity === input.declaration.configuration_identity)?.config;
 	if (firstRun === undefined || config === undefined) fail("configuration_mismatch", input.declarationPath, "Selected configuration is missing");
 	const candidate = {
-		version: 1 as const, id: options.id, created_at: options.createdAt,
-		source_payloads: { declaration_base64: base64(input.declarationBytes), corpus_manifest_base64: base64(input.corpus.manifestBytes), corpus_entries: input.corpus.entries.map((entry) => ({ fixture_id: entry.manifestEntry.id, evidence_base64: base64(entry.evidenceBytes), reference_base64: base64(entry.referenceBytes) })), benchmark_runs: input.runs.map(({ run, bytes }) => ({ run_id: run.id, bytes_base64: base64(bytes) })), annotation_bundle_base64: base64(input.annotationBytes), qualitative_review_bundle_base64: base64(input.reviewBytes) },
-		declaration_sha256: hash(input.declarationBytes),
-		corpus: { id: input.corpus.manifest.id, manifest_sha256: input.corpus.manifestSha256, fixture_count: input.corpus.entries.length },
+		version: 2 as const, id: options.id, created_at: options.createdAt,
+		source_reference: input.sourceReference,
+		corpus: { id: input.corpus.manifest.id, fixture_count: input.corpus.entries.length },
 		configuration: { identity: input.declaration.configuration_identity, exact_config: config }, repetition_count: firstRun.declaration.repetition_count,
-		benchmark_run_hashes: input.runs.map(({ declaration, run }) => ({ ordinal: declaration.ordinal, corpus_fixture_id: declaration.corpus_fixture_id, benchmark_run_id: run.id, benchmark_run_sha256: declaration.benchmark_run_sha256, fixture_sha256: run.fixture.fixture_sha256, prepared_evidence_identity_sha256: run.prepared_evidence.identity_sha256, code_commit_sha: run.provenance.code.commit_sha, output_contract_sha256s: run.provenance.output_contracts.map(({ schema_sha256 }) => schema_sha256) })),
+		sources: {
+			corpus_manifest_path: input.declaration.corpus.manifest_path,
+			benchmark_runs: input.runs.map(({ declaration, run }) => ({ ordinal: declaration.ordinal, corpus_fixture_id: declaration.corpus_fixture_id, benchmark_run_id: run.id, path: declaration.path, code_commit_sha: run.provenance.code.commit_sha, prepared_evidence_identity_sha256: run.prepared_evidence.identity_sha256, output_contract_sha256s: run.provenance.output_contracts.map(({ schema_sha256 }) => schema_sha256), transport_retry_limit: run.declaration.transport_retry_limit })),
+			annotations: { path: input.declaration.annotations.path, bundle_id: input.annotations.id, protocol_id: input.annotations.protocol.id, annotator_id: input.annotations.annotator.id, annotator_kind: input.annotations.annotator.kind, annotated_at: input.annotations.annotated_at },
+			qualitative_reviews: { path: input.declaration.qualitative_reviews.path, bundle_id: input.reviews.id, rubric_id: input.reviews.rubric.id, reviewer_id: input.reviews.reviewer.id, reviewer_kind: input.reviews.reviewer.kind, reviewed_at: input.reviews.reviewed_at },
+		},
 		scorecards: PRODUCTION_MODEL_STEPS.map((step) => roleScorecard(input, step)),
 	};
 	const result = EvaluationScorecardArtifactSchema.safeParse(candidate);

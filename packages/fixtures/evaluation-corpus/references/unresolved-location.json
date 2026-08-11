@@ -1,7 +1,6 @@
 {
-	"version": 1,
+	"version": 2,
 	"fixture_id": "unresolved-location",
-	"evidence_sha256": "6177adf07e76d5ebe6abee8fdfcbbb2c78fd830442d3fbbad7ab8eaedd48788f",
 	"claims": [],
 	"events": [],
 	"ambiguities": [

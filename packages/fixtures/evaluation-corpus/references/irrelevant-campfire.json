@@ -1,7 +1,6 @@
 {
-	"version": 1,
+	"version": 2,
 	"fixture_id": "irrelevant-campfire",
-	"evidence_sha256": "73322cd5ea13ad096b422507724299f046c827598662d70d210ea22321d6149c",
 	"claims": [
 		{"id":"spare-bedroll-count","status":"established","supporting_witnesses":[{"message_id":"campfire-01","field":"text","excerpt":"The campfire circle has 5 spare bedrolls."}],"opposing_witnesses":[],"unresolved_witnesses":[]}
 	],

@@ -1,7 +1,6 @@
 {
-	"version": 1,
+	"version": 2,
 	"fixture_id": "supply-counts",
-	"evidence_sha256": "7739777f364c60963e4b1eb3896c6053ed2645443097f4f8226fe6c24fd318db",
 	"claims": [
 		{"id":"flour-sack-count","status":"established","supporting_witnesses":[{"message_id":"supply-01","field":"text","excerpt":"The western storehouse has 32 flour sacks."},{"message_id":"supply-03","field":"text","excerpt":"The inventory sheet lists 32 flour sacks."}],"opposing_witnesses":[],"unresolved_witnesses":[]}
 	],

@@ -30,14 +30,16 @@ import { formatEvaluationReferenceCorpusReport } from "./evaluation-reference-co
 import { buildEvaluationScorecard } from "./evaluation-scorecard-builder";
 import { loadEvaluationScorecardInput } from "./evaluation-scorecard-input";
 import { formatEvaluationScorecardReport } from "./evaluation-scorecard-report";
-import { createEvaluationScorecardArtifact, loadEvaluationScorecardArtifact } from "./evaluation-scorecard-store";
+import { createEvaluationScorecardArtifact, evaluationScorecardFreshness, loadEvaluationScorecardArtifact } from "./evaluation-scorecard-store";
 import { buildEvaluationLongitudinalScorecard } from "./evaluation-longitudinal-scorecard-builder";
 import { loadEvaluationLongitudinalInput } from "./evaluation-longitudinal-scorecard-input";
 import { formatEvaluationLongitudinalScorecardReport } from "./evaluation-longitudinal-scorecard-report";
 import {
 	createEvaluationLongitudinalScorecardArtifact,
+	evaluationLongitudinalFreshness,
 	loadEvaluationLongitudinalScorecardArtifact,
 } from "./evaluation-longitudinal-scorecard-store";
+import { resolveEvaluationRepositoryRoot } from "./evaluation-repository-reference";
 import { safeEvaluationId } from "./evaluation-trial-support";
 
 export const EVAL_CLI_USAGE = `Usage:
@@ -97,6 +99,7 @@ export async function runEvalCliApplication(options: EvalCliApplicationOptions):
 	const cwd = options.environment.INIT_CWD ?? options.currentDirectory;
 	const appDirectory = options.appDirectory;
 	const writeLine = (value: string): void => options.writeOutput(`${value}\n`);
+	const evaluationRepositoryRoot = (): Promise<string> => resolveEvaluationRepositoryRoot(cwd);
 
 	function acceptanceResultsDirectoryFor(resultsDirectory: string | undefined): string {
 		return resultsDirectory === undefined
@@ -197,48 +200,48 @@ export async function runEvalCliApplication(options: EvalCliApplicationOptions):
 		return;
 	}
 	if (command.command === "corpus-show") {
-		writeLine(formatEvaluationReferenceCorpusReport(await loadEvaluationReferenceCorpus(resolve(cwd, command.corpusPath))));
+		const repositoryRoot = await evaluationRepositoryRoot();
+		writeLine(formatEvaluationReferenceCorpusReport(await loadEvaluationReferenceCorpus(resolve(cwd, command.corpusPath), repositoryRoot)));
 		return;
 	}
 	if (command.command === "scorecard-build") {
+		const repositoryRoot = await evaluationRepositoryRoot();
 		const resultsDirectory = scorecardResultsDirectoryFor(command.resultsDirectory);
 		await mkdir(resultsDirectory, { recursive: true });
-		const input = await loadEvaluationScorecardInput(resolve(cwd, command.inputPath));
+		const input = await loadEvaluationScorecardInput(resolve(cwd, command.inputPath), repositoryRoot);
 		const artifact = buildEvaluationScorecard(input, {
 			id: safeEvaluationId("scorecard"),
 			createdAt: new Date().toISOString(),
 		});
-		await createEvaluationScorecardArtifact(join(resultsDirectory, `${artifact.id}.json`), artifact);
-		const saved = await loadEvaluationScorecardArtifact(artifact.id, resultsDirectory);
-		writeLine(formatEvaluationScorecardReport(saved));
+		await createEvaluationScorecardArtifact(join(resultsDirectory, `${artifact.id}.json`), artifact, repositoryRoot);
+		const saved = await loadEvaluationScorecardArtifact(artifact.id, resultsDirectory, repositoryRoot);
+		writeLine(formatEvaluationScorecardReport(saved, saved.version === 2 ? await evaluationScorecardFreshness(saved, repositoryRoot) : undefined));
 		return;
 	}
 	if (command.command === "scorecard-show") {
-		writeLine(formatEvaluationScorecardReport(
-			await loadEvaluationScorecardArtifact(command.scorecardId, scorecardResultsDirectoryFor(command.resultsDirectory)),
-		));
+		const repositoryRoot = await evaluationRepositoryRoot();
+		const saved = await loadEvaluationScorecardArtifact(command.scorecardId, scorecardResultsDirectoryFor(command.resultsDirectory), repositoryRoot);
+		writeLine(formatEvaluationScorecardReport(saved, saved.version === 2 ? await evaluationScorecardFreshness(saved, repositoryRoot) : undefined));
 		return;
 	}
 	if (command.command === "longitudinal-build") {
+		const repositoryRoot = await evaluationRepositoryRoot();
 		const resultsDirectory = longitudinalResultsDirectoryFor(command.resultsDirectory);
 		await mkdir(resultsDirectory, { recursive: true });
-		const input = await loadEvaluationLongitudinalInput(resolve(cwd, command.inputPath));
+		const input = await loadEvaluationLongitudinalInput(resolve(cwd, command.inputPath), repositoryRoot);
 		const artifact = buildEvaluationLongitudinalScorecard(input, {
 			id: safeEvaluationId("longitudinal-scorecard"),
 			createdAt: new Date().toISOString(),
 		});
-		await createEvaluationLongitudinalScorecardArtifact(join(resultsDirectory, `${artifact.id}.json`), artifact);
-		const saved = await loadEvaluationLongitudinalScorecardArtifact(artifact.id, resultsDirectory);
-		writeLine(formatEvaluationLongitudinalScorecardReport(saved));
+		await createEvaluationLongitudinalScorecardArtifact(join(resultsDirectory, `${artifact.id}.json`), artifact, repositoryRoot);
+		const saved = await loadEvaluationLongitudinalScorecardArtifact(artifact.id, resultsDirectory, repositoryRoot);
+		writeLine(formatEvaluationLongitudinalScorecardReport(saved, saved.version === 2 ? await evaluationLongitudinalFreshness(saved, repositoryRoot) : undefined));
 		return;
 	}
 	if (command.command === "longitudinal-show") {
-		writeLine(formatEvaluationLongitudinalScorecardReport(
-			await loadEvaluationLongitudinalScorecardArtifact(
-				command.seriesId,
-				longitudinalResultsDirectoryFor(command.resultsDirectory),
-			),
-		));
+		const repositoryRoot = await evaluationRepositoryRoot();
+		const saved = await loadEvaluationLongitudinalScorecardArtifact(command.seriesId, longitudinalResultsDirectoryFor(command.resultsDirectory), repositoryRoot);
+		writeLine(formatEvaluationLongitudinalScorecardReport(saved, saved.version === 2 ? await evaluationLongitudinalFreshness(saved, repositoryRoot) : undefined));
 		return;
 	}
 

@@ -1,7 +1,6 @@
 {
-	"version": 1,
+	"version": 2,
 	"fixture_id": "sparse-repair-update",
-	"evidence_sha256": "ccf4add496f3d0804cb472da84f0446491af1aef58946320d2fbd3a36e6652a6",
 	"claims": [],
 	"events": [
 		{"id":"moss-bridge-repair","status":"established","supporting_witnesses":[{"message_id":"repair-01","field":"text","excerpt":"Repairs at Moss Bridge finished at 11:00 UTC."},{"message_id":"repair-03","field":"text","excerpt":"Moss Bridge is open again."}],"opposing_witnesses":[],"unresolved_witnesses":[]}

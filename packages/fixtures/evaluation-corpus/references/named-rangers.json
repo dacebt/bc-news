@@ -1,7 +1,6 @@
 {
-	"version": 1,
+	"version": 2,
 	"fixture_id": "named-rangers",
-	"evidence_sha256": "218e38a93f1f6c00d20d23c1e12696741b3aa37741ab187f0160a6121f4315f5",
 	"claims": [
 		{"id":"rangers-at-birch-watch","status":"established","supporting_witnesses":[{"message_id":"rangers-01","field":"text","excerpt":"Suri and Tomas reached Birch Watch."}],"opposing_witnesses":[],"unresolved_witnesses":[]}
 	],

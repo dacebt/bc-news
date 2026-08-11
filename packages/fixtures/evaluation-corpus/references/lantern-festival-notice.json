@@ -1,7 +1,6 @@
 {
-	"version": 1,
+	"version": 2,
 	"fixture_id": "lantern-festival-notice",
-	"evidence_sha256": "bf84bee734015b2ff12c075c3bdc8cc50e88491b2815e7cb89fc3d680511cdc4",
 	"claims": [],
 	"events": [
 		{"id":"lantern-festival-start","status":"established","supporting_witnesses":[{"message_id":"festival-01","field":"text","excerpt":"The Lantern Festival begins at 19:00 UTC in Amber Square."}],"opposing_witnesses":[],"unresolved_witnesses":[]}

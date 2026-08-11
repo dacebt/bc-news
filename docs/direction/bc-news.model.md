@@ -13,7 +13,7 @@ generated:
 # Domain Model: bc-news evaluation and verification
 
 **Last updated:** 2026-08-10
-**Update reason:** durable longitudinal scorecard series — compare repeated exact role evidence without turning variation or drift into a verdict.
+**Update reason:** commit-addressed scorecard evidence — retain exact historical meaning without recursive byte ownership, and report checkout freshness without turning it into a verdict.
 
 ## Ubiquitous Language
 
@@ -36,13 +36,15 @@ generated:
 | Execution context | Normalized runtime observations that identify what comparable model environment executed an invocation. | Prediction observation |
 | Prediction observation | Volatile response behavior such as stop reason, timing, throughput, speculative counts, and reasoning-content presence. | Execution context |
 | Runtime observation | One strict field state: observed, unknown with a reason, or externally controlled with a reason. | A guessed provider setting |
-| Evaluation reference corpus | One explicitly selected ordered set of synthetic conversations, each byte-paired with separate source-witness reference evidence. | A Benchmark Run or target article |
+| Evaluation reference corpus | One explicitly selected ordered set of synthetic conversations, each path-paired with separate source-witness reference evidence at a recorded Git commit. | A Benchmark Run or target article |
 | Source witness | An exact excerpt from a named raw message field that remains under the same identity after evidence preparation. | A free-form summary or model output |
 | Variation witness | Qualified reference ids and prepared message ids that mechanically prove one closed corpus variation tag. | A descriptive fixture label |
 | Evaluation scorecard | One auditable report for a single exact configuration across the complete selected corpus, containing four separate production-role scorecards. | A weighted model-wide score or acceptance gate |
-| Output annotation | A human-authored, exact-span and source-reference-linked classification of factual claims, attribution, event coverage, and announcement relevance. | Automatic semantic judgment |
-| Qualitative review | A separate human review of coherence, usefulness, newsworthiness, and voice with rationale and uncertainty. | A numeric score or model judge |
-| Scorecard context identity | The exact corpus, provenance, role configuration, ordered requests, and observed execution context to which one role's measurements belong. | Model identity alone |
+| Output annotation | A Codex-authored, exact-span and source-reference-linked classification of factual claims, attribution, event coverage, and announcement relevance. | A deterministic assertion |
+| Qualitative review | A separate Codex review of coherence, usefulness, newsworthiness, and voice with rationale and uncertainty. | A numeric score or acceptance gate |
+| Repository source reference | A repository name, full Git commit SHA, and contained POSIX repository-relative path that identifies one source file. | An embedded payload or child-file hash |
+| Evaluation freshness | Current or outdated information from comparing an evaluated code commit with an explicitly resolved repository-root HEAD. | Artifact validity, a gate, or permission to evaluate |
+| Scorecard context identity | The exact corpus source commit and path, provenance, role configuration, ordered requests, and observed execution context to which one role's measurements belong. | A scorecard evidence-storage commit or model identity alone |
 | Wilson score interval | The declared 95% interval attached to one observed counted rate and its denominator. | A longitudinal drift classification or production threshold |
 | Longitudinal scorecard series | One ordered durable audit pack containing an earlier baseline partition and later subject partition of exact Evaluation Scorecards. | A list of rendered summaries without their source evidence |
 | Stable cohort identity | A role-specific comparable-context identity normalized away from generated run/trial locators while retaining corpus, request, contract, code, role configuration, retry policy, and execution context. | The capability-3 scorecard context hash or model name alone |
@@ -61,7 +63,7 @@ generated:
 | Composed product verification | The canonical local skeleton walk through deployable entrypoints. | Walking proves composition, not model quality. |
 | Deterministic testing | Isolated assertions over contracts, lifecycle, persistence, and comparison logic. | Tests do not substitute for a live evaluation or walk. |
 | Evaluation source evidence | Strict selection, preparation, linkage, and browsing of the synthetic reference corpus. | It owns source truth and variation coverage, never generated prose, a score, or a verdict. |
-| Evaluation measurement | Strict construction and browsing of role-specific scorecards from complete retained runs, corpus sources, output annotations, and qualitative reviews. | It calculates transparent quantities and retains human judgments; it does not rank models or decide acceptance. |
+| Evaluation measurement | Strict construction and browsing of role-specific scorecards from complete retained runs, corpus sources, output annotations, and qualitative reviews. | It calculates transparent quantities and retains Codex judgments; it does not rank models or decide acceptance. |
 | Longitudinal evaluation measurement | Strict reconstruction and temporal comparison of selected scorecard audit packs inside stable role cohorts. | It classifies evidence and retains uncertainty; it does not judge quality, infer causality, or trigger product behavior. |
 
 ## Aggregates
@@ -72,9 +74,9 @@ generated:
 | Benchmark Run | The lifecycle, invocation history, and complete runtime-evidence roster for one declared model experiment. |
 | Evaluation Trial | One configuration's two-track behavior and terminal subject outcome within a benchmark. |
 | Step Invocation | Immutable request, response or transport outcome, timing, findings, and retry linkage for one model call. |
-| Evaluation Reference Corpus | Ordered manifest, byte-bound synthetic fixtures, exact source-witness references, and objective variation witnesses. |
-| Evaluation Scorecard | Exact embedded source payloads plus four role-specific contexts, sample counts, rates, distributions, and qualitative evidence summaries. |
-| Longitudinal Evaluation Scorecard Series | Exact embedded scorecard audit packs plus four stable cohort histories, baseline/subject summaries, signal witnesses, and evidence classifications. |
+| Evaluation Reference Corpus | Ordered version 2 manifest, commit-addressed synthetic fixtures, exact source-witness references, and objective variation witnesses. |
+| Evaluation Scorecard | A commit-addressed declaration plus compact source descriptors, four role-specific contexts, sample counts, rates, distributions, qualitative summaries, and freshness information. |
+| Longitudinal Evaluation Scorecard Series | Commit-addressed scorecard audit packs plus four stable cohort histories, baseline/subject summaries, signal witnesses, evidence classifications, and per-scorecard freshness information. |
 
 ## Notes
 

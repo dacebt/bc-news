@@ -29,8 +29,8 @@ outcome or silently substitutes for it.
 |---|---|---|---|
 | Deterministic tests | `pnpm test` | Isolated warranted invariants, reproduced defects, and high-risk state transitions | Test pass or hard test failure; never a retained model attempt |
 | Model evaluation | `benchmark run/list/show/summary/compare` | Strict versioned Benchmark Runs under `apps/eval/evaluation-results` | Retained model subject and harness outcomes with `evaluation:` observations; never a score or acceptance verdict |
-| Evaluation reference corpus | `corpus show --corpus <manifest-path>` and its direct verifier | Ordered synthetic fixture bytes and separate exact source-witness references | Auditable source truth and objective variation coverage; never a model result, score, or acceptance verdict |
-| Evaluation scorecards | `scorecard build/show` and `verify:evaluation-scorecards` | Complete retained V7 runs, exact corpus sources, human annotations, and human qualitative reviews | Four transparent role-specific measurements with named uncertainty; never an aggregate score, ranking, recommendation, or acceptance verdict |
+| Evaluation reference corpus | `corpus show --corpus <manifest-path>` and its direct verifier | Commit-addressed ordered synthetic fixtures and separate exact source-witness references | Auditable source truth and objective variation coverage; never a model result, score, or acceptance verdict |
+| Evaluation scorecards | `scorecard build/show` and `verify:evaluation-scorecards` | Commit-addressed V7 runs and corpus sources with Codex annotations and qualitative reviews | Four transparent role-specific measurements plus current/outdated checkout information; never an aggregate score, ranking, recommendation, or acceptance verdict |
 | Longitudinal evaluation scorecards | `longitudinal build/show` and `verify:evaluation-longitudinal-scorecards` | Exact ordered scorecard audit packs, stable role cohorts, and baseline/subject histories | Four role-specific context, sufficiency, baseline-variation, or potential-drift observations; never a judge or product gate |
 | Fixture and context tooling | `fixture record-responses` and `context benchmark` | Four request-linked recorded responses, or strict context results | Fixture-authoring or context-measurement tooling result; never acceptance or a walk |
 | Recorded-replay acceptance | `acceptance run/list/show/compare` and its direct verifier | Historical Run Files under `apps/eval/results` | `acceptance:` result over controlled replay; never a Benchmark Run outcome |
@@ -100,8 +100,9 @@ determines the experiment.
 
 **The evaluation reference corpus** is a deterministic input-evidence domain,
 not a model evaluation result. `corpus show --corpus <manifest-path>` explicitly
-selects a strict ordered manifest whose exact hashes pair each synthetic chat
-with one separate reference. References retain exact source excerpts and
+selects a strict ordered version 2 manifest whose repository-relative paths
+pair each synthetic chat with one separate reference at the manifest's Git
+commit. References retain exact source excerpts and
 closed classifications only; every cited message and excerpt must survive the
 real evidence-preparation path. Objective witnesses prove every declared
 variation tag, and closed directories reject unlisted evidence. This domain
@@ -113,38 +114,44 @@ accept `--corpus` and do not silently select a corpus entry.
 Benchmark Runs and the full ordered reference corpus. `scorecard build --input
 <declaration-path> [--results-dir <path>]` requires one exact configuration,
 every corpus fixture in order, every selected trial and invocation attempt,
-exact source-linked human annotations for every parse-success output, and a
-separate exact human qualitative review for every such output. `scorecard show
-<scorecard-id> [--results-dir <path>]` reloads the embedded source bytes and
-recomputes the artifact before reporting it.
+exact source-linked Codex annotations for every parse-success output, and a
+separate exact Codex qualitative review for every such output. `scorecard show
+<scorecard-id> [--results-dir <path>]` resolves the recorded declaration and
+all named evidence with `git show` and recomputes the artifact before reporting
+it. The corpus context uses the commit that last changed the closed corpus
+subtree, not a later scorecard-storage commit. Version 1 human evidence retains
+its frozen historical contract and remains readable through the public store
+and report path.
 
 The four production roles remain separate. Rates expose their exact numerator,
 denominator, denominator unit, sample count, comparable-context identity, and a
 95% Wilson score interval. Token usage, application latency, and provider timing
 remain separate descriptive distributions, with unavailable observations never
 converted to zero. Coherence, usefulness, newsworthiness, and voice remain
-nonnumeric human assessments with reviewer identity, rationale, and uncertainty.
+nonnumeric Codex assessments with reviewer identity, rationale, and uncertainty.
 Grounding, attribution, event coverage, and announcement relevance likewise
-retain the human annotation that supplies their semantic classification. These
+retain the Codex annotation that supplies their semantic classification. These
 transparent named measurements are not a weighted overall score, automatic
 judge, model ranking, recommendation, quality threshold, acceptance verdict,
 retry trigger, or production-selection decision.
 
-The version 1 qualitative rubric uses these fixed meanings: `coherence` is
+The current version 2 qualitative rubric uses these fixed meanings: `coherence` is
 internally understandable organization and relationships; `usefulness` is
 useful source-grounded information for a regional reader; `newsworthiness` is
-the human judgment that included material is worth reporting without requiring
+the Codex assessment that included material is worth reporting without requiring
 one target angle; and `voice` is adherence to the declared in-world,
 straightforward editorial voice.
 
-**Longitudinal evaluation scorecards** consume exact capability-3 scorecard
-audit packs without changing their version 1 meaning. `longitudinal build
+**Longitudinal evaluation scorecards** consume exact commit-addressed scorecard
+audit packs without rewriting historical version 1 evidence. `longitudinal build
 --input <declaration-path> [--results-dir <path>]` requires ordered, unique,
-path-contained source bytes with pairwise-disjoint underlying Benchmark Run ids
-and hashes. Baseline packs are all earlier than subject packs. `longitudinal
-show <series-id> [--results-dir <path>]` reloads every embedded scorecard through
+contained commit-and-path references with pairwise-disjoint underlying Benchmark
+Run ids. Baseline packs are all earlier than subject packs. `longitudinal
+show <series-id> [--results-dir <path>]` reloads every referenced scorecard through
 the existing public reader and recomputes all cohorts, histories, statistics,
-and classifications. Default artifacts live under
+and classifications. The public reader also dispatches frozen version 1
+embedded audit packs through their historical reconstruction/report path.
+Default artifacts live under
 `apps/eval/longitudinal-scorecard-results` and are deliberately commit-eligible;
 repository history is the durable audit boundary.
 
@@ -156,17 +163,21 @@ cohort can be `potential_drift` when a named quantitative witness is strictly
 separated, or `within_baseline` otherwise. Rates pool exact numerators and
 denominators and compare recomputed 95% Wilson intervals. Tokens and every
 latency metric remain separate raw distributions and compare strict observed
-ranges. Not-applicable and unavailable values never become zero. Human
+ranges. Not-applicable and unavailable values never become zero. Codex
 qualitative histories remain categorical and descriptive and do not drive the
 classifier.
 
 These four labels are model-evaluation observations only. They do not establish
 causality, equivalence, editorial quality, model rank, recommendation, retry,
-acceptance, or production action. Exact code commit equality is required even
-for unrelated changes; copyeditor prompt identity includes the upstream writer
+acceptance, or production action. Copyeditor prompt identity includes the upstream writer
 draft. Counted units can be correlated, baseline extremes can mask range
-movement, multiple named metrics raise multiplicity risk, and human annotations
+movement, multiple named metrics raise multiplicity risk, and Codex annotations
 or reviews can vary without proving model drift.
+
+Freshness is separate from cohort comparison and artifact validity. Build and
+show compare each evaluated code commit with the explicitly resolved repository
+root's `HEAD` and report `current` or `outdated`. A different commit is never a
+failure, rejection, acceptance gate, or reason to prevent another evaluation.
 
 **Recorded-replay acceptance** uses `acceptance run --fixture <path> [--config
 <path>] [--results-dir <path>]` and `acceptance list/show/compare`. It executes
@@ -248,12 +259,13 @@ the complete corruption matrix, and ends exactly with `EVALUATION REFERENCE
 CORPUS VERIFIED`. Scorecard verification assembles controlled complete version
 7 runs for the committed corpus through the real input, builder, store, reader,
 report, and CLI paths; proves the exact counts, contexts, rates, intervals,
-distributions, human-evidence linkage, and corruption matrix; and ends exactly
-with `EVALUATION SCORECARDS VERIFIED`. Longitudinal verification loads
-the committed controlled 3+2 audit pack, independently recomputes stable cohort
+distributions, Codex-evidence linkage, commit-path resolution, non-blocking
+outdated reporting, and semantic corruption checks; and ends exactly
+with `EVALUATION SCORECARDS VERIFIED`. Longitudinal verification creates a
+compact committed 3+2 audit pack and independently recomputes stable cohort
 normalization, pooled rates, Wilson intervals, raw token/latency distributions,
-all four classifications, store/read/report/CLI behavior, and its full
-corruption matrix, then ends exactly with
+four role classifications, store/read/report/CLI behavior, commit-backed
+reopen, and outdated reporting, then ends exactly with
 `EVALUATION LONGITUDINAL SCORECARDS VERIFIED`. Fixture proof ends
 with `fixture authoring: four strict v3 hosted responses retained exact agent
 configurations, replayed, and compared`. Acceptance proof ends with `acceptance: four
@@ -402,7 +414,7 @@ proves, tests of glue and framework wiring, tests to satisfy coverage.
 - The active generator and recorded-replay acceptance have no automatic model
   judge, score, verdict, quality floor, threshold, or byte-pinned baseline.
   Evaluation scorecards add only transparent named role measurements and
-  declared human assessments; they add no opaque aggregate or acceptance gate.
+  declared Codex assessments; they add no opaque aggregate or acceptance gate.
 - Copyedit preservation checks can prove only their mechanical invariants:
   announcement identity/order, paragraph count, quotes, numeric literals,
   and protected markdown spans. They cannot prove semantic equivalence or prose

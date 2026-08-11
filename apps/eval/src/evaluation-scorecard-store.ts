@@ -1,106 +1,113 @@
 import { createHash } from "node:crypto";
-import { mkdir, mkdtemp, readFile, rm, unlink, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { readFile, unlink, writeFile } from "node:fs/promises";
 import { basename, dirname, join } from "node:path";
 import { isDeepStrictEqual } from "node:util";
-import { BenchmarkRunSchema } from "./evaluation-artifact";
 import { EvaluationIdSchema } from "./evaluation-artifact-schemas";
-import type { V7BenchmarkRun } from "./evaluation-artifact-v7";
-import { loadEvaluationReferenceCorpus } from "./evaluation-reference-corpus";
+import { BenchmarkRunSchema } from "./evaluation-artifact";
+import { EvidenceFixtureSchema } from "@bc-news/contracts";
+import { EvaluationReferenceManifestV1Schema, EvaluationReferenceV1Schema } from "./evaluation-reference-corpus";
 import { buildEvaluationScorecard } from "./evaluation-scorecard-builder";
-import { validateLoadedEvaluationScorecardInput, type LoadedScorecardRun } from "./evaluation-scorecard-input";
+import { loadEvaluationScorecardInputAtReference } from "./evaluation-scorecard-input";
 import {
-	AnnotationBundleSchema, EvaluationScorecardArtifactSchema, EvaluationScorecardDeclarationSchema,
-	EvaluationScorecardError, QualitativeReviewBundleSchema, type EvaluationScorecardArtifact,
+	EvaluationScorecardArtifactSchema,
+	EvaluationScorecardArtifactV1Schema,
+	EvaluationScorecardDeclarationV1Schema,
+	AnnotationBundleV1Schema,
+	QualitativeReviewBundleV1Schema,
+	EvaluationScorecardError,
+	type AnyEvaluationScorecardArtifact,
+	type EvaluationScorecardArtifact,
+	type EvaluationScorecardArtifactV1,
 } from "./evaluation-scorecard";
+import { evaluationFreshness, type EvaluationFreshness } from "./evaluation-repository-reference";
 
 function fail(code: EvaluationScorecardError["code"], path: string, message: string, cause?: unknown): never {
 	throw new EvaluationScorecardError(code, path, message, cause === undefined ? undefined : { cause });
 }
+
 function hash(bytes: Uint8Array): string { return createHash("sha256").update(bytes).digest("hex"); }
-function decode(encoded: string, path: string): Uint8Array {
-	const decoded = Buffer.from(encoded, "base64");
-	if (decoded.toString("base64") !== encoded) fail("artifact_tampered", path, "Embedded payload is not canonical base64");
-	return decoded;
+function decodeV1(encoded: string, path: string): Uint8Array {
+	const bytes = Buffer.from(encoded, "base64");
+	if (bytes.toString("base64") !== encoded) fail("artifact_tampered", path, "Historical payload is not canonical base64");
+	return bytes;
 }
-function parseJson(bytes: Uint8Array, path: string): unknown {
+function parseV1(bytes: Uint8Array, path: string): unknown {
 	try { return JSON.parse(Buffer.from(bytes).toString("utf8")) as unknown; }
-	catch (cause) { return fail("artifact_tampered", path, "Embedded scorecard source is malformed JSON", cause); }
+	catch (cause) { return fail("artifact_tampered", path, "Historical embedded source is malformed JSON", cause); }
 }
 
-async function recompute(candidate: EvaluationScorecardArtifact, sourcePath: string): Promise<EvaluationScorecardArtifact> {
-	const payload = candidate.source_payloads;
-	const declarationBytes = decode(payload.declaration_base64, sourcePath);
-	if (hash(declarationBytes) !== candidate.declaration_sha256) fail("artifact_tampered", sourcePath, "Declaration payload hash changed");
-	const declarationResult = EvaluationScorecardDeclarationSchema.safeParse(parseJson(declarationBytes, sourcePath));
-	if (!declarationResult.success) fail("artifact_tampered", sourcePath, "Embedded declaration contract changed", declarationResult.error);
+export function reconstructEvaluationScorecardArtifactV1(candidate: unknown, path: string): EvaluationScorecardArtifactV1 {
+	const result = EvaluationScorecardArtifactV1Schema.safeParse(candidate);
+	if (!result.success) fail("scorecard_invalid", path, `Historical scorecard contract rejected: ${result.error.message}`, result.error);
+	const artifact = result.data; const payload = artifact.source_payloads;
+	const declarationBytes = decodeV1(payload.declaration_base64, path);
+	if (hash(declarationBytes) !== artifact.declaration_sha256) fail("artifact_tampered", path, "Historical declaration hash changed");
+	const declarationResult = EvaluationScorecardDeclarationV1Schema.safeParse(parseV1(declarationBytes, path));
+	if (!declarationResult.success) fail("artifact_tampered", path, "Historical declaration contract changed", declarationResult.error);
 	const declaration = declarationResult.data;
-	const manifestBytes = decode(payload.corpus_manifest_base64, sourcePath);
-	if (hash(manifestBytes) !== declaration.corpus.manifest_sha256) fail("artifact_tampered", sourcePath, "Embedded corpus manifest hash changed");
-	const annotationBytes = decode(payload.annotation_bundle_base64, sourcePath);
-	if (hash(annotationBytes) !== declaration.annotations.sha256) fail("artifact_tampered", sourcePath, "Embedded annotation hash changed");
-	const annotationResult = AnnotationBundleSchema.safeParse(parseJson(annotationBytes, sourcePath));
-	if (!annotationResult.success) fail("artifact_tampered", sourcePath, "Embedded annotation contract changed", annotationResult.error);
-	const reviewBytes = decode(payload.qualitative_review_bundle_base64, sourcePath);
-	if (hash(reviewBytes) !== declaration.qualitative_reviews.sha256) fail("artifact_tampered", sourcePath, "Embedded review hash changed");
-	const reviewResult = QualitativeReviewBundleSchema.safeParse(parseJson(reviewBytes, sourcePath));
-	if (!reviewResult.success) fail("artifact_tampered", sourcePath, "Embedded review contract changed", reviewResult.error);
-	if (payload.corpus_entries.length !== declaration.runs.length || payload.benchmark_runs.length !== declaration.runs.length) fail("artifact_tampered", sourcePath, "Embedded source roster length changed");
-
-	const root = await mkdtemp(join(tmpdir(), "bc-news-scorecard-read-")); let cleanupFailure: unknown;
-	try {
-		const corpusRoot = join(root, "fixtures", "evaluation-corpus"); const evidenceRoot = join(corpusRoot, "evidence"); const referenceRoot = join(corpusRoot, "references");
-		await mkdir(evidenceRoot, { recursive: true }); await mkdir(referenceRoot, { recursive: true });
-		await writeFile(join(corpusRoot, "manifest.json"), manifestBytes, { flag: "wx" });
-		for (const [index, entry] of payload.corpus_entries.entries()) {
-			if (entry.fixture_id !== declaration.runs[index]?.corpus_fixture_id) fail("artifact_tampered", sourcePath, "Embedded corpus order changed");
-			await writeFile(join(evidenceRoot, `${entry.fixture_id}.json`), decode(entry.evidence_base64, sourcePath), { flag: "wx" });
-			await writeFile(join(referenceRoot, `${entry.fixture_id}.json`), decode(entry.reference_base64, sourcePath), { flag: "wx" });
-		}
-		let corpus;
-		try { corpus = await loadEvaluationReferenceCorpus(join(corpusRoot, "manifest.json")); }
-		catch (cause) { return fail("artifact_tampered", sourcePath, "Embedded corpus no longer validates", cause); }
-		const runs: LoadedScorecardRun[] = [];
-		for (const [index, embedded] of payload.benchmark_runs.entries()) {
-			const declared = declaration.runs[index]; if (declared === undefined || embedded.run_id !== declared.benchmark_run_id) fail("artifact_tampered", sourcePath, "Embedded Benchmark Run order changed");
-			const runBytes = decode(embedded.bytes_base64, sourcePath);
-			if (hash(runBytes) !== declared.benchmark_run_sha256) fail("artifact_tampered", sourcePath, "Embedded Benchmark Run hash changed");
-			const result = BenchmarkRunSchema.safeParse(parseJson(runBytes, sourcePath));
-			if (!result.success || result.data.id !== embedded.run_id) fail("artifact_tampered", sourcePath, "Embedded Benchmark Run contract or identity changed", result.success ? undefined : result.error);
-			runs.push({ declaration: declared, bytes: runBytes, run: result.data as V7BenchmarkRun, corpusEntry: corpus.entries[index]! });
-		}
-		let loaded;
-		try { loaded = validateLoadedEvaluationScorecardInput({ declarationPath: sourcePath, declarationBytes, declaration, corpus, runs, annotationBytes, annotations: annotationResult.data, reviewBytes, reviews: reviewResult.data }); }
-		catch (cause) { return fail("artifact_tampered", sourcePath, "Embedded scorecard evidence no longer validates", cause); }
-		return buildEvaluationScorecard(loaded, { id: candidate.id, createdAt: candidate.created_at });
-	} finally {
-		try { await rm(root, { recursive: true }); } catch (cause) { cleanupFailure = cause; }
-		if (cleanupFailure !== undefined) fail("scorecard_invalid", sourcePath, `Could not clean scorecard reconstruction root ${root}`, cleanupFailure);
+	const manifestBytes = decodeV1(payload.corpus_manifest_base64, path);
+	if (hash(manifestBytes) !== declaration.corpus.manifest_sha256 || artifact.corpus.manifest_sha256 !== declaration.corpus.manifest_sha256) fail("artifact_tampered", path, "Historical corpus manifest hash changed");
+	const manifestResult = EvaluationReferenceManifestV1Schema.safeParse(parseV1(manifestBytes, path));
+	if (!manifestResult.success || manifestResult.data.id !== artifact.corpus.id || manifestResult.data.fixtures.length !== artifact.corpus.fixture_count) fail("artifact_tampered", path, "Historical corpus identity changed", manifestResult.success ? undefined : manifestResult.error);
+	const annotationBytes = decodeV1(payload.annotation_bundle_base64, path); const reviewBytes = decodeV1(payload.qualitative_review_bundle_base64, path);
+	if (hash(annotationBytes) !== declaration.annotations.sha256 || !AnnotationBundleV1Schema.safeParse(parseV1(annotationBytes, path)).success) fail("artifact_tampered", path, "Historical annotation source changed");
+	if (hash(reviewBytes) !== declaration.qualitative_reviews.sha256 || !QualitativeReviewBundleV1Schema.safeParse(parseV1(reviewBytes, path)).success) fail("artifact_tampered", path, "Historical review source changed");
+	if (payload.corpus_entries.length !== declaration.runs.length || payload.benchmark_runs.length !== declaration.runs.length || artifact.benchmark_run_hashes.length !== declaration.runs.length) fail("artifact_tampered", path, "Historical source roster length changed");
+	for (const [index, declared] of declaration.runs.entries()) {
+		const manifestEntry = manifestResult.data.fixtures[index]; const corpusEntry = payload.corpus_entries[index]; const runEntry = payload.benchmark_runs[index]; const listed = artifact.benchmark_run_hashes[index];
+		if (manifestEntry === undefined || corpusEntry === undefined || runEntry === undefined || listed === undefined || declared.corpus_fixture_id !== manifestEntry.id || corpusEntry.fixture_id !== manifestEntry.id || runEntry.run_id !== declared.benchmark_run_id || listed.benchmark_run_id !== declared.benchmark_run_id || listed.benchmark_run_sha256 !== declared.benchmark_run_sha256) fail("artifact_tampered", path, "Historical source roster changed");
+		const evidenceBytes = decodeV1(corpusEntry.evidence_base64, path); const referenceBytes = decodeV1(corpusEntry.reference_base64, path); const runBytes = decodeV1(runEntry.bytes_base64, path);
+		if (hash(evidenceBytes) !== manifestEntry.evidence_sha256 || hash(referenceBytes) !== manifestEntry.reference_sha256 || hash(runBytes) !== declared.benchmark_run_sha256) fail("artifact_tampered", path, "Historical embedded source hash changed");
+		if (!EvidenceFixtureSchema.safeParse(parseV1(evidenceBytes, path)).success || !EvaluationReferenceV1Schema.safeParse(parseV1(referenceBytes, path)).success) fail("artifact_tampered", path, "Historical corpus entry contract changed");
+		const runResult = BenchmarkRunSchema.safeParse(parseV1(runBytes, path));
+		if (!runResult.success || runResult.data.id !== declared.benchmark_run_id) fail("artifact_tampered", path, "Historical Benchmark Run contract changed", runResult.success ? undefined : runResult.error);
 	}
+	return artifact;
 }
 
-async function validatedArtifact(candidate: unknown, path: string, malformedCode: "scorecard_malformed" | "scorecard_create_rejected", invalidCode: "scorecard_invalid" | "scorecard_create_rejected"): Promise<EvaluationScorecardArtifact> {
+async function recompute(candidate: EvaluationScorecardArtifact, repositoryRoot: string, sourcePath: string): Promise<EvaluationScorecardArtifact> {
+	let input;
+	try { input = await loadEvaluationScorecardInputAtReference(repositoryRoot, candidate.source_reference); }
+	catch (cause) { return fail("artifact_tampered", sourcePath, "Recorded scorecard evidence cannot be resolved", cause); }
+	return buildEvaluationScorecard(input, { id: candidate.id, createdAt: candidate.created_at });
+}
+
+async function validatedArtifact(candidate: unknown, path: string, repositoryRoot: string, malformedCode: "scorecard_malformed" | "scorecard_create_rejected", invalidCode: "scorecard_invalid" | "scorecard_create_rejected"): Promise<EvaluationScorecardArtifact> {
 	if (candidate === undefined) fail(malformedCode, path, "Scorecard artifact is malformed");
 	const result = EvaluationScorecardArtifactSchema.safeParse(candidate);
 	if (!result.success) fail(invalidCode, path, `Scorecard artifact contract rejected: ${result.error.message}`, result.error);
-	const rebuilt = await recompute(result.data, path);
+	const rebuilt = await recompute(result.data, repositoryRoot, path);
 	if (!isDeepStrictEqual(rebuilt, result.data)) fail("artifact_tampered", path, "Scorecard derived evidence does not reconstruct exactly");
 	return result.data;
 }
 
-export async function createEvaluationScorecardArtifact(path: string, artifact: EvaluationScorecardArtifact): Promise<EvaluationScorecardArtifact> {
+export async function validateEvaluationScorecardArtifact(candidate: unknown, path: string, repositoryRoot?: string): Promise<AnyEvaluationScorecardArtifact> {
+	if (typeof candidate === "object" && candidate !== null && "version" in candidate && candidate.version === 1) return reconstructEvaluationScorecardArtifactV1(candidate, path);
+	if (repositoryRoot === undefined) fail("scorecard_invalid", path, "Repository root is required for current scorecard reconstruction");
+	return validatedArtifact(candidate, path, repositoryRoot, "scorecard_malformed", "scorecard_invalid");
+}
+
+export async function validateEvaluationScorecardArtifactV2(candidate: unknown, path: string, repositoryRoot: string): Promise<EvaluationScorecardArtifact> {
+	return validatedArtifact(candidate, path, repositoryRoot, "scorecard_malformed", "scorecard_invalid");
+}
+
+export async function createEvaluationScorecardArtifact(path: string, artifact: EvaluationScorecardArtifact, repositoryRoot: string): Promise<EvaluationScorecardArtifact>;
+export async function createEvaluationScorecardArtifact(path: string, artifact: EvaluationScorecardArtifactV1, repositoryRoot?: string): Promise<EvaluationScorecardArtifactV1>;
+export async function createEvaluationScorecardArtifact(path: string, artifact: AnyEvaluationScorecardArtifact, repositoryRoot?: string): Promise<AnyEvaluationScorecardArtifact> {
 	if (basename(path) !== `${artifact.id}.json`) fail("scorecard_create_rejected", path, "Scorecard path must use its artifact id as filename");
-	const candidate = await validatedArtifact(artifact, path, "scorecard_create_rejected", "scorecard_create_rejected");
+	const candidate = artifact.version === 1
+		? reconstructEvaluationScorecardArtifactV1(artifact, path)
+		: await validatedArtifact(artifact, path, repositoryRoot ?? fail("scorecard_create_rejected", path, "Repository root is required for current scorecard reconstruction"), "scorecard_create_rejected", "scorecard_create_rejected");
 	try { await writeFile(path, `${JSON.stringify(candidate, null, 2)}\n`, { encoding: "utf8", flag: "wx" }); }
 	catch (cause) { return fail("scorecard_create_rejected", path, "Could not exclusively create scorecard artifact", cause); }
-	try { return await loadEvaluationScorecardArtifact(candidate.id, dirname(path)); }
+	try { return await loadEvaluationScorecardArtifact(candidate.id, dirname(path), repositoryRoot); }
 	catch (cause) {
-		try { await unlink(path); } catch { /* the create failure remains authoritative */ }
+		try { await unlink(path); } catch { /* primary create failure remains authoritative */ }
 		return fail("scorecard_create_rejected", path, "Scorecard read-after-write validation failed", cause);
 	}
 }
 
-export async function loadEvaluationScorecardArtifact(id: string, directory: string): Promise<EvaluationScorecardArtifact> {
+export async function loadEvaluationScorecardArtifact(id: string, directory: string, repositoryRoot?: string): Promise<AnyEvaluationScorecardArtifact> {
 	const parsedId = EvaluationIdSchema.safeParse(id);
 	if (!parsedId.success) fail("invalid_scorecard_id", directory, `Invalid scorecard id: ${id}`, parsedId.error);
 	const path = join(directory, `${parsedId.data}.json`); let raw: Uint8Array;
@@ -109,7 +116,13 @@ export async function loadEvaluationScorecardArtifact(id: string, directory: str
 	let candidate: unknown;
 	try { candidate = JSON.parse(Buffer.from(raw).toString("utf8")) as unknown; }
 	catch (cause) { return fail("scorecard_malformed", path, "Malformed scorecard JSON", cause); }
-	const artifact = await validatedArtifact(candidate, path, "scorecard_malformed", "scorecard_invalid");
+	const artifact = await validateEvaluationScorecardArtifact(candidate, path, repositoryRoot);
 	if (artifact.id !== parsedId.data) fail("scorecard_filename_mismatch", path, "Scorecard filename identity mismatch");
 	return artifact;
+}
+
+export async function evaluationScorecardFreshness(artifact: EvaluationScorecardArtifact, repositoryRoot: string): Promise<EvaluationFreshness> {
+	const commits = [...new Set(artifact.sources.benchmark_runs.map(({ code_commit_sha }) => code_commit_sha))];
+	if (commits.length !== 1) fail("provenance_mismatch", artifact.id, "Scorecard contains more than one evaluated code commit");
+	return evaluationFreshness(repositoryRoot, commits[0]!);
 }

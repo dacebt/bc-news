@@ -1,55 +1,55 @@
 ---
 type: thickening
 title: >-
-  Thickening: durable longitudinal scorecard series
+  Thickening: commit-addressed evaluation history
 description: >-
-  Active WSD thickening for retaining comparable role scorecards over time and truthfully classifying context change, insufficient evidence, baseline variation, and potential drift.
+  Active WSD thickening for reopening scorecards from their recorded Git state while reporting, never enforcing, checkout freshness.
 tags: [wsd, thickening, active]
 status: stable
 generated:
   by: ebt-wsd/okf-v0.2
-  at: "2026-08-10T15:04:00Z"
+  at: "2026-08-11T02:09:41Z"
 ---
-# Thickening: durable longitudinal scorecard series
+# Thickening: commit-addressed evaluation history
 
 **Started:** 2026-08-10
-**Git strategy:** commit this coherent thickening directly to local `main`; no push
+**Git strategy:** commit the coherent replacement directly to local `main`; no push
 **Cadence:** Normal
 
 ## Dimension
 
-Durable temporal comparison at the strict per-agent scorecard boundary.
+Repository-owned evaluation evidence identity and freshness reporting.
 
 ## Observable delta
 
-- before: an evaluator can build and audit four role-specific scorecards for one retained evaluation pack, but those observations have no deliberate durable series, baseline cohort, or truthful temporal classification.
-- after: an evaluator retains selected scorecard audit packs in an ordered longitudinal series and browses each role's exact comparable cohort, supporting distributions, sample counts, uncertainty, and one explicit `context_changed`, `insufficient_evidence`, `within_baseline`, or `potential_drift` classification without receiving a winner, recommendation, threshold, or production verdict.
+- before: opening a scorecard reconstructs copied Base64 source files, and opening a longitudinal artifact reconstructs copied scorecard files, so ordinary evaluator metadata changes cascade into a giant regenerated artifact.
+- after: an evaluator opens the same scorecard and longitudinal reports from commit-and-path references, sees whether the recorded code state is current or outdated relative to the checkout, and can still run a new evaluation from a newer commit without any freshness failure.
 
 ## Minimum surface
 
-- A versioned strict longitudinal-series contract that retains an ordered declaration plus every selected scorecard audit pack needed to reconstruct its summaries. Scratch Benchmark Runs and scorecards may remain ignored; selected evidence is complete, internally hash-bound, exactly reconstructable, and repository-owned, with commit history as the durable audit boundary.
-- Exact cohort identity over fixture/reference identity, prompt and output contracts, code provenance, declared role configuration, selected and responding model identity, and observable runtime fingerprint. Volatile prediction timing, throughput, stop reason, speculative counts, reasoning-content presence, output measurements, annotations, and reviews remain observations rather than execution-context identity.
-- Role-specific baseline and subject partitions with an explicit repetition policy. Every longitudinal metric preserves its name, unit, denominator, observation count, sample count, uncertainty method, and exact source scorecards; tokens and latency remain separate descriptive distributions.
-- A deterministic, inspectable four-state classifier: changed comparable identity yields `context_changed`; an otherwise comparable cohort that cannot meet the declared evidence minimum yields `insufficient_evidence`; only a sufficiently observed unchanged context can yield `within_baseline` or `potential_drift`. Potential drift is a descriptive evidence flag, never a model ranking, acceptance decision, retry trigger, publication threshold, or production gate.
-- Eval-owned build/read/report and explicit CLI routes that render the durable series and all four role classifications while preserving Benchmark Run versions 1–7, the capability-3 scorecard contract, acceptance Run Files, production generation, prompts, retry behavior, and model selection.
-- A repository-owned direct verifier and focused rejection tests that prove exact source reconstruction, cohort identity, temporal ordering, baseline/subject separation, uncertainty and distribution calculations, all four classifications, historical-version safety, and the absence of aggregate scoring or verdict fields.
+- Current versioned scorecard and longitudinal declaration/artifact contracts with one contained repository-relative reference shape and no embedded source payload fields or recursive whole-file hashes.
+- A current version-2 corpus manifest/reference contract that links committed evidence by canonical paths and semantic fixture IDs without cross-file byte hashes while preserving strict source-grounding checks.
+- Git-backed source resolution using an explicitly supplied repository root, so result directories may live outside Git; it reads the exact recorded evidence commit, never substitutes working-tree bytes, and reports each evaluated code commit as current/outdated without rejecting a valid historical evaluation.
+- Scorecard and longitudinal builders, stores, reports, CLI paths, Codex evaluator provenance, and current input loading threaded through the reference contract while historical artifact meanings remain explicit.
+- Focused semantic tests and direct verifiers that exercise exact commit resolution, missing references, path containment, outdated reporting, unchanged-context comparison, and absence of copied bytes.
+- Removal of the 29 MB controlled longitudinal artifact after the replacement verification path no longer consumes it, plus binding architecture/testing/model documentation and the reopened ADR/task outcome.
 
 ## Verification path
 
-`pnpm --filter @bc-news/eval verify:evaluation-longitudinal-scorecards` assembles controlled capability-3 audit packs through the real longitudinal builder, store, reader, and report path; proves durable reconstruction and four separate role histories with exact context identities, baseline and subject samples, named units and denominators, uncertainty, distinct token and latency distributions, and each classification; classifies under-sampled comparable evidence as insufficient and rejects missing, duplicate, reordered, detached, hash-mismatched, or fabricated supporting evidence; and ends exactly with `EVALUATION LONGITUDINAL SCORECARDS VERIFIED`. Project typecheck, lint, the full test suite, and `/Users/epicbadtiming/.codex/plugins/cache/ebt-plugins/ebt-wsd/0.12.2/bin/wsd-walk --require-probe --expect "WALK PASS"` then prove that the durable evaluation boundary did not regress the composed product.
+`pnpm --filter @bc-news/eval verify:evaluation-reference-corpus`, `pnpm --filter @bc-news/eval verify:evaluation-scorecards`, and `pnpm --filter @bc-news/eval verify:evaluation-longitudinal-scorecards` create compact committed evidence, place results outside that Git checkout, reopen historical artifacts through recorded evidence commits, compare the evaluated code commits with HEAD, print `outdated` without failing, prove four role reports and longitudinal classifications, and end with their exact verified markers. Eval typecheck, the full eval test suite, workspace lint, `git diff --check`, and the probe-backed composed walk ending in `WALK PASS` prove the replacement did not regress the larger product.
 
 ## Residual risks
 
-- Non-invariant: a deterministic potential-drift rule can expose an unusual changed distribution but cannot explain causality, editorial merit, or whether a production model should change.
-- Non-invariant: the repository-authored verification history proves the evidence and classification contracts with controlled observations; it does not claim that any live model has drifted or that one candidate is superior.
-- Non-invariant: retained audit packs deliberately grow repository history. Only selected complete packs belong in the longitudinal series; operational cleanup or external evidence storage remains outside BCN-006.
+- Non-invariant: local Git history can be garbage-collected only after commits become unreachable; external archival or repository replication policy is outside this local evaluator change.
+- Non-invariant: existing version-1 byte-owning artifacts remain historical contracts if encountered, but the removed synthetic golden file is no longer maintained or exercised as current evidence.
+- Non-invariant: a useful UI for filtering outdated evaluations can be added later; this thickening provides truthful report text and structured freshness data.
 
 ## Notes
 
-Changed context and changed behavior answer different questions. A context mismatch stops drift comparison and is reported directly. Under an unchanged context, too little evidence stays insufficient; enough evidence can describe ordinary baseline variation or potential drift, but neither result is an editorial judgment or release gate.
+Commit difference is not a failure condition. `outdated` means only that the checkout has advanced beyond the code state named by the evaluation. Existing hashes that identify domain content inside Benchmark Runs, requests, schemas, or metric context remain; the removed design is whole-file copying and recursive parent/child hash ownership.
 
 ## Context
 
-- governed by the [longitudinal scorecard shape](../direction/2026-08-10-longitudinal-model-evaluation-scorecards.shape.md)
-- implements capability 4 of the [longitudinal scorecard map](../direction/2026-08-10-longitudinal-model-evaluation-scorecards.map.md)
-- uses the established vocabulary in the [evaluation and verification model](../direction/bc-news.model.md)
+- governed by the [commit-addressed evaluation evidence shape](../direction/2026-08-10-commit-addressed-evaluation-evidence.shape.md)
+- repairs capability 4 of the [longitudinal scorecard map](../direction/2026-08-10-longitudinal-model-evaluation-scorecards.map.md)
+- updates vocabulary in the [evaluation and verification model](../direction/bc-news.model.md)

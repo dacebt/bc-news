@@ -1,6 +1,4 @@
 import { createHash } from "node:crypto";
-import { readFile } from "node:fs/promises";
-import { dirname, join, resolve } from "node:path";
 import { isDeepStrictEqual } from "node:util";
 import { EvidenceFixtureSchema } from "@bc-news/contracts";
 import { prepareEvidence } from "@bc-news/generation-core";
@@ -9,7 +7,8 @@ import { BenchmarkRunSchema } from "./evaluation-artifact";
 import { canonical, evaluationConfigIdentity, sha256Json } from "./evaluation-artifact-schemas";
 import { V7BenchmarkRunBaseSchema, V7BenchmarkRunSchema, type V7BenchmarkRun } from "./evaluation-artifact-v7";
 import { v1OutputContractProvenance } from "./evaluation-artifact-v1-contracts";
-import { EvaluationReferenceCorpusError, loadEvaluationReferenceCorpus, type LoadedEvaluationReferenceCorpus, type LoadedEvaluationReferenceCorpusEntry } from "./evaluation-reference-corpus";
+import { EvaluationReferenceCorpusError, loadEvaluationReferenceCorpusAtReference, type LoadedEvaluationReferenceCorpus, type LoadedEvaluationReferenceCorpusEntry } from "./evaluation-reference-corpus";
+import { readRepositorySource, sourceReferenceAtHead, type RepositorySourceReference } from "./evaluation-repository-reference";
 import {
 	AnnotationBundleSchema, EvaluationScorecardDeclarationSchema, EvaluationScorecardError,
 	QualitativeReviewBundleSchema, type AnnotationBundle, type EvaluationScorecardDeclaration,
@@ -19,6 +18,7 @@ import {
 export interface LoadedScorecardRun { readonly declaration: EvaluationScorecardDeclaration["runs"][number]; readonly bytes: Uint8Array; readonly run: V7BenchmarkRun; readonly corpusEntry: LoadedEvaluationReferenceCorpusEntry }
 export interface SelectedScorecardOutput { readonly identity: OutputIdentity; readonly run: LoadedScorecardRun; readonly trial: V7BenchmarkRun["trials"][number]; readonly invocation: V7BenchmarkRun["trials"][number]["invocations"][number]; readonly runtime: Extract<V7BenchmarkRun["runtime_evidence"][number], { state: "captured" }> }
 export interface LoadedEvaluationScorecardInput {
+	readonly repositoryRoot: string; readonly sourceReference: RepositorySourceReference;
 	readonly declarationPath: string; readonly declarationBytes: Uint8Array; readonly declaration: EvaluationScorecardDeclaration;
 	readonly corpus: LoadedEvaluationReferenceCorpus; readonly runs: readonly LoadedScorecardRun[];
 	readonly annotationBytes: Uint8Array; readonly annotations: AnnotationBundle;
@@ -30,9 +30,6 @@ function fail(code: EvaluationScorecardError["code"], path: string, message: str
 	throw new EvaluationScorecardError(code, path, message, cause === undefined ? undefined : { cause });
 }
 function hash(bytes: Uint8Array): string { return createHash("sha256").update(bytes).digest("hex"); }
-async function bytes(path: string): Promise<Uint8Array> {
-	try { return await readFile(path); } catch (cause) { return fail("source_unreadable", path, `Cannot read scorecard source ${path}`, cause); }
-}
 function json(raw: Uint8Array, path: string, code: "invalid_declaration_json" | "benchmark_artifact_malformed" | "annotation_bundle_rejected" | "review_bundle_rejected"): unknown {
 	try { return JSON.parse(Buffer.from(raw).toString("utf8")) as unknown; }
 	catch (cause) { return fail(code, path, `Malformed JSON at ${path}`, cause); }
@@ -53,19 +50,17 @@ function rawJson(raw: Uint8Array, path: string, code: EvaluationScorecardError["
 function auditRetainedSources(input: Omit<LoadedEvaluationScorecardInput, "selectedOutputs">): void {
 	const declarationFromBytes = parsed(rawJson(input.declarationBytes, input.declarationPath, "invalid_declaration_json"), EvaluationScorecardDeclarationSchema, input.declarationPath, "declaration_rejected");
 	if (!isDeepStrictEqual(declarationFromBytes, input.declaration)) fail("declaration_rejected", input.declarationPath, "Parsed declaration is detached from its retained bytes");
-	if (hash(input.corpus.manifestBytes) !== input.corpus.manifestSha256 || input.corpus.manifestSha256 !== input.declaration.corpus.manifest_sha256) fail("source_hash_mismatch", input.corpus.manifestPath, "Corpus manifest byte hash mismatch");
+	if (input.corpus.sourceReference.path !== input.declaration.corpus.manifest_path) fail("corpus_binding_mismatch", input.corpus.manifestPath, "Corpus reference is detached from the declared path");
 	if (!isDeepStrictEqual(rawJson(input.corpus.manifestBytes, input.corpus.manifestPath, "corpus_binding_mismatch"), input.corpus.manifest)) fail("corpus_binding_mismatch", input.corpus.manifestPath, "Parsed corpus manifest is detached from its retained bytes");
 	if (input.runs.length !== input.declaration.runs.length || input.corpus.entries.length !== input.declaration.runs.length || input.corpus.manifest.fixtures.length !== input.declaration.runs.length) fail("evidence_set_mismatch", input.declarationPath, "Loaded runs and corpus entries must match the complete declared roster");
 	let repetitionCount: number | undefined;
 	for (const [index, declared] of input.declaration.runs.entries()) {
 		const loaded = input.runs[index]; const corpusEntry = input.corpus.entries[index]; const manifestEntry = input.corpus.manifest.fixtures[index];
 		if (loaded === undefined || corpusEntry === undefined || manifestEntry === undefined || !isDeepStrictEqual(loaded.declaration, declared) || !isDeepStrictEqual(loaded.corpusEntry, corpusEntry) || !isDeepStrictEqual(corpusEntry.manifestEntry, manifestEntry) || declared.corpus_fixture_id !== manifestEntry.id) fail("evidence_set_mismatch", input.declarationPath, `Loaded evidence at ordinal ${String(index + 1)} is reordered or substituted`);
-		if (hash(corpusEntry.evidenceBytes) !== manifestEntry.evidence_sha256 || hash(corpusEntry.referenceBytes) !== manifestEntry.reference_sha256) fail("source_hash_mismatch", corpusEntry.evidencePath, `Corpus entry ${manifestEntry.id} byte hash mismatch`);
 		const fixture = parsed(rawJson(corpusEntry.evidenceBytes, corpusEntry.evidencePath, "corpus_binding_mismatch"), EvidenceFixtureSchema, corpusEntry.evidencePath, "corpus_binding_mismatch");
 		if (!isDeepStrictEqual(fixture, corpusEntry.fixture) || !isDeepStrictEqual(rawJson(corpusEntry.referenceBytes, corpusEntry.referencePath, "corpus_binding_mismatch"), corpusEntry.reference)) fail("corpus_binding_mismatch", corpusEntry.referencePath, `Parsed corpus entry ${manifestEntry.id} is detached from retained bytes`);
 		const prepared = prepareEvidence({ activeRegionId: fixture.active_region_id, publicationDate: corpusEntry.publicationDate, messages: fixture.messages });
 		if (!isDeepStrictEqual(prepared, corpusEntry.preparedEvidence)) fail("corpus_binding_mismatch", corpusEntry.evidencePath, `Prepared corpus entry ${manifestEntry.id} is detached from retained evidence`);
-		if (hash(loaded.bytes) !== declared.benchmark_run_sha256) fail("source_hash_mismatch", declared.benchmark_run_id, `Benchmark Run ${declared.benchmark_run_id} byte hash mismatch`);
 		const runFromBytes = parseEvaluationScorecardBenchmark(rawJson(loaded.bytes, declared.benchmark_run_id, "benchmark_artifact_malformed"), declared.benchmark_run_id, input.declaration.configuration_identity, declared.benchmark_run_id, repetitionCount);
 		repetitionCount ??= runFromBytes.declaration.repetition_count;
 		if (!isDeepStrictEqual(runFromBytes, loaded.run) || loaded.run.id !== declared.benchmark_run_id) fail("evidence_set_mismatch", declared.benchmark_run_id, "Parsed Benchmark Run is detached from its retained bytes or declared identity");
@@ -73,10 +68,8 @@ function auditRetainedSources(input: Omit<LoadedEvaluationScorecardInput, "selec
 }
 
 function auditBundleBytes(input: Omit<LoadedEvaluationScorecardInput, "selectedOutputs">): void {
-	if (hash(input.annotationBytes) !== input.declaration.annotations.sha256) fail("source_hash_mismatch", input.declaration.annotations.path, "Annotation byte hash mismatch");
 	const annotations = parsed(rawJson(input.annotationBytes, input.declaration.annotations.path, "annotation_bundle_rejected"), AnnotationBundleSchema, input.declaration.annotations.path, "annotation_bundle_rejected");
 	if (!isDeepStrictEqual(annotations, input.annotations)) fail("annotation_bundle_rejected", input.declaration.annotations.path, "Parsed annotations are detached from retained bytes");
-	if (hash(input.reviewBytes) !== input.declaration.qualitative_reviews.sha256) fail("source_hash_mismatch", input.declaration.qualitative_reviews.path, "Review byte hash mismatch");
 	const reviews = parsed(rawJson(input.reviewBytes, input.declaration.qualitative_reviews.path, "review_bundle_rejected"), QualitativeReviewBundleSchema, input.declaration.qualitative_reviews.path, "review_bundle_rejected");
 	if (!isDeepStrictEqual(reviews, input.reviews)) fail("review_bundle_rejected", input.declaration.qualitative_reviews.path, "Parsed reviews are detached from retained bytes");
 }
@@ -134,11 +127,11 @@ function outputIdentity(loaded: LoadedScorecardRun, trial: V7BenchmarkRun["trial
 	const runtime = loaded.run.runtime_evidence.find(({ invocation_id }) => invocation_id === invocation.id);
 	if (runtime?.state !== "captured") fail("output_identity_mismatch", loaded.declaration.benchmark_run_id, `Missing captured runtime evidence for ${invocation.id}`);
 	return {
-		benchmark_run_id: loaded.run.id, benchmark_run_version: 7, benchmark_run_sha256: loaded.declaration.benchmark_run_sha256,
-		code_commit_sha: loaded.run.provenance.code.commit_sha, fixture_sha256: loaded.run.fixture.fixture_sha256,
+		benchmark_run_id: loaded.run.id, benchmark_run_version: 7,
+		code_commit_sha: loaded.run.provenance.code.commit_sha,
 		prepared_evidence_identity_sha256: loaded.run.prepared_evidence.identity_sha256,
-		corpus_manifest_id: "", corpus_manifest_sha256: "", corpus_fixture_id: loaded.declaration.corpus_fixture_id,
-		reference_sha256: loaded.corpusEntry.manifestEntry.reference_sha256, config_identity: trial.config_identity,
+		corpus_manifest_id: "", corpus_fixture_id: loaded.declaration.corpus_fixture_id,
+		config_identity: trial.config_identity,
 		trial_id: trial.id, repetition: trial.repetition, invocation_id: invocation.id, production_step: invocation.production_step,
 		invocation_ordinal: invocation.ordinal, request_sha256: invocation.request_sha256,
 		completion_text_sha256: hash(Buffer.from(invocation.completion.text)), parsed_output_sha256: sha256Json(canonical(invocation.parse.output)),
@@ -234,7 +227,6 @@ export function validateLoadedEvaluationScorecardInput(input: Omit<LoadedEvaluat
 	const { declaration, corpus, runs, annotations, reviews, declarationPath } = input;
 	auditRetainedSources(input);
 	if (declaration.runs.some(({ ordinal }, index) => ordinal !== index + 1)) fail("evidence_set_mismatch", declarationPath, "Run ordinals must be contiguous");
-	if (declaration.corpus.manifest_sha256 !== corpus.manifestSha256) fail("source_hash_mismatch", corpus.manifestPath, "Corpus manifest byte hash mismatch");
 	if (!isDeepStrictEqual(declaration.runs.map(({ corpus_fixture_id }) => corpus_fixture_id), corpus.entries.map(({ manifestEntry }) => manifestEntry.id))) fail("evidence_set_mismatch", declarationPath, "Runs must match the complete corpus manifest in order");
 	unique(runs.map(({ run }) => run.id), declarationPath, "evidence_set_mismatch", "Benchmark runs must be unique");
 	let repetitionCount: number | undefined; let exactConfig: unknown; let provenance: unknown;
@@ -244,7 +236,7 @@ export function validateLoadedEvaluationScorecardInput(input: Omit<LoadedEvaluat
 		if (run.version !== 7) fail("unsupported_benchmark_version", declared.benchmark_run_id, "Scorecards require Benchmark Run V7");
 		if (run.lifecycle !== "complete") fail("benchmark_not_complete", run.id, "Benchmark Run must be complete");
 		if (run.harness_outcome !== "retained") fail("benchmark_not_retained", run.id, "Benchmark Run must be retained");
-		if (run.fixture.fixture_sha256 !== corpusEntry.manifestEntry.evidence_sha256 || run.prepared_evidence.identity_sha256 !== sha256Json(corpusEntry.preparedEvidence) || !isDeepStrictEqual(run.prepared_evidence.snapshot, corpusEntry.preparedEvidence)) fail("corpus_binding_mismatch", run.id, "Benchmark fixture/prepared evidence does not match corpus entry");
+		if (run.prepared_evidence.identity_sha256 !== sha256Json(corpusEntry.preparedEvidence) || !isDeepStrictEqual(run.prepared_evidence.snapshot, corpusEntry.preparedEvidence)) fail("corpus_binding_mismatch", run.id, "Benchmark prepared evidence does not match corpus entry");
 		const declarations = run.declaration.configurations.filter(({ identity }) => identity === declaration.configuration_identity);
 		if (declarations.length !== 1) fail("configuration_mismatch", run.id, "Selected configuration must occur exactly once");
 		if (exactConfig === undefined) exactConfig = declarations[0]!.config; else if (!isDeepStrictEqual(exactConfig, declarations[0]!.config)) fail("configuration_mismatch", run.id, "Selected configuration changed between runs");
@@ -255,7 +247,7 @@ export function validateLoadedEvaluationScorecardInput(input: Omit<LoadedEvaluat
 		const trials = run.trials.filter(({ config_identity }) => config_identity === declaration.configuration_identity);
 		if (roster.length !== run.declaration.repetition_count || trials.length !== roster.length || trials.some((trial, index) => trial.id !== roster[index]?.trial_id || trial.lifecycle !== "complete")) fail("evidence_set_mismatch", run.id, "Selected trial roster is incomplete or reordered");
 		for (const trial of trials) for (const invocation of trial.invocations) if (invocation.transport === "succeeded" && invocation.parse.state === "succeeded") {
-			const identity = outputIdentity(loaded, trial, invocation); identity.corpus_manifest_id = corpus.manifest.id; identity.corpus_manifest_sha256 = corpus.manifestSha256;
+			const identity = outputIdentity(loaded, trial, invocation); identity.corpus_manifest_id = corpus.manifest.id;
 			const runtime = run.runtime_evidence.find(({ invocation_id }) => invocation_id === invocation.id);
 			if (runtime?.state !== "captured") fail("output_identity_mismatch", run.id, `Runtime evidence missing for ${invocation.id}`);
 			selectedOutputs.push({ identity, run: loaded, trial, invocation, runtime });
@@ -281,62 +273,46 @@ export function validateLoadedEvaluationScorecardInput(input: Omit<LoadedEvaluat
 	return { ...input, selectedOutputs };
 }
 
-function nestedNodeError(error: unknown): NodeJS.ErrnoException | undefined {
-	if (error !== null && typeof error === "object") {
-		if (typeof (error as NodeJS.ErrnoException).code === "string" && ["EACCES", "EIO", "ELOOP", "EMFILE", "ENFILE", "ENOENT", "ENOTDIR", "EPERM"].includes((error as NodeJS.ErrnoException).code!)) return error as NodeJS.ErrnoException;
-		return nestedNodeError((error as { cause?: unknown }).cause);
-	}
-	return undefined;
-}
-
-async function corpusRosterHasUnreadableEntry(corpusPath: string): Promise<boolean> {
-	try {
-		const manifest = JSON.parse(await readFile(corpusPath, "utf8")) as { fixtures?: Array<{ id?: unknown }> };
-		if (!Array.isArray(manifest.fixtures)) return false;
-		for (const fixture of manifest.fixtures) {
-			if (typeof fixture.id !== "string") continue;
-			for (const directory of ["evidence", "references"]) {
-				try { await readFile(join(dirname(corpusPath), directory, `${fixture.id}.json`)); }
-				catch (cause) { if (nestedNodeError(cause) !== undefined) return true; throw cause; }
-			}
-		}
-		return false;
-	} catch (cause) { return nestedNodeError(cause) !== undefined; }
-}
-
-async function mapCorpusError(error: unknown, fallbackPath: string): Promise<never> {
+function mapCorpusError(error: unknown, fallbackPath: string): never {
 	if (error instanceof EvaluationReferenceCorpusError) {
-		if (error.code === "hash_mismatch") fail("source_hash_mismatch", error.path, error.message, error);
-		if (error.code === "directory_not_closed" && await corpusRosterHasUnreadableEntry(fallbackPath)) fail("source_unreadable", error.path, error.message, error);
-		if (error.code === "missing_owned_path" || nestedNodeError(error) !== undefined) fail("source_unreadable", error.path, error.message, error);
+		if (error.code === "missing_owned_path") fail("source_unreadable", error.path, error.message, error);
 		fail("corpus_binding_mismatch", error.path, error.message, error);
 	}
-	if (nestedNodeError(error) !== undefined) fail("source_unreadable", fallbackPath, "Cannot read evaluation reference corpus", error);
-	fail("corpus_binding_mismatch", fallbackPath, "Evaluation reference corpus rejected", error);
+	fail("source_unreadable", fallbackPath, "Cannot read evaluation reference corpus", error);
 }
 
-export async function loadEvaluationScorecardInput(declarationPath: string): Promise<LoadedEvaluationScorecardInput> {
-	const absolute = resolve(declarationPath); const declarationBytes = await bytes(absolute);
-	const declaration = parsed(json(declarationBytes, absolute, "invalid_declaration_json"), EvaluationScorecardDeclarationSchema, absolute, "declaration_rejected");
-	const root = dirname(absolute); const corpusPath = resolve(root, declaration.corpus.manifest_path);
+export async function loadEvaluationScorecardInputAtReference(repositoryRoot: string, sourceReference: RepositorySourceReference): Promise<LoadedEvaluationScorecardInput> {
+	let declarationBytes: Uint8Array;
+	try { declarationBytes = await readRepositorySource(repositoryRoot, sourceReference); }
+	catch (cause) { return fail("source_unreadable", sourceReference.path, "Cannot read scorecard declaration", cause); }
+	const declaration = parsed(json(declarationBytes, sourceReference.path, "invalid_declaration_json"), EvaluationScorecardDeclarationSchema, sourceReference.path, "declaration_rejected");
 	let corpus: LoadedEvaluationReferenceCorpus;
-	try { corpus = await loadEvaluationReferenceCorpus(corpusPath); } catch (cause) { return mapCorpusError(cause, corpusPath); }
-	if (corpus.manifestSha256 !== declaration.corpus.manifest_sha256) fail("source_hash_mismatch", corpus.manifestPath, "Corpus manifest byte hash mismatch");
-	const results = resolve(root, declaration.benchmark_results_directory);
+	try { corpus = await loadEvaluationReferenceCorpusAtReference(repositoryRoot, { ...sourceReference, path: declaration.corpus.manifest_path }); }
+	catch (cause) { return mapCorpusError(cause, declaration.corpus.manifest_path); }
 	const runs: LoadedScorecardRun[] = []; let expectedRepetitionCount: number | undefined;
 	for (const [index, declared] of declaration.runs.entries()) {
-		const path = join(results, `${declared.benchmark_run_id}.json`); const runBytes = await bytes(path);
-		if (hash(runBytes) !== declared.benchmark_run_sha256) fail("source_hash_mismatch", path, "Benchmark Run byte hash mismatch");
-		const candidate = json(runBytes, path, "benchmark_artifact_malformed");
-		const run = parseEvaluationScorecardBenchmark(candidate, declared.benchmark_run_id, declaration.configuration_identity, path, expectedRepetitionCount);
+		let runBytes: Uint8Array;
+		try { runBytes = await readRepositorySource(repositoryRoot, { ...sourceReference, path: declared.path }); }
+		catch (cause) { return fail("source_unreadable", declared.path, "Cannot read Benchmark Run source", cause); }
+		const candidate = json(runBytes, declared.path, "benchmark_artifact_malformed");
+		const run = parseEvaluationScorecardBenchmark(candidate, declared.benchmark_run_id, declaration.configuration_identity, declared.path, expectedRepetitionCount);
 		expectedRepetitionCount ??= run.declaration.repetition_count;
 		runs.push({ declaration: declared, bytes: runBytes, run, corpusEntry: corpus.entries[index]! });
 	}
-	const annotationPath = resolve(root, declaration.annotations.path); const annotationBytes = await bytes(annotationPath);
-	if (hash(annotationBytes) !== declaration.annotations.sha256) fail("source_hash_mismatch", annotationPath, "Annotation byte hash mismatch");
-	const annotations = parsed(json(annotationBytes, annotationPath, "annotation_bundle_rejected"), AnnotationBundleSchema, annotationPath, "annotation_bundle_rejected");
-	const reviewPath = resolve(root, declaration.qualitative_reviews.path); const reviewBytes = await bytes(reviewPath);
-	if (hash(reviewBytes) !== declaration.qualitative_reviews.sha256) fail("source_hash_mismatch", reviewPath, "Review byte hash mismatch");
-	const reviews = parsed(json(reviewBytes, reviewPath, "review_bundle_rejected"), QualitativeReviewBundleSchema, reviewPath, "review_bundle_rejected");
-	return validateLoadedEvaluationScorecardInput({ declarationPath: absolute, declarationBytes, declaration, corpus, runs, annotationBytes, annotations, reviewBytes, reviews });
+	let annotationBytes: Uint8Array; let reviewBytes: Uint8Array;
+	try {
+		[annotationBytes, reviewBytes] = await Promise.all([
+			readRepositorySource(repositoryRoot, { ...sourceReference, path: declaration.annotations.path }),
+			readRepositorySource(repositoryRoot, { ...sourceReference, path: declaration.qualitative_reviews.path }),
+		]);
+	} catch (cause) { return fail("source_unreadable", sourceReference.path, "Cannot read Codex evaluation evidence", cause); }
+	const annotations = parsed(json(annotationBytes, declaration.annotations.path, "annotation_bundle_rejected"), AnnotationBundleSchema, declaration.annotations.path, "annotation_bundle_rejected");
+	const reviews = parsed(json(reviewBytes, declaration.qualitative_reviews.path, "review_bundle_rejected"), QualitativeReviewBundleSchema, declaration.qualitative_reviews.path, "review_bundle_rejected");
+	if (annotations.id !== declaration.annotations.bundle_id || reviews.id !== declaration.qualitative_reviews.bundle_id) fail("evidence_set_mismatch", sourceReference.path, "Codex evidence bundle identity does not match the declaration");
+	return validateLoadedEvaluationScorecardInput({ repositoryRoot, sourceReference, declarationPath: sourceReference.path, declarationBytes, declaration, corpus, runs, annotationBytes, annotations, reviewBytes, reviews });
+}
+
+export async function loadEvaluationScorecardInput(declarationPath: string, repositoryRoot: string): Promise<LoadedEvaluationScorecardInput> {
+	const sourceReference = await sourceReferenceAtHead(repositoryRoot, declarationPath);
+	return loadEvaluationScorecardInputAtReference(repositoryRoot, sourceReference);
 }

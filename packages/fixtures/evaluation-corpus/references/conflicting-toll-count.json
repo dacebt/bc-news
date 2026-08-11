@@ -1,7 +1,6 @@
 {
-	"version": 1,
+	"version": 2,
 	"fixture_id": "conflicting-toll-count",
-	"evidence_sha256": "c5caf0f1bc9f996eef709e1cb11bb828153c01723c82c34229dbdf854bb8486b",
 	"claims": [
 		{"id":"stone-gate-toll","status":"contested","supporting_witnesses":[{"message_id":"toll-01","field":"text","excerpt":"The Stone Gate toll is 8 copper today."},{"message_id":"toll-03","field":"text","excerpt":"I paid 8 copper this morning."}],"opposing_witnesses":[{"message_id":"toll-02","field":"text","excerpt":"The posted Stone Gate toll says 10 copper."}],"unresolved_witnesses":[]}
 	],

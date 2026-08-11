@@ -1,13 +1,16 @@
-import { createHash } from "node:crypto";
-import { lstat, readFile, readdir, realpath } from "node:fs/promises";
-import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { EvidenceFixtureSchema, type EvidenceFixture } from "@bc-news/contracts";
-import { prepareEvidence, type PreparedEvidence } from "@bc-news/generation-core";
+import { evidenceDateForPublicationDate, prepareEvidence, type PreparedEvidence } from "@bc-news/generation-core";
+import { resolve } from "node:path";
 import { z } from "zod";
-import { loadFixture } from "./evidence-fixture";
+import {
+	listRepositorySources,
+	readRepositorySource,
+	repositorySourceAtLastChange,
+	sourceReferenceAtHead,
+	type RepositorySourceReference,
+} from "./evaluation-repository-reference";
 
 const KEBAB_CASE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-const SHA256 = /^[a-f0-9]{64}$/;
 const TrimmedNonblankSchema = z.string().min(1).refine((value) => value === value.trim(), "String must be trimmed");
 const RecordIdSchema = z.string().min(1).regex(KEBAB_CASE).refine((value) => value === value.trim(), "Record id must be trimmed");
 
@@ -30,10 +33,10 @@ const StatusRecordSchema = z.strictObject({
 	opposing_witnesses: z.array(SourceWitnessSchema),
 	unresolved_witnesses: z.array(SourceWitnessSchema),
 });
-const ReferenceSchema = z.strictObject({
+export const EvaluationReferenceV1Schema = z.strictObject({
 	version: z.literal(1),
 	fixture_id: RecordIdSchema,
-	evidence_sha256: z.string().regex(SHA256),
+	evidence_sha256: z.string().regex(/^[a-f0-9]{64}$/u),
 	claims: z.array(StatusRecordSchema),
 	events: z.array(StatusRecordSchema),
 	ambiguities: z.array(z.strictObject({ id: RecordIdSchema, witnesses: z.array(SourceWitnessSchema) })),
@@ -60,16 +63,18 @@ const ReferenceSchema = z.strictObject({
 	})),
 	irrelevant_message_ids: z.array(TrimmedNonblankSchema),
 });
-const ManifestSchema = z.strictObject({
+export const EvaluationReferenceSchema = EvaluationReferenceV1Schema.omit({ evidence_sha256: true }).extend({ version: z.literal(2) }).strict();
+
+export const EvaluationReferenceManifestV1Schema = z.strictObject({
 	version: z.literal(1),
 	id: RecordIdSchema,
 	fixtures: z.array(z.strictObject({
 		ordinal: z.number().int().positive(),
 		id: RecordIdSchema,
 		evidence_path: TrimmedNonblankSchema,
-		evidence_sha256: z.string().regex(SHA256),
+		evidence_sha256: z.string().regex(/^[a-f0-9]{64}$/u),
 		reference_path: TrimmedNonblankSchema,
-		reference_sha256: z.string().regex(SHA256),
+		reference_sha256: z.string().regex(/^[a-f0-9]{64}$/u),
 		variation_tags: z.array(VariationTagSchema).min(1),
 		variation_witnesses: z.array(z.strictObject({
 			tag: VariationTagSchema,
@@ -79,8 +84,16 @@ const ManifestSchema = z.strictObject({
 	})).min(12),
 });
 
-export type EvaluationReference = z.infer<typeof ReferenceSchema>;
-export type EvaluationReferenceManifest = z.infer<typeof ManifestSchema>;
+export const EvaluationReferenceManifestSchema = EvaluationReferenceManifestV1Schema.extend({
+	version: z.literal(2),
+	fixtures: z.array(EvaluationReferenceManifestV1Schema.shape.fixtures.element.omit({
+		evidence_sha256: true,
+		reference_sha256: true,
+	})).min(12),
+}).strict();
+
+export type EvaluationReference = z.infer<typeof EvaluationReferenceSchema>;
+export type EvaluationReferenceManifest = z.infer<typeof EvaluationReferenceManifestSchema>;
 type SourceWitness = z.infer<typeof SourceWitnessSchema>;
 type ManifestEntry = EvaluationReferenceManifest["fixtures"][number];
 
@@ -109,9 +122,10 @@ export interface LoadedEvaluationReferenceCorpusEntry {
 }
 
 export interface LoadedEvaluationReferenceCorpus {
+	readonly sourceReference: RepositorySourceReference;
+	readonly repositoryRoot: string;
 	readonly manifestPath: string;
 	readonly manifestBytes: Uint8Array;
-	readonly manifestSha256: string;
 	readonly manifest: EvaluationReferenceManifest;
 	readonly entries: readonly LoadedEvaluationReferenceCorpusEntry[];
 }
@@ -120,9 +134,6 @@ function fail(code: string, path: string, message: string): never {
 	throw new EvaluationReferenceCorpusError(code, path, message);
 }
 
-function hash(bytes: Uint8Array): string {
-	return createHash("sha256").update(bytes).digest("hex");
-}
 
 function parseJson<T>(bytes: Uint8Array, path: string, schema: z.ZodType<T>): T {
 	let candidate: unknown;
@@ -138,28 +149,6 @@ function parseJson<T>(bytes: Uint8Array, path: string, schema: z.ZodType<T>): T 
 
 function unique(values: readonly string[], path: string, subject: string): void {
 	if (new Set(values).size !== values.length) fail("duplicate_value", path, `${subject} contains duplicates`);
-}
-
-function inside(root: string, candidate: string): boolean {
-	const offset = relative(root, candidate);
-	return offset === "" || (!offset.startsWith(`..${sep}`) && offset !== ".." && !isAbsolute(offset));
-}
-
-async function assertOwnedPath(path: string, rootReal: string, kind: "file" | "directory"): Promise<void> {
-	const info = await lstat(path).catch(() => fail("missing_owned_path", path, `Missing ${kind} ${path}`));
-	const actual = await realpath(path).catch(() => fail("invalid_owned_path", path, `${path} must resolve to an owned ${kind}`));
-	if (!inside(rootReal, actual)) fail("path_escape", path, `${path} resolves outside the corpus root`);
-	if (info.isSymbolicLink() || (kind === "file" ? !info.isFile() : !info.isDirectory())) {
-		fail("invalid_owned_path", path, `${path} must be a non-symlink ${kind}`);
-	}
-}
-
-async function assertDirectoryClosure(directory: string, expected: readonly string[]): Promise<void> {
-	const actual = (await readdir(directory)).sort();
-	const wanted = [...expected].sort();
-	if (actual.length !== wanted.length || actual.some((name, index) => name !== wanted[index])) {
-		fail("directory_not_closed", directory, `${directory} entries do not exactly match the manifest`);
-	}
 }
 
 function witnessKey(witness: SourceWitness): string {
@@ -320,22 +309,28 @@ function validateVariation(entry: LoadedEvaluationReferenceCorpusEntry): void {
 	}
 }
 
-async function loadEntry(entry: ManifestEntry, fixturesRoot: string, corpusRoot: string, corpusReal: string): Promise<LoadedEvaluationReferenceCorpusEntry> {
-	const evidenceRelative = `evaluation-corpus/evidence/${entry.id}.json`;
-	const referenceRelative = `evaluation-corpus/references/${entry.id}.json`;
-	if (entry.evidence_path !== evidenceRelative || entry.reference_path !== referenceRelative || isAbsolute(entry.evidence_path) || isAbsolute(entry.reference_path)) fail("noncanonical_path", corpusRoot, `Manifest paths for ${entry.id} are not canonical`);
-	const evidencePath = resolve(fixturesRoot, entry.evidence_path);
-	const referencePath = resolve(fixturesRoot, entry.reference_path);
-	if (!inside(corpusRoot, evidencePath) || !inside(corpusRoot, referencePath)) fail("path_escape", corpusRoot, `Manifest paths for ${entry.id} escape the corpus`);
-	await Promise.all([assertOwnedPath(evidencePath, corpusReal, "file"), assertOwnedPath(referencePath, corpusReal, "file")]);
-	const [evidenceBytes, referenceBytes] = await Promise.all([readFile(evidencePath), readFile(referencePath)]);
-	if (hash(evidenceBytes) !== entry.evidence_sha256 || hash(referenceBytes) !== entry.reference_sha256) fail("hash_mismatch", corpusRoot, `Byte identity mismatch for ${entry.id}`);
+function publicationDateForEvidenceDate(evidenceDate: string): string {
+	const [year, month, day] = evidenceDate.split("-").map(Number);
+	const shifted = new Date(Date.UTC(year ?? 0, (month ?? 1) - 1, (day ?? 1) + 1));
+	const candidate = `${String(shifted.getUTCFullYear()).padStart(4, "0")}-${String(shifted.getUTCMonth() + 1).padStart(2, "0")}-${String(shifted.getUTCDate()).padStart(2, "0")}`;
+	if (evidenceDateForPublicationDate(candidate) !== evidenceDate) fail("identity_mismatch", evidenceDate, "Evidence date does not round-trip to a publication date");
+	return candidate;
+}
+
+async function loadEntry(entry: ManifestEntry, repositoryRoot: string, sourceReference: RepositorySourceReference, corpusRoot: string): Promise<LoadedEvaluationReferenceCorpusEntry> {
+	const evidencePath = `${corpusRoot}/evidence/${entry.id}.json`;
+	const referencePath = `${corpusRoot}/references/${entry.id}.json`;
+	if (entry.evidence_path !== evidencePath || entry.reference_path !== referencePath) fail("noncanonical_path", sourceReference.path, `Manifest paths for ${entry.id} are not canonical repository paths`);
+	const [evidenceBytes, referenceBytes] = await Promise.all([
+		readRepositorySource(repositoryRoot, { ...sourceReference, path: evidencePath }),
+		readRepositorySource(repositoryRoot, { ...sourceReference, path: referencePath }),
+	]);
 	const fixture = parseJson(evidenceBytes, evidencePath, EvidenceFixtureSchema);
-	const reference = parseJson(referenceBytes, referencePath, ReferenceSchema);
-	if (reference.fixture_id !== entry.id || reference.evidence_sha256 !== entry.evidence_sha256) fail("identity_mismatch", referencePath, `Reference identity mismatch for ${entry.id}`);
-	const loadedFixture = await loadFixture(evidencePath);
-	const preparedEvidence = prepareEvidence({ activeRegionId: fixture.active_region_id, publicationDate: loadedFixture.publicationDate, messages: fixture.messages });
-	const loaded = { manifestEntry: entry, evidencePath, evidenceBytes, fixture, publicationDate: loadedFixture.publicationDate, preparedEvidence, referencePath, referenceBytes, reference };
+	const reference = parseJson(referenceBytes, referencePath, EvaluationReferenceSchema);
+	if (reference.fixture_id !== entry.id) fail("identity_mismatch", referencePath, `Reference identity mismatch for ${entry.id}`);
+	const publicationDate = publicationDateForEvidenceDate(fixture.evidence_date);
+	const preparedEvidence = prepareEvidence({ activeRegionId: fixture.active_region_id, publicationDate, messages: fixture.messages });
+	const loaded = { manifestEntry: entry, evidencePath, evidenceBytes, fixture, publicationDate, preparedEvidence, referencePath, referenceBytes, reference };
 	validateReferenceCollections(reference, referencePath);
 	validateGrounding(loaded);
 	validateRelationships(loaded);
@@ -343,38 +338,31 @@ async function loadEntry(entry: ManifestEntry, fixturesRoot: string, corpusRoot:
 	return loaded;
 }
 
-async function loadEvaluationReferenceCorpusInternal(manifestPath: string): Promise<LoadedEvaluationReferenceCorpus> {
-	const absoluteManifest = resolve(manifestPath);
-	const corpusRoot = dirname(absoluteManifest);
-	const fixturesRoot = dirname(corpusRoot);
-	if (basename(absoluteManifest) !== "manifest.json" || basename(corpusRoot) !== "evaluation-corpus") fail("invalid_manifest_location", absoluteManifest, "Manifest must be <fixtures-root>/evaluation-corpus/manifest.json");
-	const corpusInfo = await lstat(corpusRoot).catch(() => fail("missing_owned_path", corpusRoot, `Missing corpus directory ${corpusRoot}`));
-	if (!corpusInfo.isDirectory() || corpusInfo.isSymbolicLink()) fail("invalid_owned_path", corpusRoot, "Corpus root must be a non-symlink directory");
-	const corpusReal = await realpath(corpusRoot);
-	await assertOwnedPath(absoluteManifest, corpusReal, "file");
-	const evidenceDirectory = join(corpusRoot, "evidence");
-	const referenceDirectory = join(corpusRoot, "references");
-	await Promise.all([assertOwnedPath(evidenceDirectory, corpusReal, "directory"), assertOwnedPath(referenceDirectory, corpusReal, "directory")]);
-	const manifestBytes = await readFile(absoluteManifest);
-	const manifest = parseJson(manifestBytes, absoluteManifest, ManifestSchema);
-	unique(manifest.fixtures.map(({ id }) => id), absoluteManifest, "fixture ids");
+export async function loadEvaluationReferenceCorpusAtReference(repositoryRoot: string, sourceReference: RepositorySourceReference): Promise<LoadedEvaluationReferenceCorpus> {
+	const suffix = "/evaluation-corpus/manifest.json";
+	if (!sourceReference.path.endsWith(suffix)) fail("invalid_manifest_location", sourceReference.path, `Manifest must end with ${suffix}`);
+	const corpusRoot = sourceReference.path.slice(0, -"/manifest.json".length);
+	const corpusReference = await repositorySourceAtLastChange(repositoryRoot, sourceReference, corpusRoot);
+	const manifestBytes = await readRepositorySource(repositoryRoot, corpusReference);
+	const manifest = parseJson(manifestBytes, corpusReference.path, EvaluationReferenceManifestSchema);
+	unique(manifest.fixtures.map(({ id }) => id), corpusReference.path, "fixture ids");
 	for (const [index, entry] of manifest.fixtures.entries()) {
-		if (entry.ordinal !== index + 1) fail("invalid_order", absoluteManifest, "Fixture ordinals must match manifest positions");
+		if (entry.ordinal !== index + 1) fail("invalid_order", corpusReference.path, "Fixture ordinals must match manifest positions");
 	}
-	await Promise.all([
-		assertDirectoryClosure(evidenceDirectory, manifest.fixtures.map(({ id }) => `${id}.json`)),
-		assertDirectoryClosure(referenceDirectory, manifest.fixtures.map(({ id }) => `${id}.json`)),
-	]);
+	const expectedPaths = manifest.fixtures.flatMap(({ id }) => [`${corpusRoot}/evidence/${id}.json`, `${corpusRoot}/references/${id}.json`]).sort();
+	const actualPaths = (await listRepositorySources(repositoryRoot, { ...corpusReference, path: corpusRoot })).filter((path) => path !== corpusReference.path).sort();
+	if (actualPaths.length !== expectedPaths.length || actualPaths.some((path, index) => path !== expectedPaths[index])) fail("directory_not_closed", corpusReference.path, "Committed corpus entries do not exactly match the manifest");
 	const entries: LoadedEvaluationReferenceCorpusEntry[] = [];
-	for (const entry of manifest.fixtures) entries.push(await loadEntry(entry, fixturesRoot, corpusRoot, corpusReal));
+	for (const entry of manifest.fixtures) entries.push(await loadEntry(entry, repositoryRoot, corpusReference, corpusRoot));
 	const coverage = new Set(manifest.fixtures.flatMap(({ variation_tags }) => variation_tags));
-	if (EVALUATION_CORPUS_VARIATION_TAGS.some((tag) => !coverage.has(tag))) fail("missing_variation_coverage", absoluteManifest, "Manifest does not cover every variation tag");
-	return { manifestPath: absoluteManifest, manifestBytes, manifestSha256: hash(manifestBytes), manifest, entries };
+	if (EVALUATION_CORPUS_VARIATION_TAGS.some((tag) => !coverage.has(tag))) fail("missing_variation_coverage", corpusReference.path, "Manifest does not cover every variation tag");
+	return { sourceReference: corpusReference, repositoryRoot, manifestPath: corpusReference.path, manifestBytes, manifest, entries };
 }
 
-export async function loadEvaluationReferenceCorpus(manifestPath: string): Promise<LoadedEvaluationReferenceCorpus> {
+export async function loadEvaluationReferenceCorpus(manifestPath: string, repositoryRoot: string): Promise<LoadedEvaluationReferenceCorpus> {
 	try {
-		return await loadEvaluationReferenceCorpusInternal(manifestPath);
+		const sourceReference = await sourceReferenceAtHead(repositoryRoot, manifestPath);
+		return await loadEvaluationReferenceCorpusAtReference(repositoryRoot, sourceReference);
 	} catch (error) {
 		if (error instanceof EvaluationReferenceCorpusError) throw error;
 		throw new EvaluationReferenceCorpusError(

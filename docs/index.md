@@ -4,7 +4,7 @@ okf_version: "0.2"
 
 # bc-news documentation
 
-- [Active thickening: durable longitudinal scorecard series](thickenings/active.md) — Active WSD thickening for retaining comparable role scorecards over time and truthfully classifying context change, insufficient evidence, baseline variation, and potential drift.
+- [Active thickening: commit-addressed evaluation history](thickenings/active.md) — Active WSD thickening for reopening scorecards from their recorded Git state while reporting, never enforcing, checkout freshness.
 - [Product requirements](PRD.md) — Binding high-level product direction for rebuilding the regional BitCraft newspaper on Cloudflare with durable generation, replaceable models, and evaluation-led development.
 - [Structural discipline](ARCHITECTURE.md) — The binding architecture posture for bc-news v2 — TypeScript throughout, exactly two ports (model provider, evidence input), functional core with zod-validated rejecting boundaries, and deliberate Cloudflare coupling everywhere else.
 - [Domain model](DOMAIN.md) — The binding domain vocabulary and identity rules for bc-news v2 — what an edition is, what identifies a generation run, and which domain questions remain deliberately open for planning.
