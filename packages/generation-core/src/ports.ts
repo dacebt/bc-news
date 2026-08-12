@@ -48,7 +48,7 @@ export interface CloudflareAiGatewayRequestProvenance {
 	transport: "cloudflare_ai_gateway_rest";
 	account_id: string;
 	gateway: { selection: "named"; id: string } | { selection: "account_default" };
-	gateway_log_id: string;
+	gateway_log_id: string | { state: "unavailable"; reason: "provider_did_not_report" };
 	requested_model: string;
 	correlation: ModelRequestCorrelation;
 	policy: {

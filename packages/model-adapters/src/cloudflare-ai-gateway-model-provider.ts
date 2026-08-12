@@ -242,13 +242,10 @@ export function createCloudflareAiGatewayModelProvider(
 					`Cloudflare AI Gateway completion rejected the request with HTTP status ${response.status}`,
 				);
 			}
-			const gatewayLogId = response.headers.get("cf-aig-log-id");
-			if (gatewayLogId === null || gatewayLogId.trim() === "") {
-				throw new CloudflareAiGatewayDeterministicError(
-					"cloudflare_ai_gateway_missing_log_id",
-					"Cloudflare AI Gateway completion did not return cf-aig-log-id",
-				);
-			}
+			const reportedGatewayLogId = response.headers.get("cf-aig-log-id");
+			const gatewayLogId = reportedGatewayLogId === null || reportedGatewayLogId.trim() === ""
+				? { state: "unavailable" as const, reason: "provider_did_not_report" as const }
+				: reportedGatewayLogId;
 			let body: string;
 			try {
 				body = await response.text();

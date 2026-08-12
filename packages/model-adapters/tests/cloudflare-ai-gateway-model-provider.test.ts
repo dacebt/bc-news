@@ -181,14 +181,17 @@ it("requires correlation before making a paid request", async () => {
 	expect(fetchCall).not.toHaveBeenCalled();
 });
 
-it("requires the response-scoped Gateway log id", async () => {
+it("retains a successful response when Cloudflare omits the Gateway log id", async () => {
 	vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({
 		model: "gpt-4.1-mini",
 		choices: [{ message: { content: "completion" } }],
 		usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
 	}));
-	await expect(provider().complete(request())).rejects.toMatchObject({
-		code: "cloudflare_ai_gateway_missing_log_id",
+	await expect(provider().complete(request())).resolves.toMatchObject({
+		text: "completion",
+		request_provenance: {
+			gateway_log_id: { state: "unavailable", reason: "provider_did_not_report" },
+		},
 	});
 });
 

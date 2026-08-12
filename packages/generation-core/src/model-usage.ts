@@ -60,7 +60,10 @@ export const ModelRequestProvenanceSchema = z.discriminatedUnion("transport", [
 			z.strictObject({ selection: z.literal("named"), id: z.string().trim().min(1) }),
 			z.strictObject({ selection: z.literal("account_default") }),
 		]),
-		gateway_log_id: z.string().trim().min(1),
+		gateway_log_id: z.union([
+			z.string().trim().min(1),
+			z.strictObject({ state: z.literal("unavailable"), reason: z.literal("provider_did_not_report") }),
+		]),
 		requested_model: z.string().trim().min(1),
 		correlation: ModelRequestCorrelationSchema,
 		policy: z.strictObject({

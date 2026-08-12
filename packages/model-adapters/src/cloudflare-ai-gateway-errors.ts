@@ -4,7 +4,6 @@ export type CloudflareAiGatewayDeterministicErrorCode =
 	| "cloudflare_ai_gateway_http_rejection"
 	| "cloudflare_ai_gateway_invalid_json"
 	| "cloudflare_ai_gateway_response_contract_rejected"
-	| "cloudflare_ai_gateway_missing_log_id"
 	| "cloudflare_ai_gateway_unexpected_transport_failure";
 
 export type CloudflareAiGatewayRetryableErrorCode =

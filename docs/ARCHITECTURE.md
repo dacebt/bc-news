@@ -174,7 +174,8 @@ sets cache bypass, metadata-only logging, one Gateway attempt, and a ten-minute
 timeout, and requires run/invocation correlation before transport. Unified
 Billing owns third-party keys. Gateway-estimated cost is absent from the
 inference response, so the completion records billing as unavailable and
-retains `cf-aig-log-id` for separately authorized reconciliation.
+retains `cf-aig-log-id` for separately authorized reconciliation when Cloudflare
+reports it and otherwise records the response header as unavailable evidence.
 
 The production workflow has two editorial products and four model steps. The
 main-story writer receives prepared evidence and owns `title`, `subtitle`, and

@@ -107,10 +107,11 @@ The `cloudflare_ai_gateway` adapter uses Cloudflare's account default when
 specific gateway is required. It uses Cloudflare's fixed account REST endpoint,
 skips cache, retains log metadata without prompt/response payloads, attaches run
 and invocation ids, sets one Gateway attempt, and bounds the request at ten minutes. The application
-retains the response-scoped `cf-aig-log-id`, provider/model identity, and token
-usage. The inference response does not report cost, so billing remains
-`unavailable`; use the log id to reconcile Cloudflare's estimated cost without
-calling it invoice truth.
+retains the response-scoped `cf-aig-log-id` when Cloudflare reports it, records
+an explicit unavailable observation when it does not, and retains provider/model
+identity and token usage. The inference response does not report cost, so billing
+remains `unavailable`; a reported log id can reconcile Cloudflare's estimated
+cost without calling it invoice truth.
 
 Each of the four production agents has its own complete adapter configuration:
 provider or adapter, model, optional `temperature`, and the adapter-specific
