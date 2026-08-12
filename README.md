@@ -102,11 +102,11 @@ pnpm --filter @bc-news/eval eval -- benchmark run \
 	--results-dir apps/eval/evaluation-results
 ```
 
-The `cloudflare_ai_gateway` adapter accepts either
-`"gateway":{"selection":"account_default"}` or a named selection with an
-`id`. It uses Cloudflare's fixed account REST endpoint, skips cache, retains log
-metadata without prompt/response payloads, attaches run and invocation ids,
-sets one Gateway attempt, and bounds the request at ten minutes. The application
+The `cloudflare_ai_gateway` adapter uses Cloudflare's account default when
+`gateway` is omitted. A named selection with an `id` is available when a
+specific gateway is required. It uses Cloudflare's fixed account REST endpoint,
+skips cache, retains log metadata without prompt/response payloads, attaches run
+and invocation ids, sets one Gateway attempt, and bounds the request at ten minutes. The application
 retains the response-scoped `cf-aig-log-id`, provider/model identity, and token
 usage. The inference response does not report cost, so billing remains
 `unavailable`; use the log id to reconcile Cloudflare's estimated cost without

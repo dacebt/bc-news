@@ -19,4 +19,4 @@ MODEL_CONFIG='{"main_story_write":{"adapter":"lmstudio","model":"replace-with-lo
 # a separate operator action.
 # CLOUDFLARE_ACCOUNT_ID="replace-with-account-id"
 # CLOUDFLARE_API_TOKEN="replace-with-workers-ai-read-token"
-# MODEL_CONFIG='{"main_story_write":{"adapter":"cloudflare_ai_gateway","gateway":{"selection":"account_default"},"model":"openai/gpt-4.1"},"main_story_copyedit":{"adapter":"cloudflare_ai_gateway","gateway":{"selection":"account_default"},"model":"openai/gpt-4.1"},"announcements_write":{"adapter":"cloudflare_ai_gateway","gateway":{"selection":"account_default"},"model":"openai/gpt-4.1"},"announcements_copyedit":{"adapter":"cloudflare_ai_gateway","gateway":{"selection":"account_default"},"model":"openai/gpt-4.1"}}'
+# MODEL_CONFIG='{"main_story_write":{"adapter":"cloudflare_ai_gateway","model":"openai/gpt-4.1"},"main_story_copyedit":{"adapter":"cloudflare_ai_gateway","model":"openai/gpt-4.1"},"announcements_write":{"adapter":"cloudflare_ai_gateway","model":"openai/gpt-4.1"},"announcements_copyedit":{"adapter":"cloudflare_ai_gateway","model":"openai/gpt-4.1"}}'

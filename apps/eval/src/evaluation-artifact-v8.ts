@@ -85,9 +85,9 @@ type V8Candidate = z.infer<typeof V8BenchmarkRunBaseSchema>;
 
 function legacyAdapter(adapter: z.infer<typeof V8ModelAdapterConfigSchema>) {
 	if (adapter.adapter !== "cloudflare_ai_gateway") return adapter;
-	const gatewayIdentity = adapter.gateway.selection === "named"
-		? `named:${adapter.gateway.id}`
-		: "account_default";
+	const gatewayIdentity = adapter.gateway === undefined
+		? "account_default"
+		: `named:${adapter.gateway.id}`;
 	return {
 		adapter: "openai_compatible_hosted" as const,
 		provider: `cloudflare_ai_gateway:${cloudflareAiGatewayProviderForModel(adapter.model)}:${gatewayIdentity}`,
@@ -223,8 +223,9 @@ export const V8BenchmarkRunSchema = V8BenchmarkRunBaseSchema.superRefine((run, c
 				context.addIssue({ code: "custom", path: ["gateway_requests", index, "state"], message: "successful Cloudflare AI Gateway invocation must retain captured Gateway provenance" });
 				continue;
 			}
-			if (record.provenance.gateway.selection !== adapter.gateway.selection
-				|| (record.provenance.gateway.selection === "named" && adapter.gateway.selection === "named" && record.provenance.gateway.id !== adapter.gateway.id)
+			const expectedGateway = adapter.gateway ?? { selection: "account_default" as const };
+			if (record.provenance.gateway.selection !== expectedGateway.selection
+				|| (record.provenance.gateway.selection === "named" && expectedGateway.selection === "named" && record.provenance.gateway.id !== expectedGateway.id)
 				|| record.provenance.requested_model !== adapter.model
 				|| record.provenance.correlation.run_id !== run.id
 				|| record.provenance.correlation.invocation_id !== record.invocation_id) {

@@ -12,6 +12,11 @@ function recordedConfig(): Record<string, { adapter: "recorded" }> {
 	return Object.fromEntries(PRODUCTION_MODEL_STEPS.map((step) => [step, { adapter: "recorded" }]));
 }
 
+it("does not expose operator credentials to the test runtime", () => {
+	expect(Reflect.has(env, "CLOUDFLARE_ACCOUNT_ID")).toBe(false);
+	expect(Reflect.has(env, "CLOUDFLARE_API_TOKEN")).toBe(false);
+});
+
 it("resolves exactly four independently configured production providers", () => {
 	const ports = resolveGenerationPorts(envWith({ EVIDENCE_INPUT: "fixture" }));
 	expect(ports.evidenceInput).toBe(fixtureEvidenceInput);
@@ -75,7 +80,6 @@ it("resolves a hosted provider only with endpoint and API key bindings", () => {
 it("resolves Cloudflare AI Gateway only with account and token bindings", () => {
 	const gateway = {
 		adapter: "cloudflare_ai_gateway",
-		gateway: { selection: "named", id: "bc-news-generation" },
 		model: "openai/gpt-4.1-mini",
 	};
 	const modelConfig = { ...recordedConfig(), main_story_write: gateway };
@@ -87,6 +91,7 @@ it("resolves Cloudflare AI Gateway only with account and token bindings", () => 
 	expect(resolveGenerationPorts(gatewayEnv).modelProviders.main_story_write).toBeDefined();
 	expect(() => resolveGenerationPorts(envWith({
 		CLOUDFLARE_ACCOUNT_ID: "account-id",
+		CLOUDFLARE_API_TOKEN: "",
 		MODEL_CONFIG: gatewayEnv.MODEL_CONFIG,
 	}))).toThrow(GenerationConfigError);
 });

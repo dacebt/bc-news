@@ -11,11 +11,14 @@ import {
 
 afterEach(() => vi.restoreAllMocks());
 
-function provider(model = "openai/gpt-4.1-mini") {
+function provider(
+	model = "openai/gpt-4.1-mini",
+	gateway?: { selection: "named"; id: string },
+) {
 	return createCloudflareAiGatewayModelProvider({
 		accountId: "account-id",
 		apiToken: "cloudflare-api-token",
-		gateway: { selection: "named", id: "bc-news-evaluation" },
+		...(gateway === undefined ? {} : { gateway }),
 		requestedModel: model,
 	});
 }
@@ -48,7 +51,6 @@ function completionResponse(model = "gpt-4.1-mini") {
 it("accepts only non-secret Gateway configuration and canonical routed model ids", () => {
 	const candidate = {
 		adapter: "cloudflare_ai_gateway",
-		gateway: { selection: "named", id: "bc-news-evaluation" },
 		model: "openai/gpt-4.1-mini",
 	};
 	expect(CloudflareAiGatewayAdapterConfigSchema.safeParse(candidate).success).toBe(true);
@@ -59,8 +61,11 @@ it("accepts only non-secret Gateway configuration and canonical routed model ids
 	}).success).toBe(true);
 	expect(CloudflareAiGatewayAdapterConfigSchema.safeParse({
 		...candidate,
-		gateway: { selection: "account_default" },
 		model: "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+	}).success).toBe(false);
+	expect(CloudflareAiGatewayAdapterConfigSchema.safeParse({
+		...candidate,
+		gateway: { selection: "account_default" },
 	}).success).toBe(false);
 	expect(CloudflareAiGatewayAdapterConfigSchema.safeParse({ ...candidate, api_token: "secret" }).success).toBe(false);
 	for (const model of ["gpt-4.1-mini", "openai/", "openai//model", "@cf//model", "@cf/meta/model/extra"]) {
@@ -78,7 +83,7 @@ it.each([
 	expect(cloudflareAiGatewayProviderForModel(model)).toBe(expected);
 });
 
-it("uses the fixed account REST endpoint and explicit request policy", async () => {
+it("uses the fixed account REST endpoint without declaring a default Gateway", async () => {
 	const fetchCall = vi.spyOn(globalThis, "fetch").mockResolvedValue(completionResponse());
 	await provider().complete(request());
 	expect(fetchCall).toHaveBeenCalledOnce();
@@ -87,7 +92,6 @@ it("uses the fixed account REST endpoint and explicit request policy", async () 
 	expect(url.href).toBe("https://api.cloudflare.com/client/v4/accounts/account-id/ai/v1/chat/completions");
 	expect(init?.headers).toEqual(expect.objectContaining({
 		Authorization: "Bearer cloudflare-api-token",
-		"cf-aig-gateway-id": "bc-news-evaluation",
 		"cf-aig-skip-cache": "true",
 		"cf-aig-collect-log": "true",
 		"cf-aig-collect-log-payload": "false",
@@ -99,6 +103,7 @@ it("uses the fixed account REST endpoint and explicit request policy", async () 
 			production_step: "main_story_write",
 		}),
 	}));
+	expect(init?.headers).not.toHaveProperty("cf-aig-gateway-id");
 	const body = init?.body;
 	if (typeof body !== "string") throw new Error("Expected request body to be JSON text");
 	expect(JSON.parse(body) as unknown).toEqual({
@@ -108,6 +113,15 @@ it("uses the fixed account REST endpoint and explicit request policy", async () 
 			{ role: "user", content: "writer prompt" },
 		],
 	});
+});
+
+it("sends a Gateway id only when a named Gateway is selected", async () => {
+	const fetchCall = vi.spyOn(globalThis, "fetch").mockResolvedValue(completionResponse());
+	await provider("openai/gpt-4.1-mini", { selection: "named", id: "bc-news-evaluation" }).complete(request());
+	const [, init] = fetchCall.mock.calls[0]!;
+	expect(init?.headers).toEqual(expect.objectContaining({
+		"cf-aig-gateway-id": "bc-news-evaluation",
+	}));
 });
 
 it.each([
@@ -125,7 +139,7 @@ it.each([
 		request_provenance: {
 			transport: "cloudflare_ai_gateway_rest",
 			account_id: "account-id",
-			gateway: { selection: "named", id: "bc-news-evaluation" },
+			gateway: { selection: "account_default" },
 			gateway_log_id: "gateway-log-one",
 			requested_model: requestedModel,
 			correlation: { run_id: "benchmark-one", invocation_id: "invocation-one" },
@@ -153,7 +167,6 @@ it("rejects credentials with surrounding whitespace before transport", () => {
 	expect(() => createCloudflareAiGatewayModelProvider({
 		accountId: "account-id",
 		apiToken: " token",
-		gateway: { selection: "named", id: "bc-news-evaluation" },
 		requestedModel: "openai/gpt-4.1-mini",
 	})).toThrow(CloudflareAiGatewayDeterministicError);
 });

@@ -1,0 +1,29 @@
+{
+	"$schema": "../node_modules/wrangler/config-schema.json",
+	"name": "bc-news-generation-test",
+	"main": "../src/index.ts",
+	"compatibility_date": "2026-08-03",
+	"compatibility_flags": ["nodejs_compat"],
+	"workflows": [
+		{
+			"name": "generation-run-test",
+			"binding": "GENERATION_RUN",
+			"class_name": "GenerationRun"
+		}
+	],
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "bc-news-editions-test",
+			"database_id": "00000000-0000-0000-0000-000000000000",
+			"migrations_dir": "../migrations"
+		}
+	],
+	"assets": {
+		"directory": "../../client/dist"
+	},
+	"vars": {
+		"EVIDENCE_INPUT": "d1_chat",
+		"MODEL_CONFIG": "{\"main_story_write\":{\"adapter\":\"recorded\"},\"main_story_copyedit\":{\"adapter\":\"recorded\"},\"announcements_write\":{\"adapter\":\"recorded\"},\"announcements_copyedit\":{\"adapter\":\"recorded\"}}"
+	}
+}

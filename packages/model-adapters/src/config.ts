@@ -36,18 +36,18 @@ export const HostedModelAdapterConfigSchema = z.strictObject({
 	billing: CalculatedBillingConfigSchema,
 });
 
-export const CloudflareAiGatewaySelectionSchema = z.discriminatedUnion("selection", [
-	z.strictObject({ selection: z.literal("named"), id: NonBlankStringSchema }),
-	z.strictObject({ selection: z.literal("account_default") }),
-]);
+export const CloudflareAiGatewaySelectionSchema = z.strictObject({
+	selection: z.literal("named"),
+	id: NonBlankStringSchema,
+});
 
 export const CloudflareAiGatewayAdapterConfigSchema = z.strictObject({
 	adapter: z.literal("cloudflare_ai_gateway"),
-	gateway: CloudflareAiGatewaySelectionSchema,
+	gateway: CloudflareAiGatewaySelectionSchema.optional(),
 	model: CloudflareAiGatewayModelSchema,
 	temperature: ModelTemperatureSchema.optional(),
 }).superRefine((config, context) => {
-	if (config.model.startsWith("@cf/") && config.gateway.selection !== "named") {
+	if (config.model.startsWith("@cf/") && config.gateway === undefined) {
 		context.addIssue({
 			code: "custom",
 			path: ["gateway"],

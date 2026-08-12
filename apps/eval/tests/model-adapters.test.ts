@@ -4,7 +4,6 @@ import { resolveModelProvider } from "../src/model-adapters";
 
 const config = {
 	adapter: "cloudflare_ai_gateway" as const,
-	gateway: { selection: "named" as const, id: "bc-news-evaluation" },
 	model: "anthropic/claude-sonnet-4",
 };
 

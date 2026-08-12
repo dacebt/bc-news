@@ -19,7 +19,7 @@ export default defineConfig(async () => {
 		},
 		plugins: [
 			cloudflareTest({
-				wrangler: { configPath: "./wrangler.jsonc" },
+				wrangler: { configPath: "./tests/wrangler.jsonc" },
 				miniflare: {
 					bindings: {
 						EVIDENCE_INPUT: "d1_chat",

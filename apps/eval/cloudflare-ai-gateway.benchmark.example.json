@@ -2,18 +2,18 @@
 	"configurations": [
 		{
 			"production_steps": {
-				"main_story_write": { "adapter": "cloudflare_ai_gateway", "gateway": { "selection": "account_default" }, "model": "openai/gpt-4.1" },
-				"main_story_copyedit": { "adapter": "cloudflare_ai_gateway", "gateway": { "selection": "account_default" }, "model": "openai/gpt-4.1" },
-				"announcements_write": { "adapter": "cloudflare_ai_gateway", "gateway": { "selection": "account_default" }, "model": "openai/gpt-4.1" },
-				"announcements_copyedit": { "adapter": "cloudflare_ai_gateway", "gateway": { "selection": "account_default" }, "model": "openai/gpt-4.1" }
+				"main_story_write": { "adapter": "cloudflare_ai_gateway", "model": "openai/gpt-4.1" },
+				"main_story_copyedit": { "adapter": "cloudflare_ai_gateway", "model": "openai/gpt-4.1" },
+				"announcements_write": { "adapter": "cloudflare_ai_gateway", "model": "openai/gpt-4.1" },
+				"announcements_copyedit": { "adapter": "cloudflare_ai_gateway", "model": "openai/gpt-4.1" }
 			}
 		},
 		{
 			"production_steps": {
-				"main_story_write": { "adapter": "cloudflare_ai_gateway", "gateway": { "selection": "account_default" }, "model": "anthropic/claude-sonnet-4" },
-				"main_story_copyedit": { "adapter": "cloudflare_ai_gateway", "gateway": { "selection": "account_default" }, "model": "anthropic/claude-sonnet-4" },
-				"announcements_write": { "adapter": "cloudflare_ai_gateway", "gateway": { "selection": "account_default" }, "model": "anthropic/claude-sonnet-4" },
-				"announcements_copyedit": { "adapter": "cloudflare_ai_gateway", "gateway": { "selection": "account_default" }, "model": "anthropic/claude-sonnet-4" }
+				"main_story_write": { "adapter": "cloudflare_ai_gateway", "model": "anthropic/claude-sonnet-4" },
+				"main_story_copyedit": { "adapter": "cloudflare_ai_gateway", "model": "anthropic/claude-sonnet-4" },
+				"announcements_write": { "adapter": "cloudflare_ai_gateway", "model": "anthropic/claude-sonnet-4" },
+				"announcements_copyedit": { "adapter": "cloudflare_ai_gateway", "model": "anthropic/claude-sonnet-4" }
 			}
 		}
 	],

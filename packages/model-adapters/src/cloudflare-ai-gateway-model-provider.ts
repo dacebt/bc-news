@@ -121,7 +121,7 @@ function gatewayRuntimeEvidence(
 export interface CloudflareAiGatewayProviderInput {
 	readonly accountId: string;
 	readonly apiToken: string;
-	readonly gateway: CloudflareAiGatewaySelection;
+	readonly gateway?: CloudflareAiGatewaySelection;
 	readonly requestedModel: string;
 	readonly temperature?: ModelTemperature;
 }
@@ -183,7 +183,7 @@ export function createCloudflareAiGatewayModelProvider(
 			"Cloudflare API token must be nonblank and contain no surrounding whitespace",
 		);
 	}
-	if (input.requestedModel.startsWith("@cf/") && input.gateway.selection !== "named") {
+	if (input.requestedModel.startsWith("@cf/") && input.gateway === undefined) {
 		throw new CloudflareAiGatewayDeterministicError(
 			"cloudflare_ai_gateway_invalid_config",
 			"Cloudflare Workers AI models require a named AI Gateway",
@@ -211,7 +211,7 @@ export function createCloudflareAiGatewayModelProvider(
 					production_step: request.productionStep,
 				}),
 			};
-			if (input.gateway.selection === "named") headers["cf-aig-gateway-id"] = input.gateway.id;
+			if (input.gateway !== undefined) headers["cf-aig-gateway-id"] = input.gateway.id;
 			let response: Response;
 			try {
 				response = await fetch(endpoint, {
@@ -295,7 +295,7 @@ export function createCloudflareAiGatewayModelProvider(
 				request_provenance: {
 					transport: "cloudflare_ai_gateway_rest",
 					account_id: input.accountId,
-					gateway: input.gateway,
+					gateway: input.gateway ?? { selection: "account_default" },
 					gateway_log_id: gatewayLogId,
 					requested_model: input.requestedModel,
 					correlation: request.correlation,

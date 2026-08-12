@@ -91,7 +91,7 @@ export function resolveModelProvider(
 			return construct(() => createCloudflareAiGatewayModelProvider({
 				accountId,
 				apiToken,
-				gateway: config.gateway,
+				...(config.gateway === undefined ? {} : { gateway: config.gateway }),
 				requestedModel: config.model,
 				...(config.temperature === undefined ? {} : { temperature: config.temperature }),
 			}));

@@ -22,12 +22,12 @@ async function outputs(): Promise<Record<ProductionModelStep, string>> {
 
 function configuration(
 	author: "openai" | "anthropic",
-	gateway: { selection: "named"; id: string } | { selection: "account_default" } = { selection: "named", id: "bc-news-evaluation" },
+	gateway?: { selection: "named"; id: string },
 ) {
 	return {
 		production_steps: Object.fromEntries(PRODUCTION_MODEL_STEPS.map((step) => [step, {
 			adapter: "cloudflare_ai_gateway",
-			gateway,
+			...(gateway === undefined ? {} : { gateway }),
 			model: `${author}/${step}`,
 		}])) as Record<ProductionModelStep, object>,
 	};
@@ -91,8 +91,8 @@ test("runs two hosted provider families through the Gateway contract and retains
 			}));
 		}
 
-		const named = configuration("openai");
-		const accountDefault = configuration("openai", { selection: "account_default" });
+		const named = configuration("openai", { selection: "named", id: "bc-news-evaluation" });
+		const accountDefault = configuration("openai");
 		const configurations = [named, accountDefault].map((config) => ({
 			identity: evaluationConfigIdentity(config),
 			config,
