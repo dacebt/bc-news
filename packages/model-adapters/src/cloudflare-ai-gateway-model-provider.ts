@@ -19,15 +19,15 @@ import {
 export const CLOUDFLARE_AI_GATEWAY_REQUEST_TIMEOUT_MS = 600_000;
 
 const NonBlankExactStringSchema = z.string().min(1).refine((value) => value.trim().length > 0);
-const UsageSchema = z.strictObject({
+const UsageSchema = z.looseObject({
 	prompt_tokens: z.int().nonnegative(),
 	completion_tokens: z.int().nonnegative(),
 	total_tokens: z.int().nonnegative(),
-	prompt_tokens_details: z.strictObject({
+	prompt_tokens_details: z.looseObject({
 		cached_tokens: z.int().nonnegative().optional(),
 		audio_tokens: z.int().nonnegative().optional(),
 	}).optional(),
-	completion_tokens_details: z.strictObject({
+	completion_tokens_details: z.looseObject({
 		reasoning_tokens: z.int().nonnegative().optional(),
 		audio_tokens: z.int().nonnegative().optional(),
 		accepted_prediction_tokens: z.int().nonnegative().optional(),
@@ -42,7 +42,7 @@ const CompletionSchema = z.strictObject({
 	model: NonBlankExactStringSchema,
 	choices: z.tuple([z.strictObject({
 		index: z.int().nonnegative().optional(),
-		message: z.strictObject({
+		message: z.looseObject({
 			role: z.literal("assistant").optional(),
 			content: NonBlankExactStringSchema,
 			refusal: z.string().nullable().optional(),

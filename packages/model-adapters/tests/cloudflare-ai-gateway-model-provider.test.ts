@@ -216,6 +216,31 @@ it("reports response-contract issue paths without retaining rejected values", as
 	expect(JSON.stringify(failure)).not.toContain("sensitive-provider-value");
 });
 
+it.each([
+	["Qwen", {
+		model: "qwen3.5-397b-a17b",
+		choices: [{ message: { content: "completion", reasoning_content: "provider extension" } }],
+		usage: {
+			prompt_tokens: 1,
+			completion_tokens: 1,
+			total_tokens: 2,
+			prompt_tokens_details: { text_tokens: 1 },
+			completion_tokens_details: { text_tokens: 1 },
+		},
+	}],
+	["Gemini", {
+		model: "gemini-3.1-flash-lite",
+		choices: [{ message: { content: "completion", extra_content: { provider: "metadata" } } }],
+		usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2, extra_properties: { provider: "metadata" } },
+	}],
+])("accepts %s provider extensions outside consumed completion fields", async (_providerName, response) => {
+	vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json(response));
+	await expect(provider().complete(request())).resolves.toMatchObject({
+		text: "completion",
+		token_usage: { measurement: "reported", input_tokens: 1, output_tokens: 1, total_tokens: 2 },
+	});
+});
+
 it.each([408, 409, 425, 429, 500, 599])("classifies HTTP %i as retryable", async (status) => {
 	vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null, { status }));
 	await expect(provider().complete(request())).rejects.toBeInstanceOf(CloudflareAiGatewayRetryableError);
