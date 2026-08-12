@@ -15,3 +15,5 @@ dist/
 # generated local benchmark output
 apps/eval/context-results/
 apps/eval/evaluation-results/
+apps/eval/scorecard-evidence/
+apps/eval/scorecard-results/
