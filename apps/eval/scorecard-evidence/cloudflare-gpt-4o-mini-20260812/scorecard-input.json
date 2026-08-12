@@ -1,0 +1,90 @@
+{
+  "version": 2,
+  "id": "cloudflare-gpt-4o-mini-20260812-scorecard-input",
+  "corpus": {
+    "manifest_path": "packages/fixtures/evaluation-corpus/manifest.json"
+  },
+  "configuration_identity": "config-223570179d303f078237e35c9085c93015a9ed1df434da04298b05ad58f06f8c",
+  "runs": [
+    {
+      "ordinal": 1,
+      "corpus_fixture_id": "dense-market-day",
+      "benchmark_run_id": "benchmark-2026-08-12T20-23-32-181Z-c448230b-43d3-401f-acf0-6e9419a66eda",
+      "path": "apps/eval/scorecard-evidence/cloudflare-gpt-4o-mini-20260812/benchmark-runs/benchmark-2026-08-12T20-23-32-181Z-c448230b-43d3-401f-acf0-6e9419a66eda.json"
+    },
+    {
+      "ordinal": 2,
+      "corpus_fixture_id": "sparse-repair-update",
+      "benchmark_run_id": "benchmark-2026-08-12T20-24-57-277Z-2b886791-d49e-4e67-a5c8-6f890f5847cd",
+      "path": "apps/eval/scorecard-evidence/cloudflare-gpt-4o-mini-20260812/benchmark-runs/benchmark-2026-08-12T20-24-57-277Z-2b886791-d49e-4e67-a5c8-6f890f5847cd.json"
+    },
+    {
+      "ordinal": 3,
+      "corpus_fixture_id": "overlapping-deliveries",
+      "benchmark_run_id": "benchmark-2026-08-12T20-24-53-282Z-6bee16ad-21ab-461d-bdf1-9b681e6a86e9",
+      "path": "apps/eval/scorecard-evidence/cloudflare-gpt-4o-mini-20260812/benchmark-runs/benchmark-2026-08-12T20-24-53-282Z-6bee16ad-21ab-461d-bdf1-9b681e6a86e9.json"
+    },
+    {
+      "ordinal": 4,
+      "corpus_fixture_id": "conflicting-toll-count",
+      "benchmark_run_id": "benchmark-2026-08-12T20-24-19-498Z-cc34d74b-3552-46f3-94df-fefc2dd23789",
+      "path": "apps/eval/scorecard-evidence/cloudflare-gpt-4o-mini-20260812/benchmark-runs/benchmark-2026-08-12T20-24-19-498Z-cc34d74b-3552-46f3-94df-fefc2dd23789.json"
+    },
+    {
+      "ordinal": 5,
+      "corpus_fixture_id": "unresolved-location",
+      "benchmark_run_id": "benchmark-2026-08-12T20-25-14-259Z-94b9c703-6052-43b6-8d91-24e081921962",
+      "path": "apps/eval/scorecard-evidence/cloudflare-gpt-4o-mini-20260812/benchmark-runs/benchmark-2026-08-12T20-25-14-259Z-94b9c703-6052-43b6-8d91-24e081921962.json"
+    },
+    {
+      "ordinal": 6,
+      "corpus_fixture_id": "irrelevant-campfire",
+      "benchmark_run_id": "benchmark-2026-08-12T20-24-31-241Z-3cdd6e8e-1684-4991-a506-10b6168178b0",
+      "path": "apps/eval/scorecard-evidence/cloudflare-gpt-4o-mini-20260812/benchmark-runs/benchmark-2026-08-12T20-24-31-241Z-3cdd6e8e-1684-4991-a506-10b6168178b0.json"
+    },
+    {
+      "ordinal": 7,
+      "corpus_fixture_id": "isolated-bell-test",
+      "benchmark_run_id": "benchmark-2026-08-12T20-24-37-987Z-7bfd5cd3-b8e7-410a-9150-1a92747ef3e7",
+      "path": "apps/eval/scorecard-evidence/cloudflare-gpt-4o-mini-20260812/benchmark-runs/benchmark-2026-08-12T20-24-37-987Z-7bfd5cd3-b8e7-410a-9150-1a92747ef3e7.json"
+    },
+    {
+      "ordinal": 8,
+      "corpus_fixture_id": "lantern-festival-notice",
+      "benchmark_run_id": "benchmark-2026-08-12T20-24-44-667Z-c01c2914-7da6-4457-869c-85aa216c4c2d",
+      "path": "apps/eval/scorecard-evidence/cloudflare-gpt-4o-mini-20260812/benchmark-runs/benchmark-2026-08-12T20-24-44-667Z-c01c2914-7da6-4457-869c-85aa216c4c2d.json"
+    },
+    {
+      "ordinal": 9,
+      "corpus_fixture_id": "supply-counts",
+      "benchmark_run_id": "benchmark-2026-08-12T20-25-01-755Z-acf6eae3-556e-44e0-ab28-ebb8f9ac2289",
+      "path": "apps/eval/scorecard-evidence/cloudflare-gpt-4o-mini-20260812/benchmark-runs/benchmark-2026-08-12T20-25-01-755Z-acf6eae3-556e-44e0-ab28-ebb8f9ac2289.json"
+    },
+    {
+      "ordinal": 10,
+      "corpus_fixture_id": "named-rangers",
+      "benchmark_run_id": "benchmark-2026-08-12T20-24-48-342Z-fc806530-0e7d-415a-8aec-4836010572f7",
+      "path": "apps/eval/scorecard-evidence/cloudflare-gpt-4o-mini-20260812/benchmark-runs/benchmark-2026-08-12T20-24-48-342Z-fc806530-0e7d-415a-8aec-4836010572f7.json"
+    },
+    {
+      "ordinal": 11,
+      "corpus_fixture_id": "contested-closure",
+      "benchmark_run_id": "benchmark-2026-08-12T20-24-26-804Z-3b432760-a4a7-4437-bb85-816734ff1a10",
+      "path": "apps/eval/scorecard-evidence/cloudflare-gpt-4o-mini-20260812/benchmark-runs/benchmark-2026-08-12T20-24-26-804Z-3b432760-a4a7-4437-bb85-816734ff1a10.json"
+    },
+    {
+      "ordinal": 12,
+      "corpus_fixture_id": "unresolved-departure",
+      "benchmark_run_id": "benchmark-2026-08-12T20-25-08-294Z-3bc8be58-948a-4dcd-9e4b-60a6e3f1c435",
+      "path": "apps/eval/scorecard-evidence/cloudflare-gpt-4o-mini-20260812/benchmark-runs/benchmark-2026-08-12T20-25-08-294Z-3bc8be58-948a-4dcd-9e4b-60a6e3f1c435.json"
+    }
+  ],
+  "annotations": {
+    "path": "apps/eval/scorecard-evidence/cloudflare-gpt-4o-mini-20260812/annotations.json",
+    "bundle_id": "cloudflare-gpt-4o-mini-20260812-annotations"
+  },
+  "qualitative_reviews": {
+    "path": "apps/eval/scorecard-evidence/cloudflare-gpt-4o-mini-20260812/reviews.json",
+    "bundle_id": "cloudflare-gpt-4o-mini-20260812-reviews"
+  }
+}

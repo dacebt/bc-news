@@ -1,0 +1,1359 @@
+{
+  "version": 2,
+  "id": "cloudflare-gemini-3-1-flash-lite-20260812-reviews",
+  "rubric": {
+    "id": "bc-news-editorial-qualitative",
+    "version": 2
+  },
+  "reviewer": {
+    "id": "codex",
+    "kind": "codex"
+  },
+  "reviewed_at": "2026-08-12T21:25:34.646Z",
+  "reviews": [
+    {
+      "review_id": "review-cloudflare-gemini-3-1-flash-lite-20260812-dense-market-day-announcements_write",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-12T21-25-00-782Z-dd1d9c93-b2ae-44f7-8927-a951959c20c3",
+        "benchmark_run_version": 8,
+        "code_commit_sha": "9cf89f422f72f7f479e67bc9b8a4cfa40f9aabd7",
+        "prepared_evidence_identity_sha256": "43ff17b07de790cb2dd0860f70ef542b44a7aa3b77a8c8878143e4df07f4692c",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "dense-market-day",
+        "config_identity": "config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "trial_id": "benchmark-2026-08-12T21-25-00-782Z-dd1d9c93-b2ae-44f7-8927-a951959c20c3-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-12T21-25-00-782Z-dd1d9c93-b2ae-44f7-8927-a951959c20c3-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4-invocation-2",
+        "production_step": "announcements_write",
+        "invocation_ordinal": 2,
+        "request_sha256": "a60b902daa14cff1d3d166f4e1d0c9b5b7c09da8b84fc45e438ddd7b1a39be9b",
+        "completion_text_sha256": "d6a94ec0695ae30147d04ec079e219f68bb4cd3df7f32978730155682c349907",
+        "parsed_output_sha256": "97c38dfbd138d557a9da5bddda3bbafcfcffcdeee4122a3e35927916db62471e",
+        "runtime_evidence_sha256": "889412b499e58e0352ae1d33492cc4b8fa22b1fe0b5d0ea544e53c13de412d75",
+        "gateway_request_sha256": "28d791dee2535ff6412f8af37ea2450daf3102cea87e63145b2ff1b89161c727"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The announcement entries are concise and internally readable.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "does_not_meet",
+          "rationale": "The output communicates 0 relevant announcement item(s) against 1 paired noteworthy candidate(s).",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "does_not_meet",
+          "rationale": "Newsworthiness follows coverage of the paired noteworthy candidates.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The announcement prose is direct and readable.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-cloudflare-gemini-3-1-flash-lite-20260812-dense-market-day-announcements_copyedit",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-12T21-25-00-782Z-dd1d9c93-b2ae-44f7-8927-a951959c20c3",
+        "benchmark_run_version": 8,
+        "code_commit_sha": "9cf89f422f72f7f479e67bc9b8a4cfa40f9aabd7",
+        "prepared_evidence_identity_sha256": "43ff17b07de790cb2dd0860f70ef542b44a7aa3b77a8c8878143e4df07f4692c",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "dense-market-day",
+        "config_identity": "config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "trial_id": "benchmark-2026-08-12T21-25-00-782Z-dd1d9c93-b2ae-44f7-8927-a951959c20c3-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-12T21-25-00-782Z-dd1d9c93-b2ae-44f7-8927-a951959c20c3-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4-invocation-3",
+        "production_step": "announcements_copyedit",
+        "invocation_ordinal": 3,
+        "request_sha256": "9e50727f72fd95e6d9b926bf07903448c6e6bf4b3536215b4105efa2974b5a7c",
+        "completion_text_sha256": "385ac9649351501cf2da861fdd0a07e545f0fc183a17012edc50601fd629ec8f",
+        "parsed_output_sha256": "8814396d949ac09393549a65a3c7b55337e055a9876bbf33b1f87b1a99832771",
+        "runtime_evidence_sha256": "4b1ba762d56608946081cb1e21eaa618b357f310de131c7452f89899e560a635",
+        "gateway_request_sha256": "600dd014be5ac4ad3ee26c28b105a39f4781e75d6562d60188caf8adceb9950b"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The announcement entries are concise and internally readable.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "does_not_meet",
+          "rationale": "The output communicates 0 relevant announcement item(s) against 1 paired noteworthy candidate(s).",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "does_not_meet",
+          "rationale": "Newsworthiness follows coverage of the paired noteworthy candidates.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The announcement prose is direct and readable.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-cloudflare-gemini-3-1-flash-lite-20260812-sparse-repair-update-announcements_write",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-12T21-25-22-298Z-077e4dea-81bd-4d21-bc7f-ad917464972a",
+        "benchmark_run_version": 8,
+        "code_commit_sha": "9cf89f422f72f7f479e67bc9b8a4cfa40f9aabd7",
+        "prepared_evidence_identity_sha256": "0a5ed115d52e1d38b7e065ee1c0ca1392d76f7100f1a302269aee8020392c43e",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "sparse-repair-update",
+        "config_identity": "config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "trial_id": "benchmark-2026-08-12T21-25-22-298Z-077e4dea-81bd-4d21-bc7f-ad917464972a-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-12T21-25-22-298Z-077e4dea-81bd-4d21-bc7f-ad917464972a-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4-invocation-2",
+        "production_step": "announcements_write",
+        "invocation_ordinal": 2,
+        "request_sha256": "a6dc9c54d95ed6070fcd9a5d7238f2d723785bbb4d56504c72bf3f78fc3506df",
+        "completion_text_sha256": "ced721f4c512ac59ffcc7620c58b5227c3944fafd037aa69b8f0fe862deff0b9",
+        "parsed_output_sha256": "6c652bf607800c330eb3965c08974b09f06f98944560e329258171130db72294",
+        "runtime_evidence_sha256": "53395c10f9f85034ad54cef5789ea99d9976dc4967a5b4c602ad628ef280d37c",
+        "gateway_request_sha256": "08a5dcbdff2c522ce53b805e46cb18d4b5a54a017445297320314e0db032926a"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The announcement entries are concise and internally readable.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "does_not_meet",
+          "rationale": "The output communicates 0 relevant announcement item(s) against 1 paired noteworthy candidate(s).",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "does_not_meet",
+          "rationale": "Newsworthiness follows coverage of the paired noteworthy candidates.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The announcement prose is direct and readable.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-cloudflare-gemini-3-1-flash-lite-20260812-sparse-repair-update-announcements_copyedit",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-12T21-25-22-298Z-077e4dea-81bd-4d21-bc7f-ad917464972a",
+        "benchmark_run_version": 8,
+        "code_commit_sha": "9cf89f422f72f7f479e67bc9b8a4cfa40f9aabd7",
+        "prepared_evidence_identity_sha256": "0a5ed115d52e1d38b7e065ee1c0ca1392d76f7100f1a302269aee8020392c43e",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "sparse-repair-update",
+        "config_identity": "config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "trial_id": "benchmark-2026-08-12T21-25-22-298Z-077e4dea-81bd-4d21-bc7f-ad917464972a-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-12T21-25-22-298Z-077e4dea-81bd-4d21-bc7f-ad917464972a-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4-invocation-3",
+        "production_step": "announcements_copyedit",
+        "invocation_ordinal": 3,
+        "request_sha256": "0d794ccd4b511f150bdd54b5758089db4c434a34732fa2b84a922614fe962980",
+        "completion_text_sha256": "fde77ccbba6b57756eac716ff75504bf0136cd94486a2e817eb97f1a570a303c",
+        "parsed_output_sha256": "9cfc00ce3cb4d4aec64028a1445a6d7ee54159ed2d11058d3e5c9569a4593d0c",
+        "runtime_evidence_sha256": "e7830d8f3c27f81ee530b41aa8e9871c8d94a9de24ef8d6c03953e36df4db5d6",
+        "gateway_request_sha256": "4b9eb75ece1c9e9d487c6e4d0fdf22fa8e3e5c7d1c1d2a5e72e8962969d0e9bb"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The announcement entries are concise and internally readable.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "does_not_meet",
+          "rationale": "The output communicates 0 relevant announcement item(s) against 1 paired noteworthy candidate(s).",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "does_not_meet",
+          "rationale": "Newsworthiness follows coverage of the paired noteworthy candidates.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The announcement prose is direct and readable.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-cloudflare-gemini-3-1-flash-lite-20260812-overlapping-deliveries-main_story_write",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-12T21-25-17-540Z-8fb2803f-2306-4672-9cd1-2752874d5761",
+        "benchmark_run_version": 8,
+        "code_commit_sha": "9cf89f422f72f7f479e67bc9b8a4cfa40f9aabd7",
+        "prepared_evidence_identity_sha256": "a7baa261081785e80488ecf149ccdfb14c0b9cace1fba15e5f8000ae0df6d832",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "overlapping-deliveries",
+        "config_identity": "config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "trial_id": "benchmark-2026-08-12T21-25-17-540Z-8fb2803f-2306-4672-9cd1-2752874d5761-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-12T21-25-17-540Z-8fb2803f-2306-4672-9cd1-2752874d5761-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4-invocation-1",
+        "production_step": "main_story_write",
+        "invocation_ordinal": 1,
+        "request_sha256": "764e8aa1c5ae5589db5c2f08f22725d35d3223a9dfe4652c2e1b30a515f546f3",
+        "completion_text_sha256": "9be8d00e02802178638da828cec3eb7370ca2be9436fb31330c21cf7f01588c5",
+        "parsed_output_sha256": "bd9d59ebd1b06993193c9e28c01c537babf216b9f942745eae4d7640907bed70",
+        "runtime_evidence_sha256": "e0a15a14aad7ddabf91c9a8042ab3296bd09dbfb4d99de42f936b0be2a5124c8",
+        "gateway_request_sha256": "e078d8fe20b20f90f910f0477c9ccb82f8c31970b7dd6cff6785a3adfc060171"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The structured article presents a readable, connected account.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "does_not_meet",
+          "rationale": "Closed-corpus claim and event coverage yields a 5% evidence-usefulness signal.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "does_not_meet",
+          "rationale": "The assessment reflects whether the output covers the fixture's paired reportable events or notices.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The prose uses a direct, readable in-world news voice.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-cloudflare-gemini-3-1-flash-lite-20260812-overlapping-deliveries-announcements_write",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-12T21-25-17-540Z-8fb2803f-2306-4672-9cd1-2752874d5761",
+        "benchmark_run_version": 8,
+        "code_commit_sha": "9cf89f422f72f7f479e67bc9b8a4cfa40f9aabd7",
+        "prepared_evidence_identity_sha256": "a7baa261081785e80488ecf149ccdfb14c0b9cace1fba15e5f8000ae0df6d832",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "overlapping-deliveries",
+        "config_identity": "config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "trial_id": "benchmark-2026-08-12T21-25-17-540Z-8fb2803f-2306-4672-9cd1-2752874d5761-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-12T21-25-17-540Z-8fb2803f-2306-4672-9cd1-2752874d5761-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4-invocation-2",
+        "production_step": "announcements_write",
+        "invocation_ordinal": 2,
+        "request_sha256": "3c1bf65e39a2453d3265b56be0eb513e0c97626fb3c082b13d76b9f72e0649a3",
+        "completion_text_sha256": "75166cef1f4e539a065b13382e0dd01599e146d4e6e1b57df79af39ae2561adf",
+        "parsed_output_sha256": "749d0e1a18eed8c7a3352f3cdd817d18156b6e7cffdac34288e7e72f4c47626e",
+        "runtime_evidence_sha256": "80039519f9676aa0e9381b5de5b7db0e1c6195f2f1d4f04165796ef7eb71d066",
+        "gateway_request_sha256": "6867f84113ca2630ee4b96322c286d1b2850013b5a40abce318102e862e8a77c"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The announcement entries are concise and internally readable.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "does_not_meet",
+          "rationale": "The output communicates 0 relevant announcement item(s) against 0 paired noteworthy candidate(s).",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "does_not_meet",
+          "rationale": "The fixture provides no paired noteworthy announcement candidate.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The announcement prose is direct and readable.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-cloudflare-gemini-3-1-flash-lite-20260812-overlapping-deliveries-announcements_copyedit",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-12T21-25-17-540Z-8fb2803f-2306-4672-9cd1-2752874d5761",
+        "benchmark_run_version": 8,
+        "code_commit_sha": "9cf89f422f72f7f479e67bc9b8a4cfa40f9aabd7",
+        "prepared_evidence_identity_sha256": "a7baa261081785e80488ecf149ccdfb14c0b9cace1fba15e5f8000ae0df6d832",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "overlapping-deliveries",
+        "config_identity": "config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "trial_id": "benchmark-2026-08-12T21-25-17-540Z-8fb2803f-2306-4672-9cd1-2752874d5761-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-12T21-25-17-540Z-8fb2803f-2306-4672-9cd1-2752874d5761-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4-invocation-3",
+        "production_step": "announcements_copyedit",
+        "invocation_ordinal": 3,
+        "request_sha256": "32e39b9b28fcaaf72a1f1193b25e8809c5782c81fa56c414e07185b05f62e112",
+        "completion_text_sha256": "5177af8a2f6c086a89dc1605eb3706ab5af901d7559ccdf00c6e2a42e8e487ba",
+        "parsed_output_sha256": "69d0600fbfb4bc08d6de88178a475e3a45398f9b37c76242fd6cbbdafddb5539",
+        "runtime_evidence_sha256": "ccc85171b9feb9928d0fbf1545ce64a8a28ebfb39e998f0ede031e2c14e3ba40",
+        "gateway_request_sha256": "e02dece709f00f3f624f09d027358e03257daf011fdcd5a9ceb4d44964dce3a7"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The announcement entries are concise and internally readable.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "does_not_meet",
+          "rationale": "The output communicates 0 relevant announcement item(s) against 0 paired noteworthy candidate(s).",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "does_not_meet",
+          "rationale": "The fixture provides no paired noteworthy announcement candidate.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The announcement prose is direct and readable.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-cloudflare-gemini-3-1-flash-lite-20260812-overlapping-deliveries-main_story_copyedit",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-12T21-25-17-540Z-8fb2803f-2306-4672-9cd1-2752874d5761",
+        "benchmark_run_version": 8,
+        "code_commit_sha": "9cf89f422f72f7f479e67bc9b8a4cfa40f9aabd7",
+        "prepared_evidence_identity_sha256": "a7baa261081785e80488ecf149ccdfb14c0b9cace1fba15e5f8000ae0df6d832",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "overlapping-deliveries",
+        "config_identity": "config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "trial_id": "benchmark-2026-08-12T21-25-17-540Z-8fb2803f-2306-4672-9cd1-2752874d5761-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-12T21-25-17-540Z-8fb2803f-2306-4672-9cd1-2752874d5761-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4-invocation-4",
+        "production_step": "main_story_copyedit",
+        "invocation_ordinal": 4,
+        "request_sha256": "80dc6dbe917c430ade254814ea82e53ae6e6c00b1f37668e210c7d83d38a6a2b",
+        "completion_text_sha256": "9be8d00e02802178638da828cec3eb7370ca2be9436fb31330c21cf7f01588c5",
+        "parsed_output_sha256": "bd9d59ebd1b06993193c9e28c01c537babf216b9f942745eae4d7640907bed70",
+        "runtime_evidence_sha256": "87f70d3a15e95aeaf4cb4075af9b5af145e4e6bda39023140d519b9ba779810e",
+        "gateway_request_sha256": "76e33b7d9d1edb84bf5eede4f6de39130f459f91cea42cae3108b89a10b3db10"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The structured article presents a readable, connected account.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "does_not_meet",
+          "rationale": "Closed-corpus claim and event coverage yields a 5% evidence-usefulness signal.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "does_not_meet",
+          "rationale": "The assessment reflects whether the output covers the fixture's paired reportable events or notices.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The prose uses a direct, readable in-world news voice.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-cloudflare-gemini-3-1-flash-lite-20260812-conflicting-toll-count-announcements_write",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-12T21-23-45-346Z-4d9b8c32-dce9-40dc-abec-6ec53df86022",
+        "benchmark_run_version": 8,
+        "code_commit_sha": "9cf89f422f72f7f479e67bc9b8a4cfa40f9aabd7",
+        "prepared_evidence_identity_sha256": "57830e2b15825a2e47d92ec738f9a75e763ac0d020672d97872c309f34eee4c0",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "conflicting-toll-count",
+        "config_identity": "config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "trial_id": "benchmark-2026-08-12T21-23-45-346Z-4d9b8c32-dce9-40dc-abec-6ec53df86022-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-12T21-23-45-346Z-4d9b8c32-dce9-40dc-abec-6ec53df86022-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4-invocation-2",
+        "production_step": "announcements_write",
+        "invocation_ordinal": 2,
+        "request_sha256": "a9e58a6500f40713d00041f39e86cc8eb18c42f245b3c362af114345467c84c7",
+        "completion_text_sha256": "5ed138e66e2c3a4cca392c846c506ba25f4eda6debefe0e223323d3fde02f079",
+        "parsed_output_sha256": "6a1171c8bfbb9b4500eedc79490080dedeebfefa308175d85858db5670a007d8",
+        "runtime_evidence_sha256": "53b9767dda0c9e54fc402fc8a2d880ecff567b0187e2eba0a3cce81edf938d89",
+        "gateway_request_sha256": "466cd2206e5a96a34c9b74dfbbd818261e0e3f5ce38db6f7209e7fd288b47702"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "uncertain",
+          "rationale": "No announcement prose is available to judge.",
+          "uncertainty": "high"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "meets",
+          "rationale": "The output communicates 0 relevant announcement item(s) against 0 paired noteworthy candidate(s).",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "meets",
+          "rationale": "The fixture provides no paired noteworthy announcement candidate.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "uncertain",
+          "rationale": "No prose is available to judge voice.",
+          "uncertainty": "high"
+        }
+      ]
+    },
+    {
+      "review_id": "review-cloudflare-gemini-3-1-flash-lite-20260812-conflicting-toll-count-announcements_copyedit",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-12T21-23-45-346Z-4d9b8c32-dce9-40dc-abec-6ec53df86022",
+        "benchmark_run_version": 8,
+        "code_commit_sha": "9cf89f422f72f7f479e67bc9b8a4cfa40f9aabd7",
+        "prepared_evidence_identity_sha256": "57830e2b15825a2e47d92ec738f9a75e763ac0d020672d97872c309f34eee4c0",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "conflicting-toll-count",
+        "config_identity": "config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "trial_id": "benchmark-2026-08-12T21-23-45-346Z-4d9b8c32-dce9-40dc-abec-6ec53df86022-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-12T21-23-45-346Z-4d9b8c32-dce9-40dc-abec-6ec53df86022-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4-invocation-3",
+        "production_step": "announcements_copyedit",
+        "invocation_ordinal": 3,
+        "request_sha256": "cbedf6e2ecf2c1db6f28c4ca87507e86ba7ee8fce23d4a0b3504c5a7578d0e52",
+        "completion_text_sha256": "5ed138e66e2c3a4cca392c846c506ba25f4eda6debefe0e223323d3fde02f079",
+        "parsed_output_sha256": "6a1171c8bfbb9b4500eedc79490080dedeebfefa308175d85858db5670a007d8",
+        "runtime_evidence_sha256": "9592b262deab7994cf9040949b599d33ee11858704ea0a1c8f5e59037ad671aa",
+        "gateway_request_sha256": "7782d7db29e6901c949e99833d1592bf9e718770ddd9c17fd3290e15f04d7270"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "uncertain",
+          "rationale": "No announcement prose is available to judge.",
+          "uncertainty": "high"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "meets",
+          "rationale": "The output communicates 0 relevant announcement item(s) against 0 paired noteworthy candidate(s).",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "meets",
+          "rationale": "The fixture provides no paired noteworthy announcement candidate.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "uncertain",
+          "rationale": "No prose is available to judge voice.",
+          "uncertainty": "high"
+        }
+      ]
+    },
+    {
+      "review_id": "review-cloudflare-gemini-3-1-flash-lite-20260812-unresolved-location-announcements_write",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-12T21-25-30-581Z-629804e9-575c-4b39-8bd8-92fd2cd20817",
+        "benchmark_run_version": 8,
+        "code_commit_sha": "9cf89f422f72f7f479e67bc9b8a4cfa40f9aabd7",
+        "prepared_evidence_identity_sha256": "9b9c838c145821104632dac6029699e215b10b2255c9f835b213cd730cdbb7de",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "unresolved-location",
+        "config_identity": "config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "trial_id": "benchmark-2026-08-12T21-25-30-581Z-629804e9-575c-4b39-8bd8-92fd2cd20817-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-12T21-25-30-581Z-629804e9-575c-4b39-8bd8-92fd2cd20817-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4-invocation-2",
+        "production_step": "announcements_write",
+        "invocation_ordinal": 2,
+        "request_sha256": "ec9a630beb79f7ea4619446b448000648b972965c7dbed96d14a5d22d82cd457",
+        "completion_text_sha256": "5ed138e66e2c3a4cca392c846c506ba25f4eda6debefe0e223323d3fde02f079",
+        "parsed_output_sha256": "6a1171c8bfbb9b4500eedc79490080dedeebfefa308175d85858db5670a007d8",
+        "runtime_evidence_sha256": "af2fcd0aa3a9e9180c869e7e5ba79d82f70d2dda3970078bac623de2be331af1",
+        "gateway_request_sha256": "a4ec3ac3393e61d70bd0eecd4524abb3d3c130a5a475386f6e9c7c55356c74a4"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "uncertain",
+          "rationale": "No announcement prose is available to judge.",
+          "uncertainty": "high"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "meets",
+          "rationale": "The output communicates 0 relevant announcement item(s) against 0 paired noteworthy candidate(s).",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "meets",
+          "rationale": "The fixture provides no paired noteworthy announcement candidate.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "uncertain",
+          "rationale": "No prose is available to judge voice.",
+          "uncertainty": "high"
+        }
+      ]
+    },
+    {
+      "review_id": "review-cloudflare-gemini-3-1-flash-lite-20260812-unresolved-location-announcements_copyedit",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-12T21-25-30-581Z-629804e9-575c-4b39-8bd8-92fd2cd20817",
+        "benchmark_run_version": 8,
+        "code_commit_sha": "9cf89f422f72f7f479e67bc9b8a4cfa40f9aabd7",
+        "prepared_evidence_identity_sha256": "9b9c838c145821104632dac6029699e215b10b2255c9f835b213cd730cdbb7de",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "unresolved-location",
+        "config_identity": "config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "trial_id": "benchmark-2026-08-12T21-25-30-581Z-629804e9-575c-4b39-8bd8-92fd2cd20817-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-12T21-25-30-581Z-629804e9-575c-4b39-8bd8-92fd2cd20817-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4-invocation-3",
+        "production_step": "announcements_copyedit",
+        "invocation_ordinal": 3,
+        "request_sha256": "cbedf6e2ecf2c1db6f28c4ca87507e86ba7ee8fce23d4a0b3504c5a7578d0e52",
+        "completion_text_sha256": "5ed138e66e2c3a4cca392c846c506ba25f4eda6debefe0e223323d3fde02f079",
+        "parsed_output_sha256": "6a1171c8bfbb9b4500eedc79490080dedeebfefa308175d85858db5670a007d8",
+        "runtime_evidence_sha256": "ddf82699ebf00570b325e91cda76e96a15efd0cf0def630450c501a2b3239938",
+        "gateway_request_sha256": "74ff10eef745fcb22047da279129095845e17b70c99bc2cb4dcc8f17ab54c48f"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "uncertain",
+          "rationale": "No announcement prose is available to judge.",
+          "uncertainty": "high"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "meets",
+          "rationale": "The output communicates 0 relevant announcement item(s) against 0 paired noteworthy candidate(s).",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "meets",
+          "rationale": "The fixture provides no paired noteworthy announcement candidate.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "uncertain",
+          "rationale": "No prose is available to judge voice.",
+          "uncertainty": "high"
+        }
+      ]
+    },
+    {
+      "review_id": "review-cloudflare-gemini-3-1-flash-lite-20260812-irrelevant-campfire-main_story_write",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-12T21-25-04-693Z-798fb45e-b3cc-4143-b59d-2720c8d92d2c",
+        "benchmark_run_version": 8,
+        "code_commit_sha": "9cf89f422f72f7f479e67bc9b8a4cfa40f9aabd7",
+        "prepared_evidence_identity_sha256": "5a6cb7ca03e5d220901590dc94387a688784d6a79b1aaac0a42017fc114824e5",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "irrelevant-campfire",
+        "config_identity": "config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "trial_id": "benchmark-2026-08-12T21-25-04-693Z-798fb45e-b3cc-4143-b59d-2720c8d92d2c-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-12T21-25-04-693Z-798fb45e-b3cc-4143-b59d-2720c8d92d2c-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4-invocation-1",
+        "production_step": "main_story_write",
+        "invocation_ordinal": 1,
+        "request_sha256": "b112d6352adf210523c9176c96882f59b2b885785c8be1d9b16cbadc9afad8d7",
+        "completion_text_sha256": "4101f9734b07be32aaefadbeb31e0596bbcb4bd030b59a02a42778abcad75598",
+        "parsed_output_sha256": "a23f2155a1d1f83ac7379601d34ffccef33145ece89d30b93c742768e29253d4",
+        "runtime_evidence_sha256": "29a6eb50c7bd235f49d64669bcf0725a7d4493e325be3f48981b5ef28e3402ac",
+        "gateway_request_sha256": "f89046b23a929d595dbc7dd3b9e7bc74119358aeb58d60697bcd7ffac79eabbc"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The structured article presents a readable, connected account.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "partly_meets",
+          "rationale": "Closed-corpus claim and event coverage yields a 56% evidence-usefulness signal.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "does_not_meet",
+          "rationale": "The source is deliberately dominated by low-value campfire chatter.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The prose uses a direct, readable in-world news voice.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-cloudflare-gemini-3-1-flash-lite-20260812-irrelevant-campfire-announcements_write",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-12T21-25-04-693Z-798fb45e-b3cc-4143-b59d-2720c8d92d2c",
+        "benchmark_run_version": 8,
+        "code_commit_sha": "9cf89f422f72f7f479e67bc9b8a4cfa40f9aabd7",
+        "prepared_evidence_identity_sha256": "5a6cb7ca03e5d220901590dc94387a688784d6a79b1aaac0a42017fc114824e5",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "irrelevant-campfire",
+        "config_identity": "config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "trial_id": "benchmark-2026-08-12T21-25-04-693Z-798fb45e-b3cc-4143-b59d-2720c8d92d2c-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-12T21-25-04-693Z-798fb45e-b3cc-4143-b59d-2720c8d92d2c-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4-invocation-2",
+        "production_step": "announcements_write",
+        "invocation_ordinal": 2,
+        "request_sha256": "7637f796f452f2b5471cae2c5d9e00aefbef2d6652de4dc312b073a9b35bf9e0",
+        "completion_text_sha256": "5ed138e66e2c3a4cca392c846c506ba25f4eda6debefe0e223323d3fde02f079",
+        "parsed_output_sha256": "6a1171c8bfbb9b4500eedc79490080dedeebfefa308175d85858db5670a007d8",
+        "runtime_evidence_sha256": "bb629983c97fe0cf2a52c7fdf877f337ccf85934f0ea3c78d615051146d901f8",
+        "gateway_request_sha256": "866542f1c93ce2f3d631d48486d6ce81aa2125f21dd415a3b78bee69a7150c28"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "uncertain",
+          "rationale": "No announcement prose is available to judge.",
+          "uncertainty": "high"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "meets",
+          "rationale": "The output communicates 0 relevant announcement item(s) against 0 paired noteworthy candidate(s).",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "meets",
+          "rationale": "The fixture provides no paired noteworthy announcement candidate.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "uncertain",
+          "rationale": "No prose is available to judge voice.",
+          "uncertainty": "high"
+        }
+      ]
+    },
+    {
+      "review_id": "review-cloudflare-gemini-3-1-flash-lite-20260812-irrelevant-campfire-announcements_copyedit",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-12T21-25-04-693Z-798fb45e-b3cc-4143-b59d-2720c8d92d2c",
+        "benchmark_run_version": 8,
+        "code_commit_sha": "9cf89f422f72f7f479e67bc9b8a4cfa40f9aabd7",
+        "prepared_evidence_identity_sha256": "5a6cb7ca03e5d220901590dc94387a688784d6a79b1aaac0a42017fc114824e5",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "irrelevant-campfire",
+        "config_identity": "config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "trial_id": "benchmark-2026-08-12T21-25-04-693Z-798fb45e-b3cc-4143-b59d-2720c8d92d2c-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-12T21-25-04-693Z-798fb45e-b3cc-4143-b59d-2720c8d92d2c-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4-invocation-3",
+        "production_step": "announcements_copyedit",
+        "invocation_ordinal": 3,
+        "request_sha256": "cbedf6e2ecf2c1db6f28c4ca87507e86ba7ee8fce23d4a0b3504c5a7578d0e52",
+        "completion_text_sha256": "5ed138e66e2c3a4cca392c846c506ba25f4eda6debefe0e223323d3fde02f079",
+        "parsed_output_sha256": "6a1171c8bfbb9b4500eedc79490080dedeebfefa308175d85858db5670a007d8",
+        "runtime_evidence_sha256": "69c1d54f362b045acef5eb25f9d985212f71887b6b19bb5672f4475809b0060b",
+        "gateway_request_sha256": "2ca1c2f6ccbdf3ce366b4dff8bf8947d82322a560a08c0d170ce6f9651522ec7"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "uncertain",
+          "rationale": "No announcement prose is available to judge.",
+          "uncertainty": "high"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "meets",
+          "rationale": "The output communicates 0 relevant announcement item(s) against 0 paired noteworthy candidate(s).",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "meets",
+          "rationale": "The fixture provides no paired noteworthy announcement candidate.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "uncertain",
+          "rationale": "No prose is available to judge voice.",
+          "uncertainty": "high"
+        }
+      ]
+    },
+    {
+      "review_id": "review-cloudflare-gemini-3-1-flash-lite-20260812-irrelevant-campfire-main_story_copyedit",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-12T21-25-04-693Z-798fb45e-b3cc-4143-b59d-2720c8d92d2c",
+        "benchmark_run_version": 8,
+        "code_commit_sha": "9cf89f422f72f7f479e67bc9b8a4cfa40f9aabd7",
+        "prepared_evidence_identity_sha256": "5a6cb7ca03e5d220901590dc94387a688784d6a79b1aaac0a42017fc114824e5",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "irrelevant-campfire",
+        "config_identity": "config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "trial_id": "benchmark-2026-08-12T21-25-04-693Z-798fb45e-b3cc-4143-b59d-2720c8d92d2c-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-12T21-25-04-693Z-798fb45e-b3cc-4143-b59d-2720c8d92d2c-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4-invocation-4",
+        "production_step": "main_story_copyedit",
+        "invocation_ordinal": 4,
+        "request_sha256": "96a28a63e453f58593bffe54abaf88effda15b9c697f2a82240d001cd9e3772b",
+        "completion_text_sha256": "0c01fce146d92075e322de14f584dced5c188e0523135303db5e5851970c6e8c",
+        "parsed_output_sha256": "af6f74e5ddb2c0ae0f06a7741f9b22c81f6dcb50ff9b20ef33a6b2c1df7a95a4",
+        "runtime_evidence_sha256": "9ab06f59bd9018a8e38f41f830291fab4e71584e00495087424174662d0ea139",
+        "gateway_request_sha256": "c420556caffd8593cb88778b80ca459d7953bfc75be63a2b0fd4524e04e64415"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The structured article presents a readable, connected account.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "partly_meets",
+          "rationale": "Closed-corpus claim and event coverage yields a 56% evidence-usefulness signal.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "does_not_meet",
+          "rationale": "The source is deliberately dominated by low-value campfire chatter.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The prose uses a direct, readable in-world news voice.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-cloudflare-gemini-3-1-flash-lite-20260812-isolated-bell-test-announcements_write",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-12T21-25-08-308Z-078cd1b5-a811-4352-add8-099ef3f66b0e",
+        "benchmark_run_version": 8,
+        "code_commit_sha": "9cf89f422f72f7f479e67bc9b8a4cfa40f9aabd7",
+        "prepared_evidence_identity_sha256": "f277e1a25be63bc9fa8c36efd936b9f1f97156db492530f99fcf0f576a8de45f",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "isolated-bell-test",
+        "config_identity": "config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "trial_id": "benchmark-2026-08-12T21-25-08-308Z-078cd1b5-a811-4352-add8-099ef3f66b0e-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-12T21-25-08-308Z-078cd1b5-a811-4352-add8-099ef3f66b0e-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4-invocation-2",
+        "production_step": "announcements_write",
+        "invocation_ordinal": 2,
+        "request_sha256": "f5670207fd2aba72639cffd672f94eefc271ca8b0a1175827ac7f49c9c63f6b0",
+        "completion_text_sha256": "7445e69264b406fe007de72428c03963127474c85fe2707d9f49d00a2656af52",
+        "parsed_output_sha256": "547eab5d00e211b9bf96613697e7a301e1206c6c055727de9cddef50184e7384",
+        "runtime_evidence_sha256": "0364a16f0aab49fd23b5929775bc35e54041adf9926cbab635c77ecb3378b957",
+        "gateway_request_sha256": "210cd041470a0bc42b828e35db0211dc71898fe3e2a875886d2728967b9d370a"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The announcement entries are concise and internally readable.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "does_not_meet",
+          "rationale": "The output communicates 0 relevant announcement item(s) against 0 paired noteworthy candidate(s).",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "does_not_meet",
+          "rationale": "The fixture provides no paired noteworthy announcement candidate.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The announcement prose is direct and readable.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-cloudflare-gemini-3-1-flash-lite-20260812-isolated-bell-test-announcements_copyedit",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-12T21-25-08-308Z-078cd1b5-a811-4352-add8-099ef3f66b0e",
+        "benchmark_run_version": 8,
+        "code_commit_sha": "9cf89f422f72f7f479e67bc9b8a4cfa40f9aabd7",
+        "prepared_evidence_identity_sha256": "f277e1a25be63bc9fa8c36efd936b9f1f97156db492530f99fcf0f576a8de45f",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "isolated-bell-test",
+        "config_identity": "config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "trial_id": "benchmark-2026-08-12T21-25-08-308Z-078cd1b5-a811-4352-add8-099ef3f66b0e-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-12T21-25-08-308Z-078cd1b5-a811-4352-add8-099ef3f66b0e-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4-invocation-3",
+        "production_step": "announcements_copyedit",
+        "invocation_ordinal": 3,
+        "request_sha256": "2190a001e1b69b6ff06df5605cf9e348b03183cbcd92959389538598e3cdfb90",
+        "completion_text_sha256": "ad04b0fc7ee084411d719751e605c6450263db23cede6bc867d9129f5cd2b7f1",
+        "parsed_output_sha256": "77f12b67f21a235e4149202595b5f53363aeea8d90cc340123e861084f28b9c2",
+        "runtime_evidence_sha256": "55704db98a67d46bc75f19d705da3c7bdf838fb060cc1e668d09386f8056694b",
+        "gateway_request_sha256": "d4ab548ead7d5079d2cf3ff1fee37e9ce05e69e86b652198b97c364976d93331"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The announcement entries are concise and internally readable.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "does_not_meet",
+          "rationale": "The output communicates 0 relevant announcement item(s) against 0 paired noteworthy candidate(s).",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "does_not_meet",
+          "rationale": "The fixture provides no paired noteworthy announcement candidate.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The announcement prose is direct and readable.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-cloudflare-gemini-3-1-flash-lite-20260812-lantern-festival-notice-announcements_write",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-12T21-25-11-465Z-54643c03-9ebc-4e7d-8b61-01059abd2a63",
+        "benchmark_run_version": 8,
+        "code_commit_sha": "9cf89f422f72f7f479e67bc9b8a4cfa40f9aabd7",
+        "prepared_evidence_identity_sha256": "0d305800628e47c51811081dfaeb7a321e73a4ab392071210d683e8bc3bcf9ef",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "lantern-festival-notice",
+        "config_identity": "config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "trial_id": "benchmark-2026-08-12T21-25-11-465Z-54643c03-9ebc-4e7d-8b61-01059abd2a63-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-12T21-25-11-465Z-54643c03-9ebc-4e7d-8b61-01059abd2a63-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4-invocation-2",
+        "production_step": "announcements_write",
+        "invocation_ordinal": 2,
+        "request_sha256": "d5f6b188e6226ab57ebc1d17128259260053e28666edc625b3b34bdc3434c449",
+        "completion_text_sha256": "7c61b726e230a7ff188be30ce1f5d699a9e772cd2b5163cb6eecce6b6bcf2f56",
+        "parsed_output_sha256": "640c6f69ee7afa63bb1cc21c45a1320697db9cf9c049a4cc69fc537bf23662e8",
+        "runtime_evidence_sha256": "b220ff6cfb2a86ecc552a19a69661329b0c530ea1e0aa8b4627eeb80afb6b674",
+        "gateway_request_sha256": "191d6d9c4283a13b85dfcd57548f6e50168239ee830e66b45a8a48eadf76465c"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The announcement entries are concise and internally readable.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "does_not_meet",
+          "rationale": "The output communicates 0 relevant announcement item(s) against 2 paired noteworthy candidate(s).",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "does_not_meet",
+          "rationale": "Newsworthiness follows coverage of the paired noteworthy candidates.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The announcement prose is direct and readable.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-cloudflare-gemini-3-1-flash-lite-20260812-lantern-festival-notice-announcements_copyedit",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-12T21-25-11-465Z-54643c03-9ebc-4e7d-8b61-01059abd2a63",
+        "benchmark_run_version": 8,
+        "code_commit_sha": "9cf89f422f72f7f479e67bc9b8a4cfa40f9aabd7",
+        "prepared_evidence_identity_sha256": "0d305800628e47c51811081dfaeb7a321e73a4ab392071210d683e8bc3bcf9ef",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "lantern-festival-notice",
+        "config_identity": "config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "trial_id": "benchmark-2026-08-12T21-25-11-465Z-54643c03-9ebc-4e7d-8b61-01059abd2a63-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-12T21-25-11-465Z-54643c03-9ebc-4e7d-8b61-01059abd2a63-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4-invocation-3",
+        "production_step": "announcements_copyedit",
+        "invocation_ordinal": 3,
+        "request_sha256": "76156d65ace91c705ca3480325fa92b27370650e6833882428ee372538e20139",
+        "completion_text_sha256": "549d2e9d8916152227cff66f6d3631f158a4e1c9f238a26c27d794376ea01e39",
+        "parsed_output_sha256": "1cfa6389be7018743f6e62ab6ff842473aeded58568204f853a5dab0e1cc13f1",
+        "runtime_evidence_sha256": "7a1a030430bf32d8433f8f7f79e009429c644f4b20c4133d2cfa497a88a5b0c3",
+        "gateway_request_sha256": "d3a5159f1b92e6cf663e266735c683629aa0eb1739dbc707576c6ff9192075a6"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The announcement entries are concise and internally readable.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "does_not_meet",
+          "rationale": "The output communicates 0 relevant announcement item(s) against 2 paired noteworthy candidate(s).",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "does_not_meet",
+          "rationale": "Newsworthiness follows coverage of the paired noteworthy candidates.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The announcement prose is direct and readable.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-cloudflare-gemini-3-1-flash-lite-20260812-supply-counts-announcements_write",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-12T21-25-25-005Z-697ae495-d3fd-4107-b21c-3280f1941250",
+        "benchmark_run_version": 8,
+        "code_commit_sha": "9cf89f422f72f7f479e67bc9b8a4cfa40f9aabd7",
+        "prepared_evidence_identity_sha256": "a118c6f3da5b4bd1ed65f4716f889fed889ec89161ff98a86e65b7cba805039c",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "supply-counts",
+        "config_identity": "config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "trial_id": "benchmark-2026-08-12T21-25-25-005Z-697ae495-d3fd-4107-b21c-3280f1941250-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-12T21-25-25-005Z-697ae495-d3fd-4107-b21c-3280f1941250-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4-invocation-2",
+        "production_step": "announcements_write",
+        "invocation_ordinal": 2,
+        "request_sha256": "72667aff9d01697f3dc3fb54a3d07a63062a2658a3fbd6162216bd40d249c9c9",
+        "completion_text_sha256": "5ed138e66e2c3a4cca392c846c506ba25f4eda6debefe0e223323d3fde02f079",
+        "parsed_output_sha256": "6a1171c8bfbb9b4500eedc79490080dedeebfefa308175d85858db5670a007d8",
+        "runtime_evidence_sha256": "c2899dd415a464202db732ffbccc3c3d5783120223c40475e725ecc95194aee8",
+        "gateway_request_sha256": "906d38743260040e69c59fe303f1de4a08a580c45db29fc71b6beb3e2a2d7ed2"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "uncertain",
+          "rationale": "No announcement prose is available to judge.",
+          "uncertainty": "high"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "does_not_meet",
+          "rationale": "The output communicates 0 relevant announcement item(s) against 1 paired noteworthy candidate(s).",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "does_not_meet",
+          "rationale": "Newsworthiness follows coverage of the paired noteworthy candidates.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "uncertain",
+          "rationale": "No prose is available to judge voice.",
+          "uncertainty": "high"
+        }
+      ]
+    },
+    {
+      "review_id": "review-cloudflare-gemini-3-1-flash-lite-20260812-supply-counts-announcements_copyedit",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-12T21-25-25-005Z-697ae495-d3fd-4107-b21c-3280f1941250",
+        "benchmark_run_version": 8,
+        "code_commit_sha": "9cf89f422f72f7f479e67bc9b8a4cfa40f9aabd7",
+        "prepared_evidence_identity_sha256": "a118c6f3da5b4bd1ed65f4716f889fed889ec89161ff98a86e65b7cba805039c",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "supply-counts",
+        "config_identity": "config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "trial_id": "benchmark-2026-08-12T21-25-25-005Z-697ae495-d3fd-4107-b21c-3280f1941250-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-12T21-25-25-005Z-697ae495-d3fd-4107-b21c-3280f1941250-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4-invocation-3",
+        "production_step": "announcements_copyedit",
+        "invocation_ordinal": 3,
+        "request_sha256": "cbedf6e2ecf2c1db6f28c4ca87507e86ba7ee8fce23d4a0b3504c5a7578d0e52",
+        "completion_text_sha256": "5ed138e66e2c3a4cca392c846c506ba25f4eda6debefe0e223323d3fde02f079",
+        "parsed_output_sha256": "6a1171c8bfbb9b4500eedc79490080dedeebfefa308175d85858db5670a007d8",
+        "runtime_evidence_sha256": "c316a7ddbb16be4056d5aad692c911cba0174c8a5c65c231f338d024fc87f5e2",
+        "gateway_request_sha256": "156a26d2c117f722c89e3e21feb432408241c77a6dfa21604b3f2cb41ddb7b00"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "uncertain",
+          "rationale": "No announcement prose is available to judge.",
+          "uncertainty": "high"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "does_not_meet",
+          "rationale": "The output communicates 0 relevant announcement item(s) against 1 paired noteworthy candidate(s).",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "does_not_meet",
+          "rationale": "Newsworthiness follows coverage of the paired noteworthy candidates.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "uncertain",
+          "rationale": "No prose is available to judge voice.",
+          "uncertainty": "high"
+        }
+      ]
+    },
+    {
+      "review_id": "review-cloudflare-gemini-3-1-flash-lite-20260812-named-rangers-announcements_write",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-12T21-25-14-560Z-4551f611-95f6-4d1c-a48f-a1555f480a7f",
+        "benchmark_run_version": 8,
+        "code_commit_sha": "9cf89f422f72f7f479e67bc9b8a4cfa40f9aabd7",
+        "prepared_evidence_identity_sha256": "eb9a9add15d02912206ce0f4ee76d8944bfcf38490acffeaaedc3156c03f23f9",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "named-rangers",
+        "config_identity": "config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "trial_id": "benchmark-2026-08-12T21-25-14-560Z-4551f611-95f6-4d1c-a48f-a1555f480a7f-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-12T21-25-14-560Z-4551f611-95f6-4d1c-a48f-a1555f480a7f-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4-invocation-2",
+        "production_step": "announcements_write",
+        "invocation_ordinal": 2,
+        "request_sha256": "685bfb43a9fdc33d08722366d947a74dfcc9d41c60e96ed11210346b4011e102",
+        "completion_text_sha256": "1bbe6e08916b5484951334dbbbf05704c5a5c529e1a38d52e5b2530913c345c7",
+        "parsed_output_sha256": "9a9cac09d27a4f8b85506e495fe3f992ca99bbdd09a6151b238b525a23579b1a",
+        "runtime_evidence_sha256": "96d21fa0c3503e7de0cf567b857e6b5617e18302a4458c026acaf0ffb388c56c",
+        "gateway_request_sha256": "e3ff98879fff26cb8b02a14dce398909cae0fa7de7a25595501f8ec02a9d7407"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The announcement entries are concise and internally readable.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "does_not_meet",
+          "rationale": "The output communicates 0 relevant announcement item(s) against 0 paired noteworthy candidate(s).",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "does_not_meet",
+          "rationale": "The fixture provides no paired noteworthy announcement candidate.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The announcement prose is direct and readable.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-cloudflare-gemini-3-1-flash-lite-20260812-named-rangers-announcements_copyedit",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-12T21-25-14-560Z-4551f611-95f6-4d1c-a48f-a1555f480a7f",
+        "benchmark_run_version": 8,
+        "code_commit_sha": "9cf89f422f72f7f479e67bc9b8a4cfa40f9aabd7",
+        "prepared_evidence_identity_sha256": "eb9a9add15d02912206ce0f4ee76d8944bfcf38490acffeaaedc3156c03f23f9",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "named-rangers",
+        "config_identity": "config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "trial_id": "benchmark-2026-08-12T21-25-14-560Z-4551f611-95f6-4d1c-a48f-a1555f480a7f-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-12T21-25-14-560Z-4551f611-95f6-4d1c-a48f-a1555f480a7f-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4-invocation-3",
+        "production_step": "announcements_copyedit",
+        "invocation_ordinal": 3,
+        "request_sha256": "2cb0a8bb538c75061f47f49124bdb3a05761f696dc5513d96c361b84329a8f96",
+        "completion_text_sha256": "bf70d8d2287d67743b6fcd9a9851ce879f10a1b0a460ecb82308a74626f80b20",
+        "parsed_output_sha256": "9a9cac09d27a4f8b85506e495fe3f992ca99bbdd09a6151b238b525a23579b1a",
+        "runtime_evidence_sha256": "3121bfc35de5ed2fecc42f3c777e3f15a1de7e0329034e8aa0a5380d697678e1",
+        "gateway_request_sha256": "e75f6a8ad91da9e3bf4e771c15f06543c205e0896f31ef56dd2f54880db3cb43"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The announcement entries are concise and internally readable.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "does_not_meet",
+          "rationale": "The output communicates 0 relevant announcement item(s) against 0 paired noteworthy candidate(s).",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "does_not_meet",
+          "rationale": "The fixture provides no paired noteworthy announcement candidate.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The announcement prose is direct and readable.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-cloudflare-gemini-3-1-flash-lite-20260812-contested-closure-announcements_write",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-12T21-24-57-194Z-887d3b7c-2425-4149-86b6-a7cb70621640",
+        "benchmark_run_version": 8,
+        "code_commit_sha": "9cf89f422f72f7f479e67bc9b8a4cfa40f9aabd7",
+        "prepared_evidence_identity_sha256": "5d260a26adf2c8f776d014ab872cb38e3276eafaf3b1ca2bf74626edd27dc2fc",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "contested-closure",
+        "config_identity": "config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "trial_id": "benchmark-2026-08-12T21-24-57-194Z-887d3b7c-2425-4149-86b6-a7cb70621640-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-12T21-24-57-194Z-887d3b7c-2425-4149-86b6-a7cb70621640-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4-invocation-2",
+        "production_step": "announcements_write",
+        "invocation_ordinal": 2,
+        "request_sha256": "421f113385389284684f176e2865c2dfd47ee1f9c39ca7a783bf9eb8e6c502df",
+        "completion_text_sha256": "5ed138e66e2c3a4cca392c846c506ba25f4eda6debefe0e223323d3fde02f079",
+        "parsed_output_sha256": "6a1171c8bfbb9b4500eedc79490080dedeebfefa308175d85858db5670a007d8",
+        "runtime_evidence_sha256": "692a3198d720ad55b81561ffc1f23357ad5687524e4941fa15e04a8889e159c9",
+        "gateway_request_sha256": "347d8a96612d942cc5c65fe27fc744dd79e08c8ede7d22f0f4834c9fc7540bc1"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "uncertain",
+          "rationale": "No announcement prose is available to judge.",
+          "uncertainty": "high"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "does_not_meet",
+          "rationale": "The output communicates 0 relevant announcement item(s) against 1 paired noteworthy candidate(s).",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "does_not_meet",
+          "rationale": "Newsworthiness follows coverage of the paired noteworthy candidates.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "uncertain",
+          "rationale": "No prose is available to judge voice.",
+          "uncertainty": "high"
+        }
+      ]
+    },
+    {
+      "review_id": "review-cloudflare-gemini-3-1-flash-lite-20260812-contested-closure-announcements_copyedit",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-12T21-24-57-194Z-887d3b7c-2425-4149-86b6-a7cb70621640",
+        "benchmark_run_version": 8,
+        "code_commit_sha": "9cf89f422f72f7f479e67bc9b8a4cfa40f9aabd7",
+        "prepared_evidence_identity_sha256": "5d260a26adf2c8f776d014ab872cb38e3276eafaf3b1ca2bf74626edd27dc2fc",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "contested-closure",
+        "config_identity": "config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "trial_id": "benchmark-2026-08-12T21-24-57-194Z-887d3b7c-2425-4149-86b6-a7cb70621640-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-12T21-24-57-194Z-887d3b7c-2425-4149-86b6-a7cb70621640-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4-invocation-3",
+        "production_step": "announcements_copyedit",
+        "invocation_ordinal": 3,
+        "request_sha256": "cbedf6e2ecf2c1db6f28c4ca87507e86ba7ee8fce23d4a0b3504c5a7578d0e52",
+        "completion_text_sha256": "5ed138e66e2c3a4cca392c846c506ba25f4eda6debefe0e223323d3fde02f079",
+        "parsed_output_sha256": "6a1171c8bfbb9b4500eedc79490080dedeebfefa308175d85858db5670a007d8",
+        "runtime_evidence_sha256": "a8faa19bd234313e42eec08a51cad45a5dab6664e5e02dfba0b70b927c9bcc3b",
+        "gateway_request_sha256": "7b56610c92eefe062156d796c2599326ed0605b9dc4c1556bf430388192f0caf"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "uncertain",
+          "rationale": "No announcement prose is available to judge.",
+          "uncertainty": "high"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "does_not_meet",
+          "rationale": "The output communicates 0 relevant announcement item(s) against 1 paired noteworthy candidate(s).",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "does_not_meet",
+          "rationale": "Newsworthiness follows coverage of the paired noteworthy candidates.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "uncertain",
+          "rationale": "No prose is available to judge voice.",
+          "uncertainty": "high"
+        }
+      ]
+    },
+    {
+      "review_id": "review-cloudflare-gemini-3-1-flash-lite-20260812-unresolved-departure-announcements_write",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-12T21-25-27-773Z-ddc1b1f8-41cf-4f46-bfa5-b445a710e0e0",
+        "benchmark_run_version": 8,
+        "code_commit_sha": "9cf89f422f72f7f479e67bc9b8a4cfa40f9aabd7",
+        "prepared_evidence_identity_sha256": "e2abc369c6c39970f04db00012add4f54b1630bd3dfec23659a17a8b4d046c01",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "unresolved-departure",
+        "config_identity": "config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "trial_id": "benchmark-2026-08-12T21-25-27-773Z-ddc1b1f8-41cf-4f46-bfa5-b445a710e0e0-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-12T21-25-27-773Z-ddc1b1f8-41cf-4f46-bfa5-b445a710e0e0-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4-invocation-2",
+        "production_step": "announcements_write",
+        "invocation_ordinal": 2,
+        "request_sha256": "4ecd23f4b67f82d1503a58a8674381f11b4a0039ab247dead92a9ecff50e14cf",
+        "completion_text_sha256": "5ed138e66e2c3a4cca392c846c506ba25f4eda6debefe0e223323d3fde02f079",
+        "parsed_output_sha256": "6a1171c8bfbb9b4500eedc79490080dedeebfefa308175d85858db5670a007d8",
+        "runtime_evidence_sha256": "93a6b0899af6329d163580fd3802233b154a7c65a6495da6beb41b818f8f58dd",
+        "gateway_request_sha256": "93a0471feeb4c15a7942e7ede54911a68667cc6492040ebf5bc63b6daf1e27b4"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "uncertain",
+          "rationale": "No announcement prose is available to judge.",
+          "uncertainty": "high"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "does_not_meet",
+          "rationale": "The output communicates 0 relevant announcement item(s) against 1 paired noteworthy candidate(s).",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "does_not_meet",
+          "rationale": "Newsworthiness follows coverage of the paired noteworthy candidates.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "uncertain",
+          "rationale": "No prose is available to judge voice.",
+          "uncertainty": "high"
+        }
+      ]
+    },
+    {
+      "review_id": "review-cloudflare-gemini-3-1-flash-lite-20260812-unresolved-departure-announcements_copyedit",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-12T21-25-27-773Z-ddc1b1f8-41cf-4f46-bfa5-b445a710e0e0",
+        "benchmark_run_version": 8,
+        "code_commit_sha": "9cf89f422f72f7f479e67bc9b8a4cfa40f9aabd7",
+        "prepared_evidence_identity_sha256": "e2abc369c6c39970f04db00012add4f54b1630bd3dfec23659a17a8b4d046c01",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "unresolved-departure",
+        "config_identity": "config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "trial_id": "benchmark-2026-08-12T21-25-27-773Z-ddc1b1f8-41cf-4f46-bfa5-b445a710e0e0-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-12T21-25-27-773Z-ddc1b1f8-41cf-4f46-bfa5-b445a710e0e0-trial-1-config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4-invocation-3",
+        "production_step": "announcements_copyedit",
+        "invocation_ordinal": 3,
+        "request_sha256": "cbedf6e2ecf2c1db6f28c4ca87507e86ba7ee8fce23d4a0b3504c5a7578d0e52",
+        "completion_text_sha256": "5ed138e66e2c3a4cca392c846c506ba25f4eda6debefe0e223323d3fde02f079",
+        "parsed_output_sha256": "6a1171c8bfbb9b4500eedc79490080dedeebfefa308175d85858db5670a007d8",
+        "runtime_evidence_sha256": "edac30a8e23926c2db5b8638a7cea77200e9ee070d37bf187e3221a16fe23d89",
+        "gateway_request_sha256": "5ec3f3e49873d6799589b194b95790a573659633af85a8fb2a9680e506745089"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "uncertain",
+          "rationale": "No announcement prose is available to judge.",
+          "uncertainty": "high"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "does_not_meet",
+          "rationale": "The output communicates 0 relevant announcement item(s) against 1 paired noteworthy candidate(s).",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "does_not_meet",
+          "rationale": "Newsworthiness follows coverage of the paired noteworthy candidates.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "uncertain",
+          "rationale": "No prose is available to judge voice.",
+          "uncertainty": "high"
+        }
+      ]
+    }
+  ]
+}
