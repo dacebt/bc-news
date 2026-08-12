@@ -211,7 +211,7 @@ export function createCloudflareAiGatewayModelProvider(
 					production_step: request.productionStep,
 				}),
 			};
-			if (input.gateway !== undefined) headers["cf-aig-gateway-id"] = input.gateway.id;
+			headers["cf-aig-gateway-id"] = input.gateway?.id ?? "default";
 			let response: Response;
 			try {
 				response = await fetch(endpoint, {

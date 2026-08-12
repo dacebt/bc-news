@@ -83,7 +83,7 @@ it.each([
 	expect(cloudflareAiGatewayProviderForModel(model)).toBe(expected);
 });
 
-it("uses the fixed account REST endpoint without declaring a default Gateway", async () => {
+it("uses the fixed account REST endpoint with the account default Gateway", async () => {
 	const fetchCall = vi.spyOn(globalThis, "fetch").mockResolvedValue(completionResponse());
 	await provider().complete(request());
 	expect(fetchCall).toHaveBeenCalledOnce();
@@ -103,7 +103,7 @@ it("uses the fixed account REST endpoint without declaring a default Gateway", a
 			production_step: "main_story_write",
 		}),
 	}));
-	expect(init?.headers).not.toHaveProperty("cf-aig-gateway-id");
+	expect(init?.headers).toEqual(expect.objectContaining({ "cf-aig-gateway-id": "default" }));
 	const body = init?.body;
 	if (typeof body !== "string") throw new Error("Expected request body to be JSON text");
 	expect(JSON.parse(body) as unknown).toEqual({
@@ -115,7 +115,7 @@ it("uses the fixed account REST endpoint without declaring a default Gateway", a
 	});
 });
 
-it("sends a Gateway id only when a named Gateway is selected", async () => {
+it("overrides the account default when a named Gateway is selected", async () => {
 	const fetchCall = vi.spyOn(globalThis, "fetch").mockResolvedValue(completionResponse());
 	await provider("openai/gpt-4.1-mini", { selection: "named", id: "bc-news-evaluation" }).complete(request());
 	const [, init] = fetchCall.mock.calls[0]!;
