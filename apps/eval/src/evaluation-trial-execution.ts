@@ -10,10 +10,17 @@ import {
 	type ModelCompletion, type ModelProviderPort, type ModelProviderRequest, type ModelRuntimeEvidence, type PreparedEvidence, type ProductionModelStep,
 } from "@bc-news/generation-core";
 import {
+	CloudflareAiGatewayRetryableError,
 	LmStudioRetryableError,
 	OpenAiCompatibleRetryableError,
 } from "@bc-news/model-adapters";
-import { V7BenchmarkRunSchema, type V7BenchmarkRun, type V7EvaluationTrial } from "./evaluation-artifact";
+import {
+	V7BenchmarkRunSchema,
+	V8BenchmarkRunSchema,
+	type V7BenchmarkRun,
+	type V7EvaluationTrial,
+	type V8BenchmarkRun,
+} from "./evaluation-artifact";
 import { EvaluationArtifactStore } from "./evaluation-artifact-store";
 import { deriveVersion5TrialOutcome } from "./evaluation-artifact-v5-trial-refinement";
 import { parseFinding, sha256Json, terminalCurrentTrackOutcome, transportErrorIdentity } from "./evaluation-trial-support";
@@ -35,31 +42,33 @@ export function requireRuntimeEvidence(
 }
 
 export async function executeEvaluationTrial(input: {
-	benchmark: V7BenchmarkRun;
+	benchmark: V7BenchmarkRun | V8BenchmarkRun;
 	store: EvaluationArtifactStore;
 	preparedEvidence: PreparedEvidence;
 	providers: Record<ProductionModelStep, ModelProviderPort>;
 	configIdentity: string;
 	trialId?: string;
 	transportRetryLimit?: number;
-}): Promise<V7BenchmarkRun> {
+}): Promise<V7BenchmarkRun | V8BenchmarkRun> {
 	let benchmark = input.benchmark;
 	const trialId = input.trialId ?? benchmark.trials[0]!.id;
 	let mutationTail = Promise.resolve();
 	let mutationFailed = false;
 	let mutationFailure: unknown;
 
-	function retainedTrial(retainedBenchmark: V7BenchmarkRun): V7EvaluationTrial {
+	function retainedTrial(retainedBenchmark: V7BenchmarkRun | V8BenchmarkRun): V7EvaluationTrial {
 		const retained = retainedBenchmark.trials.find(({ id }) => id === trialId);
 		if (retained === undefined || retainedBenchmark.trials.at(-1)?.id !== trialId) throw new Error(`Evaluation trial ${trialId} is not the final running trial`);
 		return retained;
 	}
-	function enqueueMutation<T>(derive: (current: V7BenchmarkRun) => { readonly next: V7BenchmarkRun; readonly result: T }): Promise<T> {
+	function enqueueMutation<T>(derive: (current: V7BenchmarkRun | V8BenchmarkRun) => { readonly next: V7BenchmarkRun | V8BenchmarkRun; readonly result: T }): Promise<T> {
 		const operation = mutationTail.then(async () => {
 			if (mutationFailed) throw mutationFailure;
 			try {
 				const mutation = derive(benchmark);
-				const next = V7BenchmarkRunSchema.parse(mutation.next);
+				const next = benchmark.version === 8
+					? V8BenchmarkRunSchema.parse(mutation.next)
+					: V7BenchmarkRunSchema.parse(mutation.next);
 				await input.store.replace(next);
 				benchmark = next;
 				return mutation.result;
@@ -88,7 +97,6 @@ export async function executeEvaluationTrial(input: {
 	async function invoke<T extends Record<string, unknown>>(stepInput: {
 		productionStep: ProductionModelStep; system: string; user: string; parse: (completion: ModelCompletion) => T;
 	}): Promise<T | undefined> {
-		const request: ModelProviderRequest = { productionStep: stepInput.productionStep, system: stepInput.system, user: stepInput.user };
 		const retainedRequest = { production_step: stepInput.productionStep, system: stepInput.system, user: stepInput.user };
 		let predecessorInvocationId: string | null = null;
 		let completion: ModelCompletion;
@@ -117,11 +125,25 @@ export async function executeEvaluationTrial(input: {
 							ordinal,
 							state: "pending" as const,
 						}],
+						...(currentBenchmark.version === 8 ? { gateway_requests: [...currentBenchmark.gateway_requests, {
+							trial_id: current.id,
+							invocation_id: invocationId,
+							config_identity: input.configIdentity,
+							production_step: stepInput.productionStep,
+							ordinal,
+							state: "pending" as const,
+						}] } : {}),
 					},
 					result: { invocationId, startedAt },
 				};
 			});
 			const { invocationId, startedAt } = allocation;
+			const request: ModelProviderRequest = {
+				productionStep: stepInput.productionStep,
+				system: stepInput.system,
+				user: stepInput.user,
+				correlation: { run_id: benchmark.id, invocation_id: invocationId },
+			};
 			try {
 				completion = await input.providers[stepInput.productionStep].complete(request);
 			}
@@ -140,10 +162,16 @@ export async function executeEvaluationTrial(input: {
 							state: "unavailable" as const,
 							reason: "transport_failed" as const,
 						} : candidate),
+						...(currentBenchmark.version === 8 ? { gateway_requests: currentBenchmark.gateway_requests.map((candidate) => candidate.invocation_id === invocationId ? {
+							...candidate,
+							state: "unavailable" as const,
+							reason: "transport_failed" as const,
+						} : candidate) } : {}),
 					}, result: undefined };
 				});
 				const eligible =
 					error instanceof OpenAiCompatibleRetryableError
+					|| error instanceof CloudflareAiGatewayRetryableError
 					|| error instanceof LmStudioRetryableError;
 				await updateTrial((current) => ({ next: { ...current, invocations: current.invocations.map((candidate) => candidate.id === invocationId && candidate.transport === "failed" ? {
 					...candidate, retry_classification: { state: "classified" as const, eligible,
@@ -177,6 +205,11 @@ export async function executeEvaluationTrial(input: {
 						state: "captured" as const,
 						evidence: runtimeEvidence,
 					} : candidate),
+					...(currentBenchmark.version === 8 ? { gateway_requests: currentBenchmark.gateway_requests.map((candidate) => candidate.invocation_id === invocationId
+						? completion.request_provenance === undefined
+							? { ...candidate, state: "not_applicable" as const }
+							: { ...candidate, state: "captured" as const, provenance: completion.request_provenance }
+						: candidate) } : {}),
 				}, result: undefined };
 			});
 			try {

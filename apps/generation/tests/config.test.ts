@@ -72,6 +72,25 @@ it("resolves a hosted provider only with endpoint and API key bindings", () => {
 	).toThrow(GenerationConfigError);
 });
 
+it("resolves Cloudflare AI Gateway only with account and token bindings", () => {
+	const gateway = {
+		adapter: "cloudflare_ai_gateway",
+		gateway: { selection: "named", id: "bc-news-generation" },
+		model: "openai/gpt-4.1-mini",
+	};
+	const modelConfig = { ...recordedConfig(), main_story_write: gateway };
+	const gatewayEnv = envWith({
+		CLOUDFLARE_ACCOUNT_ID: "account-id",
+		CLOUDFLARE_API_TOKEN: "sentinel",
+		MODEL_CONFIG: JSON.stringify(modelConfig),
+	});
+	expect(resolveGenerationPorts(gatewayEnv).modelProviders.main_story_write).toBeDefined();
+	expect(() => resolveGenerationPorts(envWith({
+		CLOUDFLARE_ACCOUNT_ID: "account-id",
+		MODEL_CONFIG: gatewayEnv.MODEL_CONFIG,
+	}))).toThrow(GenerationConfigError);
+});
+
 it("resolves independent provider-default and explicit LM Studio temperatures", () => {
 	const local = {
 		adapter: "lmstudio",

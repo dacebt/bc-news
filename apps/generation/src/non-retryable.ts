@@ -8,6 +8,7 @@ import {
 import { FixtureEvidenceMismatchError, RecordedModelProviderError } from "@bc-news/fixtures";
 import { D1ChatEvidenceError } from "./adapters/d1-chat-evidence";
 import {
+	CloudflareAiGatewayDeterministicError,
 	LmStudioDeterministicError,
 	OpenAiCompatibleDeterministicError,
 } from "@bc-news/model-adapters";
@@ -21,6 +22,7 @@ const DETERMINISTIC_FAILURES = [
 	FixtureEvidenceMismatchError,
 	RecordedModelProviderError,
 	OpenAiCompatibleDeterministicError,
+	CloudflareAiGatewayDeterministicError,
 	LmStudioDeterministicError,
 	GenerationConfigError,
 	D1ChatEvidenceError,

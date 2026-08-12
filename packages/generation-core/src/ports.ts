@@ -35,13 +35,38 @@ export interface ModelCompletion {
 	execution: "recorded_replay" | "local_inference" | "hosted_inference";
 	token_usage: TokenUsage;
 	external_billing: ExternalBilling;
+	request_provenance?: ModelRequestProvenance | undefined;
 	runtime_evidence?: ModelRuntimeEvidence;
 }
+
+export interface ModelRequestCorrelation {
+	readonly run_id: string;
+	readonly invocation_id: string;
+}
+
+export interface CloudflareAiGatewayRequestProvenance {
+	transport: "cloudflare_ai_gateway_rest";
+	account_id: string;
+	gateway: { selection: "named"; id: string } | { selection: "account_default" };
+	gateway_log_id: string;
+	requested_model: string;
+	correlation: ModelRequestCorrelation;
+	policy: {
+		cache: "bypass";
+		log_metadata: true;
+		log_payload: false;
+		max_attempts: 1;
+		request_timeout_ms: number;
+	};
+}
+
+export type ModelRequestProvenance = CloudflareAiGatewayRequestProvenance;
 
 export interface ModelProviderRequest {
 	readonly productionStep: ProductionModelStep;
 	readonly system: string;
 	readonly user: string;
+	readonly correlation?: ModelRequestCorrelation;
 }
 
 export interface ModelUsageRecord {
@@ -51,6 +76,7 @@ export interface ModelUsageRecord {
 	execution: ModelCompletion["execution"];
 	token_usage: TokenUsage;
 	external_billing: ExternalBilling;
+	request_provenance?: ModelRequestProvenance | undefined;
 }
 
 export interface EvidenceInputPort {

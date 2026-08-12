@@ -1,15 +1,33 @@
 export {
 	CalculatedBillingConfigSchema,
+	CloudflareAiGatewayAdapterConfigSchema,
+	CloudflareAiGatewayModelSchema,
+	CloudflareAiGatewaySelectionSchema,
 	HostedModelAdapterConfigSchema,
 	LmStudioAdapterConfigSchema,
 	LmStudioReasoningEffortSchema,
 	ModelTemperatureSchema,
 	type CalculatedBillingConfig,
+	type CloudflareAiGatewayAdapterConfig,
+	type CloudflareAiGatewaySelection,
 	type HostedModelAdapterConfig,
 	type LmStudioAdapterConfig,
 	type LmStudioReasoningEffort,
 	type ModelTemperature,
 } from "./config";
+export {
+	CloudflareAiGatewayDeterministicError,
+	CloudflareAiGatewayRetryableError,
+	type CloudflareAiGatewayDeterministicErrorCode,
+	type CloudflareAiGatewayRetryableErrorCode,
+} from "./cloudflare-ai-gateway-errors";
+export {
+	CLOUDFLARE_AI_GATEWAY_REQUEST_TIMEOUT_MS,
+	cloudflareAiGatewayChatCompletionsUrl,
+	cloudflareAiGatewayProviderForModel,
+	createCloudflareAiGatewayModelProvider,
+	type CloudflareAiGatewayProviderInput,
+} from "./cloudflare-ai-gateway-model-provider";
 export {
 	OpenAiCompatibleDeterministicError,
 	OpenAiCompatibleRetryableError,

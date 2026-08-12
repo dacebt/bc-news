@@ -8,7 +8,7 @@ export function formatBenchmarkRunReport(benchmark: BenchmarkRun, path: string):
 	const diagnostics = benchmark.trials.flatMap((trial, trialIndex) => Object.entries(trial.tracks).flatMap(
 		([track, state]) => state.findings.map((finding) => `Diagnostic trial=${String(trialIndex + 1)} track=${track} kind=${finding.kind} code=${finding.code}: ${finding.message}`),
 	));
-	const runtimeEvidence = benchmark.version === 7
+	const runtimeEvidence = benchmark.version === 7 || benchmark.version === 8
 		? benchmark.runtime_evidence.reduce((counts, record) => ({ ...counts, [record.state]: counts[record.state] + 1 }), { pending: 0, captured: 0, unavailable: 0 })
 		: undefined;
 	return [

@@ -149,6 +149,7 @@ export async function buildControlledEvaluationScorecardInput(root: string, mani
 		const server = await startRecordLoopbackServer(Object.fromEntries(PRODUCTION_MODEL_STEPS.map((step) => [`scorecard/${step}`, controlledOutputs(entry)[step]])));
 		try {
 			const result = await evaluateBenchmarkCommand({ fixturePath: join(root, entry.evidencePath), configPath, resultsDirectory, environment: { HOSTED_MODEL_BASE_URL: server.baseUrl, HOSTED_MODEL_API_KEY: "record-loopback-proof" }, sourceProvenance: { repository: "bc-news", commit_sha: codeCommit, dirty: false } });
+			assertProof(result.benchmark.version === 7, "Controlled scorecard benchmark must remain V7");
 			runs.push({ run: result.benchmark, path: result.path, entry });
 		} finally { await server.close(); }
 	}

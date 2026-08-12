@@ -104,6 +104,7 @@ export async function verifyEvaluationBenchmarkContinuation(temporaryRoot?: stri
 			sourceProvenance: TEST_PROVENANCE,
 			artifactObserver: (artifact) => { snapshots.push(structuredClone(artifact)); },
 		});
+		assertProof(result.benchmark.version === 7, "unexpected_artifact_version", "Non-Gateway benchmark proof must remain V7");
 		assertSnapshots(snapshots);
 		assertFinalBenchmark(result.benchmark);
 		const retained = BenchmarkRunSchema.parse(JSON.parse(await readFile(result.path, "utf8")) as unknown);

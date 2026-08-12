@@ -83,10 +83,34 @@ dispatch concurrently:
 
 ```sh
 pnpm --filter @bc-news/eval eval -- benchmark run \
-  --fixture packages/fixtures \
-  --config path/to/eval.config.json \
-  --results-dir path/to/evaluation-results
+	--fixture packages/fixtures/evidence/active-region-7_2026-01-24.json \
+	--config path/to/eval.config.json \
+	--results-dir path/to/evaluation-results
 ```
+
+For Cloudflare AI Gateway, create the ignored `apps/generation/.dev.vars` with
+only `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`. The token needs
+**Account > Workers AI > Read**; an AI Gateway-only token is not sufficient for
+the account AI REST endpoint. Unified Billing requires loaded credits and a
+payment method but no provider API keys. Then run the checked-in two-provider
+example after reviewing its current model ids and expected spend:
+
+```sh
+pnpm --filter @bc-news/eval eval -- benchmark run \
+	--fixture packages/fixtures/evidence/active-region-7_2026-01-24.json \
+	--config apps/eval/cloudflare-ai-gateway.benchmark.example.json \
+	--results-dir apps/eval/evaluation-results
+```
+
+The `cloudflare_ai_gateway` adapter accepts either
+`"gateway":{"selection":"account_default"}` or a named selection with an
+`id`. It uses Cloudflare's fixed account REST endpoint, skips cache, retains log
+metadata without prompt/response payloads, attaches run and invocation ids,
+sets one Gateway attempt, and bounds the request at ten minutes. The application
+retains the response-scoped `cf-aig-log-id`, provider/model identity, and token
+usage. The inference response does not report cost, so billing remains
+`unavailable`; use the log id to reconcile Cloudflare's estimated cost without
+calling it invoice truth.
 
 Each of the four production agents has its own complete adapter configuration:
 provider or adapter, model, optional `temperature`, and the adapter-specific
@@ -99,7 +123,7 @@ be deployed; it is not a deterministic test or a provider-default quality gate.
 
 The command incrementally retains every Evaluation Trial and Step Invocation in
 a versioned Benchmark Run. One ordered application owner allocates invocation
-ordinals and applies every version 7 transition, retaining each invocation and
+ordinals and applies every current transition, retaining each invocation and
 its pending runtime-evidence record before provider transport. The two
 concurrently dispatched chains therefore form one truthful interleaved history,
 and the artifact store's atomic full-file replacement never races. Each writer
@@ -110,10 +134,13 @@ Validation, persistence, or an unknown harness rejection prevents terminal
 retained completion, leaving the last strict running artifact inspectable
 through the benchmark browse routes.
 
-The current version 7 artifact retains every exact per-agent configuration,
-schema-valid copyedit diagnostic, and one lifecycle-matched normalized runtime
-record per invocation; versions 1–6 keep their frozen historical
-semantics. Its four subject outcomes are `completed`,
+Version 7 remains current for LM Studio and the legacy hosted adapter. A
+configuration that selects `cloudflare_ai_gateway` emits version 8, adding one
+lifecycle-matched Gateway-request provenance record per invocation while
+preserving version 7's runtime-evidence and execution invariants. Versions 1–7
+keep their historical meanings. Both current paths retain every exact per-agent
+configuration, schema-valid copyedit diagnostic, and one lifecycle-matched
+normalized runtime record per invocation. Their four subject outcomes are `completed`,
 `parse_rejected`, `contract_rejected`, and `infrastructure_incomplete`, separate
 from whether the harness retained trustworthy evidence. Malformed JSON or
 strict schema mismatch is the only terminal model-output failure;

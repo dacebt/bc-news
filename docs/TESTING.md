@@ -45,7 +45,7 @@ retained model-evaluation attempt.
 roster serially. Within each Evaluation Trial, the main-story and announcements
 writer-to-copyeditor chains dispatch concurrently, with each writer preceding
 its own copyeditor. One ordered application owner allocates invocations and
-applies every retained version 7 transition, retaining each invocation and its
+applies every retained current transition, retaining each invocation and its
 pending runtime-evidence record before provider transport. This produces one
 truthful interleaved history while the artifact store's atomic full-file
 replacement never races. Its strict Benchmark
@@ -59,26 +59,30 @@ judge, score, or acceptance verdict. Eligible transport failures receive only
 the declared bounded retries, with each attempt retained and linked. Provider
 exhaustion or schema rejection closes its dependent track without suppressing
 the independent editorial track or later declared trials. Both tracks quiesce
-before terminal aggregation; interruption leaves a strict running version 7
+before terminal aggregation; interruption leaves a strict running version 7 or
+Gateway-only version 8
 artifact browseable through `benchmark list`, `benchmark show`, `benchmark
 summary`, and `benchmark compare`. Concurrent dispatch proves harness
 scheduling, not parallel processing inside a selected model runtime. Comparison
 separates fixture, configuration, and provenance context from behavior and
 reports no score, judge result, recommendation, or acceptance decision.
 
-Current Benchmark Run version 7 retains every exact per-agent configuration,
-schema-valid copyedit diagnostic, and a lifecycle-matched runtime-evidence
-record for every invocation. Each role independently
+Benchmark Run version 7 retains existing live configurations. A
+`cloudflare_ai_gateway` configuration emits version 8 and additionally requires
+one lifecycle-matched Gateway-request record for every invocation, including
+the response-scoped log id and declared cache/logging/retry/timeout policy on
+success. Versions 1–7 retain their historical meanings. Both current paths
+retain every exact per-agent configuration, schema-valid copyedit diagnostic,
+and a lifecycle-matched runtime-evidence record for every invocation. Each role independently
 chooses a provider, model, and optional temperature; omission includes that
 role's provider default as a candidate. Temperature is the only decoding
 control admitted or sent. Model evaluation compares these candidate
 configurations to select production settings; it is not a deterministic test or
-a provider-default quality gate. Version 7 preserves version 6's four subject
+a provider-default quality gate. Version 8 preserves version 7's four subject
 outcomes: `completed`, `parse_rejected`, `contract_rejected`, and
 `infrastructure_incomplete`. Runtime evidence separates comparable execution
 context from volatile prediction observation and represents every unavailable
-field as an explicit unknown or externally controlled state. Versions 1–6
-remain frozen historical contracts.
+field as an explicit unknown or externally controlled state.
 
 Malformed JSON or strict schema mismatch is the only terminal model-output
 failure. Infrastructure failure is classified separately. Every schema-valid

@@ -141,10 +141,9 @@ provenance is the configured provider id and model provenance is the response
 model.
 
 The provider-facing `ModelCompletion` may also carry normalized runtime
-evidence for evaluation. Published `ModelUsageRecord` remains an explicit
-legacy-field projection of provider, returned model, execution, token usage,
-and billing, so runtime evidence cannot enter Edition or generation-status
-contracts accidentally. The native SDK dependency and the exported application
+evidence for evaluation. `ModelUsageRecord` retains Cloudflare Gateway request
+provenance when present, including the response-scoped log id and explicit
+request policy; runtime evidence still cannot enter Edition accidentally. The native SDK dependency and the exported application
 release constant are pinned exactly to `@lmstudio/sdk` 1.5.0; a test-only
 metadata-resolution proof verifies the installed package without making
 production code traverse package internals.
@@ -153,7 +152,8 @@ production code traverse package internals.
 configuration per production agent: non-secret adapter identity, requested
 model, optional temperature, and adapter-specific reasoning or billing
 declarations. `LMSTUDIO_BASE_URL`,
-`HOSTED_MODEL_BASE_URL`, and `HOSTED_MODEL_API_KEY` are environment-only, and a
+`HOSTED_MODEL_BASE_URL`, `HOSTED_MODEL_API_KEY`, `CLOUDFLARE_ACCOUNT_ID`, and
+`CLOUDFLARE_API_TOKEN` are environment-only, and a
 base URL containing credentials rejects. Native LM Studio timeout, model
 availability, SDK, and transport failures are retryable by default. Hosted
 timeout, network/body-read failure, and HTTP 408/409/425/429/5xx are retryable
@@ -163,6 +163,18 @@ rejection, ordinary hosted 4xx, invalid hosted JSON, and impossible cost are
 deterministic. Errors
 and retained evidence never contain authorization values, prompts, raw
 response bodies, or response-validation detail that could echo payloads.
+
+`cloudflare_ai_gateway` uses the official account REST Chat Completions endpoint
+in both the Worker and Node evaluation runtime. The Worker binding is not used:
+its current per-request contract lacks payload suppression, attempt count, and
+timeout controls, while its log id names the most recent binding request rather
+than the specific response. The REST adapter fixes the Cloudflare host, derives
+provider identity from `author/model` (or `workers_ai` from `@cf/author/model`),
+sets cache bypass, metadata-only logging, one Gateway attempt, and a ten-minute
+timeout, and requires run/invocation correlation before transport. Unified
+Billing owns third-party keys. Gateway-estimated cost is absent from the
+inference response, so the completion records billing as unavailable and
+retains `cf-aig-log-id` for separately authorized reconciliation.
 
 The production workflow has two editorial products and four model steps. The
 main-story writer receives prepared evidence and owns `title`, `subtitle`, and
@@ -262,6 +274,12 @@ This is application scheduling, not a promise that an underlying model runtime
 processes the requests in parallel. The eval application owns this artifact
 boundary directly, adding no third domain port and changing neither provider
 adapters nor production Workflow scheduling.
+
+Existing live configurations continue to emit Benchmark Run version 7.
+Configurations containing `cloudflare_ai_gateway` emit version 8, whose
+additional Gateway-request roster is allocated and resolved atomically beside
+the invocation and runtime-evidence rosters. Versions 1–7 keep their historical
+schemas and meanings.
 
 The evaluation reference corpus is selected only through `corpus show
 --corpus <manifest-path>`. Its current version 2 manifest owns positional

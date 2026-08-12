@@ -22,6 +22,7 @@ import {
 	type EditorialDiagnostic,
 	type ModelUsageRecord,
 	type PreparedEvidence,
+	type ProductionModelStep,
 } from "@bc-news/generation-core";
 import { resolveGenerationPorts } from "./config";
 import { publishEdition } from "./edition-store";
@@ -90,6 +91,11 @@ export class GenerationRun extends WorkflowEntrypoint<Env, GenerationRunParams> 
 			);
 		}
 		const params = paramsResult.data;
+		const runId = generationRunInstanceId(params);
+		const correlation = (productionStep: ProductionModelStep) => ({
+			run_id: runId,
+			invocation_id: `${runId}-${productionStep}`,
+		});
 		let failureStep: GenerationRunFailure["step"] = "configure-generation-run";
 		let completedSteps: GenerationStep[] = [];
 		let modelUsage: ModelUsageRecord[] = [];
@@ -148,6 +154,7 @@ export class GenerationRun extends WorkflowEntrypoint<Env, GenerationRunParams> 
 						productionStep: "main_story_write",
 						system: WRITER_SYSTEM_CONSTRAINTS,
 						user: buildMainStoryWriterPrompt(preparedEvidence),
+						correlation: correlation("main_story_write"),
 					});
 					return { product: parseMainStoryWriterOutput(completion.text), completion };
 				}),
@@ -170,6 +177,7 @@ export class GenerationRun extends WorkflowEntrypoint<Env, GenerationRunParams> 
 						productionStep: "main_story_copyedit",
 						system: COPYEDIT_SYSTEM_CONSTRAINTS,
 						user: buildMainStoryCopyeditPrompt(mainStoryDraft.product),
+						correlation: correlation("main_story_copyedit"),
 					});
 					return {
 						...parseMainStoryCopyeditOutputWithDiagnostics(
@@ -203,6 +211,7 @@ export class GenerationRun extends WorkflowEntrypoint<Env, GenerationRunParams> 
 						productionStep: "announcements_write",
 						system: WRITER_SYSTEM_CONSTRAINTS,
 						user: buildAnnouncementsWriterPrompt(preparedEvidence),
+						correlation: correlation("announcements_write"),
 					});
 					return { product: parseAnnouncementsWriterOutput(completion.text), completion };
 				}),
@@ -226,6 +235,7 @@ export class GenerationRun extends WorkflowEntrypoint<Env, GenerationRunParams> 
 						productionStep: "announcements_copyedit",
 						system: COPYEDIT_SYSTEM_CONSTRAINTS,
 						user: buildAnnouncementsCopyeditPrompt(identifiedAnnouncements),
+						correlation: correlation("announcements_copyedit"),
 					});
 					return {
 						...parseAnnouncementsCopyeditOutputWithDiagnostics(

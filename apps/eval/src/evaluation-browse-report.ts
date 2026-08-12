@@ -10,7 +10,7 @@ function increment(counts: Record<string, number>, key: string): void {
 }
 
 function diagnosticProjection(version: BenchmarkRun["version"], findings: TrackFindings) {
-	return version === 5 || version === 6 || version === 7 ? {
+	return version === 5 || version === 6 || version === 7 || version === 8 ? {
 		diagnostic_count: findings.length,
 		diagnostics: findings,
 	} : {};
@@ -51,7 +51,7 @@ export function summarizeBenchmarkRun(run: BenchmarkRun) {
 			increment(trackOutcomes, track.subject_outcome ?? "pending");
 			for (const finding of track.findings) {
 				increment(findingKinds, finding.kind);
-				if (run.version === 5 || run.version === 6 || run.version === 7) increment(diagnosticKinds, finding.kind);
+				if (run.version === 5 || run.version === 6 || run.version === 7 || run.version === 8) increment(diagnosticKinds, finding.kind);
 			}
 		}
 		for (const invocation of trial.invocations) {
@@ -117,7 +117,8 @@ export function summarizeBenchmarkRun(run: BenchmarkRun) {
 		invocations: run.trials.flatMap((trial, index) => trial.invocations.map(
 			(invocation) => invocationEvidence(invocation, index + 1),
 		)),
-		runtime_evidence: run.version === 7 ? run.runtime_evidence : [],
+		runtime_evidence: run.version === 7 || run.version === 8 ? run.runtime_evidence : [],
+		gateway_requests: run.version === 8 ? run.gateway_requests : [],
 	};
 }
 

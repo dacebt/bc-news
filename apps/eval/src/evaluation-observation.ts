@@ -7,13 +7,16 @@ export interface BenchmarkContextProjection {
 	readonly declaration: BenchmarkRun["declaration"];
 	readonly provenance: BenchmarkRun["provenance"];
 	readonly runtime_execution_contexts: readonly unknown[];
+	readonly gateway_request_contexts: readonly unknown[];
 }
 
 function invocationOrdinalById(run: BenchmarkRun, trialIndex: number): ReadonlyMap<string, number> {
 	return new Map(run.trials[trialIndex]?.invocations.map(({ id }, index) => [id, index + 1]));
 }
 
-function runtimeEvidenceOrdinal(run: Extract<BenchmarkRun, { version: 7 }>, record: Extract<BenchmarkRun, { version: 7 }>["runtime_evidence"][number]) {
+type RuntimeEvidenceRun = Extract<BenchmarkRun, { version: 7 }> | Extract<BenchmarkRun, { version: 8 }>;
+
+function runtimeEvidenceOrdinal(run: RuntimeEvidenceRun, record: RuntimeEvidenceRun["runtime_evidence"][number]) {
 	return {
 		trial_roster_ordinal: run.trial_roster.findIndex(({ trial_id }) => trial_id === record.trial_id) + 1,
 		configuration_ordinal: run.declaration.configurations.findIndex(({ identity }) => identity === record.config_identity) + 1,
@@ -30,10 +33,24 @@ export function projectBenchmarkContext(run: BenchmarkRun): BenchmarkContextProj
 		prepared_evidence: run.prepared_evidence,
 		declaration: run.declaration,
 		provenance: run.provenance,
-		runtime_execution_contexts: run.version === 7
+		runtime_execution_contexts: run.version === 7 || run.version === 8
 			? run.runtime_evidence.map((record) => ({
 				...runtimeEvidenceOrdinal(run, record),
 				execution_context: record.state === "captured" ? record.evidence.execution_context : null,
+			}))
+			: [],
+		gateway_request_contexts: run.version === 8
+			? run.gateway_requests.map((record) => ({
+				trial_roster_ordinal: run.trial_roster.findIndex(({ trial_id }) => trial_id === record.trial_id) + 1,
+				configuration_ordinal: run.declaration.configurations.findIndex(({ identity }) => identity === record.config_identity) + 1,
+				production_step: record.production_step,
+				invocation_ordinal: record.ordinal,
+				...(record.state === "captured" ? {
+					account_id: record.provenance.account_id,
+					gateway: record.provenance.gateway,
+					requested_model: record.provenance.requested_model,
+					policy: record.provenance.policy,
+				} : {}),
 			}))
 			: [],
 	};
@@ -44,12 +61,23 @@ export function projectBenchmarkBehavior(run: BenchmarkRun) {
 		lifecycle: run.lifecycle,
 		harness_outcome: run.harness_outcome,
 		outcome_counts: run.outcome_counts,
-		runtime_prediction_observations: run.version === 7
+		runtime_prediction_observations: run.version === 7 || run.version === 8
 			? run.runtime_evidence.map((record) => ({
 				...runtimeEvidenceOrdinal(run, record),
 				state: record.state,
 				...(record.state === "unavailable" ? { reason: record.reason } : {}),
 				...(record.state === "captured" ? { prediction_observation: record.evidence.prediction_observation } : {}),
+			}))
+			: [],
+		gateway_request_observations: run.version === 8
+			? run.gateway_requests.map((record) => ({
+				invocation_id: record.invocation_id,
+				state: record.state,
+				...(record.state === "unavailable" ? { reason: record.reason } : {}),
+				...(record.state === "captured" ? {
+					gateway_log_id: record.provenance.gateway_log_id,
+					correlation: record.provenance.correlation,
+				} : {}),
 			}))
 			: [],
 		trials: run.trials.map((trial, trialIndex) => {

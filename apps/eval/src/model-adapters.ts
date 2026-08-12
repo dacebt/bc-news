@@ -2,12 +2,15 @@ import { z } from "zod";
 import type { ModelProviderPort, ProductionModelStep } from "@bc-news/generation-core";
 import { recordedModelProvider } from "@bc-news/fixtures";
 import {
+	CloudflareAiGatewayAdapterConfigSchema,
+	CloudflareAiGatewayDeterministicError,
 	HostedModelAdapterConfigSchema,
 	LM_STUDIO_PRODUCTION_STEP_OUTPUT_CONTRACTS,
 	LmStudioAdapterConfigSchema,
 	LmStudioDeterministicError,
 	OpenAiCompatibleDeterministicError,
 	createLmStudioModelProvider,
+	createCloudflareAiGatewayModelProvider,
 	createOpenAiCompatibleModelProvider,
 } from "@bc-news/model-adapters";
 
@@ -15,6 +18,7 @@ export const ModelAdapterConfigSchema = z.discriminatedUnion("adapter", [
 	z.strictObject({ adapter: z.literal("recorded") }),
 	LmStudioAdapterConfigSchema,
 	HostedModelAdapterConfigSchema,
+	CloudflareAiGatewayAdapterConfigSchema,
 ]);
 export type ModelAdapterConfig = z.infer<typeof ModelAdapterConfigSchema>;
 
@@ -22,6 +26,8 @@ export interface ModelProviderEnvironment {
 	readonly LMSTUDIO_BASE_URL?: string;
 	readonly HOSTED_MODEL_BASE_URL?: string;
 	readonly HOSTED_MODEL_API_KEY?: string;
+	readonly CLOUDFLARE_ACCOUNT_ID?: string;
+	readonly CLOUDFLARE_API_TOKEN?: string;
 }
 
 export function resolveModelProvider(
@@ -65,6 +71,23 @@ export function resolveModelProvider(
 				requestedModel: config.model,
 				...(config.temperature === undefined ? {} : { temperature: config.temperature }),
 				billing: config.billing,
+			});
+		}
+		case "cloudflare_ai_gateway": {
+			const accountId = environment.CLOUDFLARE_ACCOUNT_ID;
+			const apiToken = environment.CLOUDFLARE_API_TOKEN;
+			if (accountId === undefined || accountId === "" || apiToken === undefined || apiToken === "") {
+				throw new CloudflareAiGatewayDeterministicError(
+					"cloudflare_ai_gateway_invalid_config",
+					`CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN are required for ${productionStep}`,
+				);
+			}
+			return createCloudflareAiGatewayModelProvider({
+				accountId,
+				apiToken,
+				gateway: config.gateway,
+				requestedModel: config.model,
+				...(config.temperature === undefined ? {} : { temperature: config.temperature }),
 			});
 		}
 	}

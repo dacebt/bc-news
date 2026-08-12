@@ -11,6 +11,7 @@ import { V4BenchmarkRunSchema } from "./evaluation-artifact-v4";
 import { V5BenchmarkRunSchema } from "./evaluation-artifact-v5";
 import { V6BenchmarkRunSchema } from "./evaluation-artifact-v6";
 import { V7BenchmarkRunSchema } from "./evaluation-artifact-v7";
+import { V8BenchmarkRunSchema } from "./evaluation-artifact-v8";
 
 export const BenchmarkRunSchema = z.discriminatedUnion("version", [
 	V1BenchmarkRunSchema,
@@ -20,6 +21,7 @@ export const BenchmarkRunSchema = z.discriminatedUnion("version", [
 	V5BenchmarkRunSchema,
 	V6BenchmarkRunSchema,
 	V7BenchmarkRunSchema,
+	V8BenchmarkRunSchema,
 ]);
 export type BenchmarkRun = z.infer<typeof BenchmarkRunSchema>;
 export { V2BenchmarkRunSchema, type V2BenchmarkRun } from "./evaluation-artifact-v2";
@@ -37,6 +39,15 @@ export {
 	type V7BenchmarkRun,
 	type V7EvaluationTrial,
 } from "./evaluation-artifact-v7";
+export {
+	GatewayRequestRecordSchema,
+	V8BenchmarkRunSchema,
+	V8EvalConfigSchema,
+	V8ModelAdapterConfigSchema,
+	type GatewayRequestRecord,
+	type V8BenchmarkRun,
+	type V8EvaluationTrial,
+} from "./evaluation-artifact-v8";
 export { deriveEvaluationTrialOutcome } from "./evaluation-artifact-outcomes";
 export {
 	EvaluationCodeProvenanceSchema,

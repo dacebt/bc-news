@@ -72,7 +72,7 @@ test("normalizes invalid external observations without nulls, non-finite numbers
 	expect(RuntimeNonnegativeIntegerObservationSchema.safeParse({ state: "externally_controlled", reason: "not_applicable" }).success).toBe(false);
 });
 
-test("keeps published model usage as the exact legacy-field projection", () => {
+test("keeps runtime evidence out of model usage while preserving request provenance", () => {
 	const record = modelUsageRecord("main_story_write", {
 		text: "completion",
 		provider: "provider",
@@ -80,9 +80,19 @@ test("keeps published model usage as the exact legacy-field projection", () => {
 		execution: "hosted_inference",
 		token_usage: { measurement: "reported", input_tokens: 1, output_tokens: 2, total_tokens: 3 },
 		external_billing: { classification: "unavailable", reason: "provider_did_not_report_cost" },
+		request_provenance: {
+			transport: "cloudflare_ai_gateway_rest",
+			account_id: "account-id",
+			gateway: { selection: "account_default" },
+			gateway_log_id: "gateway-log-id",
+			requested_model: "openai/model",
+			correlation: { run_id: "run-id", invocation_id: "invocation-id" },
+			policy: { cache: "bypass", log_metadata: true, log_payload: false, max_attempts: 1, request_timeout_ms: 600_000 },
+		},
 		runtime_evidence: ModelRuntimeEvidenceSchema.parse(runtimeEvidenceCandidate(9)),
 	});
 	expect(record).not.toHaveProperty("runtime_evidence");
+	expect(record.request_provenance?.gateway_log_id).toBe("gateway-log-id");
 	expect(ModelUsageRecordSchema.parse(record)).toEqual(record);
 });
 

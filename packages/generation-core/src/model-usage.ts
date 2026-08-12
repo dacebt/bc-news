@@ -47,6 +47,32 @@ export const ExternalBillingSchema = z.discriminatedUnion("classification", [
 	}),
 ]);
 
+export const ModelRequestCorrelationSchema = z.strictObject({
+	run_id: z.string().trim().min(1),
+	invocation_id: z.string().trim().min(1),
+});
+
+export const ModelRequestProvenanceSchema = z.discriminatedUnion("transport", [
+	z.strictObject({
+		transport: z.literal("cloudflare_ai_gateway_rest"),
+		account_id: z.string().trim().min(1),
+		gateway: z.union([
+			z.strictObject({ selection: z.literal("named"), id: z.string().trim().min(1) }),
+			z.strictObject({ selection: z.literal("account_default") }),
+		]),
+		gateway_log_id: z.string().trim().min(1),
+		requested_model: z.string().trim().min(1),
+		correlation: ModelRequestCorrelationSchema,
+		policy: z.strictObject({
+			cache: z.literal("bypass"),
+			log_metadata: z.literal(true),
+			log_payload: z.literal(false),
+			max_attempts: z.literal(1),
+			request_timeout_ms: z.number().int().positive(),
+		}),
+	}),
+]);
+
 export const ModelUsageRecordSchema = z.strictObject({
 	production_step: ProductionModelStepSchema,
 	provider: z.string().trim().min(1),
@@ -54,6 +80,7 @@ export const ModelUsageRecordSchema = z.strictObject({
 	execution: z.enum(["recorded_replay", "local_inference", "hosted_inference"]),
 	token_usage: TokenUsageSchema,
 	external_billing: ExternalBillingSchema,
+	request_provenance: ModelRequestProvenanceSchema.optional(),
 });
 
 export const ProductionModelUsageRosterSchema = z
@@ -82,5 +109,6 @@ export function modelUsageRecord(
 		execution: completion.execution,
 		token_usage: completion.token_usage,
 		external_billing: completion.external_billing,
+		...(completion.request_provenance === undefined ? {} : { request_provenance: completion.request_provenance }),
 	};
 }
