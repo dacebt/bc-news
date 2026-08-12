@@ -13,6 +13,7 @@ import {
 import {
 	CloudflareAiGatewayDeterministicError,
 	CloudflareAiGatewayRetryableError,
+	type CloudflareAiGatewayContractIssue,
 	type CloudflareAiGatewayContractFailureDetails,
 } from "./cloudflare-ai-gateway-errors";
 
@@ -23,49 +24,48 @@ const UsageSchema = z.looseObject({
 	prompt_tokens: z.int().nonnegative(),
 	completion_tokens: z.int().nonnegative(),
 	total_tokens: z.int().nonnegative(),
-	prompt_tokens_details: z.looseObject({
-		cached_tokens: z.int().nonnegative().optional(),
-		audio_tokens: z.int().nonnegative().optional(),
-	}).optional(),
-	completion_tokens_details: z.looseObject({
-		reasoning_tokens: z.int().nonnegative().optional(),
-		audio_tokens: z.int().nonnegative().optional(),
-		accepted_prediction_tokens: z.int().nonnegative().optional(),
-		rejected_prediction_tokens: z.int().nonnegative().optional(),
-	}).optional(),
 }).refine((usage) => usage.total_tokens === usage.prompt_tokens + usage.completion_tokens);
 
-const CompletionSchema = z.strictObject({
+const ChoiceSchema = z.looseObject({
+	message: z.looseObject({
+		content: NonBlankExactStringSchema,
+	}),
+	finish_reason: z.string().nullable().optional(),
+});
+
+const CompletionSchema = z.looseObject({
 	id: NonBlankExactStringSchema.optional(),
-	object: z.literal("chat.completion").optional(),
-	created: z.int().nonnegative().optional(),
 	model: NonBlankExactStringSchema,
-	choices: z.tuple([z.strictObject({
-		index: z.int().nonnegative().optional(),
-		message: z.looseObject({
-			role: z.literal("assistant").optional(),
-			content: NonBlankExactStringSchema,
-			refusal: z.string().nullable().optional(),
-			annotations: z.array(z.unknown()).optional(),
-		}),
-		finish_reason: z.string().nullable().optional(),
-		logprobs: z.null().optional(),
-	})]),
+	choices: z.tuple([ChoiceSchema]).rest(z.unknown()),
 	usage: UsageSchema,
 	service_tier: z.string().nullable().optional(),
 	system_fingerprint: z.string().nullable().optional(),
-	gatewayMetadata: z.strictObject({
-		keySource: NonBlankExactStringSchema,
-	}).optional(),
 });
 
-function completionContractFailureDetails(error: z.ZodError): CloudflareAiGatewayContractFailureDetails {
+function receivedType(value: unknown): NonNullable<CloudflareAiGatewayContractIssue["received_type"]> {
+	if (value === null) return "null";
+	if (Array.isArray(value)) return "array";
+	const type = typeof value;
+	return type === "boolean" || type === "number" || type === "object" || type === "string" ? type : "undefined";
+}
+
+function valueAtPath(candidate: unknown, path: readonly PropertyKey[]): unknown {
+	let value = candidate;
+	for (const segment of path) {
+		if (typeof segment === "symbol" || value === null || typeof value !== "object") return undefined;
+		value = (value as Record<PropertyKey, unknown>)[segment];
+	}
+	return value;
+}
+
+function completionContractFailureDetails(candidate: unknown, error: z.ZodError): CloudflareAiGatewayContractFailureDetails {
 	return {
 		contract: "cloudflare_ai_gateway_chat_completion_response",
 		issues: error.issues.map((issue) => ({
 			path: issue.path.map((segment) => typeof segment === "symbol" ? segment.toString() : segment),
 			code: issue.code,
 			...("expected" in issue && typeof issue.expected === "string" ? { expected: issue.expected } : {}),
+			received_type: receivedType(valueAtPath(candidate, issue.path)),
 			...("keys" in issue && Array.isArray(issue.keys) ? { unexpected_keys: issue.keys.filter((key): key is string => typeof key === "string") } : {}),
 		})),
 	};
@@ -284,7 +284,7 @@ export function createCloudflareAiGatewayModelProvider(
 				throw new CloudflareAiGatewayDeterministicError(
 					"cloudflare_ai_gateway_response_contract_rejected",
 					"Cloudflare AI Gateway completion response rejected by the strict contract",
-					{ details: completionContractFailureDetails(parsed.error) },
+					{ details: completionContractFailureDetails(candidate, parsed.error) },
 				);
 			}
 			const usage = parsed.data.usage;

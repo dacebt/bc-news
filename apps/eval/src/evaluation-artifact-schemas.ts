@@ -69,6 +69,7 @@ export const TransportFailureDetailsSchema = z.strictObject({
 		path: z.array(z.union([z.string(), z.number().int().nonnegative()])),
 		code: z.string().min(1),
 		expected: z.string().min(1).optional(),
+		received_type: z.enum(["array", "boolean", "null", "number", "object", "string", "undefined"]).optional(),
 		unexpected_keys: z.array(z.string()).min(1).optional(),
 	})).min(1),
 });

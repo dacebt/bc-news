@@ -16,7 +16,7 @@ export function formatBenchmarkRunReport(benchmark: BenchmarkRun, path: string):
 		const summary = `Failure trial=${String(trialIndex + 1)} invocation=${String(invocation.ordinal)} step=${invocation.production_step} code=${invocation.failure.code}: ${invocation.failure.message}`;
 		const issues = invocation.failure.details?.issues.map((issue) => {
 			const issuePath = issue.path.reduce<string>((current, segment) => typeof segment === "number" ? `${current}[${String(segment)}]` : `${current}.${segment}`, "$");
-			return `Contract issue contract=${invocation.failure.details!.contract} path=${issuePath} code=${issue.code}${issue.expected === undefined ? "" : ` expected=${issue.expected}`}${issue.unexpected_keys === undefined ? "" : ` unexpected_keys=${issue.unexpected_keys.join(",")}`}`;
+			return `Contract issue contract=${invocation.failure.details!.contract} path=${issuePath} code=${issue.code}${issue.expected === undefined ? "" : ` expected=${issue.expected}`}${issue.received_type === undefined ? "" : ` received_type=${issue.received_type}`}${issue.unexpected_keys === undefined ? "" : ` unexpected_keys=${issue.unexpected_keys.join(",")}`}`;
 		}) ?? [];
 		return [summary, ...issues];
 	}));

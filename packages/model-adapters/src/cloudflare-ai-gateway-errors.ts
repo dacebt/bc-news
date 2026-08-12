@@ -15,6 +15,7 @@ export interface CloudflareAiGatewayContractIssue {
 	readonly path: readonly (string | number)[];
 	readonly code: string;
 	readonly expected?: string;
+	readonly received_type?: "array" | "boolean" | "null" | "number" | "object" | "string" | "undefined";
 	readonly unexpected_keys?: readonly string[];
 }
 

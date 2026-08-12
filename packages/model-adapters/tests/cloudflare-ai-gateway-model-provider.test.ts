@@ -202,16 +202,15 @@ it("reports response-contract issue paths without retaining rejected values", as
 		usage: { prompt_tokens: "sensitive-provider-value", completion_tokens: 1, total_tokens: 2 },
 	}));
 	const failure = await provider().complete(request()).catch((error: unknown) => error);
-	expect(failure).toMatchObject({
-		code: "cloudflare_ai_gateway_response_contract_rejected",
-		details: {
-			contract: "cloudflare_ai_gateway_chat_completion_response",
-			issues: expect.arrayContaining([{
-				path: ["usage", "prompt_tokens"],
-				code: "invalid_type",
-				expected: "number",
-			}]),
-		},
+	expect(failure).toBeInstanceOf(CloudflareAiGatewayDeterministicError);
+	if (!(failure instanceof CloudflareAiGatewayDeterministicError)) throw new Error("Expected deterministic Gateway failure");
+	expect(failure.code).toBe("cloudflare_ai_gateway_response_contract_rejected");
+	expect(failure.details?.contract).toBe("cloudflare_ai_gateway_chat_completion_response");
+	expect(failure.details?.issues).toContainEqual({
+		path: ["usage", "prompt_tokens"],
+		code: "invalid_type",
+		expected: "number",
+		received_type: "string",
 	});
 	expect(JSON.stringify(failure)).not.toContain("sensitive-provider-value");
 });
@@ -238,6 +237,38 @@ it.each([
 	await expect(provider().complete(request())).resolves.toMatchObject({
 		text: "completion",
 		token_usage: { measurement: "reported", input_tokens: 1, output_tokens: 1, total_tokens: 2 },
+	});
+});
+
+it("accepts the Workers AI GPT-OSS Chat Completions envelope", async () => {
+	vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({
+		id: "chatcmpl-gpt-oss",
+		object: "chat.completion",
+		created: 1,
+		model: "@cf/openai/gpt-oss-120b",
+		choices: [{
+			index: 0,
+			message: { role: "assistant", content: "completion", refusal: null, annotations: null },
+			finish_reason: "stop",
+			logprobs: null,
+			routed_experts: null,
+			stop_reason: 200002,
+			token_ids: [1, 2, 3],
+		}],
+		usage: {
+			prompt_tokens: 10,
+			completion_tokens: 5,
+			total_tokens: 15,
+			prompt_tokens_details: null,
+			completion_tokens_details: { reasoning_tokens: 3 },
+		},
+		provider_extension: { region: "provider-controlled" },
+	}));
+	await expect(provider("@cf/openai/gpt-oss-120b", { selection: "named", id: "default" }).complete(request())).resolves.toMatchObject({
+		text: "completion",
+		provider: "workers_ai",
+		model: "@cf/openai/gpt-oss-120b",
+		token_usage: { measurement: "reported", input_tokens: 10, output_tokens: 5, total_tokens: 15 },
 	});
 });
 

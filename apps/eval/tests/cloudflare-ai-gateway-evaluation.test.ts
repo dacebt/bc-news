@@ -145,14 +145,19 @@ test("retains and reports sanitized Gateway response-contract failure locations"
 		const retained = V8BenchmarkRunSchema.parse(JSON.parse(await readFile(result.path, "utf8")) as unknown);
 		const failures = retained.trials.flatMap(({ invocations }) => invocations.filter((invocation) => invocation.transport === "failed"));
 		expect(failures).toHaveLength(2);
-		expect(failures.map((invocation) => invocation.transport === "failed" ? invocation.failure.details : undefined)).toEqual([
-			expect.objectContaining({ issues: expect.arrayContaining([expect.objectContaining({ path: ["usage", "prompt_tokens"], code: "invalid_type", expected: "number" })]) }),
-			expect.objectContaining({ issues: expect.arrayContaining([expect.objectContaining({ path: ["usage", "prompt_tokens"], code: "invalid_type", expected: "number" })]) }),
-		]);
+		for (const invocation of failures) {
+			if (invocation.transport !== "failed") throw new Error("Expected failed invocation");
+			expect(invocation.failure.details?.issues).toContainEqual({
+				path: ["usage", "prompt_tokens"],
+				code: "invalid_type",
+				expected: "number",
+				received_type: "string",
+			});
+		}
 		const retainedJson = JSON.stringify(retained);
 		expect(retainedJson).not.toContain("sensitive-provider-value");
 		const report = formatBenchmarkRunReport(retained, result.path);
-		expect(report).toContain("path=$.usage.prompt_tokens code=invalid_type expected=number");
+		expect(report).toContain("path=$.usage.prompt_tokens code=invalid_type expected=number received_type=string");
 		expect(report).not.toContain("sensitive-provider-value");
 	} finally {
 		await rm(root, { recursive: true, force: true });

@@ -59,8 +59,9 @@ judge, score, or acceptance verdict. Eligible transport failures receive only
 the declared bounded retries, with each attempt retained and linked. Provider
 exhaustion or schema rejection closes its dependent track without suppressing
 the independent editorial track or later declared trials. Provider
-response-contract rejection retains and prints sanitized schema issue paths and
-codes without retaining rejected values. Both tracks quiesce before terminal
+response-contract rejection retains and prints sanitized schema issue paths,
+codes, expected types, and received structural types without retaining rejected
+values. Both tracks quiesce before terminal
 aggregation; interruption leaves a strict running version 7 or
 Gateway-only version 8
 artifact browseable through `benchmark list`, `benchmark show`, `benchmark
