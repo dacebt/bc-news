@@ -43,6 +43,13 @@ test("current output identities retain semantic hashes but no source-file hashes
 	expect(parsed).not.toHaveProperty("reference_sha256");
 });
 
+test("version 8 output identities require exact Gateway-request evidence", () => {
+	const gatewayIdentity = { ...outputIdentity(), benchmark_run_version: 8, gateway_request_sha256: HASH };
+	expect(OutputIdentitySchema.safeParse(gatewayIdentity).success).toBe(true);
+	expect(OutputIdentitySchema.safeParse({ ...outputIdentity(), benchmark_run_version: 8 }).success).toBe(false);
+	expect(OutputIdentitySchema.safeParse({ ...outputIdentity(), gateway_request_sha256: HASH }).success).toBe(false);
+});
+
 test("current declaration and artifact reject recursive byte ownership fields", () => {
 	const declaration = { version: 2, id: "scorecard-input", corpus: { manifest_path: "packages/fixtures/evaluation-corpus/manifest.json" }, configuration_identity: "config-one", runs: [{ ordinal: 1, corpus_fixture_id: "fixture-one", benchmark_run_id: "benchmark-one", path: "evidence/benchmark-one.json" }], annotations: { path: "evidence/annotations.json", bundle_id: "annotations-one" }, qualitative_reviews: { path: "evidence/reviews.json", bundle_id: "reviews-one" } };
 	expect(EvaluationScorecardDeclarationSchema.safeParse(declaration).success).toBe(true);

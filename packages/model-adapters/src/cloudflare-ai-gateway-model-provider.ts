@@ -45,6 +45,7 @@ const CompletionSchema = z.strictObject({
 			role: z.literal("assistant").optional(),
 			content: NonBlankExactStringSchema,
 			refusal: z.string().nullable().optional(),
+			annotations: z.array(z.unknown()).optional(),
 		}),
 		finish_reason: z.string().nullable().optional(),
 		logprobs: z.null().optional(),
@@ -52,6 +53,9 @@ const CompletionSchema = z.strictObject({
 	usage: UsageSchema,
 	service_tier: z.string().nullable().optional(),
 	system_fingerprint: z.string().nullable().optional(),
+	gatewayMetadata: z.strictObject({
+		keySource: NonBlankExactStringSchema,
+	}).optional(),
 });
 
 const unknownString = { state: "unknown" as const, reason: "not_reported" as const };

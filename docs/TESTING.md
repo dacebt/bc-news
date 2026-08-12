@@ -30,7 +30,7 @@ outcome or silently substitutes for it.
 | Deterministic tests | `pnpm test` | Isolated warranted invariants, reproduced defects, and high-risk state transitions | Test pass or hard test failure; never a retained model attempt |
 | Model evaluation | `benchmark run/list/show/summary/compare` | Strict versioned Benchmark Runs under `apps/eval/evaluation-results` | Retained model subject and harness outcomes with `evaluation:` observations; never a score or acceptance verdict |
 | Evaluation reference corpus | `corpus show --corpus <manifest-path>` and its direct verifier | Commit-addressed ordered synthetic fixtures and separate exact source-witness references | Auditable source truth and objective variation coverage; never a model result, score, or acceptance verdict |
-| Evaluation scorecards | `scorecard build/show` and `verify:evaluation-scorecards` | Commit-addressed V7 runs and corpus sources with Codex annotations and qualitative reviews | Four transparent role-specific measurements plus current/outdated checkout information; never an aggregate score, ranking, recommendation, or acceptance verdict |
+| Evaluation scorecards | `scorecard build/show` and `verify:evaluation-scorecards` | Commit-addressed V7 or Gateway V8 runs and corpus sources with Codex annotations and qualitative reviews | Four transparent role-specific measurements plus current/outdated checkout information; never an aggregate score, ranking, recommendation, or acceptance verdict |
 | Longitudinal evaluation scorecards | `longitudinal build/show` and `verify:evaluation-longitudinal-scorecards` | Exact ordered scorecard audit packs, stable role cohorts, and baseline/subject histories | Four role-specific context, sufficiency, baseline-variation, or potential-drift observations; never a judge or product gate |
 | Fixture and context tooling | `fixture record-responses` and `context benchmark` | Four request-linked recorded responses, or strict context results | Fixture-authoring or context-measurement tooling result; never acceptance or a walk |
 | Recorded-replay acceptance | `acceptance run/list/show/compare` and its direct verifier | Historical Run Files under `apps/eval/results` | `acceptance:` result over controlled replay; never a Benchmark Run outcome |
@@ -115,11 +115,14 @@ target article, angle, wording, score, or verdict. Existing commands do not
 accept `--corpus` and do not silently select a corpus entry.
 
 **Evaluation scorecards** consume, but never alter, complete retained version 7
-Benchmark Runs and the full ordered reference corpus. `scorecard build --input
-<declaration-path> [--results-dir <path>]` requires one exact configuration,
-every corpus fixture in order, every selected trial and invocation attempt,
-exact source-linked Codex annotations for every parse-success output, and a
-separate exact Codex qualitative review for every such output. `scorecard show
+or Gateway version 8 Benchmark Runs and the full ordered reference corpus. A
+version 8 output identity requires the hash of its exact Gateway-request record,
+and identified role context retains the ordered request-record hashes without
+turning response-scoped log ids into stable longitudinal context. `scorecard
+build --input <declaration-path> [--results-dir <path>]` requires one exact
+configuration, every corpus fixture in order, every selected trial and invocation
+attempt, exact source-linked Codex annotations for every parse-success output,
+and a separate exact Codex qualitative review for every such output. `scorecard show
 <scorecard-id> [--results-dir <path>]` resolves the recorded declaration and
 all named evidence with `git show` and recomputes the artifact before reporting
 it. The corpus context uses the commit that last changed the closed corpus

@@ -8,7 +8,7 @@ import { promisify } from "node:util";
 import { PRODUCTION_MODEL_STEPS, type ProductionModelStep } from "@bc-news/generation-core";
 import { runEvalCliApplication } from "./cli";
 import { evaluateBenchmarkCommand } from "./evaluation-benchmark-command";
-import type { V7BenchmarkRun } from "./evaluation-artifact";
+import type { V7BenchmarkRun, V8BenchmarkRun } from "./evaluation-artifact";
 import { canonical } from "./evaluation-artifact-schemas";
 import { loadEvaluationReferenceCorpus, type LoadedEvaluationReferenceCorpusEntry } from "./evaluation-reference-corpus";
 import { evaluationFreshness, evaluationRepositoryHead, readRepositorySource } from "./evaluation-repository-reference";
@@ -33,11 +33,19 @@ function hash(value: string): string {
 	return createHash("sha256").update(value).digest("hex");
 }
 
-function verifierConfiguration(): JsonObject {
+function verifierConfiguration(gateway: boolean): JsonObject {
 	return {
 		configurations: [{ production_steps: Object.fromEntries(PRODUCTION_MODEL_STEPS.map((step) => [step, {
-			adapter: "openai_compatible_hosted", provider: "repository_loopback", model: `scorecard/${step}`,
-			billing: { method: "calculated", input_usd_per_million_tokens: 0, output_usd_per_million_tokens: 0, pricing_reference: "repository scorecard proof" },
+			...(gateway ? {
+				adapter: "cloudflare_ai_gateway",
+				gateway: { selection: "named", id: "controlled-scorecard" },
+				model: `openai/${step}`,
+			} : {
+				adapter: "openai_compatible_hosted",
+				provider: "repository_loopback",
+				model: `scorecard/${step}`,
+				billing: { method: "calculated", input_usd_per_million_tokens: 0, output_usd_per_million_tokens: 0, pricing_reference: "repository scorecard proof" },
+			}),
 		}])) }],
 		repetition_count: 1,
 		transport_retry_limit: 0,
@@ -82,13 +90,13 @@ function controlledOutputs(entry: LoadedEvaluationReferenceCorpusEntry): Record<
 	};
 }
 
-function outputIdentity(run: V7BenchmarkRun, entry: LoadedEvaluationReferenceCorpusEntry, invocation: V7BenchmarkRun["trials"][number]["invocations"][number], manifestId: string): JsonObject {
+function outputIdentity(run: V7BenchmarkRun | V8BenchmarkRun, entry: LoadedEvaluationReferenceCorpusEntry, invocation: V7BenchmarkRun["trials"][number]["invocations"][number], manifestId: string): JsonObject {
 	assertProof(invocation.transport === "succeeded" && invocation.parse.state === "succeeded", "Controlled invocation did not parse successfully");
 	const runtime = run.runtime_evidence.find(({ invocation_id }) => invocation_id === invocation.id);
 	assertProof(runtime?.state === "captured", `Controlled invocation ${invocation.id} lacks runtime evidence`);
 	const trial = run.trials.find(({ id }) => id === runtime.trial_id)!;
-	return {
-		benchmark_run_id: run.id, benchmark_run_version: 7, code_commit_sha: run.provenance.code.commit_sha,
+	const identity = {
+		benchmark_run_id: run.id, benchmark_run_version: run.version, code_commit_sha: run.provenance.code.commit_sha,
 		prepared_evidence_identity_sha256: run.prepared_evidence.identity_sha256, corpus_manifest_id: manifestId,
 		corpus_fixture_id: entry.manifestEntry.id, config_identity: invocation.config_identity,
 		trial_id: trial.id, repetition: trial.repetition, invocation_id: invocation.id,
@@ -97,6 +105,10 @@ function outputIdentity(run: V7BenchmarkRun, entry: LoadedEvaluationReferenceCor
 		parsed_output_sha256: hash(JSON.stringify(canonical(invocation.parse.output))),
 		runtime_evidence_sha256: hash(JSON.stringify(canonical(runtime.evidence))),
 	};
+	if (run.version === 7) return identity;
+	const gatewayRequest = run.gateway_requests.find(({ invocation_id }) => invocation_id === invocation.id);
+	assertProof(gatewayRequest !== undefined, `Controlled invocation ${invocation.id} lacks Gateway-request evidence`);
+	return { ...identity, gateway_request_sha256: hash(JSON.stringify(canonical(gatewayRequest))) };
 }
 
 function span(pointer: string, excerpt: string): JsonObject { return { json_pointer: pointer, start_utf16: 0, end_utf16: excerpt.length, excerpt }; }
@@ -138,20 +150,47 @@ export async function initializeControlledEvaluationRepository(root: string, cor
 	return { manifestPath: join(corpusDestination, "manifest.json"), codeCommit: await evaluationRepositoryHead(root) };
 }
 
-export async function buildControlledEvaluationScorecardInput(root: string, manifestPath: string, options: { directory?: string; codeCommit?: string } = {}): Promise<{ declarationPath: string; createdAt: string; sourceCommit: string }> {
+export async function buildControlledEvaluationScorecardInput(root: string, manifestPath: string, options: { directory?: string; codeCommit?: string; gateway?: boolean } = {}): Promise<{ declarationPath: string; createdAt: string; sourceCommit: string }> {
 	const directory = join(root, options.directory ?? "evidence/scorecard");
 	const corpus = await loadEvaluationReferenceCorpus(manifestPath, root);
 	const resultsDirectory = join(directory, "benchmark-results"); const configPath = join(directory, "benchmark.config.json");
-	await mkdir(resultsDirectory, { recursive: true }); await writeFile(configPath, json(verifierConfiguration()), "utf8");
+	await mkdir(resultsDirectory, { recursive: true }); await writeFile(configPath, json(verifierConfiguration(options.gateway === true)), "utf8");
 	const codeCommit = options.codeCommit ?? await evaluationRepositoryHead(root);
-	const runs: Array<{ run: V7BenchmarkRun; path: string; entry: LoadedEvaluationReferenceCorpusEntry }> = [];
-	for (const entry of corpus.entries) {
-		const server = await startRecordLoopbackServer(Object.fromEntries(PRODUCTION_MODEL_STEPS.map((step) => [`scorecard/${step}`, controlledOutputs(entry)[step]])));
-		try {
-			const result = await evaluateBenchmarkCommand({ fixturePath: join(root, entry.evidencePath), configPath, resultsDirectory, environment: { HOSTED_MODEL_BASE_URL: server.baseUrl, HOSTED_MODEL_API_KEY: "record-loopback-proof" }, sourceProvenance: { repository: "bc-news", commit_sha: codeCommit, dirty: false } });
-			assertProof(result.benchmark.version === 7, "Controlled scorecard benchmark must remain V7");
-			runs.push({ run: result.benchmark, path: result.path, entry });
-		} finally { await server.close(); }
+	const runs: Array<{ run: V7BenchmarkRun | V8BenchmarkRun; path: string; entry: LoadedEvaluationReferenceCorpusEntry }> = [];
+	let gatewayOrdinal = 0;
+	const originalFetch = globalThis.fetch;
+	try {
+		for (const entry of corpus.entries) {
+			const retainedOutputs = controlledOutputs(entry);
+			if (options.gateway === true) {
+				globalThis.fetch = (_input, init) => {
+					const body = typeof init?.body === "string" ? JSON.parse(init.body) as { model?: unknown } : undefined;
+					const step = typeof body?.model === "string" ? body.model.split("/")[1] as ProductionModelStep : undefined;
+					assertProof(step !== undefined && PRODUCTION_MODEL_STEPS.includes(step), "Controlled Gateway request omitted its production step");
+					gatewayOrdinal += 1;
+					return Promise.resolve(new Response(JSON.stringify({
+						id: `controlled-provider-response-${String(gatewayOrdinal)}`,
+						object: "chat.completion",
+						model: body!.model,
+						choices: [{ index: 0, message: { role: "assistant", content: retainedOutputs[step], refusal: null, annotations: [] }, finish_reason: "stop", logprobs: null }],
+						usage: { prompt_tokens: 100, completion_tokens: 25, total_tokens: 125 },
+						gatewayMetadata: { keySource: "Unified" },
+					}), { headers: { "content-type": "application/json", "cf-aig-log-id": `controlled-gateway-log-${String(gatewayOrdinal)}` } }));
+				};
+				const result = await evaluateBenchmarkCommand({ fixturePath: join(root, entry.evidencePath), configPath, resultsDirectory, environment: { CLOUDFLARE_ACCOUNT_ID: "controlled-account", CLOUDFLARE_API_TOKEN: "controlled-token" }, sourceProvenance: { repository: "bc-news", commit_sha: codeCommit, dirty: false } });
+				assertProof(result.benchmark.version === 8, "Controlled Gateway scorecard benchmark must be V8");
+				runs.push({ run: result.benchmark, path: result.path, entry });
+				continue;
+			}
+			const server = await startRecordLoopbackServer(Object.fromEntries(PRODUCTION_MODEL_STEPS.map((step) => [`scorecard/${step}`, retainedOutputs[step]])));
+			try {
+				const result = await evaluateBenchmarkCommand({ fixturePath: join(root, entry.evidencePath), configPath, resultsDirectory, environment: { HOSTED_MODEL_BASE_URL: server.baseUrl, HOSTED_MODEL_API_KEY: "record-loopback-proof" }, sourceProvenance: { repository: "bc-news", commit_sha: codeCommit, dirty: false } });
+				assertProof(result.benchmark.version === 7, "Controlled scorecard benchmark must remain V7");
+				runs.push({ run: result.benchmark, path: result.path, entry });
+			} finally { await server.close(); }
+		}
+	} finally {
+		globalThis.fetch = originalFetch;
 	}
 	const latestCompletion = Math.max(...runs.map(({ run }) => Date.parse(run.completed_at!)));
 	const annotatedAt = new Date(latestCompletion + 1).toISOString(); const reviewedAt = new Date(latestCompletion + 2).toISOString(); const createdAt = new Date(latestCompletion + 3).toISOString();
@@ -187,7 +226,7 @@ export async function verifyEvaluationScorecards(temporaryRoot?: string): Promis
 		const corpusSource = resolve(dirname(fileURLToPath(import.meta.url)), "../../../packages/fixtures/evaluation-corpus");
 		const { manifestPath, codeCommit } = await initializeControlledEvaluationRepository(repositoryRoot, corpusSource);
 		await git(repositoryRoot, "checkout", "-b", "evidence");
-		const controlled = await buildControlledEvaluationScorecardInput(repositoryRoot, manifestPath, { codeCommit });
+		const controlled = await buildControlledEvaluationScorecardInput(repositoryRoot, manifestPath, { codeCommit, gateway: true });
 		const input = await loadEvaluationScorecardInput(controlled.declarationPath, repositoryRoot);
 		const artifact = buildEvaluationScorecard(input, { id: "controlled-evaluation-scorecard", createdAt: controlled.createdAt });
 		const serialized = json(artifact);
@@ -195,7 +234,9 @@ export async function verifyEvaluationScorecards(temporaryRoot?: string): Promis
 		assertProof(artifact.version === 2 && artifact.sources.annotations.annotator_kind === "codex" && artifact.scorecards.length === 4, "Current scorecard contract or Codex provenance is missing");
 		assertProof(artifact.scorecards.every((role, index) => role.production_step === PRODUCTION_MODEL_STEPS[index]), "Scorecard role roster or order changed");
 		assertProof(artifact.sources.benchmark_runs.length === 12 && artifact.sources.benchmark_runs.every(({ ordinal }, index) => ordinal === index + 1), "Scorecard source roster or order changed");
+		assertProof(artifact.sources.benchmark_runs.every((source) => "benchmark_run_version" in source && source.benchmark_run_version === 8 && source.gateway_request_sha256s.length === 4), "Gateway scorecard sources omitted exact V8 request provenance");
 		assertProof(artifact.scorecards.every(({ scorecard_context }) => scorecard_context.state === "identified" && JSON.stringify(scorecard_context.projection.corpus_source_reference) === JSON.stringify(input.corpus.sourceReference)), "Scorecard semantic context omitted the corpus source commit and path");
+		assertProof(artifact.scorecards.every(({ scorecard_context }) => scorecard_context.state === "identified" && scorecard_context.projection.gateway_request_hashes?.length === 12), "Gateway scorecard context omitted ordered request provenance hashes");
 		const annotationKeys = new Set(input.annotations.outputs.map(({ output }) => JSON.stringify(output))); const reviewKeys = new Set(input.reviews.reviews.map(({ output }) => JSON.stringify(output)));
 		assertProof(annotationKeys.size === reviewKeys.size && [...annotationKeys].every((key) => reviewKeys.has(key)), "Scorecard annotation and review output linkage changed");
 		for (const role of artifact.scorecards) {

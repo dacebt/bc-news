@@ -36,11 +36,12 @@ function completionResponse(model = "gpt-4.1-mini") {
 		model,
 		choices: [{
 			index: 0,
-			message: { role: "assistant", content: "completion", refusal: null },
+			message: { role: "assistant", content: "completion", refusal: null, annotations: [] },
 			finish_reason: "stop",
 			logprobs: null,
 		}],
 		usage: { prompt_tokens: 100, completion_tokens: 25, total_tokens: 125 },
+		gatewayMetadata: { keySource: "Unified" },
 	}), { headers: { "content-type": "application/json", "cf-aig-log-id": "gateway-log-one" } });
 }
 

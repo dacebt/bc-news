@@ -307,19 +307,22 @@ Evaluation scorecards are a separate eval-owned evidence boundary selected only
 through `scorecard build --input <declaration-path> [--results-dir <path>]` and
 `scorecard show <scorecard-id> [--results-dir <path>]`. A declaration binds one
 exact configuration to the complete ordered reference corpus, every complete
-retained version 7 Benchmark Run for that corpus, exact Codex output
-annotations, and separate Codex qualitative reviews. Version 1 human evidence
-retains its historical schema and is not rewritten. No Benchmark Run, corpus
-entry, production prompt, retry policy, generation path, or historical artifact
-is changed by scorecard construction, and this boundary adds no domain port.
+retained version 7 or Gateway version 8 Benchmark Run for that corpus, exact
+Codex output annotations, and separate Codex qualitative reviews. Version 1
+human evidence retains its historical schema and is not rewritten. No Benchmark
+Run, corpus entry, production prompt, retry policy, generation path, or
+historical artifact is changed by scorecard construction, and this boundary adds
+no domain port.
 
 Each current version 2 scorecard artifact stores one source declaration
 reference `{ repository, commit_sha, path }` plus compact semantic source
 descriptors. Loading reads the declaration and every named child with `git
 show` from the recorded commit and recomputes every output identity, context
 identity, count, rate, 95% Wilson interval, distribution, and qualitative
-summary before accepting the artifact. Reports contain exactly four separate
-production-role sections. Deterministic measurements expose named units,
+summary before accepting the artifact. Version 8 output identities and role
+contexts additionally hash their exact Gateway-request records, while the
+source descriptors retain the complete ordered Gateway-request hash roster.
+Reports contain exactly four separate production-role sections. Deterministic measurements expose named units,
 denominators, sample counts, and unavailable or inapplicable states. Semantic
 grounding, attribution, event coverage, announcement relevance, coherence,
 usefulness, newsworthiness, and voice remain visibly Codex-authored evidence.

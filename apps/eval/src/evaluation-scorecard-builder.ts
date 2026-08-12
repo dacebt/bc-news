@@ -1,9 +1,8 @@
 import { isDeepStrictEqual } from "node:util";
 import { PRODUCTION_MODEL_STEPS, type ModelExecutionContext, type ProductionModelStep } from "@bc-news/generation-core";
 import { canonical, sha256Json } from "./evaluation-artifact-schemas";
-import type { V7BenchmarkRun } from "./evaluation-artifact-v7";
 import { EvaluationScorecardArtifactSchema, EvaluationScorecardError, type EvaluationRoleScorecard, type EvaluationScorecardArtifact, type ScorecardContext } from "./evaluation-scorecard";
-import { validateLoadedEvaluationScorecardInput, type LoadedEvaluationScorecardInput } from "./evaluation-scorecard-input";
+import { validateLoadedEvaluationScorecardInput, type LoadedEvaluationScorecardInput, type ScorecardBenchmarkRun } from "./evaluation-scorecard-input";
 
 const RATE_DEFINITIONS = [
 	["schema_reliability", "terminal_provider_success_invocation"],
@@ -47,6 +46,14 @@ function contextFor(input: LoadedEvaluationScorecardInput, step: ProductionModel
 		adapter: config.production_steps[step],
 		declared_transport_retry_limit: firstRun.declaration.transport_retry_limit,
 		request_hashes: evidence.flatMap(({ loaded, trial, invocations }) => invocations.map(({ request_sha256 }) => ({ run_id: loaded.run.id, trial_id: trial.id, request_sha256 }))),
+		...(firstRun.version === 8 ? {
+			gateway_request_hashes: evidence.flatMap(({ loaded, trial, invocations }) => invocations.map((invocation) => {
+				if (loaded.run.version !== 8) fail("unsupported_benchmark_version", loaded.run.id, "Scorecard context cannot mix Benchmark Run versions");
+				const gatewayRequest = loaded.run.gateway_requests.find(({ invocation_id }) => invocation_id === invocation.id);
+				if (gatewayRequest === undefined) fail("output_identity_mismatch", loaded.run.id, `Missing Gateway-request evidence for ${invocation.id}`);
+				return { run_id: loaded.run.id, trial_id: trial.id, invocation_id: invocation.id, gateway_request_sha256: sha256Json(canonical(gatewayRequest)) };
+			})),
+		} : {}),
 		execution_context: captured[0]!,
 	};
 	return { state: "identified", identity: `context-${sha256Json(canonical(projection))}`, projection };
@@ -113,7 +120,7 @@ function distribution(metric: typeof DISTRIBUTIONS[number], context: ScorecardCo
 function distributions(input: LoadedEvaluationScorecardInput, step: ProductionModelStep, context: ScorecardContext) {
 	const attempts = roleEvidence(input, step).flatMap(({ loaded, trial, invocations }) => invocations.map((invocation) => ({ loaded, trial, invocation })));
 	const completions = attempts.filter(({ invocation }) => invocation.transport === "succeeded");
-	const captured = completions.map((item) => ({ ...item, runtime: item.loaded.run.runtime_evidence.find(({ invocation_id }) => invocation_id === item.invocation.id) })).filter((item): item is typeof item & { runtime: Extract<V7BenchmarkRun["runtime_evidence"][number], { state: "captured" }> } => item.runtime?.state === "captured");
+	const captured = completions.map((item) => ({ ...item, runtime: item.loaded.run.runtime_evidence.find(({ invocation_id }) => invocation_id === item.invocation.id) })).filter((item): item is typeof item & { runtime: Extract<ScorecardBenchmarkRun["runtime_evidence"][number], { state: "captured" }> } => item.runtime?.state === "captured");
 	const identity = ({ loaded, trial, invocation }: typeof attempts[number]) => ({ run_id: loaded.run.id, trial_id: trial.id, invocation_id: invocation.id });
 	const token = (field: "input_tokens" | "output_tokens" | "total_tokens") => completions.map((item) => ({ identity: identity(item), value: item.invocation.transport === "succeeded" && item.invocation.completion.token_usage.measurement === "reported" ? item.invocation.completion.token_usage[field] : undefined }));
 	const timing = (field: "time_to_first_token_ms" | "total_time_ms") => captured.map((item) => ({ identity: identity(item), value: item.runtime.evidence.prediction_observation[field].state === "observed" ? item.runtime.evidence.prediction_observation[field].value : undefined }));
@@ -151,7 +158,20 @@ export function buildEvaluationScorecard(input: LoadedEvaluationScorecardInput, 
 		configuration: { identity: input.declaration.configuration_identity, exact_config: config }, repetition_count: firstRun.declaration.repetition_count,
 		sources: {
 			corpus_manifest_path: input.declaration.corpus.manifest_path,
-			benchmark_runs: input.runs.map(({ declaration, run }) => ({ ordinal: declaration.ordinal, corpus_fixture_id: declaration.corpus_fixture_id, benchmark_run_id: run.id, path: declaration.path, code_commit_sha: run.provenance.code.commit_sha, prepared_evidence_identity_sha256: run.prepared_evidence.identity_sha256, output_contract_sha256s: run.provenance.output_contracts.map(({ schema_sha256 }) => schema_sha256), transport_retry_limit: run.declaration.transport_retry_limit })),
+			benchmark_runs: input.runs.map(({ declaration, run }) => ({
+				ordinal: declaration.ordinal,
+				corpus_fixture_id: declaration.corpus_fixture_id,
+				benchmark_run_id: run.id,
+				...(run.version === 8 ? {
+					benchmark_run_version: 8 as const,
+					gateway_request_sha256s: run.gateway_requests.map((record) => sha256Json(canonical(record))),
+				} : {}),
+				path: declaration.path,
+				code_commit_sha: run.provenance.code.commit_sha,
+				prepared_evidence_identity_sha256: run.prepared_evidence.identity_sha256,
+				output_contract_sha256s: run.provenance.output_contracts.map(({ schema_sha256 }) => schema_sha256),
+				transport_retry_limit: run.declaration.transport_retry_limit,
+			})),
 			annotations: { path: input.declaration.annotations.path, bundle_id: input.annotations.id, protocol_id: input.annotations.protocol.id, annotator_id: input.annotations.annotator.id, annotator_kind: input.annotations.annotator.kind, annotated_at: input.annotations.annotated_at },
 			qualitative_reviews: { path: input.declaration.qualitative_reviews.path, bundle_id: input.reviews.id, rubric_id: input.reviews.rubric.id, reviewer_id: input.reviews.reviewer.id, reviewer_kind: input.reviews.reviewer.kind, reviewed_at: input.reviews.reviewed_at },
 		},

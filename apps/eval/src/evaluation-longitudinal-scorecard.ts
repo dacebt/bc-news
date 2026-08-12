@@ -2,7 +2,7 @@ import { z } from "zod";
 import { ModelExecutionContextSchema } from "@bc-news/generation-core";
 import { EvaluationIdSchema, EvaluationTimestampSchema } from "./evaluation-artifact-schemas";
 import { V1ProductionModelStepSchema, V1Sha256HashSchema } from "./evaluation-artifact-v1-contracts";
-import { V6ModelAdapterConfigSchema } from "./evaluation-artifact-v6";
+import { V8ModelAdapterConfigSchema } from "./evaluation-artifact-v8";
 import { RepositorySourceReferenceSchema } from "./evaluation-repository-reference";
 
 export {
@@ -66,7 +66,7 @@ const StableProjectionSchema = z.strictObject({
 	ordered_fixture_prepared_identities: z.array(z.strictObject({ fixture_id: z.string(), prepared_evidence_identity_sha256: Hash })),
 	code_provenance: z.strictObject({ repository: z.literal("bc-news"), commit_sha: z.string().regex(/^[0-9a-f]{40}$/u), dirty: z.literal(false) }),
 	ordered_output_contract_provenance: z.array(z.strictObject({ production_step: V1ProductionModelStepSchema, canonical_schema: z.unknown(), schema_sha256: Hash })),
-	adapter: V6ModelAdapterConfigSchema, declared_transport_retry_limit: z.number().int().min(0).max(3),
+	adapter: V8ModelAdapterConfigSchema, declared_transport_retry_limit: z.number().int().min(0).max(3),
 	ordered_requests: z.array(z.strictObject({ observation_ordinal: z.number().int().positive(), request_sha256: Hash })),
 	normalized_execution_context: ModelExecutionContextSchema,
 });

@@ -196,8 +196,9 @@ no target article, preferred angle, model output, score, or acceptance verdict;
 existing benchmark and tooling commands remain single-fixture boundaries.
 
 Build an auditable scorecard only from a complete declaration that binds one
-configuration across the full corpus, retained version 7 Benchmark Runs, exact
-human output annotations, and separate human qualitative reviews:
+configuration across the full corpus, retained version 7 or Gateway version 8
+Benchmark Runs, exact human output annotations, and separate human qualitative
+reviews:
 
 ```sh
 pnpm --filter @bc-news/eval eval -- scorecard build \

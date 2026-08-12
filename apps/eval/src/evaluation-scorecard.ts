@@ -3,6 +3,7 @@ import { ModelExecutionContextSchema } from "@bc-news/generation-core";
 import { EvaluationIdSchema, EvaluationTimestampSchema } from "./evaluation-artifact-schemas";
 import { V1ProductionModelStepSchema, V1Sha256HashSchema } from "./evaluation-artifact-v1-contracts";
 import { V6EvalConfigSchema, V6ModelAdapterConfigSchema } from "./evaluation-artifact-v6";
+import { V8EvalConfigSchema, V8ModelAdapterConfigSchema } from "./evaluation-artifact-v8";
 import { RepositoryPathSchema, RepositorySourceReferenceSchema } from "./evaluation-repository-reference";
 
 export const EVALUATION_SCORECARD_ERROR_CODES = [
@@ -171,9 +172,8 @@ export const EvaluationScorecardDeclarationSchema = z.strictObject({
 	qualitative_reviews: z.strictObject({ path: RepositoryPathSchema, bundle_id: EvaluationIdSchema }),
 });
 
-export const OutputIdentitySchema = z.strictObject({
+const OutputIdentityBaseSchema = z.strictObject({
 	benchmark_run_id: EvaluationIdSchema,
-	benchmark_run_version: z.literal(7),
 	code_commit_sha: z.string().regex(/^[0-9a-f]{40}$/u),
 	prepared_evidence_identity_sha256: Hash,
 	corpus_manifest_id: EvaluationIdSchema,
@@ -189,6 +189,13 @@ export const OutputIdentitySchema = z.strictObject({
 	parsed_output_sha256: Hash,
 	runtime_evidence_sha256: Hash,
 });
+export const OutputIdentitySchema = z.discriminatedUnion("benchmark_run_version", [
+	OutputIdentityBaseSchema.extend({ benchmark_run_version: z.literal(7) }).strict(),
+	OutputIdentityBaseSchema.extend({
+		benchmark_run_version: z.literal(8),
+		gateway_request_sha256: Hash,
+	}).strict(),
+]);
 export type OutputIdentity = z.infer<typeof OutputIdentitySchema>;
 
 const OutputAnnotationV2Schema = OutputAnnotationSchema.extend({ output: OutputIdentitySchema }).strict();
@@ -218,9 +225,15 @@ const ContextV2Schema = z.discriminatedUnion("state", [
 		fixture_prepared_identities: z.array(z.strictObject({ fixture_id: Kebab, prepared_evidence_identity_sha256: Hash })),
 		code_provenance: z.strictObject({ repository: z.literal("bc-news"), commit_sha: z.string().regex(/^[0-9a-f]{40}$/u), dirty: z.literal(false) }),
 		output_contract_provenance: z.array(z.strictObject({ production_step: V1ProductionModelStepSchema, canonical_schema: z.json(), schema_sha256: Hash })),
-		adapter: V6ModelAdapterConfigSchema,
+		adapter: V8ModelAdapterConfigSchema,
 		declared_transport_retry_limit: Nonnegative,
 		request_hashes: z.array(z.strictObject({ run_id: EvaluationIdSchema, trial_id: EvaluationIdSchema, request_sha256: Hash })),
+		gateway_request_hashes: z.array(z.strictObject({
+			run_id: EvaluationIdSchema,
+			trial_id: EvaluationIdSchema,
+			invocation_id: EvaluationIdSchema,
+			gateway_request_sha256: Hash,
+		})).optional(),
 		execution_context: ModelExecutionContextSchema,
 	}) }),
 	z.strictObject({ state: z.literal("unknown"), reason: z.literal("no_captured_invocation") }),
@@ -244,7 +257,7 @@ const CriterionSummaryV2Schema = z.strictObject({
 });
 const ScorecardV2Schema = z.strictObject({
 	production_step: V1ProductionModelStepSchema,
-	adapter: V6ModelAdapterConfigSchema,
+	adapter: V8ModelAdapterConfigSchema,
 	scorecard_context: ContextV2Schema,
 	sample_counts: CountsSchema,
 	rates: z.array(RateMetricV2Schema).length(6),
@@ -258,11 +271,14 @@ export const EvaluationScorecardArtifactSchema = z.strictObject({
 	created_at: EvaluationTimestampSchema,
 	source_reference: RepositorySourceReferenceSchema,
 	corpus: z.strictObject({ id: EvaluationIdSchema, fixture_count: z.number().int().positive() }),
-	configuration: z.strictObject({ identity: EvaluationIdSchema, exact_config: V6EvalConfigSchema }),
+	configuration: z.strictObject({ identity: EvaluationIdSchema, exact_config: V8EvalConfigSchema }),
 	repetition_count: z.number().int().positive(),
 	sources: z.strictObject({
 		corpus_manifest_path: Trimmed,
-		benchmark_runs: z.array(z.strictObject({ ordinal: z.number().int().positive(), corpus_fixture_id: Kebab, benchmark_run_id: EvaluationIdSchema, path: Trimmed, code_commit_sha: z.string().regex(/^[0-9a-f]{40}$/u), prepared_evidence_identity_sha256: Hash, output_contract_sha256s: z.array(Hash).length(4), transport_retry_limit: Nonnegative })),
+		benchmark_runs: z.array(z.union([
+			z.strictObject({ ordinal: z.number().int().positive(), corpus_fixture_id: Kebab, benchmark_run_id: EvaluationIdSchema, path: Trimmed, code_commit_sha: z.string().regex(/^[0-9a-f]{40}$/u), prepared_evidence_identity_sha256: Hash, output_contract_sha256s: z.array(Hash).length(4), transport_retry_limit: Nonnegative }),
+			z.strictObject({ ordinal: z.number().int().positive(), corpus_fixture_id: Kebab, benchmark_run_id: EvaluationIdSchema, benchmark_run_version: z.literal(8), path: Trimmed, code_commit_sha: z.string().regex(/^[0-9a-f]{40}$/u), prepared_evidence_identity_sha256: Hash, output_contract_sha256s: z.array(Hash).length(4), transport_retry_limit: Nonnegative, gateway_request_sha256s: z.array(Hash) }),
+		])),
 		annotations: z.strictObject({ path: Trimmed, bundle_id: EvaluationIdSchema, protocol_id: Trimmed, annotator_id: Trimmed, annotator_kind: z.literal("codex"), annotated_at: EvaluationTimestampSchema }),
 		qualitative_reviews: z.strictObject({ path: Trimmed, bundle_id: EvaluationIdSchema, rubric_id: Trimmed, reviewer_id: Trimmed, reviewer_kind: z.literal("codex"), reviewed_at: EvaluationTimestampSchema }),
 	}),

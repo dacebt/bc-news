@@ -6,6 +6,7 @@ import { z } from "zod";
 import { BenchmarkRunSchema } from "./evaluation-artifact";
 import { canonical, evaluationConfigIdentity, sha256Json } from "./evaluation-artifact-schemas";
 import { V7BenchmarkRunBaseSchema, V7BenchmarkRunSchema, type V7BenchmarkRun } from "./evaluation-artifact-v7";
+import { V8BenchmarkRunBaseSchema, V8BenchmarkRunSchema, type V8BenchmarkRun } from "./evaluation-artifact-v8";
 import { v1OutputContractProvenance } from "./evaluation-artifact-v1-contracts";
 import { EvaluationReferenceCorpusError, loadEvaluationReferenceCorpusAtReference, type LoadedEvaluationReferenceCorpus, type LoadedEvaluationReferenceCorpusEntry } from "./evaluation-reference-corpus";
 import { readRepositorySource, sourceReferenceAtHead, type RepositorySourceReference } from "./evaluation-repository-reference";
@@ -15,8 +16,12 @@ import {
 	type OutputIdentity, type QualitativeReviewBundle,
 } from "./evaluation-scorecard";
 
-export interface LoadedScorecardRun { readonly declaration: EvaluationScorecardDeclaration["runs"][number]; readonly bytes: Uint8Array; readonly run: V7BenchmarkRun; readonly corpusEntry: LoadedEvaluationReferenceCorpusEntry }
-export interface SelectedScorecardOutput { readonly identity: OutputIdentity; readonly run: LoadedScorecardRun; readonly trial: V7BenchmarkRun["trials"][number]; readonly invocation: V7BenchmarkRun["trials"][number]["invocations"][number]; readonly runtime: Extract<V7BenchmarkRun["runtime_evidence"][number], { state: "captured" }> }
+export type ScorecardBenchmarkRun = V7BenchmarkRun | V8BenchmarkRun;
+type ScorecardTrial = ScorecardBenchmarkRun["trials"][number];
+type ScorecardInvocation = ScorecardTrial["invocations"][number];
+type CapturedScorecardRuntime = Extract<ScorecardBenchmarkRun["runtime_evidence"][number], { state: "captured" }>;
+export interface LoadedScorecardRun { readonly declaration: EvaluationScorecardDeclaration["runs"][number]; readonly bytes: Uint8Array; readonly run: ScorecardBenchmarkRun; readonly corpusEntry: LoadedEvaluationReferenceCorpusEntry }
+export interface SelectedScorecardOutput { readonly identity: OutputIdentity; readonly run: LoadedScorecardRun; readonly trial: ScorecardTrial; readonly invocation: ScorecardInvocation; readonly runtime: CapturedScorecardRuntime }
 export interface LoadedEvaluationScorecardInput {
 	readonly repositoryRoot: string; readonly sourceReference: RepositorySourceReference;
 	readonly declarationPath: string; readonly declarationBytes: Uint8Array; readonly declaration: EvaluationScorecardDeclaration;
@@ -74,7 +79,7 @@ function auditBundleBytes(input: Omit<LoadedEvaluationScorecardInput, "selectedO
 	if (!isDeepStrictEqual(reviews, input.reviews)) fail("review_bundle_rejected", input.declaration.qualitative_reviews.path, "Parsed reviews are detached from retained bytes");
 }
 
-function classifyRuntimeRoster(run: z.infer<typeof V7BenchmarkRunBaseSchema>, path: string): void {
+function classifyRuntimeRoster(run: z.infer<typeof V7BenchmarkRunBaseSchema> | z.infer<typeof V8BenchmarkRunBaseSchema>, path: string): void {
 	const expected = run.trials.flatMap((trial) => trial.invocations.map((invocation) => ({
 		trial_id: trial.id, invocation_id: invocation.id, config_identity: invocation.config_identity,
 		production_step: invocation.production_step, ordinal: invocation.ordinal,
@@ -93,8 +98,11 @@ function classifyRuntimeRoster(run: z.infer<typeof V7BenchmarkRunBaseSchema>, pa
 	}
 }
 
-export function parseEvaluationScorecardBenchmark(candidate: unknown, expectedId: string, expectedConfigIdentity: string, path: string, expectedRepetitionCount?: number): V7BenchmarkRun {
-	const base = V7BenchmarkRunBaseSchema.safeParse(candidate);
+export function parseEvaluationScorecardBenchmark(candidate: unknown, expectedId: string, expectedConfigIdentity: string, path: string, expectedRepetitionCount?: number): ScorecardBenchmarkRun {
+	const candidateVersion = typeof candidate === "object" && candidate !== null && "version" in candidate ? candidate.version : undefined;
+	const base = candidateVersion === 8
+		? V8BenchmarkRunBaseSchema.safeParse(candidate)
+		: V7BenchmarkRunBaseSchema.safeParse(candidate);
 	if (base.success) {
 		if (base.data.id !== expectedId) fail("benchmark_filename_mismatch", path, "Benchmark Run filename identity mismatch");
 		if (base.data.lifecycle !== "complete") fail("benchmark_not_complete", path, "Benchmark Run must be complete");
@@ -110,24 +118,30 @@ export function parseEvaluationScorecardBenchmark(candidate: unknown, expectedId
 			return roster === undefined || trial.id !== roster.trial_id || trial.config_identity !== roster.config_identity || trial.repetition !== roster.repetition;
 		})) fail("evidence_set_mismatch", path, "Benchmark trial coverage is incomplete, duplicated, or reordered");
 		classifyRuntimeRoster(base.data, path);
-		const strict = V7BenchmarkRunSchema.safeParse(base.data);
+		const strict = base.data.version === 8
+			? V8BenchmarkRunSchema.safeParse(base.data)
+			: V7BenchmarkRunSchema.safeParse(base.data);
 		if (!strict.success) fail("benchmark_artifact_invalid", path, `Invalid Benchmark Run: ${strict.error.message}`, strict.error);
 		return strict.data;
 	}
 	const historical = BenchmarkRunSchema.safeParse(candidate);
 	if (historical.success) {
 		if (historical.data.id !== expectedId) fail("benchmark_filename_mismatch", path, "Benchmark Run filename identity mismatch");
-		fail("unsupported_benchmark_version", path, `Scorecards require Benchmark Run V7, received V${String(historical.data.version)}`);
+		fail("unsupported_benchmark_version", path, `Scorecards require Benchmark Run V7 or V8, received V${String(historical.data.version)}`);
 	}
 	fail("benchmark_artifact_invalid", path, `Invalid Benchmark Run: ${base.error.message}`, base.error);
 }
 
-function outputIdentity(loaded: LoadedScorecardRun, trial: V7BenchmarkRun["trials"][number], invocation: V7BenchmarkRun["trials"][number]["invocations"][number]): OutputIdentity {
+function outputIdentity(loaded: LoadedScorecardRun, trial: ScorecardTrial, invocation: ScorecardInvocation): OutputIdentity {
 	if (invocation.transport !== "succeeded" || invocation.parse.state !== "succeeded") throw new Error("Output identity requires parse success");
 	const runtime = loaded.run.runtime_evidence.find(({ invocation_id }) => invocation_id === invocation.id);
 	if (runtime?.state !== "captured") fail("output_identity_mismatch", loaded.declaration.benchmark_run_id, `Missing captured runtime evidence for ${invocation.id}`);
-	return {
-		benchmark_run_id: loaded.run.id, benchmark_run_version: 7,
+	const gatewayRequest = loaded.run.version === 8
+		? loaded.run.gateway_requests.find(({ invocation_id }) => invocation_id === invocation.id)
+		: undefined;
+	if (loaded.run.version === 8 && gatewayRequest === undefined) fail("output_identity_mismatch", loaded.declaration.benchmark_run_id, `Missing Gateway-request evidence for ${invocation.id}`);
+	const identity = {
+		benchmark_run_id: loaded.run.id,
 		code_commit_sha: loaded.run.provenance.code.commit_sha,
 		prepared_evidence_identity_sha256: loaded.run.prepared_evidence.identity_sha256,
 		corpus_manifest_id: "", corpus_fixture_id: loaded.declaration.corpus_fixture_id,
@@ -137,6 +151,9 @@ function outputIdentity(loaded: LoadedScorecardRun, trial: V7BenchmarkRun["trial
 		completion_text_sha256: hash(Buffer.from(invocation.completion.text)), parsed_output_sha256: sha256Json(canonical(invocation.parse.output)),
 		runtime_evidence_sha256: sha256Json(canonical(runtime.evidence)),
 	};
+	return loaded.run.version === 8
+		? { ...identity, benchmark_run_version: 8, gateway_request_sha256: sha256Json(canonical(gatewayRequest!)) }
+		: { ...identity, benchmark_run_version: 7 };
 }
 
 function outputString(output: Record<string, unknown>, pointer: string): string | undefined {
@@ -229,11 +246,12 @@ export function validateLoadedEvaluationScorecardInput(input: Omit<LoadedEvaluat
 	if (declaration.runs.some(({ ordinal }, index) => ordinal !== index + 1)) fail("evidence_set_mismatch", declarationPath, "Run ordinals must be contiguous");
 	if (!isDeepStrictEqual(declaration.runs.map(({ corpus_fixture_id }) => corpus_fixture_id), corpus.entries.map(({ manifestEntry }) => manifestEntry.id))) fail("evidence_set_mismatch", declarationPath, "Runs must match the complete corpus manifest in order");
 	unique(runs.map(({ run }) => run.id), declarationPath, "evidence_set_mismatch", "Benchmark runs must be unique");
-	let repetitionCount: number | undefined; let exactConfig: unknown; let provenance: unknown;
+	let repetitionCount: number | undefined; let benchmarkVersion: 7 | 8 | undefined; let exactConfig: unknown; let provenance: unknown;
 	const selectedOutputs: SelectedScorecardOutput[] = [];
 	for (const loaded of runs) {
 		const { run, declaration: declared, corpusEntry } = loaded;
-		if (run.version !== 7) fail("unsupported_benchmark_version", declared.benchmark_run_id, "Scorecards require Benchmark Run V7");
+		if (benchmarkVersion === undefined) benchmarkVersion = run.version;
+		else if (benchmarkVersion !== run.version) fail("unsupported_benchmark_version", declared.benchmark_run_id, "Scorecard evidence cannot mix Benchmark Run versions");
 		if (run.lifecycle !== "complete") fail("benchmark_not_complete", run.id, "Benchmark Run must be complete");
 		if (run.harness_outcome !== "retained") fail("benchmark_not_retained", run.id, "Benchmark Run must be retained");
 		if (run.prepared_evidence.identity_sha256 !== sha256Json(corpusEntry.preparedEvidence) || !isDeepStrictEqual(run.prepared_evidence.snapshot, corpusEntry.preparedEvidence)) fail("corpus_binding_mismatch", run.id, "Benchmark prepared evidence does not match corpus entry");
