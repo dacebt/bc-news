@@ -6,6 +6,7 @@ import { PRODUCTION_MODEL_STEPS, type ProductionModelStep } from "@bc-news/gener
 import { RecordedModelResponseSchema } from "@bc-news/fixtures";
 import { evaluateBenchmarkCommand } from "../src/evaluation-benchmark-command";
 import { V8BenchmarkRunSchema, evaluationConfigIdentity } from "../src/evaluation-artifact";
+import { formatBenchmarkRunReport } from "../src/benchmark-run-report";
 import { REPRESENTATIVE_FIXTURE_PATH } from "../src/representative-fixture";
 
 const RESPONSE_DIRECTORY = new URL("../../../packages/fixtures/model-responses/", import.meta.url).pathname;
@@ -113,6 +114,46 @@ test("runs two hosted provider families through the Gateway contract and retains
 			outcome_counts: { completed: 0, parse_rejected: 0, contract_rejected: 0, infrastructure_incomplete: 0 },
 			harness_outcome: "pending",
 		}).success).toBe(true);
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+}, 15_000);
+
+test("retains and reports sanitized Gateway response-contract failure locations", async () => {
+	const root = await mkdtemp(join(tmpdir(), "bc-news-cloudflare-contract-failure-"));
+	try {
+		const configPath = join(root, "benchmark.config.json");
+		const resultsDirectory = join(root, "results");
+		await writeFile(configPath, `${JSON.stringify({
+			configurations: [configuration("openai")],
+			repetition_count: 1,
+			transport_retry_limit: 0,
+		}, null, 2)}\n`, "utf8");
+		vi.spyOn(globalThis, "fetch").mockImplementation(() => Promise.resolve(Response.json({
+			model: "provider-model",
+			choices: [{ message: { content: "completion" } }],
+			usage: { prompt_tokens: "sensitive-provider-value", completion_tokens: 1, total_tokens: 2 },
+		})));
+
+		const result = await evaluateBenchmarkCommand({
+			fixturePath: REPRESENTATIVE_FIXTURE_PATH,
+			configPath,
+			resultsDirectory,
+			environment: { CLOUDFLARE_ACCOUNT_ID: "account-id", CLOUDFLARE_API_TOKEN: "sentinel" },
+			sourceProvenance: TEST_PROVENANCE,
+		});
+		const retained = V8BenchmarkRunSchema.parse(JSON.parse(await readFile(result.path, "utf8")) as unknown);
+		const failures = retained.trials.flatMap(({ invocations }) => invocations.filter((invocation) => invocation.transport === "failed"));
+		expect(failures).toHaveLength(2);
+		expect(failures.map((invocation) => invocation.transport === "failed" ? invocation.failure.details : undefined)).toEqual([
+			expect.objectContaining({ issues: expect.arrayContaining([expect.objectContaining({ path: ["usage", "prompt_tokens"], code: "invalid_type", expected: "number" })]) }),
+			expect.objectContaining({ issues: expect.arrayContaining([expect.objectContaining({ path: ["usage", "prompt_tokens"], code: "invalid_type", expected: "number" })]) }),
+		]);
+		const retainedJson = JSON.stringify(retained);
+		expect(retainedJson).not.toContain("sensitive-provider-value");
+		const report = formatBenchmarkRunReport(retained, result.path);
+		expect(report).toContain("path=$.usage.prompt_tokens code=invalid_type expected=number");
+		expect(report).not.toContain("sensitive-provider-value");
 	} finally {
 		await rm(root, { recursive: true, force: true });
 	}

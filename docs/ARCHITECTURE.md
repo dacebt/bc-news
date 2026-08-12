@@ -160,9 +160,11 @@ timeout, network/body-read failure, and HTTP 408/409/425/429/5xx are retryable
 within the Workflow's existing three-attempt model-call ceiling. Invalid
 configuration, loaded-model resolution, incomplete output, response/usage
 rejection, ordinary hosted 4xx, invalid hosted JSON, and impossible cost are
-deterministic. Errors
-and retained evidence never contain authorization values, prompts, raw
-response bodies, or response-validation detail that could echo payloads.
+deterministic. Errors and retained evidence never contain authorization values,
+prompts, raw response bodies, or rejected response values. Provider
+response-contract failures retain only the contract identifier, schema path,
+issue code, expected type, and unexpected field names needed to locate the
+mismatch.
 
 `cloudflare_ai_gateway` uses the official account REST Chat Completions endpoint
 in both the Worker and Node evaluation runtime. The Worker binding is not used:

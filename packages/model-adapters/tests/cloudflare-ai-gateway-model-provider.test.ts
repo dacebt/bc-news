@@ -195,6 +195,27 @@ it("retains a successful response when Cloudflare omits the Gateway log id", asy
 	});
 });
 
+it("reports response-contract issue paths without retaining rejected values", async () => {
+	vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({
+		model: "gpt-4.1-mini",
+		choices: [{ message: { content: "completion" } }],
+		usage: { prompt_tokens: "sensitive-provider-value", completion_tokens: 1, total_tokens: 2 },
+	}));
+	const failure = await provider().complete(request()).catch((error: unknown) => error);
+	expect(failure).toMatchObject({
+		code: "cloudflare_ai_gateway_response_contract_rejected",
+		details: {
+			contract: "cloudflare_ai_gateway_chat_completion_response",
+			issues: expect.arrayContaining([{
+				path: ["usage", "prompt_tokens"],
+				code: "invalid_type",
+				expected: "number",
+			}]),
+		},
+	});
+	expect(JSON.stringify(failure)).not.toContain("sensitive-provider-value");
+});
+
 it.each([408, 409, 425, 429, 500, 599])("classifies HTTP %i as retryable", async (status) => {
 	vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null, { status }));
 	await expect(provider().complete(request())).rejects.toBeInstanceOf(CloudflareAiGatewayRetryableError);

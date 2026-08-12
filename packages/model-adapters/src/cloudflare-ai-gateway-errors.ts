@@ -11,13 +11,31 @@ export type CloudflareAiGatewayRetryableErrorCode =
 	| "cloudflare_ai_gateway_timeout"
 	| "cloudflare_ai_gateway_retryable_http_status";
 
+export interface CloudflareAiGatewayContractIssue {
+	readonly path: readonly (string | number)[];
+	readonly code: string;
+	readonly expected?: string;
+	readonly unexpected_keys?: readonly string[];
+}
+
+export interface CloudflareAiGatewayContractFailureDetails {
+	readonly contract: "cloudflare_ai_gateway_chat_completion_response";
+	readonly issues: readonly CloudflareAiGatewayContractIssue[];
+}
+
+interface CloudflareAiGatewayDeterministicErrorOptions extends ErrorOptions {
+	readonly details?: CloudflareAiGatewayContractFailureDetails;
+}
+
 export class CloudflareAiGatewayDeterministicError extends Error {
 	readonly code: CloudflareAiGatewayDeterministicErrorCode;
+	readonly details: CloudflareAiGatewayContractFailureDetails | undefined;
 
-	constructor(code: CloudflareAiGatewayDeterministicErrorCode, message: string, options?: ErrorOptions) {
+	constructor(code: CloudflareAiGatewayDeterministicErrorCode, message: string, options?: CloudflareAiGatewayDeterministicErrorOptions) {
 		super(message, options);
 		this.name = "CloudflareAiGatewayDeterministicError";
 		this.code = code;
+		this.details = options?.details;
 	}
 }
 

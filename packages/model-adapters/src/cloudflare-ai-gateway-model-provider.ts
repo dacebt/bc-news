@@ -13,6 +13,7 @@ import {
 import {
 	CloudflareAiGatewayDeterministicError,
 	CloudflareAiGatewayRetryableError,
+	type CloudflareAiGatewayContractFailureDetails,
 } from "./cloudflare-ai-gateway-errors";
 
 export const CLOUDFLARE_AI_GATEWAY_REQUEST_TIMEOUT_MS = 600_000;
@@ -57,6 +58,18 @@ const CompletionSchema = z.strictObject({
 		keySource: NonBlankExactStringSchema,
 	}).optional(),
 });
+
+function completionContractFailureDetails(error: z.ZodError): CloudflareAiGatewayContractFailureDetails {
+	return {
+		contract: "cloudflare_ai_gateway_chat_completion_response",
+		issues: error.issues.map((issue) => ({
+			path: issue.path.map((segment) => typeof segment === "symbol" ? segment.toString() : segment),
+			code: issue.code,
+			...("expected" in issue && typeof issue.expected === "string" ? { expected: issue.expected } : {}),
+			...("keys" in issue && Array.isArray(issue.keys) ? { unexpected_keys: issue.keys.filter((key): key is string => typeof key === "string") } : {}),
+		})),
+	};
+}
 
 const unknownString = { state: "unknown" as const, reason: "not_reported" as const };
 const unknownInteger = { state: "unknown" as const, reason: "not_reported" as const };
@@ -271,6 +284,7 @@ export function createCloudflareAiGatewayModelProvider(
 				throw new CloudflareAiGatewayDeterministicError(
 					"cloudflare_ai_gateway_response_contract_rejected",
 					"Cloudflare AI Gateway completion response rejected by the strict contract",
+					{ details: completionContractFailureDetails(parsed.error) },
 				);
 			}
 			const usage = parsed.data.usage;

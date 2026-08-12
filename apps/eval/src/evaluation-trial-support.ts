@@ -6,6 +6,7 @@ import {
 } from "@bc-news/generation-core";
 import type { EvalConfig } from "./config";
 import type { EvaluationFinding, V5SubjectOutcome, V7BenchmarkRun, V7EvaluationTrial } from "./evaluation-artifact";
+import { TransportFailureDetailsSchema, type TransportFailureDetails } from "./evaluation-artifact-schemas";
 import { resolveModelProvider, type ModelProviderEnvironment } from "./model-adapters";
 
 export function sha256Json(value: unknown): string { return createHash("sha256").update(JSON.stringify(value)).digest("hex"); }
@@ -16,8 +17,15 @@ export function emptyOutcomeCounts(): V7BenchmarkRun["outcome_counts"] {
 export function emptyTrack(): V7EvaluationTrial["tracks"]["main_story"] {
 	return { lifecycle: "pending", subject_outcome: null, terminal_production_step: null, product: null, findings: [] };
 }
-export function transportErrorIdentity(error: unknown): { code: string; message: string } {
-	if (error instanceof Error) return { code: "code" in error && typeof error.code === "string" ? error.code : error.name, message: error.message };
+export function transportErrorIdentity(error: unknown): { code: string; message: string; details?: TransportFailureDetails } {
+	if (error instanceof Error) {
+		const details = "details" in error ? TransportFailureDetailsSchema.safeParse(error.details) : undefined;
+		return {
+			code: "code" in error && typeof error.code === "string" ? error.code : error.name,
+			message: error.message,
+			...(details?.success === true ? { details: details.data } : {}),
+		};
+	}
 	return { code: "unknown_transport_failure", message: String(error) };
 }
 export function parseFinding(error: unknown): EvaluationFinding | undefined {

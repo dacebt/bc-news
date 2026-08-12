@@ -18,6 +18,8 @@ export {
 export {
 	CloudflareAiGatewayDeterministicError,
 	CloudflareAiGatewayRetryableError,
+	type CloudflareAiGatewayContractFailureDetails,
+	type CloudflareAiGatewayContractIssue,
 	type CloudflareAiGatewayDeterministicErrorCode,
 	type CloudflareAiGatewayRetryableErrorCode,
 } from "./cloudflare-ai-gateway-errors";

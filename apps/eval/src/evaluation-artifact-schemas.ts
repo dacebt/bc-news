@@ -63,6 +63,18 @@ const ParseSucceededSchema = z.strictObject({ state: z.literal("succeeded"), out
 const ParseRejectedSchema = z.strictObject({ state: z.literal("rejected"), findings: z.array(EvaluationFindingSchema).min(1) });
 const ParseStateSchema = z.discriminatedUnion("state", [ParsePendingSchema, ParseSucceededSchema, ParseRejectedSchema]);
 
+export const TransportFailureDetailsSchema = z.strictObject({
+	contract: z.string().min(1),
+	issues: z.array(z.strictObject({
+		path: z.array(z.union([z.string(), z.number().int().nonnegative()])),
+		code: z.string().min(1),
+		expected: z.string().min(1).optional(),
+		unexpected_keys: z.array(z.string()).min(1).optional(),
+	})).min(1),
+});
+
+export type TransportFailureDetails = z.infer<typeof TransportFailureDetailsSchema>;
+
 const InvocationBase = {
 	id: EvaluationIdSchema,
 	production_step: V1ProductionModelStepSchema,
@@ -81,7 +93,11 @@ const SucceededInvocationSchema = z.strictObject({
 });
 const FailedInvocationSchema = z.strictObject({
 	...InvocationBase, transport: z.literal("failed"),
-	failure: z.strictObject({ code: z.string().min(1), message: z.string().min(1) }),
+	failure: z.strictObject({
+		code: z.string().min(1),
+		message: z.string().min(1),
+		details: TransportFailureDetailsSchema.optional(),
+	}),
 	ended_at: EvaluationTimestampSchema, duration_ms: z.number().int().nonnegative(),
 	retry_classification: z.discriminatedUnion("state", [
 		z.strictObject({ state: z.literal("pending") }),
