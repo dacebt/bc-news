@@ -51,6 +51,21 @@ function completionResponse(model = "gpt-4o-mini") {
 	}), { headers: { "content-type": "application/json", "cf-aig-log-id": "gateway-log-one" } });
 }
 
+function completionResponseWithContent(content: string, model = "gpt-4o") {
+	return new Response(JSON.stringify({
+		id: "chatcmpl-one",
+		object: "chat.completion",
+		model,
+		choices: [{
+			index: 0,
+			message: { role: "assistant", content, refusal: null, annotations: [] },
+			finish_reason: "stop",
+			logprobs: null,
+		}],
+		usage: { prompt_tokens: 100, completion_tokens: 25, total_tokens: 125 },
+	}), { headers: { "content-type": "application/json", "cf-aig-log-id": "gateway-log-one" } });
+}
+
 it("accepts only non-secret Gateway configuration and canonical routed model-id syntax", () => {
 	const candidate = {
 		adapter: "cloudflare_ai_gateway",
@@ -96,7 +111,7 @@ it.each([
 	["main_story_copyedit", "main_story_copyedit_output"],
 	["announcements_write", "announcements_write_output"],
 	["announcements_copyedit", "announcements_copyedit_output"],
-] as const)("sends the canonical %s output contract", async (productionStep, contractName) => {
+] as const)("sends the profiled %s output contract", async (productionStep, contractName) => {
 	const fetchCall = vi.spyOn(globalThis, "fetch").mockResolvedValue(completionResponse());
 	await provider().complete(request(productionStep));
 	const [, init] = fetchCall.mock.calls[0]!;
@@ -104,10 +119,36 @@ it.each([
 	const body = JSON.parse(init.body) as {
 		response_format: { json_schema: { name: string; schema: unknown } };
 	};
-	expect(body.response_format.json_schema).toEqual(expect.objectContaining({
-		name: contractName,
-		schema: PRODUCTION_STEP_OUTPUT_CONTRACTS[productionStep].schema,
-	}));
+	expect(body.response_format.json_schema.name).toBe(contractName);
+	if (productionStep.startsWith("main_story")) {
+		expect(body.response_format.json_schema.schema).toMatchObject({
+			properties: {
+				main_story: {
+					required: ["headline", "lede", "body", "image"],
+					properties: {
+						image: {
+							type: ["object", "null"],
+							required: ["url", "caption", "credit"],
+							properties: { credit: { type: ["string", "null"] } },
+						},
+						},
+				},
+			},
+		});
+	} else {
+		expect(body.response_format.json_schema.schema).toEqual(PRODUCTION_STEP_OUTPUT_CONTRACTS[productionStep].schema);
+	}
+});
+
+it("leaves a non-OpenAI hosted model's canonical optional fields unchanged", async () => {
+	const fetchCall = vi.spyOn(globalThis, "fetch").mockResolvedValue(completionResponse("gemini-3.1-flash-lite"));
+	await provider("google/gemini-3.1-flash-lite").complete(request());
+	const [, init] = fetchCall.mock.calls[0]!;
+	if (typeof init?.body !== "string") throw new Error("Expected request body to be JSON text");
+	const body = JSON.parse(init.body) as {
+		response_format: { json_schema: { schema: unknown } };
+	};
+	expect(body.response_format.json_schema.schema).toEqual(PRODUCTION_STEP_OUTPUT_CONTRACTS.main_story_write.schema);
 });
 
 it.each([
@@ -144,18 +185,27 @@ it("uses the fixed account REST endpoint with the account default Gateway", asyn
 	expect(init?.headers).toEqual(expect.objectContaining({ "cf-aig-gateway-id": "default" }));
 	const body = init?.body;
 	if (typeof body !== "string") throw new Error("Expected request body to be JSON text");
-	expect(JSON.parse(body) as unknown).toEqual({
-		model: "openai/gpt-4o-mini",
-		messages: [
-			{ role: "system", content: "system constraints" },
-			{ role: "user", content: "writer prompt" },
-		],
-		response_format: {
-			type: "json_schema",
-			json_schema: {
-				name: "main_story_write_output",
-				strict: true,
-				schema: PRODUCTION_STEP_OUTPUT_CONTRACTS.main_story_write.schema,
+	const parsedBody = JSON.parse(body) as {
+		model: unknown;
+		messages: unknown;
+		response_format: unknown;
+	};
+	expect(parsedBody.model).toBe("openai/gpt-4o-mini");
+	expect(parsedBody.messages).toEqual([
+		{ role: "system", content: "system constraints" },
+		{ role: "user", content: "writer prompt" },
+	]);
+	expect(parsedBody.response_format).toMatchObject({
+		type: "json_schema",
+		json_schema: {
+			name: "main_story_write_output",
+			strict: true,
+			schema: {
+				properties: {
+					main_story: {
+						required: ["headline", "lede", "body", "image"],
+					},
+				},
 			},
 		},
 	});
@@ -170,12 +220,11 @@ it.each(CLOUDFLARE_HOSTED_MODEL_IDS)("leaves the output-token ceiling unset for 
 	expect(body.max_tokens).toBeUndefined();
 	expect(body.max_completion_tokens).toBeUndefined();
 	expect(body.max_output_tokens).toBeUndefined();
-	expect(body.response_format).toEqual({
+	expect(body.response_format).toMatchObject({
 		type: "json_schema",
 		json_schema: {
 			name: "main_story_write_output",
 			strict: true,
-			schema: PRODUCTION_STEP_OUTPUT_CONTRACTS.main_story_write.schema,
 		},
 	});
 });
@@ -231,6 +280,55 @@ it("preserves the application-facing completion text exactly", async () => {
 		usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
 	}), { headers: { "cf-aig-log-id": "gateway-log-one" } }));
 	await expect(provider().complete(request())).resolves.toMatchObject({ text: "  completion\n" });
+});
+
+it("normalizes OpenAI null placeholders back to canonical optional fields", async () => {
+	vi.spyOn(globalThis, "fetch").mockResolvedValue(completionResponseWithContent(JSON.stringify({
+		title: "The Daily",
+		subtitle: "Market report",
+		main_story: {
+			headline: "Trade moved",
+			lede: "Merchants gathered.",
+			body: "The market was active.",
+			image: null,
+		},
+	})));
+	await expect(provider("openai/gpt-4o").complete(request())).resolves.toMatchObject({
+		text: JSON.stringify({
+			title: "The Daily",
+			subtitle: "Market report",
+			main_story: {
+				headline: "Trade moved",
+				lede: "Merchants gathered.",
+				body: "The market was active.",
+			},
+		}),
+	});
+});
+
+it("normalizes a nested OpenAI null placeholder without removing its parent", async () => {
+	vi.spyOn(globalThis, "fetch").mockResolvedValue(completionResponseWithContent(JSON.stringify({
+		title: "The Daily",
+		subtitle: "Market report",
+		main_story: {
+			headline: "Trade moved",
+			lede: "Merchants gathered.",
+			body: "The market was active.",
+			image: { url: "https://example.com/image.png", caption: "Market", credit: null },
+		},
+	})));
+	await expect(provider("openai/gpt-5-nano").complete(request())).resolves.toMatchObject({
+		text: JSON.stringify({
+			title: "The Daily",
+			subtitle: "Market report",
+			main_story: {
+				headline: "Trade moved",
+				lede: "Merchants gathered.",
+				body: "The market was active.",
+				image: { url: "https://example.com/image.png", caption: "Market" },
+			},
+		}),
+	});
 });
 
 it("rejects credentials with surrounding whitespace before transport", () => {

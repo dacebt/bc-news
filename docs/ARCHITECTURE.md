@@ -187,7 +187,9 @@ error code, message, parameter path, and HTTP status without retaining a raw
 response body.
 Gateway model selection is closed over researched exact-model request profiles.
 Each profile owns its Cloudflare request format, provider-side structured-output
-encoding, and provider identity. The admitted profiles are
+encoding, and provider identity. OpenAI profiles adapt canonical optional fields
+to required nullable wire fields and normalize returned null placeholders back
+to omitted application fields before canonical parsing. The admitted profiles are
 `openai/gpt-5-nano`, `openai/gpt-4o`, `openai/gpt-4o-mini`,
 `alibaba/qwen3.5-397b-a17b`, `google/gemini-3.1-flash-lite`, and
 `@cf/openai/gpt-oss-120b`; an unprofiled model rejects as invalid configuration.

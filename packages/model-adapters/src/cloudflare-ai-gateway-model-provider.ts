@@ -13,6 +13,7 @@ import {
 	CLOUDFLARE_HOSTED_MODEL_REQUEST_PROFILES,
 	CloudflareHostedModelIdSchema,
 	cloudflareHostedModelRequestBody,
+	cloudflareHostedModelResponseText,
 	type CloudflareHostedModelId,
 } from "./cloudflare-hosted-model-profiles";
 import {
@@ -367,7 +368,11 @@ export function createCloudflareAiGatewayModelProvider(
 			}
 			const usage = parsed.data.usage;
 			return {
-				text: parsed.data.choices[0].message.content,
+				text: cloudflareHostedModelResponseText({
+					model: requestedModel,
+					text: parsed.data.choices[0].message.content,
+					outputContract,
+				}),
 				provider,
 				model: parsed.data.model,
 				execution: "hosted_inference",

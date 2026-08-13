@@ -35,6 +35,7 @@ export {
 	CLOUDFLARE_HOSTED_MODEL_REQUEST_PROFILES,
 	CloudflareHostedModelIdSchema,
 	cloudflareHostedModelRequestBody,
+	cloudflareHostedModelResponseText,
 	type CloudflareHostedModelId,
 } from "./cloudflare-hosted-model-profiles";
 export {
