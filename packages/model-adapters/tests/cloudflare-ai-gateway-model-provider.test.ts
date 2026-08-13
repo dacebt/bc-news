@@ -153,11 +153,13 @@ it("leaves a non-OpenAI hosted model's canonical optional fields unchanged", asy
 
 it.each([
 	["openai/gpt-5-nano", "openai"],
+	["openai/gpt-5-mini", "openai"],
 	["openai/gpt-4o", "openai"],
 	["openai/gpt-4o-mini", "openai"],
 	["alibaba/qwen3.5-397b-a17b", "alibaba"],
 	["google/gemini-3.1-flash-lite", "google"],
 	["@cf/openai/gpt-oss-120b", "workers_ai"],
+	["@cf/google/gemma-4-26b-a4b-it", "workers_ai"],
 ])("derives truthful provider family %s", (model, expected) => {
 	expect(cloudflareAiGatewayProviderForModel(model)).toBe(expected);
 });
