@@ -81,7 +81,10 @@ the response-scoped log id and declared cache/logging/retry/timeout policy on
 success. New Gateway records additionally retain the exact model-profile
 request format and structured-output contract name; earlier version 8 records
 remain valid without those later evidence fields. Versions 1–7 retain their
-historical meanings. Both current paths
+historical meanings. Both current paths retain bounded structured provider-error
+details for deterministic Gateway HTTP
+rejections so an infrastructure failure identifies the rejected parameter and
+provider reason rather than only the status code. Both current paths
 retain every exact per-agent configuration, schema-valid copyedit diagnostic,
 and a lifecycle-matched runtime-evidence record for every invocation. Each role
 independently chooses a provider, model, and optional temperature; omission

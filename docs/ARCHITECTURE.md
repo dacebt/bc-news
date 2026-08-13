@@ -182,6 +182,9 @@ Billing owns third-party keys. Gateway-estimated cost is absent from the
 inference response, so the completion records billing as unavailable and
 retains `cf-aig-log-id` for separately authorized reconciliation when Cloudflare
 reports it and otherwise records the response header as unavailable evidence.
+For a deterministic non-2xx rejection, the adapter retains the bounded provider
+error code, message, parameter path, and HTTP status without retaining a raw
+response body.
 Gateway model selection is closed over researched exact-model request profiles.
 Each profile owns its Cloudflare request format, provider-side structured-output
 encoding, and provider identity. The admitted profiles are

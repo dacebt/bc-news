@@ -17,10 +17,15 @@ export interface CloudflareAiGatewayContractIssue {
 	readonly expected?: string;
 	readonly received_type?: "array" | "boolean" | "null" | "number" | "object" | "string" | "undefined";
 	readonly unexpected_keys?: readonly string[];
+	readonly provider_code?: string;
+	readonly provider_message?: string;
 }
 
 export interface CloudflareAiGatewayContractFailureDetails {
-	readonly contract: "cloudflare_ai_gateway_chat_completion_response";
+	readonly contract:
+		| "cloudflare_ai_gateway_chat_completion_response"
+		| "cloudflare_ai_gateway_http_error_response";
+	readonly http_status?: number;
 	readonly issues: readonly CloudflareAiGatewayContractIssue[];
 }
 

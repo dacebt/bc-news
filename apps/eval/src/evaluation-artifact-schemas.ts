@@ -71,7 +71,10 @@ export const TransportFailureDetailsSchema = z.strictObject({
 		expected: z.string().min(1).optional(),
 		received_type: z.enum(["array", "boolean", "null", "number", "object", "string", "undefined"]).optional(),
 		unexpected_keys: z.array(z.string()).min(1).optional(),
+		provider_code: z.string().min(1).max(256).optional(),
+		provider_message: z.string().min(1).max(4_012).optional(),
 	})).min(1),
+	http_status: z.number().int().min(400).max(599).optional(),
 });
 
 export type TransportFailureDetails = z.infer<typeof TransportFailureDetailsSchema>;

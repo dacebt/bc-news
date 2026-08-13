@@ -172,6 +172,55 @@ test("retains and reports sanitized Gateway response-contract failure locations"
 	}
 }, 15_000);
 
+test("retains and reports the structured provider reason for a Gateway HTTP rejection", async () => {
+	const root = await mkdtemp(join(tmpdir(), "bc-news-cloudflare-http-rejection-"));
+	try {
+		const configPath = join(root, "benchmark.config.json");
+		const resultsDirectory = join(root, "results");
+		await writeFile(configPath, `${JSON.stringify({
+			configurations: [configuration("openai/gpt-4o")],
+			repetition_count: 1,
+			transport_retry_limit: 0,
+		}, null, 2)}\n`, "utf8");
+		vi.spyOn(globalThis, "fetch").mockImplementation(() => Promise.resolve(Response.json({
+			error: {
+				message: "Schema rejected at properties.main_story",
+				type: "invalid_request_error",
+				param: "response_format",
+				code: null,
+			},
+		}, { status: 400 })));
+
+		const result = await evaluateBenchmarkCommand({
+			fixturePath: REPRESENTATIVE_FIXTURE_PATH,
+			configPath,
+			resultsDirectory,
+			environment: { CLOUDFLARE_ACCOUNT_ID: "account-id", CLOUDFLARE_API_TOKEN: "sentinel" },
+			sourceProvenance: TEST_PROVENANCE,
+		});
+		const retained = V8BenchmarkRunSchema.parse(JSON.parse(await readFile(result.path, "utf8")) as unknown);
+		const failures = retained.trials.flatMap(({ invocations }) => invocations.filter((invocation) => invocation.transport === "failed"));
+		expect(failures).toHaveLength(2);
+		for (const invocation of failures) {
+			if (invocation.transport !== "failed") throw new Error("Expected failed invocation");
+			expect(invocation.failure.details).toEqual({
+				contract: "cloudflare_ai_gateway_http_error_response",
+				http_status: 400,
+				issues: [{
+					path: ["response_format"],
+					code: "provider_rejection",
+					provider_code: "invalid_request_error",
+					provider_message: "Schema rejected at properties.main_story",
+				}],
+			});
+		}
+		const report = formatBenchmarkRunReport(retained, result.path);
+		expect(report).toContain("http_status=400 path=$.response_format code=provider_rejection provider_code=invalid_request_error provider_message=Schema rejected at properties.main_story");
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+}, 15_000);
+
 test("retains null hosted content as a contract-rejected model output", async () => {
 	const root = await mkdtemp(join(tmpdir(), "bc-news-cloudflare-null-content-"));
 	try {

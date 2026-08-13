@@ -383,6 +383,30 @@ it.each([400, 401, 403, 404, 422])("classifies HTTP %i as deterministic", async 
 	await expect(provider().complete(request())).rejects.toBeInstanceOf(CloudflareAiGatewayDeterministicError);
 });
 
+it("retains the bounded structured provider reason for an HTTP rejection", async () => {
+	vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({
+		error: {
+			message: "Schema rejected at properties.main_story",
+			type: "invalid_request_error",
+			param: "response_format",
+			code: null,
+		},
+	}, { status: 400 }));
+	const failure = await provider().complete(request()).catch((error: unknown) => error);
+	expect(failure).toBeInstanceOf(CloudflareAiGatewayDeterministicError);
+	if (!(failure instanceof CloudflareAiGatewayDeterministicError)) throw new Error("Expected deterministic Gateway failure");
+	expect(failure.details).toEqual({
+		contract: "cloudflare_ai_gateway_http_error_response",
+		http_status: 400,
+		issues: [{
+			path: ["response_format"],
+			code: "provider_rejection",
+			provider_code: "invalid_request_error",
+			provider_message: "Schema rejected at properties.main_story",
+		}],
+	});
+});
+
 it("does not allow an alternate host in the adapter boundary", () => {
 	expect(cloudflareAiGatewayChatCompletionsUrl("account/id").toString()).toBe(
 		"https://api.cloudflare.com/client/v4/accounts/account%2Fid/ai/v1/chat/completions",
