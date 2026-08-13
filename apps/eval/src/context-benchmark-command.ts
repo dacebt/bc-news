@@ -260,6 +260,12 @@ async function measureCompletion(input: {
 		structuredOutputContracts: LM_STUDIO_PRODUCTION_STEP_OUTPUT_CONTRACTS,
 	});
 	const contract = LM_STUDIO_PRODUCTION_STEP_OUTPUT_CONTRACTS[input.step];
+	if (completion.text === null) {
+		throw new ContextBenchmarkCommandError(
+			"model_response_mismatch",
+			`${input.step} returned no textual completion`,
+		);
+	}
 	return {
 		completion,
 		row: {

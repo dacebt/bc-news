@@ -116,19 +116,21 @@ Return one valid JSON object matching this field contract:
 }
 
 function parseMainStoryStepOutput(
-	text: string,
+	text: string | null,
 	productionStep: "main_story_write" | "main_story_copyedit",
 ): MainStoryProduct {
-	let candidate: unknown;
-	try {
-		candidate = JSON.parse(text);
-	} catch (cause) {
-		throw new EditorialOutputContractError(
-			productionStep,
-			"invalid_json",
-			`${productionStep} model output is not valid JSON`,
-			{ cause },
-		);
+	let candidate: unknown = text;
+	if (text !== null) {
+		try {
+			candidate = JSON.parse(text);
+		} catch (cause) {
+			throw new EditorialOutputContractError(
+				productionStep,
+				"invalid_json",
+				`${productionStep} model output is not valid JSON`,
+				{ cause },
+			);
+		}
 	}
 	const result = MainStoryProductSchema.safeParse(candidate);
 	if (!result.success) {
@@ -141,7 +143,7 @@ function parseMainStoryStepOutput(
 	return result.data;
 }
 
-export function parseMainStoryWriterOutput(text: string): MainStoryDraft {
+export function parseMainStoryWriterOutput(text: string | null): MainStoryDraft {
 	return parseMainStoryStepOutput(text, "main_story_write");
 }
 
@@ -156,13 +158,13 @@ Return the same JSON shape with title, subtitle, and main_story fields.`;
 }
 
 export function parseMainStoryCopyeditOutput(
-	text: string,
+	text: string | null,
 ): MainStoryProduct {
 	return parseMainStoryStepOutput(text, "main_story_copyedit");
 }
 
 export function parseMainStoryCopyeditOutputWithDiagnostics(
-	text: string,
+	text: string | null,
 	draft: MainStoryDraft,
 ): MainStoryCopyeditResult {
 	const product = parseMainStoryCopyeditOutput(text);

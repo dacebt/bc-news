@@ -132,9 +132,13 @@ Studio SDK for local inference and a separate OpenAI-compatible adapter for
 hosted inference. LM Studio selects an already-loaded model without loading or
 unloading model state, reports local inference, validates complete provider
 token counts when present, marks wholly absent counts unavailable, and reports
-zero external billing. Hosted responses must carry
-exactly one nonblank completion, the returned model, and complete internally
-consistent provider-reported token counts. Hosted cost is calculated only from
+zero external billing. Hosted responses must carry exactly one choice whose
+application content is either nonblank text or an explicit provider-reported
+null, plus the returned model and complete internally consistent
+provider-reported token counts. Explicit null content is retained as a
+successful transport result and rejected at the editorial schema boundary as
+model output; missing, blank, or otherwise malformed content remains a provider
+response-contract failure. Hosted cost is calculated only from
 those counts and operator-supplied per-million-token rates, retaining the
 pricing reference; rates and counts are never guessed. Hosted provider
 provenance is the configured provider id and model provenance is the response
@@ -158,7 +162,7 @@ base URL containing credentials rejects. Native LM Studio timeout, model
 availability, SDK, and transport failures are retryable by default. Hosted
 timeout, network/body-read failure, and HTTP 408/409/425/429/5xx are retryable
 within the Workflow's existing three-attempt model-call ceiling. Invalid
-configuration, loaded-model resolution, incomplete output, response/usage
+configuration, loaded-model resolution, missing or blank output, response/usage
 rejection, ordinary hosted 4xx, invalid hosted JSON, and impossible cost are
 deterministic. Errors and retained evidence never contain authorization values,
 prompts, raw response bodies, or rejected response values. Provider
@@ -178,6 +182,8 @@ Billing owns third-party keys. Gateway-estimated cost is absent from the
 inference response, so the completion records billing as unavailable and
 retains `cf-aig-log-id` for separately authorized reconciliation when Cloudflare
 reports it and otherwise records the response header as unavailable evidence.
+Gateway Benchmark Run version 8 alone retains explicit null completion content;
+versions 1 through 7 keep their frozen string-only completion semantics.
 
 The production workflow has two editorial products and four model steps. The
 main-story writer receives prepared evidence and owns `title`, `subtitle`, and

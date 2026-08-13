@@ -103,7 +103,7 @@ export function refineVersion5ParserPromptAndProductRelations(
 export function expectedVersion5Diagnostics(
 	trackName: "main_story" | "announcements",
 	writerOutput: V1WriterOutput,
-	copyeditText: string,
+	copyeditText: string | null,
 	evidence: V1PreparedEvidence,
 ): Finding[] {
 	const parsed = parseV5Completion(

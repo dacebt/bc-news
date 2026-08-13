@@ -102,6 +102,11 @@ export function refineVersion3Trial(
 			else context.addIssue({ ...issue, path: [...trialPath, ...(issue.path ?? [])] });
 		},
 	};
+	for (const [index, invocation] of trial.invocations.entries()) {
+		if (invocation.transport === "succeeded" && invocation.completion.text === null) {
+			trialContext.addIssue({ code: "custom", path: ["invocations", index, "completion", "text"], message: "artifact versions 3 and 4 require textual completion content" });
+		}
+	}
 	refineInvocationRoster(trial, benchmarkStartedAt, trialContext);
 	refineSelections(trial, trialContext);
 	for (const trackName of ["main_story", "announcements"] as const) refineTrack(trial, trackName, evidence, trialContext);
@@ -117,4 +122,3 @@ export function refineVersion3Trial(
 		if (completedAt < latestReached) trialContext.addIssue({ code: "custom", path: ["completed_at"], message: "trial completion cannot precede reached invocation timing or trial start" });
 	}
 }
-

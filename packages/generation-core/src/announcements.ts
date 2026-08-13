@@ -59,17 +59,19 @@ Return one valid JSON object matching this field contract:
   - summary (string): what was accomplished, with markdown permitted only as defined by the system formatting rules.`;
 }
 
-export function parseAnnouncementsWriterOutput(text: string): AnnouncementsDraft {
-	let candidate: unknown;
-	try {
-		candidate = JSON.parse(text);
-	} catch (cause) {
-		throw new EditorialOutputContractError(
-			"announcements_write",
-			"invalid_json",
-			"announcements_write model output is not valid JSON",
-			{ cause },
-		);
+export function parseAnnouncementsWriterOutput(text: string | null): AnnouncementsDraft {
+	let candidate: unknown = text;
+	if (text !== null) {
+		try {
+			candidate = JSON.parse(text);
+		} catch (cause) {
+			throw new EditorialOutputContractError(
+				"announcements_write",
+				"invalid_json",
+				"announcements_write model output is not valid JSON",
+				{ cause },
+			);
+		}
 	}
 	const result = AnnouncementsWriterOutputSchema.safeParse(candidate);
 	if (!result.success) {
@@ -101,17 +103,19 @@ ${fenceUntrustedJson("ANNOUNCEMENTS DRAFT", draft)}
 Return the same JSON shape with an announcements array whose items contain id, title, and summary.`;
 }
 
-function parseIdentifiedAnnouncementsCopyeditOutput(text: string): IdentifiedAnnouncementsDraft {
-	let candidate: unknown;
-	try {
-		candidate = JSON.parse(text);
-	} catch (cause) {
-		throw new EditorialOutputContractError(
-			"announcements_copyedit",
-			"invalid_json",
-			"announcements_copyedit model output is not valid JSON",
-			{ cause },
-		);
+function parseIdentifiedAnnouncementsCopyeditOutput(text: string | null): IdentifiedAnnouncementsDraft {
+	let candidate: unknown = text;
+	if (text !== null) {
+		try {
+			candidate = JSON.parse(text);
+		} catch (cause) {
+			throw new EditorialOutputContractError(
+				"announcements_copyedit",
+				"invalid_json",
+				"announcements_copyedit model output is not valid JSON",
+				{ cause },
+			);
+		}
 	}
 	const result = AnnouncementsCopyeditOutputSchema.safeParse(candidate);
 	if (!result.success) {
@@ -125,7 +129,7 @@ function parseIdentifiedAnnouncementsCopyeditOutput(text: string): IdentifiedAnn
 }
 
 export function parseAnnouncementsCopyeditOutput(
-	text: string,
+	text: string | null,
 ): AnnouncementsProduct {
 	const edited = parseIdentifiedAnnouncementsCopyeditOutput(text);
 	return AnnouncementsProductSchema.parse({
@@ -134,7 +138,7 @@ export function parseAnnouncementsCopyeditOutput(
 }
 
 export function parseAnnouncementsCopyeditOutputWithDiagnostics(
-	text: string,
+	text: string | null,
 	draft: IdentifiedAnnouncementsDraft,
 ): AnnouncementsCopyeditResult {
 	const edited = parseIdentifiedAnnouncementsCopyeditOutput(text);

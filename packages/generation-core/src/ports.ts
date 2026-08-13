@@ -29,7 +29,7 @@ export type ExternalBilling =
 	| { classification: "unavailable"; reason: "provider_did_not_report_cost" };
 
 export interface ModelCompletion {
-	text: string;
+	text: string | null;
 	provider: string;
 	model: string;
 	execution: "recorded_replay" | "local_inference" | "hosted_inference";

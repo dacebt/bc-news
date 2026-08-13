@@ -50,7 +50,7 @@ const RetainedRequestSchema = z.strictObject({
 });
 
 const ModelCompletionSchema = z.strictObject({
-	text: z.string(),
+	text: z.string().nullable(),
 	provider: z.string().min(1),
 	model: z.string().min(1),
 	execution: z.enum(["recorded_replay", "local_inference", "hosted_inference"]),
@@ -106,7 +106,6 @@ const FailedInvocationSchema = z.strictObject({
 	]),
 	parse: ParsePendingSchema,
 });
-
 export const StepInvocationSchema = z.discriminatedUnion("transport", [InFlightInvocationSchema, SucceededInvocationSchema, FailedInvocationSchema]).superRefine((invocation, context) => {
 	if (invocation.request.production_step !== invocation.production_step) context.addIssue({ code: "custom", path: ["request", "production_step"], message: "retained request must name the invocation production step" });
 	if (invocation.request_sha256 !== sha256Json(invocation.request)) context.addIssue({ code: "custom", path: ["request_sha256"], message: "request hash must bind the exact retained request" });

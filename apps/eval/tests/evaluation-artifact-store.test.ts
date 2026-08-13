@@ -5,6 +5,16 @@ import { BenchmarkRunSchema, type BenchmarkRun } from "../src/evaluation-artifac
 import { EvaluationArtifactStore, EvaluationArtifactStoreError } from "../src/evaluation-artifact-store";
 import { clone, controlledEvaluation, preservationRejectedCopyeditOutput, rejectsWithoutChangingBytes, sha256Json, temporaryRoot } from "./evaluation-artifact-test-support";
 
+test("keeps pre-Gateway artifact completion content string-only", async () => {
+	const { result } = await controlledEvaluation(() => undefined);
+	expect(result.benchmark.version).toBe(7);
+	const candidate = clone(result.benchmark);
+	const invocation = candidate.trials[0]!.invocations.find(({ transport }) => transport === "succeeded");
+	if (invocation?.transport !== "succeeded") throw new Error("Expected a successful controlled invocation");
+	invocation.completion.text = null;
+	expect(BenchmarkRunSchema.safeParse(candidate).success).toBe(false);
+});
+
 test("retains every provider invocation on disk before observer notification", async () => {
 	const states: BenchmarkRun[] = [];
 	const { result } = await controlledEvaluation(async (notified, resultsDirectory) => {

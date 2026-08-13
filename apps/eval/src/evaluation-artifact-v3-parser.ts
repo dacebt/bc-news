@@ -23,12 +23,13 @@ export class V3CopyeditPreservationError extends Error {
 	}
 }
 
-function parseJson(step: V1ProductionModelStep, text: string): unknown {
+function parseJson(step: V1ProductionModelStep, text: string | null): unknown {
+	if (text === null) return null;
 	try { return JSON.parse(text); }
 	catch (cause) { throw new V3EditorialOutputError(step, "invalid_json", `${step} model output is not valid JSON`, { cause }); }
 }
 
-function parseSchema<T>(step: V1ProductionModelStep, text: string, schema: z.ZodType<T>): T {
+function parseSchema<T>(step: V1ProductionModelStep, text: string | null, schema: z.ZodType<T>): T {
 	const result = schema.safeParse(parseJson(step, text));
 	if (!result.success) throw new V3EditorialOutputError(step, "contract_mismatch", `${step} model output does not match its strict contract: ${result.error.message}`);
 	return result.data;
@@ -74,7 +75,7 @@ function preserve(step: CopyeditStep, fields: readonly (readonly [string, string
 	}
 }
 
-export function parseV3Completion(step: V1ProductionModelStep, text: string, writerOutput?: V1WriterOutput): Record<string, unknown> {
+export function parseV3Completion(step: V1ProductionModelStep, text: string | null, writerOutput?: V1WriterOutput): Record<string, unknown> {
 	if (step === "main_story_write") return parseSchema(step, text, V1MainStoryProductSchema);
 	if (step === "announcements_write") return parseSchema(step, text, V1AnnouncementsWriterOutputSchema);
 	if (step === "main_story_copyedit") {

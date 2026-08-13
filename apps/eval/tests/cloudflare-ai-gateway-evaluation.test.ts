@@ -163,3 +163,78 @@ test("retains and reports sanitized Gateway response-contract failure locations"
 		await rm(root, { recursive: true, force: true });
 	}
 }, 15_000);
+
+test("retains null hosted content as a contract-rejected model output", async () => {
+	const root = await mkdtemp(join(tmpdir(), "bc-news-cloudflare-null-content-"));
+	try {
+		const configPath = join(root, "benchmark.config.json");
+		const resultsDirectory = join(root, "results");
+		await writeFile(configPath, `${JSON.stringify({
+			configurations: [configuration("openai")],
+			repetition_count: 1,
+			transport_retry_limit: 0,
+		}, null, 2)}\n`, "utf8");
+		const retainedOutputs = await outputs();
+		let ordinal = 0;
+		vi.spyOn(globalThis, "fetch").mockImplementation((_url, init) => {
+			const body = typeof init?.body === "string" ? JSON.parse(init.body) as { model: string } : undefined;
+			if (body === undefined) throw new Error("Expected Gateway request body");
+			const step = body.model.split("/")[1] as ProductionModelStep;
+			ordinal += 1;
+			return Promise.resolve(new Response(JSON.stringify({
+				id: `provider-response-${String(ordinal)}`,
+				model: body.model,
+				choices: [{
+					message: { content: step === "main_story_write" ? null : retainedOutputs[step] },
+					finish_reason: step === "main_story_write" ? "length" : "stop",
+				}],
+				usage: { prompt_tokens: 100, completion_tokens: 25, total_tokens: 125 },
+			}), { headers: { "cf-aig-log-id": `gateway-log-${String(ordinal)}` } }));
+		});
+
+		const result = await evaluateBenchmarkCommand({
+			fixturePath: REPRESENTATIVE_FIXTURE_PATH,
+			configPath,
+			resultsDirectory,
+			environment: { CLOUDFLARE_ACCOUNT_ID: "account-id", CLOUDFLARE_API_TOKEN: "sentinel" },
+			sourceProvenance: TEST_PROVENANCE,
+		});
+		const retained = V8BenchmarkRunSchema.parse(JSON.parse(await readFile(result.path, "utf8")) as unknown);
+		const trial = retained.trials[0]!;
+		expect(trial.subject_outcome).toBe("contract_rejected");
+		expect(trial.tracks.main_story).toMatchObject({
+			lifecycle: "rejected",
+			subject_outcome: "contract_rejected",
+			terminal_production_step: "main_story_write",
+		});
+		expect(trial.tracks.announcements.subject_outcome).toBe("completed");
+		expect(retained.outcome_counts).toEqual({
+			completed: 0,
+			parse_rejected: 0,
+			contract_rejected: 1,
+			infrastructure_incomplete: 0,
+		});
+		const mainInvocation = trial.invocations.find(({ production_step }) => production_step === "main_story_write");
+		expect(mainInvocation).toMatchObject({
+			transport: "succeeded",
+			completion: {
+				text: null,
+				token_usage: { measurement: "reported", input_tokens: 100, output_tokens: 25, total_tokens: 125 },
+			},
+			parse: {
+				state: "rejected",
+				findings: [{ kind: "contract_mismatch", production_step: "main_story_write", code: "contract_mismatch" }],
+			},
+		});
+		expect(retained.runtime_evidence.find(({ production_step }) => production_step === "main_story_write")).toMatchObject({
+			state: "captured",
+			evidence: { prediction_observation: { stop_reason: { state: "observed", value: "length" } } },
+		});
+		expect(retained.gateway_requests.find(({ production_step }) => production_step === "main_story_write")).toMatchObject({
+			state: "captured",
+			provenance: { gateway_log_id: "gateway-log-1" },
+		});
+	} finally {
+		await rm(root, { recursive: true, force: true });
+	}
+}, 15_000);

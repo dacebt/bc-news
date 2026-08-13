@@ -272,6 +272,36 @@ it("accepts the Workers AI GPT-OSS Chat Completions envelope", async () => {
 	});
 });
 
+it("retains explicit Workers AI null content with its completion evidence", async () => {
+	vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({
+		id: "chatcmpl-gpt-oss-null",
+		model: "@cf/openai/gpt-oss-120b",
+		choices: [{
+			message: { role: "assistant", content: null, annotations: null },
+			finish_reason: "length",
+			routed_experts: null,
+			stop_reason: 200002,
+			token_ids: [1, 2, 3],
+		}],
+		usage: {
+			prompt_tokens: 10,
+			completion_tokens: 5,
+			total_tokens: 15,
+			completion_tokens_details: { reasoning_tokens: 5 },
+		},
+	}, { headers: { "cf-aig-log-id": "gateway-log-null" } }));
+	await expect(provider("@cf/openai/gpt-oss-120b", { selection: "named", id: "default" }).complete(request())).resolves.toMatchObject({
+		text: null,
+		provider: "workers_ai",
+		model: "@cf/openai/gpt-oss-120b",
+		token_usage: { measurement: "reported", input_tokens: 10, output_tokens: 5, total_tokens: 15 },
+		request_provenance: { gateway_log_id: "gateway-log-null" },
+		runtime_evidence: {
+			prediction_observation: { stop_reason: { state: "observed", value: "length" } },
+		},
+	});
+});
+
 it.each([408, 409, 425, 429, 500, 599])("classifies HTTP %i as retryable", async (status) => {
 	vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null, { status }));
 	await expect(provider().complete(request())).rejects.toBeInstanceOf(CloudflareAiGatewayRetryableError);

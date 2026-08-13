@@ -25,7 +25,8 @@ export class V5EditorialOutputError extends Error {
 	}
 }
 
-function parseJson(step: V1ProductionModelStep, text: string): unknown {
+function parseJson(step: V1ProductionModelStep, text: string | null): unknown {
+	if (text === null) return null;
 	try {
 		return JSON.parse(text);
 	} catch (cause) {
@@ -33,7 +34,7 @@ function parseJson(step: V1ProductionModelStep, text: string): unknown {
 	}
 }
 
-function parseSchema<T>(step: V1ProductionModelStep, text: string, schema: z.ZodType<T>): T {
+function parseSchema<T>(step: V1ProductionModelStep, text: string | null, schema: z.ZodType<T>): T {
 	const result = schema.safeParse(parseJson(step, text));
 	if (!result.success) throw new V5EditorialOutputError(step, "contract_mismatch", `${step} model output does not match its strict contract: ${result.error.message}`);
 	return result.data;
@@ -46,7 +47,7 @@ export interface V5CompletionParse {
 
 export function parseV5Completion(
 	step: V1ProductionModelStep,
-	text: string,
+	text: string | null,
 	writerOutput?: V1WriterOutput,
 ): V5CompletionParse {
 	if (step === "main_story_write") return { output: parseSchema(step, text, V1MainStoryProductSchema), diagnostics: [] };

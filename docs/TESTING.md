@@ -61,7 +61,11 @@ exhaustion or schema rejection closes its dependent track without suppressing
 the independent editorial track or later declared trials. Provider
 response-contract rejection retains and prints sanitized schema issue paths,
 codes, expected types, and received structural types without retaining rejected
-values. Both tracks quiesce before terminal
+values. A provider-reported explicit null completion instead retains successful
+transport, usage, provenance, and runtime evidence, then becomes a strict
+schema-mismatch model-output rejection in Gateway artifact version 8. Versions
+1 through 7 continue to reject null completion content at their frozen artifact
+boundaries. Both tracks quiesce before terminal
 aggregation; interruption leaves a strict running version 7 or
 Gateway-only version 8
 artifact browseable through `benchmark list`, `benchmark show`, `benchmark

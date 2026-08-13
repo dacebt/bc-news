@@ -102,6 +102,11 @@ export function refineTrial(
 			else context.addIssue({ ...issue, path: [...trialPath, ...(issue.path ?? [])] });
 		},
 	};
+	for (const [index, invocation] of trial.invocations.entries()) {
+		if (invocation.transport === "succeeded" && invocation.completion.text === null) {
+			trialContext.addIssue({ code: "custom", path: ["invocations", index, "completion", "text"], message: "artifact versions 1 and 2 require textual completion content" });
+		}
+	}
 	refineInvocationRoster(trial, benchmarkStartedAt, trialContext);
 	refineSelections(trial, trialContext);
 	for (const trackName of ["main_story", "announcements"] as const) refineTrack(trial, trackName, evidence, trialContext);

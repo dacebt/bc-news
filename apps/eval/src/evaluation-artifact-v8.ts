@@ -130,24 +130,27 @@ function legacyProjection(run: V8Candidate): unknown {
 			...trial,
 			config_identity: mapIdentity(trial.config_identity),
 			invocations: trial.invocations.map((invocation) => {
-					const adapter = declarations.get(invocation.config_identity)?.production_steps[invocation.production_step];
-					const projectedAdapter = projectedDeclarations.get(invocation.config_identity)?.production_steps[invocation.production_step];
-					return {
+				const adapter = declarations.get(invocation.config_identity)?.production_steps[invocation.production_step];
+				const projectedAdapter = projectedDeclarations.get(invocation.config_identity)?.production_steps[invocation.production_step];
+				return {
 					...invocation,
 					config_identity: mapIdentity(invocation.config_identity),
-						...(invocation.transport === "succeeded" && adapter?.adapter === "cloudflare_ai_gateway" ? {
-							completion: {
-								...invocation.completion,
+					...(invocation.transport === "succeeded" ? {
+						completion: {
+							...invocation.completion,
+							text: invocation.completion.text ?? "null",
+							...(adapter?.adapter === "cloudflare_ai_gateway" ? {
 								provider: projectedAdapter?.adapter === "openai_compatible_hosted"
 									? projectedAdapter.provider
 									: invocation.completion.provider,
-							external_billing: {
-								classification: "calculated" as const,
-								amount_usd: 0,
-								pricing_reference: "v8-legacy-invariant-projection",
-							},
+								external_billing: {
+									classification: "calculated" as const,
+									amount_usd: 0,
+									pricing_reference: "v8-legacy-invariant-projection",
+								},
+							} : {}),
 						},
-					} : {}),
+						} : {}),
 				};
 			}),
 		})),
@@ -218,6 +221,12 @@ export const V8BenchmarkRunSchema = V8BenchmarkRunBaseSchema.superRefine((run, c
 		if (invocation?.transport !== "succeeded") continue;
 		const declaration = run.declaration.configurations.find(({ identity }) => identity === record.config_identity);
 		const adapter = declaration?.config.production_steps[record.production_step];
+		const retainedInvocation = run.trials.flatMap(({ invocations }) => invocations).find(({ id }) => id === record.invocation_id);
+		if (retainedInvocation?.transport === "succeeded"
+			&& retainedInvocation.completion.text === null
+			&& adapter?.adapter !== "cloudflare_ai_gateway") {
+			context.addIssue({ code: "custom", path: ["trials"], message: "Only a Cloudflare AI Gateway invocation may retain explicit null completion content" });
+		}
 		if (adapter?.adapter === "cloudflare_ai_gateway") {
 			if (record.state !== "captured") {
 				context.addIssue({ code: "custom", path: ["gateway_requests", index, "state"], message: "successful Cloudflare AI Gateway invocation must retain captured Gateway provenance" });
@@ -231,7 +240,6 @@ export const V8BenchmarkRunSchema = V8BenchmarkRunBaseSchema.superRefine((run, c
 				|| record.provenance.correlation.invocation_id !== record.invocation_id) {
 				context.addIssue({ code: "custom", path: ["gateway_requests", index, "provenance"], message: "captured Gateway provenance must bind the declared adapter and invocation correlation" });
 			}
-			const retainedInvocation = run.trials.flatMap(({ invocations }) => invocations).find(({ id }) => id === record.invocation_id);
 			if (retainedInvocation?.transport === "succeeded"
 				&& retainedInvocation.completion.provider !== cloudflareAiGatewayProviderForModel(adapter.model)) {
 				context.addIssue({ code: "custom", path: ["trials"], message: "Gateway completion provider must derive from the declared routed model" });

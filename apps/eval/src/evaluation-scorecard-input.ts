@@ -134,6 +134,7 @@ export function parseEvaluationScorecardBenchmark(candidate: unknown, expectedId
 
 function outputIdentity(loaded: LoadedScorecardRun, trial: ScorecardTrial, invocation: ScorecardInvocation): OutputIdentity {
 	if (invocation.transport !== "succeeded" || invocation.parse.state !== "succeeded") throw new Error("Output identity requires parse success");
+	if (invocation.completion.text === null) fail("output_identity_mismatch", loaded.declaration.benchmark_run_id, `Parsed invocation ${invocation.id} has no textual completion`);
 	const runtime = loaded.run.runtime_evidence.find(({ invocation_id }) => invocation_id === invocation.id);
 	if (runtime?.state !== "captured") fail("output_identity_mismatch", loaded.declaration.benchmark_run_id, `Missing captured runtime evidence for ${invocation.id}`);
 	const gatewayRequest = loaded.run.version === 8

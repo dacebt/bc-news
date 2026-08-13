@@ -292,6 +292,22 @@ test("writer rejects fenced output instead of coercing it", () => {
 	expect(() => parseMainStoryWriterOutput(fenced)).toThrow(EditorialOutputContractError);
 });
 
+test("writer classifies null content as a strict contract mismatch", () => {
+	const failure = (() => {
+		try {
+			parseMainStoryWriterOutput(null);
+		} catch (error: unknown) {
+			return error;
+		}
+		return undefined;
+	})();
+	expect(failure).toMatchObject({
+		name: "EditorialOutputContractError",
+		productionStep: "main_story_write",
+		code: "contract_mismatch",
+	});
+});
+
 test("copyedit retains multiple preservation categories in deterministic order", () => {
 	const edited = {
 		...DRAFT,

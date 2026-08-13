@@ -135,3 +135,19 @@ test("copyedit reports count changes and malformed output remains terminal", () 
 test("writer keeps an empty announcement product valid", () => {
 	expect(parseAnnouncementsWriterOutput('{"announcements":[]}')).toEqual({ announcements: [] });
 });
+
+test("writer classifies null content as a strict contract mismatch", () => {
+	const failure = (() => {
+		try {
+			parseAnnouncementsWriterOutput(null);
+		} catch (error: unknown) {
+			return error;
+		}
+		return undefined;
+	})();
+	expect(failure).toMatchObject({
+		name: "EditorialOutputContractError",
+		productionStep: "announcements_write",
+		code: "contract_mismatch",
+	});
+});

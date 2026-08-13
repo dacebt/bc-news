@@ -28,7 +28,7 @@ const UsageSchema = z.looseObject({
 
 const ChoiceSchema = z.looseObject({
 	message: z.looseObject({
-		content: NonBlankExactStringSchema,
+		content: NonBlankExactStringSchema.nullable(),
 	}),
 	finish_reason: z.string().nullable().optional(),
 });

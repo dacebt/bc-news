@@ -92,6 +92,7 @@ function controlledOutputs(entry: LoadedEvaluationReferenceCorpusEntry): Record<
 
 function outputIdentity(run: V7BenchmarkRun | V8BenchmarkRun, entry: LoadedEvaluationReferenceCorpusEntry, invocation: V7BenchmarkRun["trials"][number]["invocations"][number], manifestId: string): JsonObject {
 	assertProof(invocation.transport === "succeeded" && invocation.parse.state === "succeeded", "Controlled invocation did not parse successfully");
+	assertProof(invocation.completion.text !== null, "Controlled parsed invocation has no textual completion");
 	const runtime = run.runtime_evidence.find(({ invocation_id }) => invocation_id === invocation.id);
 	assertProof(runtime?.state === "captured", `Controlled invocation ${invocation.id} lacks runtime evidence`);
 	const trial = run.trials.find(({ id }) => id === runtime.trial_id)!;

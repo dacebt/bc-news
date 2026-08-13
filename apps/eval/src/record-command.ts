@@ -51,7 +51,7 @@ export interface RecordCommandResult {
 }
 
 export class RecordCommandError extends Error {
-	readonly code: "observation_roster_mismatch" | "final_product_mismatch";
+	readonly code: "observation_roster_mismatch" | "completion_text_unavailable" | "final_product_mismatch";
 	readonly productionStep: ProductionModelStep | undefined;
 
 	constructor(
@@ -119,6 +119,13 @@ async function recordedResponse(
 		throw new RecordCommandError(
 			"observation_roster_mismatch",
 			`Expected the live observation for ${expectedStep} in production-step order`,
+			expectedStep,
+		);
+	}
+	if (observation.completion.text === null) {
+		throw new RecordCommandError(
+			"completion_text_unavailable",
+			`Cannot record ${expectedStep} because the provider returned no textual completion`,
 			expectedStep,
 		);
 	}
