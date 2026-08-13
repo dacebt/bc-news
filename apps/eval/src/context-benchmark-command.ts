@@ -22,7 +22,7 @@ import {
 	type ProductionModelStep,
 } from "@bc-news/generation-core";
 import {
-	LM_STUDIO_PRODUCTION_STEP_OUTPUT_CONTRACTS,
+	PRODUCTION_STEP_OUTPUT_CONTRACTS,
 	buildLmStudioPredictionRequest,
 	type LmStudioAdapterConfig,
 } from "@bc-news/model-adapters";
@@ -257,9 +257,9 @@ async function measureCompletion(input: {
 		system: input.prompt.system,
 		user: input.prompt.user,
 		...(input.config.temperature === undefined ? {} : { temperature: input.config.temperature }),
-		structuredOutputContracts: LM_STUDIO_PRODUCTION_STEP_OUTPUT_CONTRACTS,
+		structuredOutputContracts: PRODUCTION_STEP_OUTPUT_CONTRACTS,
 	});
-	const contract = LM_STUDIO_PRODUCTION_STEP_OUTPUT_CONTRACTS[input.step];
+	const contract = PRODUCTION_STEP_OUTPUT_CONTRACTS[input.step];
 	if (completion.text === null) {
 		throw new ContextBenchmarkCommandError(
 			"model_response_mismatch",

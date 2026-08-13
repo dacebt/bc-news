@@ -4,7 +4,7 @@ import { resolveModelProvider } from "../src/model-adapters";
 
 const config = {
 	adapter: "cloudflare_ai_gateway" as const,
-	model: "anthropic/claude-sonnet-4",
+	model: "openai/gpt-4o-mini" as const,
 };
 
 test("resolves the Gateway adapter from the Node evaluation environment", () => {

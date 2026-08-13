@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { afterEach, expect, test, vi } from "vitest";
 import { PRODUCTION_MODEL_STEPS, type ProductionModelStep } from "@bc-news/generation-core";
 import { RecordedModelResponseSchema } from "@bc-news/fixtures";
+import type { CloudflareHostedModelId } from "@bc-news/model-adapters";
 import { evaluateBenchmarkCommand } from "../src/evaluation-benchmark-command";
 import { V8BenchmarkRunSchema, evaluationConfigIdentity } from "../src/evaluation-artifact";
 import { formatBenchmarkRunReport } from "../src/benchmark-run-report";
@@ -22,14 +23,14 @@ async function outputs(): Promise<Record<ProductionModelStep, string>> {
 }
 
 function configuration(
-	author: "openai" | "anthropic",
+	model: CloudflareHostedModelId,
 	gateway?: { selection: "named"; id: string },
 ) {
 	return {
 		production_steps: Object.fromEntries(PRODUCTION_MODEL_STEPS.map((step) => [step, {
 			adapter: "cloudflare_ai_gateway",
 			...(gateway === undefined ? {} : { gateway }),
-			model: `${author}/${step}`,
+			model,
 		}])) as Record<ProductionModelStep, object>,
 	};
 }
@@ -40,7 +41,7 @@ test("runs two hosted provider families through the Gateway contract and retains
 		const configPath = join(root, "benchmark.config.json");
 		const resultsDirectory = join(root, "results");
 		await writeFile(configPath, `${JSON.stringify({
-			configurations: [configuration("openai"), configuration("anthropic")],
+			configurations: [configuration("openai/gpt-4o-mini"), configuration("alibaba/qwen3.5-397b-a17b")],
 			repetition_count: 1,
 			transport_retry_limit: 0,
 		}, null, 2)}\n`, "utf8");
@@ -49,7 +50,11 @@ test("runs two hosted provider families through the Gateway contract and retains
 		const fetchCall = vi.spyOn(globalThis, "fetch").mockImplementation((_url, init) => {
 			const body = typeof init?.body === "string" ? JSON.parse(init.body) as { model: string } : undefined;
 			if (body === undefined) throw new Error("Expected Gateway request body");
-			const step = body.model.split("/")[1] as ProductionModelStep;
+			const metadata = typeof init?.headers === "object" && init.headers !== null && !Array.isArray(init.headers)
+				? JSON.parse((init.headers as Record<string, string>)["cf-aig-metadata"]!) as { production_step: ProductionModelStep }
+				: undefined;
+			if (metadata === undefined) throw new Error("Expected Gateway request metadata");
+			const step = metadata.production_step;
 			ordinal += 1;
 			return Promise.resolve(new Response(JSON.stringify({
 				id: `provider-response-${String(ordinal)}`,
@@ -76,12 +81,19 @@ test("runs two hosted provider families through the Gateway contract and retains
 		expect(result.benchmark.trials.every(({ subject_outcome }) => subject_outcome === "completed")).toBe(true);
 		expect(result.benchmark.trials.map((trial) => [...new Set(trial.invocations
 			.filter((invocation) => invocation.transport === "succeeded")
-			.map((invocation) => invocation.completion.provider))])).toEqual([["openai"], ["anthropic"]]);
+			.map((invocation) => invocation.completion.provider))])).toEqual([["openai"], ["alibaba"]]);
 		const captured = result.benchmark.gateway_requests.filter((record) => record.state === "captured");
 		expect(captured).toHaveLength(8);
 		expect(new Set(captured.map(({ provenance }) => provenance.gateway_log_id)).size).toBe(8);
 		expect(captured.every(({ provenance }) => provenance.policy.max_attempts === 1
 			&& provenance.policy.log_payload === false
+			&& provenance.policy.request_format === "chat_completions"
+			&& provenance.policy.structured_output?.format === "openai_chat_json_schema"
+			&& provenance.policy.structured_output.contract_name.endsWith("_output")
+			&& provenance.policy.output_tokens?.limit === 16_384
+			&& provenance.policy.output_tokens.field === (
+				provenance.requested_model.startsWith("openai/") ? "max_completion_tokens" : "max_tokens"
+			)
 			&& provenance.correlation.run_id === result.benchmark.id)).toBe(true);
 		expect(fetchCall).toHaveBeenCalledTimes(8);
 		for (const [, init] of fetchCall.mock.calls) {
@@ -92,8 +104,8 @@ test("runs two hosted provider families through the Gateway contract and retains
 			}));
 		}
 
-		const named = configuration("openai", { selection: "named", id: "bc-news-evaluation" });
-		const accountDefault = configuration("openai");
+		const named = configuration("openai/gpt-4o-mini", { selection: "named", id: "bc-news-evaluation" });
+		const accountDefault = configuration("openai/gpt-4o-mini");
 		const configurations = [named, accountDefault].map((config) => ({
 			identity: evaluationConfigIdentity(config),
 			config,
@@ -125,7 +137,7 @@ test("retains and reports sanitized Gateway response-contract failure locations"
 		const configPath = join(root, "benchmark.config.json");
 		const resultsDirectory = join(root, "results");
 		await writeFile(configPath, `${JSON.stringify({
-			configurations: [configuration("openai")],
+			configurations: [configuration("openai/gpt-4o-mini")],
 			repetition_count: 1,
 			transport_retry_limit: 0,
 		}, null, 2)}\n`, "utf8");
@@ -170,7 +182,7 @@ test("retains null hosted content as a contract-rejected model output", async ()
 		const configPath = join(root, "benchmark.config.json");
 		const resultsDirectory = join(root, "results");
 		await writeFile(configPath, `${JSON.stringify({
-			configurations: [configuration("openai")],
+			configurations: [configuration("openai/gpt-4o-mini")],
 			repetition_count: 1,
 			transport_retry_limit: 0,
 		}, null, 2)}\n`, "utf8");
@@ -179,7 +191,11 @@ test("retains null hosted content as a contract-rejected model output", async ()
 		vi.spyOn(globalThis, "fetch").mockImplementation((_url, init) => {
 			const body = typeof init?.body === "string" ? JSON.parse(init.body) as { model: string } : undefined;
 			if (body === undefined) throw new Error("Expected Gateway request body");
-			const step = body.model.split("/")[1] as ProductionModelStep;
+			const metadata = typeof init?.headers === "object" && init.headers !== null && !Array.isArray(init.headers)
+				? JSON.parse((init.headers as Record<string, string>)["cf-aig-metadata"]!) as { production_step: ProductionModelStep }
+				: undefined;
+			if (metadata === undefined) throw new Error("Expected Gateway request metadata");
+			const step = metadata.production_step;
 			ordinal += 1;
 			return Promise.resolve(new Response(JSON.stringify({
 				id: `provider-response-${String(ordinal)}`,

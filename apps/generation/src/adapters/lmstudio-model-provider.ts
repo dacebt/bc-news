@@ -1,5 +1,5 @@
 import {
-	LM_STUDIO_PRODUCTION_STEP_OUTPUT_CONTRACTS,
+	PRODUCTION_STEP_OUTPUT_CONTRACTS,
 	LmStudioDeterministicError,
 	LmStudioRetryableError,
 	createLmStudioModelProvider as createSharedLmStudioModelProvider,
@@ -22,6 +22,6 @@ export function createLmStudioModelProvider(input: {
 		requestedModel: input.model,
 		...(input.temperature === undefined ? {} : { temperature: input.temperature }),
 		reasoningEffort: input.reasoningEffort,
-		structuredOutputContracts: LM_STUDIO_PRODUCTION_STEP_OUTPUT_CONTRACTS,
+		structuredOutputContracts: PRODUCTION_STEP_OUTPUT_CONTRACTS,
 	});
 }

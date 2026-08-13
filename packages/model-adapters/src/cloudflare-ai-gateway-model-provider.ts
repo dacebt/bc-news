@@ -6,16 +6,22 @@ import {
 	type ModelProviderPort,
 } from "@bc-news/generation-core";
 import {
-	CloudflareAiGatewayModelSchema,
 	type CloudflareAiGatewaySelection,
 	type ModelTemperature,
 } from "./config";
+import {
+	CLOUDFLARE_HOSTED_MODEL_REQUEST_PROFILES,
+	CloudflareHostedModelIdSchema,
+	cloudflareHostedModelRequestBody,
+	type CloudflareHostedModelId,
+} from "./cloudflare-hosted-model-profiles";
 import {
 	CloudflareAiGatewayDeterministicError,
 	CloudflareAiGatewayRetryableError,
 	type CloudflareAiGatewayContractIssue,
 	type CloudflareAiGatewayContractFailureDetails,
 } from "./cloudflare-ai-gateway-errors";
+import type { ProductionStepOutputContracts } from "./production-step-output-contracts";
 
 export const CLOUDFLARE_AI_GATEWAY_REQUEST_TIMEOUT_MS = 600_000;
 
@@ -99,7 +105,7 @@ function gatewayModelIdentity(requestedModel: string, responseModel?: string): M
 }
 
 function gatewayRuntimeEvidence(
-	input: CloudflareAiGatewayProviderInput,
+	requestedModel: string,
 	completion: z.infer<typeof CompletionSchema>,
 ): ModelRuntimeEvidence {
 	return {
@@ -109,8 +115,8 @@ function gatewayRuntimeEvidence(
 			provider_runtime_version: providerControlledString,
 			provider_runtime_build: providerControlledInteger,
 			provider_service_tier: observedString(completion.service_tier),
-			selected_model: gatewayModelIdentity(input.requestedModel),
-			response_model: gatewayModelIdentity(input.requestedModel, completion.model),
+			selected_model: gatewayModelIdentity(requestedModel),
+			response_model: gatewayModelIdentity(requestedModel, completion.model),
 			context_length: { state: "externally_controlled", reason: "provider_controlled" },
 			requested_reasoning_posture: { state: "observed", value: "provider_default" },
 			effective_reasoning_setting: providerControlledString,
@@ -137,20 +143,11 @@ export interface CloudflareAiGatewayProviderInput {
 	readonly gateway?: CloudflareAiGatewaySelection;
 	readonly requestedModel: string;
 	readonly temperature?: ModelTemperature;
+	readonly structuredOutputContracts: ProductionStepOutputContracts;
 }
 
 export function cloudflareAiGatewayProviderForModel(model: string): string {
-	const parsed = CloudflareAiGatewayModelSchema.safeParse(model);
-	if (!parsed.success) {
-		throw new CloudflareAiGatewayDeterministicError(
-			"cloudflare_ai_gateway_invalid_config",
-			"Cloudflare AI Gateway requested model must use author/model or @cf/author/model",
-		);
-	}
-	if (parsed.data.startsWith("@cf/")) {
-		return "workers_ai";
-	}
-	return parsed.data.split("/")[0]!;
+	return CLOUDFLARE_HOSTED_MODEL_REQUEST_PROFILES[requireCloudflareHostedModel(model)].provider;
 }
 
 export function cloudflareAiGatewayChatCompletionsUrl(accountId: string): URL {
@@ -189,14 +186,15 @@ export function createCloudflareAiGatewayModelProvider(
 	input: CloudflareAiGatewayProviderInput,
 ): ModelProviderPort {
 	const endpoint = cloudflareAiGatewayChatCompletionsUrl(input.accountId);
-	const provider = cloudflareAiGatewayProviderForModel(input.requestedModel);
+	const requestedModel = requireCloudflareHostedModel(input.requestedModel);
+	const provider = CLOUDFLARE_HOSTED_MODEL_REQUEST_PROFILES[requestedModel].provider;
 	if (input.apiToken.trim() !== input.apiToken || input.apiToken === "") {
 		throw new CloudflareAiGatewayDeterministicError(
 			"cloudflare_ai_gateway_invalid_config",
 			"Cloudflare API token must be nonblank and contain no surrounding whitespace",
 		);
 	}
-	if (input.requestedModel.startsWith("@cf/") && input.gateway === undefined) {
+	if (requestedModel.startsWith("@cf/") && input.gateway === undefined) {
 		throw new CloudflareAiGatewayDeterministicError(
 			"cloudflare_ai_gateway_invalid_config",
 			"Cloudflare Workers AI models require a named AI Gateway",
@@ -210,6 +208,8 @@ export function createCloudflareAiGatewayModelProvider(
 					"Cloudflare AI Gateway completion requires run and invocation correlation",
 				);
 			}
+			const outputContract = input.structuredOutputContracts[request.productionStep];
+			const requestProfile = CLOUDFLARE_HOSTED_MODEL_REQUEST_PROFILES[requestedModel];
 			const headers: Record<string, string> = {
 				Authorization: `Bearer ${input.apiToken}`,
 				"Content-Type": "application/json",
@@ -230,14 +230,13 @@ export function createCloudflareAiGatewayModelProvider(
 				response = await fetch(endpoint, {
 					method: "POST",
 					headers,
-					body: JSON.stringify({
-						model: input.requestedModel,
+					body: JSON.stringify(cloudflareHostedModelRequestBody({
+						model: requestedModel,
+						system: request.system,
+						user: request.user,
 						...(input.temperature === undefined ? {} : { temperature: input.temperature }),
-						messages: [
-							{ role: "system", content: request.system },
-							{ role: "user", content: request.user },
-						],
-					}),
+						outputContract,
+					})),
 					signal: AbortSignal.timeout(CLOUDFLARE_AI_GATEWAY_REQUEST_TIMEOUT_MS),
 				});
 			} catch (cause) {
@@ -308,7 +307,7 @@ export function createCloudflareAiGatewayModelProvider(
 					account_id: input.accountId,
 					gateway: input.gateway ?? { selection: "account_default" },
 					gateway_log_id: gatewayLogId,
-					requested_model: input.requestedModel,
+					requested_model: requestedModel,
 					correlation: request.correlation,
 					policy: {
 						cache: "bypass",
@@ -316,10 +315,30 @@ export function createCloudflareAiGatewayModelProvider(
 						log_payload: false,
 						max_attempts: 1,
 						request_timeout_ms: CLOUDFLARE_AI_GATEWAY_REQUEST_TIMEOUT_MS,
+						request_format: requestProfile.requestFormat,
+						structured_output: {
+							format: requestProfile.structuredOutputFormat,
+							contract_name: outputContract.name,
+						},
+						output_tokens: {
+							field: requestProfile.outputTokenField,
+							limit: requestProfile.outputTokenLimit,
+						},
 					},
 				},
-				runtime_evidence: gatewayRuntimeEvidence(input, parsed.data),
+				runtime_evidence: gatewayRuntimeEvidence(requestedModel, parsed.data),
 			};
 		},
 	};
+}
+
+function requireCloudflareHostedModel(model: string): CloudflareHostedModelId {
+	const parsed = CloudflareHostedModelIdSchema.safeParse(model);
+	if (!parsed.success) {
+		throw new CloudflareAiGatewayDeterministicError(
+			"cloudflare_ai_gateway_invalid_config",
+			"Cloudflare AI Gateway requested model must have a researched request profile",
+		);
+	}
+	return parsed.data;
 }

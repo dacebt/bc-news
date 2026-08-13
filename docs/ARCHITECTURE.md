@@ -182,6 +182,16 @@ Billing owns third-party keys. Gateway-estimated cost is absent from the
 inference response, so the completion records billing as unavailable and
 retains `cf-aig-log-id` for separately authorized reconciliation when Cloudflare
 reports it and otherwise records the response header as unavailable evidence.
+Gateway model selection is closed over researched exact-model request profiles.
+Each profile owns its Cloudflare request format, provider-side structured-output
+encoding, output-token field, and output-token limit. The admitted profiles are
+`openai/gpt-5-nano`, `openai/gpt-4o-mini`,
+`alibaba/qwen3.5-397b-a17b`, `google/gemini-3.1-flash-lite`, and
+`@cf/openai/gpt-oss-120b`; an unprofiled model rejects as invalid configuration.
+Every profiled request sends the production step's strict inline JSON Schema and
+a 16,384-token output allowance. Successful Gateway provenance retains the
+request format, structured-output contract name, and output-token field and
+limit in addition to the existing transport policy.
 Gateway Benchmark Run version 8 alone retains explicit null completion content;
 versions 1 through 7 keep their frozen string-only completion semantics.
 
@@ -228,15 +238,15 @@ For local development, copy `apps/generation/.dev.vars.example` to the ignored
 `main_story_write`, `main_story_copyedit`, `announcements_write`, and
 `announcements_copyedit`. Every LM Studio adapter requires
 `reasoning_effort: provider_default`. Finite `temperature` from zero through two
-is the only application-owned decoding control and is optional independently on
-every step. Omission sends no temperature override for that agent. `top_p` and
-`top_k` are not admitted or sent. Invalid or obsolete fields reject rather than
-being completed or approximated by the application. The
-native SDK request omits reasoning effort because its public prediction options
-do not expose that control; explicit effort values reject instead of being
-approximated. LM Studio requests use strict inline JSON schemas
-derived from the same Zod contracts that validate outputs. Recorded and hosted
-requests do not receive local decoding controls.
+is the only operator-configurable decoding control and is optional independently
+on every step. Omission sends no temperature override for that agent. `top_p`
+and `top_k` are not admitted or sent. Invalid or obsolete fields reject rather
+than being completed or approximated by the application. The native SDK request
+omits reasoning effort because its public prediction options do not expose that
+control; explicit effort values reject instead of being approximated. LM Studio
+and profiled Gateway requests use strict inline JSON schemas derived from the
+same Zod contracts that validate outputs. Recorded requests receive no provider
+decoding controls.
 
 The committed recorded-response set has exactly four files:
 `main_story_write.json`, `main_story_copyedit.json`,

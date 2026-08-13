@@ -2,18 +2,18 @@
 	"configurations": [
 		{
 			"production_steps": {
-				"main_story_write": { "adapter": "cloudflare_ai_gateway", "model": "openai/gpt-4.1" },
-				"main_story_copyedit": { "adapter": "cloudflare_ai_gateway", "model": "openai/gpt-4.1" },
-				"announcements_write": { "adapter": "cloudflare_ai_gateway", "model": "openai/gpt-4.1" },
-				"announcements_copyedit": { "adapter": "cloudflare_ai_gateway", "model": "openai/gpt-4.1" }
+				"main_story_write": { "adapter": "cloudflare_ai_gateway", "model": "openai/gpt-5-nano" },
+				"main_story_copyedit": { "adapter": "cloudflare_ai_gateway", "model": "openai/gpt-5-nano" },
+				"announcements_write": { "adapter": "cloudflare_ai_gateway", "model": "openai/gpt-5-nano" },
+				"announcements_copyedit": { "adapter": "cloudflare_ai_gateway", "model": "openai/gpt-5-nano" }
 			}
 		},
 		{
 			"production_steps": {
-				"main_story_write": { "adapter": "cloudflare_ai_gateway", "model": "anthropic/claude-sonnet-4" },
-				"main_story_copyedit": { "adapter": "cloudflare_ai_gateway", "model": "anthropic/claude-sonnet-4" },
-				"announcements_write": { "adapter": "cloudflare_ai_gateway", "model": "anthropic/claude-sonnet-4" },
-				"announcements_copyedit": { "adapter": "cloudflare_ai_gateway", "model": "anthropic/claude-sonnet-4" }
+				"main_story_write": { "adapter": "cloudflare_ai_gateway", "model": "alibaba/qwen3.5-397b-a17b" },
+				"main_story_copyedit": { "adapter": "cloudflare_ai_gateway", "model": "alibaba/qwen3.5-397b-a17b" },
+				"announcements_write": { "adapter": "cloudflare_ai_gateway", "model": "alibaba/qwen3.5-397b-a17b" },
+				"announcements_copyedit": { "adapter": "cloudflare_ai_gateway", "model": "alibaba/qwen3.5-397b-a17b" }
 			}
 		}
 	],

@@ -1,9 +1,11 @@
 import { afterEach, expect, it, vi } from "vitest";
 import {
 	CLOUDFLARE_AI_GATEWAY_REQUEST_TIMEOUT_MS,
+	CLOUDFLARE_HOSTED_MODEL_IDS,
 	CloudflareAiGatewayAdapterConfigSchema,
 	CloudflareAiGatewayDeterministicError,
 	CloudflareAiGatewayRetryableError,
+	PRODUCTION_STEP_OUTPUT_CONTRACTS,
 	cloudflareAiGatewayChatCompletionsUrl,
 	cloudflareAiGatewayProviderForModel,
 	createCloudflareAiGatewayModelProvider,
@@ -12,7 +14,7 @@ import {
 afterEach(() => vi.restoreAllMocks());
 
 function provider(
-	model = "openai/gpt-4.1-mini",
+	model: typeof CLOUDFLARE_HOSTED_MODEL_IDS[number] = "openai/gpt-4o-mini",
 	gateway?: { selection: "named"; id: string },
 ) {
 	return createCloudflareAiGatewayModelProvider({
@@ -20,19 +22,20 @@ function provider(
 		apiToken: "cloudflare-api-token",
 		...(gateway === undefined ? {} : { gateway }),
 		requestedModel: model,
+		structuredOutputContracts: PRODUCTION_STEP_OUTPUT_CONTRACTS,
 	});
 }
 
-function request() {
+function request(productionStep: keyof typeof PRODUCTION_STEP_OUTPUT_CONTRACTS = "main_story_write") {
 	return {
-		productionStep: "main_story_write" as const,
+		productionStep,
 		system: "system constraints",
 		user: "writer prompt",
 		correlation: { run_id: "benchmark-one", invocation_id: "invocation-one" },
 	};
 }
 
-function completionResponse(model = "gpt-4.1-mini") {
+function completionResponse(model = "gpt-4o-mini") {
 	return new Response(JSON.stringify({
 		id: "chatcmpl-one",
 		object: "chat.completion",
@@ -48,37 +51,71 @@ function completionResponse(model = "gpt-4.1-mini") {
 	}), { headers: { "content-type": "application/json", "cf-aig-log-id": "gateway-log-one" } });
 }
 
-it("accepts only non-secret Gateway configuration and canonical routed model ids", () => {
+it("accepts only non-secret Gateway configuration and canonical routed model-id syntax", () => {
 	const candidate = {
 		adapter: "cloudflare_ai_gateway",
-		model: "openai/gpt-4.1-mini",
+		model: "openai/gpt-4o-mini",
 	};
 	expect(CloudflareAiGatewayAdapterConfigSchema.safeParse(candidate).success).toBe(true);
 	expect(CloudflareAiGatewayAdapterConfigSchema.safeParse({
 		...candidate,
 		gateway: { selection: "named", id: "bc-news-evaluation" },
-		model: "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+		model: "@cf/openai/gpt-oss-120b",
 	}).success).toBe(true);
 	expect(CloudflareAiGatewayAdapterConfigSchema.safeParse({
 		...candidate,
-		model: "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+		model: "@cf/openai/gpt-oss-120b",
 	}).success).toBe(false);
 	expect(CloudflareAiGatewayAdapterConfigSchema.safeParse({
 		...candidate,
 		gateway: { selection: "account_default" },
 	}).success).toBe(false);
 	expect(CloudflareAiGatewayAdapterConfigSchema.safeParse({ ...candidate, api_token: "secret" }).success).toBe(false);
-	for (const model of ["gpt-4.1-mini", "openai/", "openai//model", "@cf//model", "@cf/meta/model/extra"]) {
+	for (const model of ["gpt-4o-mini", "openai/", "@cf/meta/model"]) {
 		expect(CloudflareAiGatewayAdapterConfigSchema.safeParse({ ...candidate, model }).success).toBe(false);
+	}
+	for (const historicalModel of ["openai/gpt-4.1-mini", "anthropic/claude-sonnet-4"]) {
+		expect(CloudflareAiGatewayAdapterConfigSchema.safeParse({ ...candidate, model: historicalModel }).success).toBe(true);
 	}
 	expect(CloudflareAiGatewayAdapterConfigSchema.safeParse({ ...candidate, gateway: { selection: "named", id: " " } }).success).toBe(false);
 });
 
+it("rejects an unprofiled hosted model before transport", () => {
+	const fetchCall = vi.spyOn(globalThis, "fetch");
+	expect(() => createCloudflareAiGatewayModelProvider({
+		accountId: "account-id",
+		apiToken: "cloudflare-api-token",
+		requestedModel: "openai/gpt-4.1-mini",
+		structuredOutputContracts: PRODUCTION_STEP_OUTPUT_CONTRACTS,
+	})).toThrowError(expect.objectContaining({ code: "cloudflare_ai_gateway_invalid_config" }));
+	expect(fetchCall).not.toHaveBeenCalled();
+});
+
 it.each([
-	["openai/gpt-4.1-mini", "openai"],
-	["anthropic/claude-sonnet-4", "anthropic"],
-	["google-ai-studio/gemini-2.5-flash", "google-ai-studio"],
-	["@cf/meta/llama-3.3-70b-instruct-fp8-fast", "workers_ai"],
+	["main_story_write", "main_story_write_output"],
+	["main_story_copyedit", "main_story_copyedit_output"],
+	["announcements_write", "announcements_write_output"],
+	["announcements_copyedit", "announcements_copyedit_output"],
+] as const)("sends the canonical %s output contract", async (productionStep, contractName) => {
+	const fetchCall = vi.spyOn(globalThis, "fetch").mockResolvedValue(completionResponse());
+	await provider().complete(request(productionStep));
+	const [, init] = fetchCall.mock.calls[0]!;
+	if (typeof init?.body !== "string") throw new Error("Expected request body to be JSON text");
+	const body = JSON.parse(init.body) as {
+		response_format: { json_schema: { name: string; schema: unknown } };
+	};
+	expect(body.response_format.json_schema).toEqual(expect.objectContaining({
+		name: contractName,
+		schema: PRODUCTION_STEP_OUTPUT_CONTRACTS[productionStep].schema,
+	}));
+});
+
+it.each([
+	["openai/gpt-5-nano", "openai"],
+	["openai/gpt-4o-mini", "openai"],
+	["alibaba/qwen3.5-397b-a17b", "alibaba"],
+	["google/gemini-3.1-flash-lite", "google"],
+	["@cf/openai/gpt-oss-120b", "workers_ai"],
 ])("derives truthful provider family %s", (model, expected) => {
 	expect(cloudflareAiGatewayProviderForModel(model)).toBe(expected);
 });
@@ -107,17 +144,50 @@ it("uses the fixed account REST endpoint with the account default Gateway", asyn
 	const body = init?.body;
 	if (typeof body !== "string") throw new Error("Expected request body to be JSON text");
 	expect(JSON.parse(body) as unknown).toEqual({
-		model: "openai/gpt-4.1-mini",
+		model: "openai/gpt-4o-mini",
+		max_completion_tokens: 16_384,
 		messages: [
 			{ role: "system", content: "system constraints" },
 			{ role: "user", content: "writer prompt" },
 		],
+		response_format: {
+			type: "json_schema",
+			json_schema: {
+				name: "main_story_write_output",
+				strict: true,
+				schema: PRODUCTION_STEP_OUTPUT_CONTRACTS.main_story_write.schema,
+			},
+		},
+	});
+});
+
+it.each([
+	["openai/gpt-5-nano", "max_completion_tokens"],
+	["openai/gpt-4o-mini", "max_completion_tokens"],
+	["alibaba/qwen3.5-397b-a17b", "max_tokens"],
+	["google/gemini-3.1-flash-lite", "max_tokens"],
+	["@cf/openai/gpt-oss-120b", "max_tokens"],
+] as const)("uses the researched output-token field for %s", async (model, outputTokenField) => {
+	const fetchCall = vi.spyOn(globalThis, "fetch").mockResolvedValue(completionResponse());
+	await provider(model, model.startsWith("@cf/") ? { selection: "named", id: "default" } : undefined).complete(request());
+	const [, init] = fetchCall.mock.calls[0]!;
+	if (typeof init?.body !== "string") throw new Error("Expected request body to be JSON text");
+	const body = JSON.parse(init.body) as Record<string, unknown>;
+	expect(body[outputTokenField]).toBe(16_384);
+	expect(body[outputTokenField === "max_tokens" ? "max_completion_tokens" : "max_tokens"]).toBeUndefined();
+	expect(body.response_format).toEqual({
+		type: "json_schema",
+		json_schema: {
+			name: "main_story_write_output",
+			strict: true,
+			schema: PRODUCTION_STEP_OUTPUT_CONTRACTS.main_story_write.schema,
+		},
 	});
 });
 
 it("overrides the account default when a named Gateway is selected", async () => {
 	const fetchCall = vi.spyOn(globalThis, "fetch").mockResolvedValue(completionResponse());
-	await provider("openai/gpt-4.1-mini", { selection: "named", id: "bc-news-evaluation" }).complete(request());
+	await provider("openai/gpt-4o-mini", { selection: "named", id: "bc-news-evaluation" }).complete(request());
 	const [, init] = fetchCall.mock.calls[0]!;
 	expect(init?.headers).toEqual(expect.objectContaining({
 		"cf-aig-gateway-id": "bc-news-evaluation",
@@ -125,9 +195,9 @@ it("overrides the account default when a named Gateway is selected", async () =>
 });
 
 it.each([
-	["openai/gpt-4.1-mini", "gpt-4.1-mini", "openai"],
-	["anthropic/claude-sonnet-4", "claude-sonnet-4", "anthropic"],
-])("retains response-scoped Gateway provenance for %s", async (requestedModel, responseModel, expectedProvider) => {
+	["openai/gpt-4o-mini", "gpt-4o-mini", "openai"],
+	["alibaba/qwen3.5-397b-a17b", "qwen3.5-397b-a17b", "alibaba"],
+] as const)("retains response-scoped Gateway provenance for %s", async (requestedModel, responseModel, expectedProvider) => {
 	vi.spyOn(globalThis, "fetch").mockResolvedValue(completionResponse(responseModel));
 	await expect(provider(requestedModel).complete(request())).resolves.toMatchObject({
 		text: "completion",
@@ -149,6 +219,15 @@ it.each([
 				log_payload: false,
 				max_attempts: 1,
 				request_timeout_ms: CLOUDFLARE_AI_GATEWAY_REQUEST_TIMEOUT_MS,
+				request_format: "chat_completions",
+				structured_output: {
+					format: "openai_chat_json_schema",
+					contract_name: "main_story_write_output",
+				},
+				output_tokens: {
+					field: requestedModel.startsWith("openai/") ? "max_completion_tokens" : "max_tokens",
+					limit: 16_384,
+				},
 			},
 		},
 	});
@@ -156,7 +235,7 @@ it.each([
 
 it("preserves the application-facing completion text exactly", async () => {
 	vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({
-		model: "gpt-4.1-mini",
+		model: "gpt-4o-mini",
 		choices: [{ message: { content: "  completion\n" } }],
 		usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
 	}), { headers: { "cf-aig-log-id": "gateway-log-one" } }));
@@ -167,7 +246,8 @@ it("rejects credentials with surrounding whitespace before transport", () => {
 	expect(() => createCloudflareAiGatewayModelProvider({
 		accountId: "account-id",
 		apiToken: " token",
-		requestedModel: "openai/gpt-4.1-mini",
+		requestedModel: "openai/gpt-4o-mini",
+		structuredOutputContracts: PRODUCTION_STEP_OUTPUT_CONTRACTS,
 	})).toThrow(CloudflareAiGatewayDeterministicError);
 });
 
@@ -183,7 +263,7 @@ it("requires correlation before making a paid request", async () => {
 
 it("retains a successful response when Cloudflare omits the Gateway log id", async () => {
 	vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({
-		model: "gpt-4.1-mini",
+		model: "gpt-4o-mini",
 		choices: [{ message: { content: "completion" } }],
 		usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
 	}));
@@ -197,7 +277,7 @@ it("retains a successful response when Cloudflare omits the Gateway log id", asy
 
 it("reports response-contract issue paths without retaining rejected values", async () => {
 	vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({
-		model: "gpt-4.1-mini",
+		model: "gpt-4o-mini",
 		choices: [{ message: { content: "completion" } }],
 		usage: { prompt_tokens: "sensitive-provider-value", completion_tokens: 1, total_tokens: 2 },
 	}));
@@ -216,7 +296,7 @@ it("reports response-contract issue paths without retaining rejected values", as
 });
 
 it.each([
-	["Qwen", {
+	["Qwen", "alibaba/qwen3.5-397b-a17b", {
 		model: "qwen3.5-397b-a17b",
 		choices: [{ message: { content: "completion", reasoning_content: "provider extension" } }],
 		usage: {
@@ -227,14 +307,14 @@ it.each([
 			completion_tokens_details: { text_tokens: 1 },
 		},
 	}],
-	["Gemini", {
+	["Gemini", "google/gemini-3.1-flash-lite", {
 		model: "gemini-3.1-flash-lite",
 		choices: [{ message: { content: "completion", extra_content: { provider: "metadata" } } }],
 		usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2, extra_properties: { provider: "metadata" } },
 	}],
-])("accepts %s provider extensions outside consumed completion fields", async (_providerName, response) => {
+] as const)("accepts %s provider extensions outside consumed completion fields", async (_providerName, requestedModel, response) => {
 	vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json(response));
-	await expect(provider().complete(request())).resolves.toMatchObject({
+	await expect(provider(requestedModel).complete(request())).resolves.toMatchObject({
 		text: "completion",
 		token_usage: { measurement: "reported", input_tokens: 1, output_tokens: 1, total_tokens: 2 },
 	});

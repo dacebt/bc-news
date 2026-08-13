@@ -12,7 +12,7 @@ import {
 	LmStudioDeterministicError,
 	LmStudioRetryableError,
 } from "./lmstudio-errors";
-import type { LmStudioStructuredOutputContracts } from "./lmstudio-structured-output";
+import type { ProductionStepOutputContracts } from "./production-step-output-contracts";
 import { lmStudioRuntimeEvidence, observeLmStudioAuxiliary } from "./lmstudio-runtime-evidence";
 
 const COMPLETION_TIMEOUT_MS = 1_800_000;
@@ -23,7 +23,7 @@ export interface LmStudioProviderInput {
 	readonly requestedModel: string;
 	readonly temperature?: ModelTemperature;
 	readonly reasoningEffort: LmStudioReasoningEffort;
-	readonly structuredOutputContracts: LmStudioStructuredOutputContracts;
+	readonly structuredOutputContracts: ProductionStepOutputContracts;
 }
 
 export interface LmStudioPredictionRequestInput {
@@ -31,7 +31,7 @@ export interface LmStudioPredictionRequestInput {
 	readonly system: string;
 	readonly user: string;
 	readonly temperature?: ModelTemperature;
-	readonly structuredOutputContracts: LmStudioStructuredOutputContracts;
+	readonly structuredOutputContracts: ProductionStepOutputContracts;
 }
 
 type LmStudioTemperaturePredictionOption =

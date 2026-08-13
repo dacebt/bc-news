@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import {
-	LM_STUDIO_PRODUCTION_STEP_OUTPUT_CONTRACTS,
+	PRODUCTION_STEP_OUTPUT_CONTRACTS,
 	LM_STUDIO_AUXILIARY_OBSERVATION_TIMEOUT_MS,
 	LmStudioAdapterConfigSchema,
 	LmStudioDeterministicError,
@@ -122,7 +122,7 @@ function provider(
 		requestedModel: "qwen/qwen3.5-9b",
 		...(options.temperature === undefined ? {} : { temperature: options.temperature }),
 		reasoningEffort: "provider_default",
-		structuredOutputContracts: LM_STUDIO_PRODUCTION_STEP_OUTPUT_CONTRACTS,
+		structuredOutputContracts: PRODUCTION_STEP_OUTPUT_CONTRACTS,
 	});
 }
 
@@ -264,7 +264,7 @@ it("uses the exact loaded model, native structured prediction, truthful evidence
 			temperature: LOCAL_TEMPERATURE,
 			structured: {
 				type: "json",
-				jsonSchema: LM_STUDIO_PRODUCTION_STEP_OUTPUT_CONTRACTS.main_story_write.schema,
+				jsonSchema: PRODUCTION_STEP_OUTPUT_CONTRACTS.main_story_write.schema,
 			},
 		}),
 	);
@@ -410,7 +410,7 @@ it("omits temperature for a provider-default evaluation candidate", async () => 
 	expect(options).toMatchObject({
 		structured: {
 			type: "json",
-			jsonSchema: LM_STUDIO_PRODUCTION_STEP_OUTPUT_CONTRACTS.main_story_write.schema,
+			jsonSchema: PRODUCTION_STEP_OUTPUT_CONTRACTS.main_story_write.schema,
 		},
 	});
 	expect(options.signal).toBeInstanceOf(AbortSignal);

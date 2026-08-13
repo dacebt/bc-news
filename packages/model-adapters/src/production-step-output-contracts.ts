@@ -6,21 +6,20 @@ import {
 	MainStoryDraftSchema,
 	type ProductionModelStep,
 } from "@bc-news/generation-core";
-import { LmStudioDeterministicError } from "./lmstudio-errors";
 
 type JsonSchema = Readonly<Record<string, unknown>>;
 
-const LmStudioAnnouncementsCopyeditOutputSchema = z.strictObject({
+const AnnouncementsCopyeditDecodeSchema = z.strictObject({
 	announcements: z.array(IdentifiedAnnouncementSchema.extend({ id: z.string() })),
 });
 
-export interface LmStudioStructuredOutputContract {
+export interface ProductionStepOutputContract {
 	readonly name: string;
 	readonly schema: JsonSchema;
 }
 
-export type LmStudioStructuredOutputContracts = Readonly<
-	Record<ProductionModelStep, LmStudioStructuredOutputContract>
+export type ProductionStepOutputContracts = Readonly<
+	Record<ProductionModelStep, ProductionStepOutputContract>
 >;
 
 function assertInlineStrictJsonSchema(schema: JsonSchema): void {
@@ -32,31 +31,22 @@ function assertInlineStrictJsonSchema(schema: JsonSchema): void {
 		if (candidate === null || typeof candidate !== "object") return;
 		const node = candidate as Record<string, unknown>;
 		if ("$ref" in node || "$defs" in node) {
-			throw new LmStudioDeterministicError(
-				"lmstudio_invalid_config",
-				"LM Studio structured output schema must be inline without $ref or $defs",
-			);
+			throw new Error("Production-step output schema must be inline without $ref or $defs");
 		}
 		if (node.type === "object" && "properties" in node && node.additionalProperties !== false) {
-			throw new LmStudioDeterministicError(
-				"lmstudio_invalid_config",
-				"LM Studio structured output object schemas must reject additional properties",
-			);
+			throw new Error("Production-step output object schemas must reject additional properties");
 		}
 		for (const value of Object.values(node)) visit(value);
 	};
 	visit(schema);
 }
 
-export function lmStudioStructuredOutputContract(
+export function productionStepOutputContract(
 	name: string,
 	schema: z.ZodType,
-): LmStudioStructuredOutputContract {
+): ProductionStepOutputContract {
 	if (!/^[A-Za-z0-9_-]+$/u.test(name)) {
-		throw new LmStudioDeterministicError(
-			"lmstudio_invalid_config",
-			"LM Studio structured output schema name is invalid",
-		);
+		throw new Error("Production-step output schema name is invalid");
 	}
 	const inlineSchema = z.toJSONSchema(schema);
 	delete inlineSchema.$schema;
@@ -64,18 +54,18 @@ export function lmStudioStructuredOutputContract(
 	return { name, schema: inlineSchema };
 }
 
-export const LM_STUDIO_PRODUCTION_STEP_OUTPUT_CONTRACTS: LmStudioStructuredOutputContracts = {
-	main_story_write: lmStudioStructuredOutputContract("main_story_write_output", MainStoryDraftSchema),
-	main_story_copyedit: lmStudioStructuredOutputContract(
+export const PRODUCTION_STEP_OUTPUT_CONTRACTS: ProductionStepOutputContracts = {
+	main_story_write: productionStepOutputContract("main_story_write_output", MainStoryDraftSchema),
+	main_story_copyedit: productionStepOutputContract(
 		"main_story_copyedit_output",
 		MainStoryCopyeditOutputSchema,
 	),
-	announcements_write: lmStudioStructuredOutputContract(
+	announcements_write: productionStepOutputContract(
 		"announcements_write_output",
 		AnnouncementsWriterOutputSchema,
 	),
-	announcements_copyedit: lmStudioStructuredOutputContract(
+	announcements_copyedit: productionStepOutputContract(
 		"announcements_copyedit_output",
-		LmStudioAnnouncementsCopyeditOutputSchema,
+		AnnouncementsCopyeditDecodeSchema,
 	),
 };

@@ -5,7 +5,7 @@ import {
 	CloudflareAiGatewayAdapterConfigSchema,
 	CloudflareAiGatewayDeterministicError,
 	HostedModelAdapterConfigSchema,
-	LM_STUDIO_PRODUCTION_STEP_OUTPUT_CONTRACTS,
+	PRODUCTION_STEP_OUTPUT_CONTRACTS,
 	LmStudioAdapterConfigSchema,
 	LmStudioDeterministicError,
 	OpenAiCompatibleDeterministicError,
@@ -51,7 +51,7 @@ export function resolveModelProvider(
 				requestedModel: config.model,
 				...(config.temperature === undefined ? {} : { temperature: config.temperature }),
 				reasoningEffort: config.reasoning_effort,
-				structuredOutputContracts: LM_STUDIO_PRODUCTION_STEP_OUTPUT_CONTRACTS,
+				structuredOutputContracts: PRODUCTION_STEP_OUTPUT_CONTRACTS,
 			});
 		}
 		case "openai_compatible_hosted": {
@@ -88,6 +88,7 @@ export function resolveModelProvider(
 				...(config.gateway === undefined ? {} : { gateway: config.gateway }),
 				requestedModel: config.model,
 				...(config.temperature === undefined ? {} : { temperature: config.temperature }),
+				structuredOutputContracts: PRODUCTION_STEP_OUTPUT_CONTRACTS,
 			});
 		}
 	}

@@ -31,6 +31,13 @@ export {
 	type CloudflareAiGatewayProviderInput,
 } from "./cloudflare-ai-gateway-model-provider";
 export {
+	CLOUDFLARE_HOSTED_MODEL_IDS,
+	CLOUDFLARE_HOSTED_MODEL_REQUEST_PROFILES,
+	CloudflareHostedModelIdSchema,
+	cloudflareHostedModelRequestBody,
+	type CloudflareHostedModelId,
+} from "./cloudflare-hosted-model-profiles";
+export {
 	OpenAiCompatibleDeterministicError,
 	OpenAiCompatibleRetryableError,
 	type OpenAiCompatibleDeterministicErrorCode,
@@ -58,8 +65,8 @@ export {
 	type LmStudioProviderInput,
 } from "./lmstudio-model-provider";
 export {
-	LM_STUDIO_PRODUCTION_STEP_OUTPUT_CONTRACTS,
-	lmStudioStructuredOutputContract,
-	type LmStudioStructuredOutputContract,
-	type LmStudioStructuredOutputContracts,
-} from "./lmstudio-structured-output";
+	PRODUCTION_STEP_OUTPUT_CONTRACTS,
+	productionStepOutputContract,
+	type ProductionStepOutputContract,
+	type ProductionStepOutputContracts,
+} from "./production-step-output-contracts";

@@ -80,7 +80,7 @@ it("resolves a hosted provider only with endpoint and API key bindings", () => {
 it("resolves Cloudflare AI Gateway only with account and token bindings", () => {
 	const gateway = {
 		adapter: "cloudflare_ai_gateway",
-		model: "openai/gpt-4.1-mini",
+		model: "openai/gpt-4o-mini",
 	};
 	const modelConfig = { ...recordedConfig(), main_story_write: gateway };
 	const gatewayEnv = envWith({

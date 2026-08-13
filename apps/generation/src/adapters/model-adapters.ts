@@ -5,6 +5,7 @@ import {
 	CloudflareAiGatewayAdapterConfigSchema,
 	CloudflareAiGatewayDeterministicError,
 	HostedModelAdapterConfigSchema,
+	PRODUCTION_STEP_OUTPUT_CONTRACTS,
 	LmStudioDeterministicError,
 	LmStudioAdapterConfigSchema,
 	OpenAiCompatibleDeterministicError,
@@ -94,6 +95,7 @@ export function resolveModelProvider(
 				...(config.gateway === undefined ? {} : { gateway: config.gateway }),
 				requestedModel: config.model,
 				...(config.temperature === undefined ? {} : { temperature: config.temperature }),
+				structuredOutputContracts: PRODUCTION_STEP_OUTPUT_CONTRACTS,
 			}));
 		}
 	}

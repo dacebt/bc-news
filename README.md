@@ -92,8 +92,12 @@ For Cloudflare AI Gateway, create the ignored `apps/generation/.dev.vars` with
 only `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`. The token needs
 **Account > Workers AI > Read**; an AI Gateway-only token is not sufficient for
 the account AI REST endpoint. Unified Billing requires loaded credits and a
-payment method but no provider API keys. Then run the checked-in two-provider
-example after reviewing its current model ids and expected spend:
+payment method but no provider API keys. Hosted model ids are admitted only
+after their Cloudflare request schema has an explicit adapter profile. The
+current profiles are `openai/gpt-5-nano`, `openai/gpt-4o-mini`,
+`alibaba/qwen3.5-397b-a17b`, `google/gemini-3.1-flash-lite`, and
+`@cf/openai/gpt-oss-120b`. Then run the checked-in two-provider example after
+reviewing its current model ids and expected spend:
 
 ```sh
 pnpm --filter @bc-news/eval eval -- benchmark run \
@@ -106,19 +110,24 @@ The `cloudflare_ai_gateway` adapter uses Cloudflare's account default when
 `gateway` is omitted. A named selection with an `id` is available when a
 specific gateway is required. It uses Cloudflare's fixed account REST endpoint,
 skips cache, retains log metadata without prompt/response payloads, attaches run
-and invocation ids, sets one Gateway attempt, and bounds the request at ten minutes. The application
-retains the response-scoped `cf-aig-log-id` when Cloudflare reports it, records
-an explicit unavailable observation when it does not, and retains provider/model
-identity and token usage. The inference response does not report cost, so billing
-remains `unavailable`; a reported log id can reconcile Cloudflare's estimated
-cost without calling it invoice truth.
+and invocation ids, sets one Gateway attempt, and bounds the request at ten
+minutes. The application sends the production step's strict Zod-derived JSON
+Schema through that model profile and sets its documented output-token field to
+16,384. It retains the response-scoped `cf-aig-log-id` when Cloudflare reports
+it, records an explicit unavailable observation when it does not, and retains
+provider/model identity and token usage. The inference response does not report
+cost, so billing remains `unavailable`; a reported log id can reconcile
+Cloudflare's estimated cost without calling it invoice truth.
 
 Each of the four production agents has its own complete adapter configuration:
 provider or adapter, model, optional `temperature`, and the adapter-specific
-reasoning or billing declaration. Temperature is the only decoding control the
-application admits or sends. Omitting it measures that agent's provider-default
-candidate; supplying it measures that exact candidate. `top_p` and `top_k` are
-not current configuration fields. A benchmark is an experiment used to compare
+reasoning or billing declaration. Temperature is the only operator-configurable
+decoding control. LM Studio and profiled Gateway requests always receive the
+production step's strict JSON Schema; Gateway profiles also own a required
+output-token allowance. Omitting temperature measures that agent's
+provider-default candidate; supplying it measures that exact candidate. `top_p`
+and `top_k` are not current configuration fields. A benchmark is an experiment
+used to compare
 candidate configurations for each role and select the configuration that will
 be deployed; it is not a deterministic test or a provider-default quality gate.
 

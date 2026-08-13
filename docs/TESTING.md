@@ -78,15 +78,22 @@ Benchmark Run version 7 retains existing live configurations. A
 `cloudflare_ai_gateway` configuration emits version 8 and additionally requires
 one lifecycle-matched Gateway-request record for every invocation, including
 the response-scoped log id and declared cache/logging/retry/timeout policy on
-success. Versions 1–7 retain their historical meanings. Both current paths
+success. New Gateway records additionally retain the exact model-profile
+request format, structured-output contract name, and output-token field and
+limit; earlier version 8 records remain valid without those later evidence
+fields. Versions 1–7 retain their historical meanings. Both current paths
 retain every exact per-agent configuration, schema-valid copyedit diagnostic,
-and a lifecycle-matched runtime-evidence record for every invocation. Each role independently
-chooses a provider, model, and optional temperature; omission includes that
-role's provider default as a candidate. Temperature is the only decoding
-control admitted or sent. Model evaluation compares these candidate
-configurations to select production settings; it is not a deterministic test or
-a provider-default quality gate. Version 8 preserves version 7's four subject
-outcomes: `completed`, `parse_rejected`, `contract_rejected`, and
+and a lifecycle-matched runtime-evidence record for every invocation. Each role
+independently chooses a provider, model, and optional temperature; omission
+includes that
+role's provider default as a candidate. Temperature is the only
+operator-configurable decoding control. LM Studio and profiled Gateway models
+receive the same strict production-step JSON Schema, while each Gateway model
+profile owns its provider request encoding and output allowance. Model
+evaluation compares these candidate configurations to select production
+settings; it is not a deterministic test or a provider-default quality gate.
+Version 8 preserves version 7's four subject outcomes: `completed`,
+`parse_rejected`, `contract_rejected`, and
 `infrastructure_incomplete`. Runtime evidence separates comparable execution
 context from volatile prediction observation and represents every unavailable
 field as an explicit unknown or externally controlled state.
