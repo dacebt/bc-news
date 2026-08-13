@@ -1,0 +1,90 @@
+{
+  "version": 2,
+  "id": "rerun-gemma-12b-qat-20260813-scorecard-input",
+  "corpus": {
+    "manifest_path": "packages/fixtures/evaluation-corpus/manifest.json"
+  },
+  "configuration_identity": "config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+  "runs": [
+    {
+      "ordinal": 1,
+      "corpus_fixture_id": "dense-market-day",
+      "benchmark_run_id": "benchmark-2026-08-13T14-25-18-136Z-61311678-f001-453d-a8d9-6cd87713ed70",
+      "path": "apps/eval/scorecard-evidence/rerun-gemma-12b-qat-20260813/benchmark-runs/benchmark-2026-08-13T14-25-18-136Z-61311678-f001-453d-a8d9-6cd87713ed70.json"
+    },
+    {
+      "ordinal": 2,
+      "corpus_fixture_id": "sparse-repair-update",
+      "benchmark_run_id": "benchmark-2026-08-13T14-42-08-803Z-2586ab8c-2e55-4845-909d-c871c4329f4b",
+      "path": "apps/eval/scorecard-evidence/rerun-gemma-12b-qat-20260813/benchmark-runs/benchmark-2026-08-13T14-42-08-803Z-2586ab8c-2e55-4845-909d-c871c4329f4b.json"
+    },
+    {
+      "ordinal": 3,
+      "corpus_fixture_id": "overlapping-deliveries",
+      "benchmark_run_id": "benchmark-2026-08-13T14-38-28-446Z-5b934cdc-b755-46ce-a11c-5e602cfd699a",
+      "path": "apps/eval/scorecard-evidence/rerun-gemma-12b-qat-20260813/benchmark-runs/benchmark-2026-08-13T14-38-28-446Z-5b934cdc-b755-46ce-a11c-5e602cfd699a.json"
+    },
+    {
+      "ordinal": 4,
+      "corpus_fixture_id": "conflicting-toll-count",
+      "benchmark_run_id": "benchmark-2026-08-13T14-20-00-665Z-b85dd372-fa12-490f-a4e5-3337937e3f92",
+      "path": "apps/eval/scorecard-evidence/rerun-gemma-12b-qat-20260813/benchmark-runs/benchmark-2026-08-13T14-20-00-665Z-b85dd372-fa12-490f-a4e5-3337937e3f92.json"
+    },
+    {
+      "ordinal": 5,
+      "corpus_fixture_id": "unresolved-location",
+      "benchmark_run_id": "benchmark-2026-08-13T14-49-30-523Z-fb1b9f79-e6ae-4637-9737-ff1aef951535",
+      "path": "apps/eval/scorecard-evidence/rerun-gemma-12b-qat-20260813/benchmark-runs/benchmark-2026-08-13T14-49-30-523Z-fb1b9f79-e6ae-4637-9737-ff1aef951535.json"
+    },
+    {
+      "ordinal": 6,
+      "corpus_fixture_id": "irrelevant-campfire",
+      "benchmark_run_id": "benchmark-2026-08-13T14-29-16-929Z-2ae9e637-4492-4a42-9d36-89d77e840a02",
+      "path": "apps/eval/scorecard-evidence/rerun-gemma-12b-qat-20260813/benchmark-runs/benchmark-2026-08-13T14-29-16-929Z-2ae9e637-4492-4a42-9d36-89d77e840a02.json"
+    },
+    {
+      "ordinal": 7,
+      "corpus_fixture_id": "isolated-bell-test",
+      "benchmark_run_id": "benchmark-2026-08-13T14-30-41-571Z-cc2bffd8-6c67-4430-bf16-614401d5c200",
+      "path": "apps/eval/scorecard-evidence/rerun-gemma-12b-qat-20260813/benchmark-runs/benchmark-2026-08-13T14-30-41-571Z-cc2bffd8-6c67-4430-bf16-614401d5c200.json"
+    },
+    {
+      "ordinal": 8,
+      "corpus_fixture_id": "lantern-festival-notice",
+      "benchmark_run_id": "benchmark-2026-08-13T14-33-35-964Z-22632b8a-2d99-4dcd-94ed-94c3563a2e46",
+      "path": "apps/eval/scorecard-evidence/rerun-gemma-12b-qat-20260813/benchmark-runs/benchmark-2026-08-13T14-33-35-964Z-22632b8a-2d99-4dcd-94ed-94c3563a2e46.json"
+    },
+    {
+      "ordinal": 9,
+      "corpus_fixture_id": "supply-counts",
+      "benchmark_run_id": "benchmark-2026-08-13T14-45-19-409Z-16076c42-44e1-478a-ab6f-2dee099e6d58",
+      "path": "apps/eval/scorecard-evidence/rerun-gemma-12b-qat-20260813/benchmark-runs/benchmark-2026-08-13T14-45-19-409Z-16076c42-44e1-478a-ab6f-2dee099e6d58.json"
+    },
+    {
+      "ordinal": 10,
+      "corpus_fixture_id": "named-rangers",
+      "benchmark_run_id": "benchmark-2026-08-13T14-35-55-247Z-aaf3bf65-da2d-4dbd-b183-0bfcf02114ac",
+      "path": "apps/eval/scorecard-evidence/rerun-gemma-12b-qat-20260813/benchmark-runs/benchmark-2026-08-13T14-35-55-247Z-aaf3bf65-da2d-4dbd-b183-0bfcf02114ac.json"
+    },
+    {
+      "ordinal": 11,
+      "corpus_fixture_id": "contested-closure",
+      "benchmark_run_id": "benchmark-2026-08-13T14-22-41-159Z-b34dbd46-200b-4e3a-a437-e0ea08bfc8b3",
+      "path": "apps/eval/scorecard-evidence/rerun-gemma-12b-qat-20260813/benchmark-runs/benchmark-2026-08-13T14-22-41-159Z-b34dbd46-200b-4e3a-a437-e0ea08bfc8b3.json"
+    },
+    {
+      "ordinal": 12,
+      "corpus_fixture_id": "unresolved-departure",
+      "benchmark_run_id": "benchmark-2026-08-13T14-47-09-035Z-6b77ff92-1c80-49c2-917f-84352a31207c",
+      "path": "apps/eval/scorecard-evidence/rerun-gemma-12b-qat-20260813/benchmark-runs/benchmark-2026-08-13T14-47-09-035Z-6b77ff92-1c80-49c2-917f-84352a31207c.json"
+    }
+  ],
+  "annotations": {
+    "path": "apps/eval/scorecard-evidence/rerun-gemma-12b-qat-20260813/annotations.json",
+    "bundle_id": "rerun-gemma-12b-qat-20260813-annotations"
+  },
+  "qualitative_reviews": {
+    "path": "apps/eval/scorecard-evidence/rerun-gemma-12b-qat-20260813/reviews.json",
+    "bundle_id": "rerun-gemma-12b-qat-20260813-reviews"
+  }
+}

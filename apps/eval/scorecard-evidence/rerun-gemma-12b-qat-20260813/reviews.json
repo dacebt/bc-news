@@ -1,0 +1,2271 @@
+{
+  "version": 2,
+  "id": "rerun-gemma-12b-qat-20260813-reviews",
+  "rubric": {
+    "id": "bc-news-editorial-qualitative",
+    "version": 2
+  },
+  "reviewer": {
+    "id": "codex",
+    "kind": "codex"
+  },
+  "reviewed_at": "2026-08-13T14:51:16.089Z",
+  "reviews": [
+    {
+      "review_id": "review-rerun-gemma-12b-qat-20260813-dense-market-day-main_story_write",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-13T14-25-18-136Z-61311678-f001-453d-a8d9-6cd87713ed70",
+        "benchmark_run_version": 7,
+        "code_commit_sha": "d7a26926541b647fba208d86e24e0a2a8c503ce1",
+        "prepared_evidence_identity_sha256": "43ff17b07de790cb2dd0860f70ef542b44a7aa3b77a8c8878143e4df07f4692c",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "dense-market-day",
+        "config_identity": "config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "trial_id": "benchmark-2026-08-13T14-25-18-136Z-61311678-f001-453d-a8d9-6cd87713ed70-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-13T14-25-18-136Z-61311678-f001-453d-a8d9-6cd87713ed70-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f-invocation-1",
+        "production_step": "main_story_write",
+        "invocation_ordinal": 1,
+        "request_sha256": "29b288b207d638a69f03dc598d6aa230fe24613bd8d6d11cc621e8bf5cd9c34f",
+        "completion_text_sha256": "f0af122326ac8e8d709809324a3b9a24cf2bd23987842c07db98ebe161e6e514",
+        "parsed_output_sha256": "472baa0de010d5872d79a68559bcc20e0458c408eba2912b92c0a966d8514ea7",
+        "runtime_evidence_sha256": "a2493ecb460f3bc3e026f46656bcd674e065267a2d8ab356d78d3f5598f0ec8f"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The structured article presents a readable, connected account.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "partly_meets",
+          "rationale": "Closed-corpus claim and event coverage yields a 56% evidence-usefulness signal.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "meets",
+          "rationale": "The assessment reflects whether the output covers the fixture's paired reportable events or notices.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The prose uses a direct, readable in-world news voice.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-rerun-gemma-12b-qat-20260813-dense-market-day-announcements_write",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-13T14-25-18-136Z-61311678-f001-453d-a8d9-6cd87713ed70",
+        "benchmark_run_version": 7,
+        "code_commit_sha": "d7a26926541b647fba208d86e24e0a2a8c503ce1",
+        "prepared_evidence_identity_sha256": "43ff17b07de790cb2dd0860f70ef542b44a7aa3b77a8c8878143e4df07f4692c",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "dense-market-day",
+        "config_identity": "config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "trial_id": "benchmark-2026-08-13T14-25-18-136Z-61311678-f001-453d-a8d9-6cd87713ed70-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-13T14-25-18-136Z-61311678-f001-453d-a8d9-6cd87713ed70-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f-invocation-2",
+        "production_step": "announcements_write",
+        "invocation_ordinal": 2,
+        "request_sha256": "a60b902daa14cff1d3d166f4e1d0c9b5b7c09da8b84fc45e438ddd7b1a39be9b",
+        "completion_text_sha256": "b682fde23b164342fa659726717ae827c33278f643268ef572ee6b79f0e23be7",
+        "parsed_output_sha256": "5aafe7edb8cce982675efa36336882aef1389178bcf4507604f747d7a8abe428",
+        "runtime_evidence_sha256": "4dadb2f725b3123fb083be7c91c258f359dff0ca1c840e57f3722110e0281b0a"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The announcement entries are concise and internally readable.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "does_not_meet",
+          "rationale": "The output communicates 0 relevant announcement item(s) against 1 paired noteworthy candidate(s).",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "does_not_meet",
+          "rationale": "Newsworthiness follows coverage of the paired noteworthy candidates.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The announcement prose is direct and readable.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-rerun-gemma-12b-qat-20260813-dense-market-day-main_story_copyedit",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-13T14-25-18-136Z-61311678-f001-453d-a8d9-6cd87713ed70",
+        "benchmark_run_version": 7,
+        "code_commit_sha": "d7a26926541b647fba208d86e24e0a2a8c503ce1",
+        "prepared_evidence_identity_sha256": "43ff17b07de790cb2dd0860f70ef542b44a7aa3b77a8c8878143e4df07f4692c",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "dense-market-day",
+        "config_identity": "config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "trial_id": "benchmark-2026-08-13T14-25-18-136Z-61311678-f001-453d-a8d9-6cd87713ed70-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-13T14-25-18-136Z-61311678-f001-453d-a8d9-6cd87713ed70-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f-invocation-3",
+        "production_step": "main_story_copyedit",
+        "invocation_ordinal": 3,
+        "request_sha256": "8d7fca80d9b8bbb8cf364939aac6762fb177c9c67672e13d6723e7a579a66cdb",
+        "completion_text_sha256": "7bd34eb109c7e7422ca4162a39864547429b5f2d2951c439bec6849d02fc9684",
+        "parsed_output_sha256": "1f42fd1f8b66a8329a7c336263edf76b634c3de758fc87d3ee177eb1f87c2faf",
+        "runtime_evidence_sha256": "2d62498375fb3a1fd3acffe2cd3f04f86209f912c2bd0561331b5376d34d2923"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The structured article presents a readable, connected account.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "partly_meets",
+          "rationale": "Closed-corpus claim and event coverage yields a 56% evidence-usefulness signal.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "meets",
+          "rationale": "The assessment reflects whether the output covers the fixture's paired reportable events or notices.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The prose uses a direct, readable in-world news voice.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-rerun-gemma-12b-qat-20260813-dense-market-day-announcements_copyedit",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-13T14-25-18-136Z-61311678-f001-453d-a8d9-6cd87713ed70",
+        "benchmark_run_version": 7,
+        "code_commit_sha": "d7a26926541b647fba208d86e24e0a2a8c503ce1",
+        "prepared_evidence_identity_sha256": "43ff17b07de790cb2dd0860f70ef542b44a7aa3b77a8c8878143e4df07f4692c",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "dense-market-day",
+        "config_identity": "config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "trial_id": "benchmark-2026-08-13T14-25-18-136Z-61311678-f001-453d-a8d9-6cd87713ed70-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-13T14-25-18-136Z-61311678-f001-453d-a8d9-6cd87713ed70-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f-invocation-4",
+        "production_step": "announcements_copyedit",
+        "invocation_ordinal": 4,
+        "request_sha256": "090cb9ed343150e000b829c4b080e6ec7184f73ff695362b03d52388a9bc27cf",
+        "completion_text_sha256": "979af4cd3cccfdd7896f073b8f9c1bca140645b873405db7930cc06957f89e20",
+        "parsed_output_sha256": "5aafe7edb8cce982675efa36336882aef1389178bcf4507604f747d7a8abe428",
+        "runtime_evidence_sha256": "860fe54de2cc75b731e6e9653090a66b715342795aad15fa3182b20aa1b0ba00"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The announcement entries are concise and internally readable.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "does_not_meet",
+          "rationale": "The output communicates 0 relevant announcement item(s) against 1 paired noteworthy candidate(s).",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "does_not_meet",
+          "rationale": "Newsworthiness follows coverage of the paired noteworthy candidates.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The announcement prose is direct and readable.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-rerun-gemma-12b-qat-20260813-sparse-repair-update-main_story_write",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-13T14-42-08-803Z-2586ab8c-2e55-4845-909d-c871c4329f4b",
+        "benchmark_run_version": 7,
+        "code_commit_sha": "d7a26926541b647fba208d86e24e0a2a8c503ce1",
+        "prepared_evidence_identity_sha256": "0a5ed115d52e1d38b7e065ee1c0ca1392d76f7100f1a302269aee8020392c43e",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "sparse-repair-update",
+        "config_identity": "config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "trial_id": "benchmark-2026-08-13T14-42-08-803Z-2586ab8c-2e55-4845-909d-c871c4329f4b-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-13T14-42-08-803Z-2586ab8c-2e55-4845-909d-c871c4329f4b-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f-invocation-1",
+        "production_step": "main_story_write",
+        "invocation_ordinal": 1,
+        "request_sha256": "345c30e52686aa81bf46d61c2de5626b23bc2e3244f6adae0c0129e5b565ed32",
+        "completion_text_sha256": "856e8dad25410eebca9498164de8abf9ea7101e61cdb6c4295d406ef9934f9fc",
+        "parsed_output_sha256": "691c302edff41cce06b97163646bb98dc985716b5c237eae4a665ade5cc36d02",
+        "runtime_evidence_sha256": "bf037e510d78a1396600c9bb08424b01e019d1d27c78a9c4305437a296b74f22"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The structured article presents a readable, connected account.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "meets",
+          "rationale": "Closed-corpus claim and event coverage yields a 69% evidence-usefulness signal.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "meets",
+          "rationale": "The assessment reflects whether the output covers the fixture's paired reportable events or notices.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The prose uses a direct, readable in-world news voice.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-rerun-gemma-12b-qat-20260813-sparse-repair-update-announcements_write",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-13T14-42-08-803Z-2586ab8c-2e55-4845-909d-c871c4329f4b",
+        "benchmark_run_version": 7,
+        "code_commit_sha": "d7a26926541b647fba208d86e24e0a2a8c503ce1",
+        "prepared_evidence_identity_sha256": "0a5ed115d52e1d38b7e065ee1c0ca1392d76f7100f1a302269aee8020392c43e",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "sparse-repair-update",
+        "config_identity": "config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "trial_id": "benchmark-2026-08-13T14-42-08-803Z-2586ab8c-2e55-4845-909d-c871c4329f4b-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-13T14-42-08-803Z-2586ab8c-2e55-4845-909d-c871c4329f4b-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f-invocation-2",
+        "production_step": "announcements_write",
+        "invocation_ordinal": 2,
+        "request_sha256": "a6dc9c54d95ed6070fcd9a5d7238f2d723785bbb4d56504c72bf3f78fc3506df",
+        "completion_text_sha256": "b554cb2b44e27d8cb8589ed48a90386edb69c2a2094f45af89a86c0d4cce2081",
+        "parsed_output_sha256": "a8b4afc33ac3f4cb3407f3ec7571ab53413e7e0e5249900606660b7ba2cd1d7a",
+        "runtime_evidence_sha256": "f8caf2e53f8c05f1b6475e9829cc10cdcf0c9310d99603348537ca435f273a4b"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The announcement entries are concise and internally readable.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "does_not_meet",
+          "rationale": "The output communicates 0 relevant announcement item(s) against 1 paired noteworthy candidate(s).",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "does_not_meet",
+          "rationale": "Newsworthiness follows coverage of the paired noteworthy candidates.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The announcement prose is direct and readable.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-rerun-gemma-12b-qat-20260813-sparse-repair-update-announcements_copyedit",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-13T14-42-08-803Z-2586ab8c-2e55-4845-909d-c871c4329f4b",
+        "benchmark_run_version": 7,
+        "code_commit_sha": "d7a26926541b647fba208d86e24e0a2a8c503ce1",
+        "prepared_evidence_identity_sha256": "0a5ed115d52e1d38b7e065ee1c0ca1392d76f7100f1a302269aee8020392c43e",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "sparse-repair-update",
+        "config_identity": "config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "trial_id": "benchmark-2026-08-13T14-42-08-803Z-2586ab8c-2e55-4845-909d-c871c4329f4b-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-13T14-42-08-803Z-2586ab8c-2e55-4845-909d-c871c4329f4b-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f-invocation-3",
+        "production_step": "announcements_copyedit",
+        "invocation_ordinal": 3,
+        "request_sha256": "1050d7069fb4ab4a812394caf0b33e20ad665935c33997fe2f29435da9d697e7",
+        "completion_text_sha256": "9033b2b455f7340b54044e13452cc45489d36114b50dfa33a6a7e821a35b357c",
+        "parsed_output_sha256": "a8b4afc33ac3f4cb3407f3ec7571ab53413e7e0e5249900606660b7ba2cd1d7a",
+        "runtime_evidence_sha256": "cb2a4e334fb48f9f3309101f93e6d6070f855d1a9b5091ca1c8078dfbc9b822d"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The announcement entries are concise and internally readable.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "does_not_meet",
+          "rationale": "The output communicates 0 relevant announcement item(s) against 1 paired noteworthy candidate(s).",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "does_not_meet",
+          "rationale": "Newsworthiness follows coverage of the paired noteworthy candidates.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The announcement prose is direct and readable.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-rerun-gemma-12b-qat-20260813-sparse-repair-update-main_story_copyedit",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-13T14-42-08-803Z-2586ab8c-2e55-4845-909d-c871c4329f4b",
+        "benchmark_run_version": 7,
+        "code_commit_sha": "d7a26926541b647fba208d86e24e0a2a8c503ce1",
+        "prepared_evidence_identity_sha256": "0a5ed115d52e1d38b7e065ee1c0ca1392d76f7100f1a302269aee8020392c43e",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "sparse-repair-update",
+        "config_identity": "config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "trial_id": "benchmark-2026-08-13T14-42-08-803Z-2586ab8c-2e55-4845-909d-c871c4329f4b-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-13T14-42-08-803Z-2586ab8c-2e55-4845-909d-c871c4329f4b-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f-invocation-4",
+        "production_step": "main_story_copyedit",
+        "invocation_ordinal": 4,
+        "request_sha256": "35e0ed494e5cb715fdf4ff473e39762750372f81acdb1ca7c5277a0c099b4bad",
+        "completion_text_sha256": "856e8dad25410eebca9498164de8abf9ea7101e61cdb6c4295d406ef9934f9fc",
+        "parsed_output_sha256": "691c302edff41cce06b97163646bb98dc985716b5c237eae4a665ade5cc36d02",
+        "runtime_evidence_sha256": "6900958533bcddfe21a5bcb4cce3a7943ba12aec68d2157033c1ce6f63d2017a"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The structured article presents a readable, connected account.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "meets",
+          "rationale": "Closed-corpus claim and event coverage yields a 69% evidence-usefulness signal.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "meets",
+          "rationale": "The assessment reflects whether the output covers the fixture's paired reportable events or notices.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The prose uses a direct, readable in-world news voice.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-rerun-gemma-12b-qat-20260813-overlapping-deliveries-main_story_write",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-13T14-38-28-446Z-5b934cdc-b755-46ce-a11c-5e602cfd699a",
+        "benchmark_run_version": 7,
+        "code_commit_sha": "d7a26926541b647fba208d86e24e0a2a8c503ce1",
+        "prepared_evidence_identity_sha256": "a7baa261081785e80488ecf149ccdfb14c0b9cace1fba15e5f8000ae0df6d832",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "overlapping-deliveries",
+        "config_identity": "config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "trial_id": "benchmark-2026-08-13T14-38-28-446Z-5b934cdc-b755-46ce-a11c-5e602cfd699a-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-13T14-38-28-446Z-5b934cdc-b755-46ce-a11c-5e602cfd699a-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f-invocation-1",
+        "production_step": "main_story_write",
+        "invocation_ordinal": 1,
+        "request_sha256": "764e8aa1c5ae5589db5c2f08f22725d35d3223a9dfe4652c2e1b30a515f546f3",
+        "completion_text_sha256": "87d1df36b362ea018bc9314b9f58a6e12b77042ba81840a6243a4bb31bb8294c",
+        "parsed_output_sha256": "dae8b3bdb0f0ecb12c8124f060724e3d4bb4441be20ea2b20c43d08d9f3bbbef",
+        "runtime_evidence_sha256": "507beaa39c6fcf82f2a5c219b125bdc74d31f4b99b07ee8ebd43217cfe542d2b"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The structured article presents a readable, connected account.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "does_not_meet",
+          "rationale": "Closed-corpus claim and event coverage yields a 6% evidence-usefulness signal.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "does_not_meet",
+          "rationale": "The assessment reflects whether the output covers the fixture's paired reportable events or notices.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The prose uses a direct, readable in-world news voice.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-rerun-gemma-12b-qat-20260813-overlapping-deliveries-announcements_write",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-13T14-38-28-446Z-5b934cdc-b755-46ce-a11c-5e602cfd699a",
+        "benchmark_run_version": 7,
+        "code_commit_sha": "d7a26926541b647fba208d86e24e0a2a8c503ce1",
+        "prepared_evidence_identity_sha256": "a7baa261081785e80488ecf149ccdfb14c0b9cace1fba15e5f8000ae0df6d832",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "overlapping-deliveries",
+        "config_identity": "config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "trial_id": "benchmark-2026-08-13T14-38-28-446Z-5b934cdc-b755-46ce-a11c-5e602cfd699a-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-13T14-38-28-446Z-5b934cdc-b755-46ce-a11c-5e602cfd699a-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f-invocation-2",
+        "production_step": "announcements_write",
+        "invocation_ordinal": 2,
+        "request_sha256": "3c1bf65e39a2453d3265b56be0eb513e0c97626fb3c082b13d76b9f72e0649a3",
+        "completion_text_sha256": "5ed138e66e2c3a4cca392c846c506ba25f4eda6debefe0e223323d3fde02f079",
+        "parsed_output_sha256": "6a1171c8bfbb9b4500eedc79490080dedeebfefa308175d85858db5670a007d8",
+        "runtime_evidence_sha256": "102c549da94c9d21361dfd06541e3b2d2aedc4e2506995b34bbce67f49ad4dde"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "uncertain",
+          "rationale": "No announcement prose is available to judge.",
+          "uncertainty": "high"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "meets",
+          "rationale": "The output communicates 0 relevant announcement item(s) against 0 paired noteworthy candidate(s).",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "meets",
+          "rationale": "The fixture provides no paired noteworthy announcement candidate.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "uncertain",
+          "rationale": "No prose is available to judge voice.",
+          "uncertainty": "high"
+        }
+      ]
+    },
+    {
+      "review_id": "review-rerun-gemma-12b-qat-20260813-overlapping-deliveries-main_story_copyedit",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-13T14-38-28-446Z-5b934cdc-b755-46ce-a11c-5e602cfd699a",
+        "benchmark_run_version": 7,
+        "code_commit_sha": "d7a26926541b647fba208d86e24e0a2a8c503ce1",
+        "prepared_evidence_identity_sha256": "a7baa261081785e80488ecf149ccdfb14c0b9cace1fba15e5f8000ae0df6d832",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "overlapping-deliveries",
+        "config_identity": "config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "trial_id": "benchmark-2026-08-13T14-38-28-446Z-5b934cdc-b755-46ce-a11c-5e602cfd699a-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-13T14-38-28-446Z-5b934cdc-b755-46ce-a11c-5e602cfd699a-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f-invocation-3",
+        "production_step": "main_story_copyedit",
+        "invocation_ordinal": 3,
+        "request_sha256": "8619542f052547cbb3d55c6889c341dd8b511bbd68851b91916e2d1e204c1a11",
+        "completion_text_sha256": "87d1df36b362ea018bc9314b9f58a6e12b77042ba81840a6243a4bb31bb8294c",
+        "parsed_output_sha256": "dae8b3bdb0f0ecb12c8124f060724e3d4bb4441be20ea2b20c43d08d9f3bbbef",
+        "runtime_evidence_sha256": "a7dbae78500eca5e33d14b7700557d299c7889bd2ee6641bdc4d2b50d6bc77ce"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The structured article presents a readable, connected account.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "does_not_meet",
+          "rationale": "Closed-corpus claim and event coverage yields a 6% evidence-usefulness signal.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "does_not_meet",
+          "rationale": "The assessment reflects whether the output covers the fixture's paired reportable events or notices.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The prose uses a direct, readable in-world news voice.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-rerun-gemma-12b-qat-20260813-overlapping-deliveries-announcements_copyedit",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-13T14-38-28-446Z-5b934cdc-b755-46ce-a11c-5e602cfd699a",
+        "benchmark_run_version": 7,
+        "code_commit_sha": "d7a26926541b647fba208d86e24e0a2a8c503ce1",
+        "prepared_evidence_identity_sha256": "a7baa261081785e80488ecf149ccdfb14c0b9cace1fba15e5f8000ae0df6d832",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "overlapping-deliveries",
+        "config_identity": "config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "trial_id": "benchmark-2026-08-13T14-38-28-446Z-5b934cdc-b755-46ce-a11c-5e602cfd699a-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-13T14-38-28-446Z-5b934cdc-b755-46ce-a11c-5e602cfd699a-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f-invocation-4",
+        "production_step": "announcements_copyedit",
+        "invocation_ordinal": 4,
+        "request_sha256": "cbedf6e2ecf2c1db6f28c4ca87507e86ba7ee8fce23d4a0b3504c5a7578d0e52",
+        "completion_text_sha256": "5ed138e66e2c3a4cca392c846c506ba25f4eda6debefe0e223323d3fde02f079",
+        "parsed_output_sha256": "6a1171c8bfbb9b4500eedc79490080dedeebfefa308175d85858db5670a007d8",
+        "runtime_evidence_sha256": "75d8870f64099e59fb5d487db5f01c1c162bc790418e3fcbca774e52c1575c5c"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "uncertain",
+          "rationale": "No announcement prose is available to judge.",
+          "uncertainty": "high"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "meets",
+          "rationale": "The output communicates 0 relevant announcement item(s) against 0 paired noteworthy candidate(s).",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "meets",
+          "rationale": "The fixture provides no paired noteworthy announcement candidate.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "uncertain",
+          "rationale": "No prose is available to judge voice.",
+          "uncertainty": "high"
+        }
+      ]
+    },
+    {
+      "review_id": "review-rerun-gemma-12b-qat-20260813-conflicting-toll-count-main_story_write",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-13T14-20-00-665Z-b85dd372-fa12-490f-a4e5-3337937e3f92",
+        "benchmark_run_version": 7,
+        "code_commit_sha": "d7a26926541b647fba208d86e24e0a2a8c503ce1",
+        "prepared_evidence_identity_sha256": "57830e2b15825a2e47d92ec738f9a75e763ac0d020672d97872c309f34eee4c0",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "conflicting-toll-count",
+        "config_identity": "config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "trial_id": "benchmark-2026-08-13T14-20-00-665Z-b85dd372-fa12-490f-a4e5-3337937e3f92-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-13T14-20-00-665Z-b85dd372-fa12-490f-a4e5-3337937e3f92-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f-invocation-1",
+        "production_step": "main_story_write",
+        "invocation_ordinal": 1,
+        "request_sha256": "c36d793f1865be7b09955dca8d157892a4cf0365e816bc3471b9d5e973db8b6f",
+        "completion_text_sha256": "91e7a2290a8ef736689f5c31f2adda1d06f78de14d6f0550e0479739e26dc09d",
+        "parsed_output_sha256": "b3a5ea2159aaf9cfc3add407df335565ecfafa67fe68416adc079eed84b3a7e3",
+        "runtime_evidence_sha256": "262c5f5c542d09226330024294697dfefaa6123691f36aee417e07c10a7773c1"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The structured article presents a readable, connected account.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "partly_meets",
+          "rationale": "Closed-corpus claim and event coverage yields a 61% evidence-usefulness signal.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "partly_meets",
+          "rationale": "The assessment reflects whether the output covers the fixture's paired reportable events or notices.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The prose uses a direct, readable in-world news voice.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-rerun-gemma-12b-qat-20260813-conflicting-toll-count-announcements_write",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-13T14-20-00-665Z-b85dd372-fa12-490f-a4e5-3337937e3f92",
+        "benchmark_run_version": 7,
+        "code_commit_sha": "d7a26926541b647fba208d86e24e0a2a8c503ce1",
+        "prepared_evidence_identity_sha256": "57830e2b15825a2e47d92ec738f9a75e763ac0d020672d97872c309f34eee4c0",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "conflicting-toll-count",
+        "config_identity": "config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "trial_id": "benchmark-2026-08-13T14-20-00-665Z-b85dd372-fa12-490f-a4e5-3337937e3f92-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-13T14-20-00-665Z-b85dd372-fa12-490f-a4e5-3337937e3f92-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f-invocation-2",
+        "production_step": "announcements_write",
+        "invocation_ordinal": 2,
+        "request_sha256": "a9e58a6500f40713d00041f39e86cc8eb18c42f245b3c362af114345467c84c7",
+        "completion_text_sha256": "5ed138e66e2c3a4cca392c846c506ba25f4eda6debefe0e223323d3fde02f079",
+        "parsed_output_sha256": "6a1171c8bfbb9b4500eedc79490080dedeebfefa308175d85858db5670a007d8",
+        "runtime_evidence_sha256": "a8c824da8a20acaef02a2446160cbe2c697e37c0f6db342ec6b660d3e6019af0"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "uncertain",
+          "rationale": "No announcement prose is available to judge.",
+          "uncertainty": "high"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "meets",
+          "rationale": "The output communicates 0 relevant announcement item(s) against 0 paired noteworthy candidate(s).",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "meets",
+          "rationale": "The fixture provides no paired noteworthy announcement candidate.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "uncertain",
+          "rationale": "No prose is available to judge voice.",
+          "uncertainty": "high"
+        }
+      ]
+    },
+    {
+      "review_id": "review-rerun-gemma-12b-qat-20260813-conflicting-toll-count-announcements_copyedit",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-13T14-20-00-665Z-b85dd372-fa12-490f-a4e5-3337937e3f92",
+        "benchmark_run_version": 7,
+        "code_commit_sha": "d7a26926541b647fba208d86e24e0a2a8c503ce1",
+        "prepared_evidence_identity_sha256": "57830e2b15825a2e47d92ec738f9a75e763ac0d020672d97872c309f34eee4c0",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "conflicting-toll-count",
+        "config_identity": "config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "trial_id": "benchmark-2026-08-13T14-20-00-665Z-b85dd372-fa12-490f-a4e5-3337937e3f92-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-13T14-20-00-665Z-b85dd372-fa12-490f-a4e5-3337937e3f92-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f-invocation-3",
+        "production_step": "announcements_copyedit",
+        "invocation_ordinal": 3,
+        "request_sha256": "cbedf6e2ecf2c1db6f28c4ca87507e86ba7ee8fce23d4a0b3504c5a7578d0e52",
+        "completion_text_sha256": "5ed138e66e2c3a4cca392c846c506ba25f4eda6debefe0e223323d3fde02f079",
+        "parsed_output_sha256": "6a1171c8bfbb9b4500eedc79490080dedeebfefa308175d85858db5670a007d8",
+        "runtime_evidence_sha256": "7dd6a03dec15361cbc44ca2865a5a793c927145ef9a6de27d586c9f276f3b6a5"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "uncertain",
+          "rationale": "No announcement prose is available to judge.",
+          "uncertainty": "high"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "meets",
+          "rationale": "The output communicates 0 relevant announcement item(s) against 0 paired noteworthy candidate(s).",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "meets",
+          "rationale": "The fixture provides no paired noteworthy announcement candidate.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "uncertain",
+          "rationale": "No prose is available to judge voice.",
+          "uncertainty": "high"
+        }
+      ]
+    },
+    {
+      "review_id": "review-rerun-gemma-12b-qat-20260813-conflicting-toll-count-main_story_copyedit",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-13T14-20-00-665Z-b85dd372-fa12-490f-a4e5-3337937e3f92",
+        "benchmark_run_version": 7,
+        "code_commit_sha": "d7a26926541b647fba208d86e24e0a2a8c503ce1",
+        "prepared_evidence_identity_sha256": "57830e2b15825a2e47d92ec738f9a75e763ac0d020672d97872c309f34eee4c0",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "conflicting-toll-count",
+        "config_identity": "config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "trial_id": "benchmark-2026-08-13T14-20-00-665Z-b85dd372-fa12-490f-a4e5-3337937e3f92-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-13T14-20-00-665Z-b85dd372-fa12-490f-a4e5-3337937e3f92-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f-invocation-4",
+        "production_step": "main_story_copyedit",
+        "invocation_ordinal": 4,
+        "request_sha256": "5774a584dfdea55c0fd976bf42df898b18dfc751722df60e076a7a7885a86d7b",
+        "completion_text_sha256": "06e18360c2872633f34a1db0f69a03ea6abb8818226160ad957fe3400b80885c",
+        "parsed_output_sha256": "b3a5ea2159aaf9cfc3add407df335565ecfafa67fe68416adc079eed84b3a7e3",
+        "runtime_evidence_sha256": "6d164ff458cb9bcab1e959429bcbe433a83ffc387935c868030e517ce9a3afec"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The structured article presents a readable, connected account.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "partly_meets",
+          "rationale": "Closed-corpus claim and event coverage yields a 61% evidence-usefulness signal.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "partly_meets",
+          "rationale": "The assessment reflects whether the output covers the fixture's paired reportable events or notices.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The prose uses a direct, readable in-world news voice.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-rerun-gemma-12b-qat-20260813-unresolved-location-main_story_write",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-13T14-49-30-523Z-fb1b9f79-e6ae-4637-9737-ff1aef951535",
+        "benchmark_run_version": 7,
+        "code_commit_sha": "d7a26926541b647fba208d86e24e0a2a8c503ce1",
+        "prepared_evidence_identity_sha256": "9b9c838c145821104632dac6029699e215b10b2255c9f835b213cd730cdbb7de",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "unresolved-location",
+        "config_identity": "config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "trial_id": "benchmark-2026-08-13T14-49-30-523Z-fb1b9f79-e6ae-4637-9737-ff1aef951535-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-13T14-49-30-523Z-fb1b9f79-e6ae-4637-9737-ff1aef951535-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f-invocation-1",
+        "production_step": "main_story_write",
+        "invocation_ordinal": 1,
+        "request_sha256": "74831c5e01b1ac2e3beeffae1a785a3bf4fa6c0338dd3da4367c2e03563627cb",
+        "completion_text_sha256": "05bf3029f4e984de7abaa99da09eab5675c9e4e842adfe3ffce7792e171be736",
+        "parsed_output_sha256": "b54f816504907b6f09735f1256daa08f9a26cf5e25ee9274e1aa92007f47b53c",
+        "runtime_evidence_sha256": "fe961aec84a93a47a5290d2eaf50506b611385f611a161606caf73a213b90dbb"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The structured article presents a readable, connected account.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "partly_meets",
+          "rationale": "Closed-corpus claim and event coverage yields a 63% evidence-usefulness signal.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "partly_meets",
+          "rationale": "The assessment reflects whether the output covers the fixture's paired reportable events or notices.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The prose uses a direct, readable in-world news voice.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-rerun-gemma-12b-qat-20260813-unresolved-location-announcements_write",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-13T14-49-30-523Z-fb1b9f79-e6ae-4637-9737-ff1aef951535",
+        "benchmark_run_version": 7,
+        "code_commit_sha": "d7a26926541b647fba208d86e24e0a2a8c503ce1",
+        "prepared_evidence_identity_sha256": "9b9c838c145821104632dac6029699e215b10b2255c9f835b213cd730cdbb7de",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "unresolved-location",
+        "config_identity": "config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "trial_id": "benchmark-2026-08-13T14-49-30-523Z-fb1b9f79-e6ae-4637-9737-ff1aef951535-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-13T14-49-30-523Z-fb1b9f79-e6ae-4637-9737-ff1aef951535-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f-invocation-2",
+        "production_step": "announcements_write",
+        "invocation_ordinal": 2,
+        "request_sha256": "ec9a630beb79f7ea4619446b448000648b972965c7dbed96d14a5d22d82cd457",
+        "completion_text_sha256": "5ed138e66e2c3a4cca392c846c506ba25f4eda6debefe0e223323d3fde02f079",
+        "parsed_output_sha256": "6a1171c8bfbb9b4500eedc79490080dedeebfefa308175d85858db5670a007d8",
+        "runtime_evidence_sha256": "21606784c52b4a70577e3b2cca44bde411f32a56034a4ccb6ab55862d77feb84"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "uncertain",
+          "rationale": "No announcement prose is available to judge.",
+          "uncertainty": "high"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "meets",
+          "rationale": "The output communicates 0 relevant announcement item(s) against 0 paired noteworthy candidate(s).",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "meets",
+          "rationale": "The fixture provides no paired noteworthy announcement candidate.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "uncertain",
+          "rationale": "No prose is available to judge voice.",
+          "uncertainty": "high"
+        }
+      ]
+    },
+    {
+      "review_id": "review-rerun-gemma-12b-qat-20260813-unresolved-location-announcements_copyedit",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-13T14-49-30-523Z-fb1b9f79-e6ae-4637-9737-ff1aef951535",
+        "benchmark_run_version": 7,
+        "code_commit_sha": "d7a26926541b647fba208d86e24e0a2a8c503ce1",
+        "prepared_evidence_identity_sha256": "9b9c838c145821104632dac6029699e215b10b2255c9f835b213cd730cdbb7de",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "unresolved-location",
+        "config_identity": "config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "trial_id": "benchmark-2026-08-13T14-49-30-523Z-fb1b9f79-e6ae-4637-9737-ff1aef951535-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-13T14-49-30-523Z-fb1b9f79-e6ae-4637-9737-ff1aef951535-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f-invocation-3",
+        "production_step": "announcements_copyedit",
+        "invocation_ordinal": 3,
+        "request_sha256": "cbedf6e2ecf2c1db6f28c4ca87507e86ba7ee8fce23d4a0b3504c5a7578d0e52",
+        "completion_text_sha256": "5ed138e66e2c3a4cca392c846c506ba25f4eda6debefe0e223323d3fde02f079",
+        "parsed_output_sha256": "6a1171c8bfbb9b4500eedc79490080dedeebfefa308175d85858db5670a007d8",
+        "runtime_evidence_sha256": "9f3974f50bca80a4a84d685deaf8937c234c5efd75b4445868be5f7560fd8e42"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "uncertain",
+          "rationale": "No announcement prose is available to judge.",
+          "uncertainty": "high"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "meets",
+          "rationale": "The output communicates 0 relevant announcement item(s) against 0 paired noteworthy candidate(s).",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "meets",
+          "rationale": "The fixture provides no paired noteworthy announcement candidate.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "uncertain",
+          "rationale": "No prose is available to judge voice.",
+          "uncertainty": "high"
+        }
+      ]
+    },
+    {
+      "review_id": "review-rerun-gemma-12b-qat-20260813-unresolved-location-main_story_copyedit",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-13T14-49-30-523Z-fb1b9f79-e6ae-4637-9737-ff1aef951535",
+        "benchmark_run_version": 7,
+        "code_commit_sha": "d7a26926541b647fba208d86e24e0a2a8c503ce1",
+        "prepared_evidence_identity_sha256": "9b9c838c145821104632dac6029699e215b10b2255c9f835b213cd730cdbb7de",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "unresolved-location",
+        "config_identity": "config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "trial_id": "benchmark-2026-08-13T14-49-30-523Z-fb1b9f79-e6ae-4637-9737-ff1aef951535-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-13T14-49-30-523Z-fb1b9f79-e6ae-4637-9737-ff1aef951535-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f-invocation-4",
+        "production_step": "main_story_copyedit",
+        "invocation_ordinal": 4,
+        "request_sha256": "a875369081ad62e453eff05a4a70f89e131cd76f94aeb39f16346d9bd4abe842",
+        "completion_text_sha256": "d835cc661ce16583ce078be054990fd8e26f7e40bce6fb3fa5e1dca80090a98c",
+        "parsed_output_sha256": "b54f816504907b6f09735f1256daa08f9a26cf5e25ee9274e1aa92007f47b53c",
+        "runtime_evidence_sha256": "7a18c157ed464ad0be3156cddccde86bff55a22c6d3a42c0aae562bbcc86edc8"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The structured article presents a readable, connected account.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "partly_meets",
+          "rationale": "Closed-corpus claim and event coverage yields a 63% evidence-usefulness signal.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "partly_meets",
+          "rationale": "The assessment reflects whether the output covers the fixture's paired reportable events or notices.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The prose uses a direct, readable in-world news voice.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-rerun-gemma-12b-qat-20260813-irrelevant-campfire-main_story_write",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-13T14-29-16-929Z-2ae9e637-4492-4a42-9d36-89d77e840a02",
+        "benchmark_run_version": 7,
+        "code_commit_sha": "d7a26926541b647fba208d86e24e0a2a8c503ce1",
+        "prepared_evidence_identity_sha256": "5a6cb7ca03e5d220901590dc94387a688784d6a79b1aaac0a42017fc114824e5",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "irrelevant-campfire",
+        "config_identity": "config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "trial_id": "benchmark-2026-08-13T14-29-16-929Z-2ae9e637-4492-4a42-9d36-89d77e840a02-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-13T14-29-16-929Z-2ae9e637-4492-4a42-9d36-89d77e840a02-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f-invocation-1",
+        "production_step": "main_story_write",
+        "invocation_ordinal": 1,
+        "request_sha256": "b112d6352adf210523c9176c96882f59b2b885785c8be1d9b16cbadc9afad8d7",
+        "completion_text_sha256": "aab71a541558e4a20b1e4a9474b8f2dc5e14724a92ef5909b8da64a17e8752c1",
+        "parsed_output_sha256": "e7c9f61f3892c3e664d8a266be0d475480cdc01f69dbf82bb1a72c3f9fce4c7f",
+        "runtime_evidence_sha256": "835b2f51d326e5906ab66dab925f23d69aeea3ca3d6e5d804e4febe4317d93eb"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The structured article presents a readable, connected account.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "partly_meets",
+          "rationale": "Closed-corpus claim and event coverage yields a 55% evidence-usefulness signal.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "does_not_meet",
+          "rationale": "The source is deliberately dominated by low-value campfire chatter.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The prose uses a direct, readable in-world news voice.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-rerun-gemma-12b-qat-20260813-irrelevant-campfire-announcements_write",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-13T14-29-16-929Z-2ae9e637-4492-4a42-9d36-89d77e840a02",
+        "benchmark_run_version": 7,
+        "code_commit_sha": "d7a26926541b647fba208d86e24e0a2a8c503ce1",
+        "prepared_evidence_identity_sha256": "5a6cb7ca03e5d220901590dc94387a688784d6a79b1aaac0a42017fc114824e5",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "irrelevant-campfire",
+        "config_identity": "config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "trial_id": "benchmark-2026-08-13T14-29-16-929Z-2ae9e637-4492-4a42-9d36-89d77e840a02-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-13T14-29-16-929Z-2ae9e637-4492-4a42-9d36-89d77e840a02-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f-invocation-2",
+        "production_step": "announcements_write",
+        "invocation_ordinal": 2,
+        "request_sha256": "7637f796f452f2b5471cae2c5d9e00aefbef2d6652de4dc312b073a9b35bf9e0",
+        "completion_text_sha256": "11803bd57f7fef08a4e361863d680bedb399aba5d06c8b32fa16b1360c4504e7",
+        "parsed_output_sha256": "6a1171c8bfbb9b4500eedc79490080dedeebfefa308175d85858db5670a007d8",
+        "runtime_evidence_sha256": "cba076e76d3e001b60c6f277d2a2c8f79e959d6f00d27000d95ea938f6af9094"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "uncertain",
+          "rationale": "No announcement prose is available to judge.",
+          "uncertainty": "high"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "meets",
+          "rationale": "The output communicates 0 relevant announcement item(s) against 0 paired noteworthy candidate(s).",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "meets",
+          "rationale": "The fixture provides no paired noteworthy announcement candidate.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "uncertain",
+          "rationale": "No prose is available to judge voice.",
+          "uncertainty": "high"
+        }
+      ]
+    },
+    {
+      "review_id": "review-rerun-gemma-12b-qat-20260813-irrelevant-campfire-main_story_copyedit",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-13T14-29-16-929Z-2ae9e637-4492-4a42-9d36-89d77e840a02",
+        "benchmark_run_version": 7,
+        "code_commit_sha": "d7a26926541b647fba208d86e24e0a2a8c503ce1",
+        "prepared_evidence_identity_sha256": "5a6cb7ca03e5d220901590dc94387a688784d6a79b1aaac0a42017fc114824e5",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "irrelevant-campfire",
+        "config_identity": "config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "trial_id": "benchmark-2026-08-13T14-29-16-929Z-2ae9e637-4492-4a42-9d36-89d77e840a02-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-13T14-29-16-929Z-2ae9e637-4492-4a42-9d36-89d77e840a02-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f-invocation-3",
+        "production_step": "main_story_copyedit",
+        "invocation_ordinal": 3,
+        "request_sha256": "14f19af4a920bf192d0351b0833c286ad8086f1accfc590061f15b4de204e57f",
+        "completion_text_sha256": "1c4ea5a578a7db656d52e398f04d6d5aece3e111c384a35f8f794d1f65dec00b",
+        "parsed_output_sha256": "e7c9f61f3892c3e664d8a266be0d475480cdc01f69dbf82bb1a72c3f9fce4c7f",
+        "runtime_evidence_sha256": "7beef4da52708fb369ee7f9f2aa92cc60f1d698be17112a336b2e1b307c4f7c8"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The structured article presents a readable, connected account.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "partly_meets",
+          "rationale": "Closed-corpus claim and event coverage yields a 55% evidence-usefulness signal.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "does_not_meet",
+          "rationale": "The source is deliberately dominated by low-value campfire chatter.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The prose uses a direct, readable in-world news voice.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-rerun-gemma-12b-qat-20260813-irrelevant-campfire-announcements_copyedit",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-13T14-29-16-929Z-2ae9e637-4492-4a42-9d36-89d77e840a02",
+        "benchmark_run_version": 7,
+        "code_commit_sha": "d7a26926541b647fba208d86e24e0a2a8c503ce1",
+        "prepared_evidence_identity_sha256": "5a6cb7ca03e5d220901590dc94387a688784d6a79b1aaac0a42017fc114824e5",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "irrelevant-campfire",
+        "config_identity": "config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "trial_id": "benchmark-2026-08-13T14-29-16-929Z-2ae9e637-4492-4a42-9d36-89d77e840a02-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-13T14-29-16-929Z-2ae9e637-4492-4a42-9d36-89d77e840a02-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f-invocation-4",
+        "production_step": "announcements_copyedit",
+        "invocation_ordinal": 4,
+        "request_sha256": "cbedf6e2ecf2c1db6f28c4ca87507e86ba7ee8fce23d4a0b3504c5a7578d0e52",
+        "completion_text_sha256": "5ed138e66e2c3a4cca392c846c506ba25f4eda6debefe0e223323d3fde02f079",
+        "parsed_output_sha256": "6a1171c8bfbb9b4500eedc79490080dedeebfefa308175d85858db5670a007d8",
+        "runtime_evidence_sha256": "182ed989814511eac0af32bc6f5d8929e8857ad43e6915769bd5cab7938cdf14"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "uncertain",
+          "rationale": "No announcement prose is available to judge.",
+          "uncertainty": "high"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "meets",
+          "rationale": "The output communicates 0 relevant announcement item(s) against 0 paired noteworthy candidate(s).",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "meets",
+          "rationale": "The fixture provides no paired noteworthy announcement candidate.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "uncertain",
+          "rationale": "No prose is available to judge voice.",
+          "uncertainty": "high"
+        }
+      ]
+    },
+    {
+      "review_id": "review-rerun-gemma-12b-qat-20260813-isolated-bell-test-main_story_write",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-13T14-30-41-571Z-cc2bffd8-6c67-4430-bf16-614401d5c200",
+        "benchmark_run_version": 7,
+        "code_commit_sha": "d7a26926541b647fba208d86e24e0a2a8c503ce1",
+        "prepared_evidence_identity_sha256": "f277e1a25be63bc9fa8c36efd936b9f1f97156db492530f99fcf0f576a8de45f",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "isolated-bell-test",
+        "config_identity": "config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "trial_id": "benchmark-2026-08-13T14-30-41-571Z-cc2bffd8-6c67-4430-bf16-614401d5c200-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-13T14-30-41-571Z-cc2bffd8-6c67-4430-bf16-614401d5c200-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f-invocation-1",
+        "production_step": "main_story_write",
+        "invocation_ordinal": 1,
+        "request_sha256": "1a3c7f2f6b23ce055b6808d9fb9d339535ec2872acac41ef38654ec3ca049b84",
+        "completion_text_sha256": "bf88ccb3b04f7f9c1d18ba4e2734837dc8d4a33ac50e956221786483e39ee85e",
+        "parsed_output_sha256": "95ff487c8313ed555f6864ced4d2abccefb575039920afad368ffb540d2aceed",
+        "runtime_evidence_sha256": "94ffb346a8679025a68a6f8d35a9d485bb1160c5571878cc90b5fb3d7f870f23"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The structured article presents a readable, connected account.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "partly_meets",
+          "rationale": "Closed-corpus claim and event coverage yields a 63% evidence-usefulness signal.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "meets",
+          "rationale": "The assessment reflects whether the output covers the fixture's paired reportable events or notices.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The prose uses a direct, readable in-world news voice.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-rerun-gemma-12b-qat-20260813-isolated-bell-test-announcements_write",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-13T14-30-41-571Z-cc2bffd8-6c67-4430-bf16-614401d5c200",
+        "benchmark_run_version": 7,
+        "code_commit_sha": "d7a26926541b647fba208d86e24e0a2a8c503ce1",
+        "prepared_evidence_identity_sha256": "f277e1a25be63bc9fa8c36efd936b9f1f97156db492530f99fcf0f576a8de45f",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "isolated-bell-test",
+        "config_identity": "config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "trial_id": "benchmark-2026-08-13T14-30-41-571Z-cc2bffd8-6c67-4430-bf16-614401d5c200-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-13T14-30-41-571Z-cc2bffd8-6c67-4430-bf16-614401d5c200-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f-invocation-2",
+        "production_step": "announcements_write",
+        "invocation_ordinal": 2,
+        "request_sha256": "f5670207fd2aba72639cffd672f94eefc271ca8b0a1175827ac7f49c9c63f6b0",
+        "completion_text_sha256": "1b4e69247cef23c41e00ea9f1c6ac028b5de5246b04d86fba702b992c634fb2b",
+        "parsed_output_sha256": "d20198d3400101879f82a869e8610d741162379ed633df522c92ef645d9ad336",
+        "runtime_evidence_sha256": "68a991000b5823015dace5a3b705bea8b4d65d1a46a9ac4be901becb0a7e190c"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The announcement entries are concise and internally readable.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "does_not_meet",
+          "rationale": "The output communicates 0 relevant announcement item(s) against 0 paired noteworthy candidate(s).",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "does_not_meet",
+          "rationale": "The fixture provides no paired noteworthy announcement candidate.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The announcement prose is direct and readable.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-rerun-gemma-12b-qat-20260813-isolated-bell-test-announcements_copyedit",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-13T14-30-41-571Z-cc2bffd8-6c67-4430-bf16-614401d5c200",
+        "benchmark_run_version": 7,
+        "code_commit_sha": "d7a26926541b647fba208d86e24e0a2a8c503ce1",
+        "prepared_evidence_identity_sha256": "f277e1a25be63bc9fa8c36efd936b9f1f97156db492530f99fcf0f576a8de45f",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "isolated-bell-test",
+        "config_identity": "config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "trial_id": "benchmark-2026-08-13T14-30-41-571Z-cc2bffd8-6c67-4430-bf16-614401d5c200-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-13T14-30-41-571Z-cc2bffd8-6c67-4430-bf16-614401d5c200-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f-invocation-3",
+        "production_step": "announcements_copyedit",
+        "invocation_ordinal": 3,
+        "request_sha256": "08e7531927f17df96d1192aba374a9bb81c1dd8429790c808adf13ab4a05ad86",
+        "completion_text_sha256": "b0e23818173d2de70a2fa016fd11995cacabc5686048180ae9a057cdf0997f50",
+        "parsed_output_sha256": "d20198d3400101879f82a869e8610d741162379ed633df522c92ef645d9ad336",
+        "runtime_evidence_sha256": "81af98d27ca571928a852c10bda4d840d898bd4f7b4e74f135219119441b3aa2"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The announcement entries are concise and internally readable.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "does_not_meet",
+          "rationale": "The output communicates 0 relevant announcement item(s) against 0 paired noteworthy candidate(s).",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "does_not_meet",
+          "rationale": "The fixture provides no paired noteworthy announcement candidate.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The announcement prose is direct and readable.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-rerun-gemma-12b-qat-20260813-isolated-bell-test-main_story_copyedit",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-13T14-30-41-571Z-cc2bffd8-6c67-4430-bf16-614401d5c200",
+        "benchmark_run_version": 7,
+        "code_commit_sha": "d7a26926541b647fba208d86e24e0a2a8c503ce1",
+        "prepared_evidence_identity_sha256": "f277e1a25be63bc9fa8c36efd936b9f1f97156db492530f99fcf0f576a8de45f",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "isolated-bell-test",
+        "config_identity": "config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "trial_id": "benchmark-2026-08-13T14-30-41-571Z-cc2bffd8-6c67-4430-bf16-614401d5c200-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-13T14-30-41-571Z-cc2bffd8-6c67-4430-bf16-614401d5c200-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f-invocation-4",
+        "production_step": "main_story_copyedit",
+        "invocation_ordinal": 4,
+        "request_sha256": "f21f6cc9e40f34769877e1e0df7a49fffd7947ba11c227efdf5ef7986fc9cf95",
+        "completion_text_sha256": "bf88ccb3b04f7f9c1d18ba4e2734837dc8d4a33ac50e956221786483e39ee85e",
+        "parsed_output_sha256": "95ff487c8313ed555f6864ced4d2abccefb575039920afad368ffb540d2aceed",
+        "runtime_evidence_sha256": "b1a931097df4ac31c8eba07fc62bea0faa68402bf775d3124a72de1d13fbc335"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The structured article presents a readable, connected account.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "partly_meets",
+          "rationale": "Closed-corpus claim and event coverage yields a 63% evidence-usefulness signal.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "meets",
+          "rationale": "The assessment reflects whether the output covers the fixture's paired reportable events or notices.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The prose uses a direct, readable in-world news voice.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-rerun-gemma-12b-qat-20260813-lantern-festival-notice-main_story_write",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-13T14-33-35-964Z-22632b8a-2d99-4dcd-94ed-94c3563a2e46",
+        "benchmark_run_version": 7,
+        "code_commit_sha": "d7a26926541b647fba208d86e24e0a2a8c503ce1",
+        "prepared_evidence_identity_sha256": "0d305800628e47c51811081dfaeb7a321e73a4ab392071210d683e8bc3bcf9ef",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "lantern-festival-notice",
+        "config_identity": "config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "trial_id": "benchmark-2026-08-13T14-33-35-964Z-22632b8a-2d99-4dcd-94ed-94c3563a2e46-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-13T14-33-35-964Z-22632b8a-2d99-4dcd-94ed-94c3563a2e46-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f-invocation-1",
+        "production_step": "main_story_write",
+        "invocation_ordinal": 1,
+        "request_sha256": "897e5150882cc2e52a1cbcf38e66f957d6904db1f272daabb3251682b11ef778",
+        "completion_text_sha256": "be02b8edcff56201a2ec7fc86582f851dfbd0449b98b28981ee0e4824a90f8ba",
+        "parsed_output_sha256": "e372bd061d8af999c56fac7642e2c04f774fa23e7476eee93a82b0d2d79784fe",
+        "runtime_evidence_sha256": "5ea0985758e88736c64e44bf0b864bbeee285f1c69a009c46e3e66636c454b08"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The structured article presents a readable, connected account.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "does_not_meet",
+          "rationale": "Closed-corpus claim and event coverage yields a 11% evidence-usefulness signal.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "does_not_meet",
+          "rationale": "The assessment reflects whether the output covers the fixture's paired reportable events or notices.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The prose uses a direct, readable in-world news voice.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-rerun-gemma-12b-qat-20260813-lantern-festival-notice-announcements_write",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-13T14-33-35-964Z-22632b8a-2d99-4dcd-94ed-94c3563a2e46",
+        "benchmark_run_version": 7,
+        "code_commit_sha": "d7a26926541b647fba208d86e24e0a2a8c503ce1",
+        "prepared_evidence_identity_sha256": "0d305800628e47c51811081dfaeb7a321e73a4ab392071210d683e8bc3bcf9ef",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "lantern-festival-notice",
+        "config_identity": "config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "trial_id": "benchmark-2026-08-13T14-33-35-964Z-22632b8a-2d99-4dcd-94ed-94c3563a2e46-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-13T14-33-35-964Z-22632b8a-2d99-4dcd-94ed-94c3563a2e46-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f-invocation-2",
+        "production_step": "announcements_write",
+        "invocation_ordinal": 2,
+        "request_sha256": "d5f6b188e6226ab57ebc1d17128259260053e28666edc625b3b34bdc3434c449",
+        "completion_text_sha256": "917c143a28e6b2234621369a23994b222d2597a4181705a88fe48214cf03ec95",
+        "parsed_output_sha256": "376d83319de8f4dd28bb50466a6a268e2ae86fa29e0577a6599b23dc4ca78323",
+        "runtime_evidence_sha256": "97e45545496b42f267ad99c0f32e8764b6b7da87ef4d092244c7c443fb20d8c3"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The announcement entries are concise and internally readable.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "does_not_meet",
+          "rationale": "The output communicates 0 relevant announcement item(s) against 2 paired noteworthy candidate(s).",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "does_not_meet",
+          "rationale": "Newsworthiness follows coverage of the paired noteworthy candidates.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The announcement prose is direct and readable.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-rerun-gemma-12b-qat-20260813-lantern-festival-notice-main_story_copyedit",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-13T14-33-35-964Z-22632b8a-2d99-4dcd-94ed-94c3563a2e46",
+        "benchmark_run_version": 7,
+        "code_commit_sha": "d7a26926541b647fba208d86e24e0a2a8c503ce1",
+        "prepared_evidence_identity_sha256": "0d305800628e47c51811081dfaeb7a321e73a4ab392071210d683e8bc3bcf9ef",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "lantern-festival-notice",
+        "config_identity": "config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "trial_id": "benchmark-2026-08-13T14-33-35-964Z-22632b8a-2d99-4dcd-94ed-94c3563a2e46-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-13T14-33-35-964Z-22632b8a-2d99-4dcd-94ed-94c3563a2e46-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f-invocation-3",
+        "production_step": "main_story_copyedit",
+        "invocation_ordinal": 3,
+        "request_sha256": "3265242c1f9570906c818f749a0d24c65f7185a1ca5e9be7401bdae1df813e43",
+        "completion_text_sha256": "b04fbba2a3ba89f2348c5056b7c24946ffbd3098fabde2b627b30f10e609d6fe",
+        "parsed_output_sha256": "52692c7f4722799bfa56b2751d4dc82a860916b7ab2aa8a75bd11d38e58a1051",
+        "runtime_evidence_sha256": "f531b4c288b932ed531c80095c4a6ec33ba25e3dce69001a7da291b2fa35ca6e"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The structured article presents a readable, connected account.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "does_not_meet",
+          "rationale": "Closed-corpus claim and event coverage yields a 11% evidence-usefulness signal.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "does_not_meet",
+          "rationale": "The assessment reflects whether the output covers the fixture's paired reportable events or notices.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The prose uses a direct, readable in-world news voice.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-rerun-gemma-12b-qat-20260813-lantern-festival-notice-announcements_copyedit",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-13T14-33-35-964Z-22632b8a-2d99-4dcd-94ed-94c3563a2e46",
+        "benchmark_run_version": 7,
+        "code_commit_sha": "d7a26926541b647fba208d86e24e0a2a8c503ce1",
+        "prepared_evidence_identity_sha256": "0d305800628e47c51811081dfaeb7a321e73a4ab392071210d683e8bc3bcf9ef",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "lantern-festival-notice",
+        "config_identity": "config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "trial_id": "benchmark-2026-08-13T14-33-35-964Z-22632b8a-2d99-4dcd-94ed-94c3563a2e46-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-13T14-33-35-964Z-22632b8a-2d99-4dcd-94ed-94c3563a2e46-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f-invocation-4",
+        "production_step": "announcements_copyedit",
+        "invocation_ordinal": 4,
+        "request_sha256": "fcfe87632c2afe6d71184d39458f24cacfd07523a0618bde3112b3230dba2f98",
+        "completion_text_sha256": "204343f75f72cbe9531e1eda59c389583027dee29fd3f8537917959aad2ddb4d",
+        "parsed_output_sha256": "376d83319de8f4dd28bb50466a6a268e2ae86fa29e0577a6599b23dc4ca78323",
+        "runtime_evidence_sha256": "5ab7067a0aff84f9946db21b55739a3e915c3715ac41eb26d912ed17d2f3f0c1"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The announcement entries are concise and internally readable.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "does_not_meet",
+          "rationale": "The output communicates 0 relevant announcement item(s) against 2 paired noteworthy candidate(s).",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "does_not_meet",
+          "rationale": "Newsworthiness follows coverage of the paired noteworthy candidates.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The announcement prose is direct and readable.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-rerun-gemma-12b-qat-20260813-supply-counts-main_story_write",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-13T14-45-19-409Z-16076c42-44e1-478a-ab6f-2dee099e6d58",
+        "benchmark_run_version": 7,
+        "code_commit_sha": "d7a26926541b647fba208d86e24e0a2a8c503ce1",
+        "prepared_evidence_identity_sha256": "a118c6f3da5b4bd1ed65f4716f889fed889ec89161ff98a86e65b7cba805039c",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "supply-counts",
+        "config_identity": "config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "trial_id": "benchmark-2026-08-13T14-45-19-409Z-16076c42-44e1-478a-ab6f-2dee099e6d58-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-13T14-45-19-409Z-16076c42-44e1-478a-ab6f-2dee099e6d58-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f-invocation-1",
+        "production_step": "main_story_write",
+        "invocation_ordinal": 1,
+        "request_sha256": "60874cce9d09b8869b1671e8775f51548073086c08e901b73ce4c4596900bfee",
+        "completion_text_sha256": "fd9593b9c4e1a23de0b733342e469600695eb20ae26cb8cb391d470710832257",
+        "parsed_output_sha256": "f4f4f92b496e17bea081f0ee7fb61e4e8b4f902f488cab792c186c5b817c14f5",
+        "runtime_evidence_sha256": "f2c584439a0f494d56d536f19f0e3a49ec2c70e7c6a3990e24f81f910af1a296"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The structured article presents a readable, connected account.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "partly_meets",
+          "rationale": "Closed-corpus claim and event coverage yields a 61% evidence-usefulness signal.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "meets",
+          "rationale": "The assessment reflects whether the output covers the fixture's paired reportable events or notices.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The prose uses a direct, readable in-world news voice.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-rerun-gemma-12b-qat-20260813-supply-counts-announcements_write",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-13T14-45-19-409Z-16076c42-44e1-478a-ab6f-2dee099e6d58",
+        "benchmark_run_version": 7,
+        "code_commit_sha": "d7a26926541b647fba208d86e24e0a2a8c503ce1",
+        "prepared_evidence_identity_sha256": "a118c6f3da5b4bd1ed65f4716f889fed889ec89161ff98a86e65b7cba805039c",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "supply-counts",
+        "config_identity": "config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "trial_id": "benchmark-2026-08-13T14-45-19-409Z-16076c42-44e1-478a-ab6f-2dee099e6d58-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-13T14-45-19-409Z-16076c42-44e1-478a-ab6f-2dee099e6d58-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f-invocation-2",
+        "production_step": "announcements_write",
+        "invocation_ordinal": 2,
+        "request_sha256": "72667aff9d01697f3dc3fb54a3d07a63062a2658a3fbd6162216bd40d249c9c9",
+        "completion_text_sha256": "5ed138e66e2c3a4cca392c846c506ba25f4eda6debefe0e223323d3fde02f079",
+        "parsed_output_sha256": "6a1171c8bfbb9b4500eedc79490080dedeebfefa308175d85858db5670a007d8",
+        "runtime_evidence_sha256": "e8f71157ee2e01501ef995dea37fdb3e28511c06168a8be1aeabee060620cc75"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "uncertain",
+          "rationale": "No announcement prose is available to judge.",
+          "uncertainty": "high"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "does_not_meet",
+          "rationale": "The output communicates 0 relevant announcement item(s) against 1 paired noteworthy candidate(s).",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "does_not_meet",
+          "rationale": "Newsworthiness follows coverage of the paired noteworthy candidates.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "uncertain",
+          "rationale": "No prose is available to judge voice.",
+          "uncertainty": "high"
+        }
+      ]
+    },
+    {
+      "review_id": "review-rerun-gemma-12b-qat-20260813-supply-counts-announcements_copyedit",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-13T14-45-19-409Z-16076c42-44e1-478a-ab6f-2dee099e6d58",
+        "benchmark_run_version": 7,
+        "code_commit_sha": "d7a26926541b647fba208d86e24e0a2a8c503ce1",
+        "prepared_evidence_identity_sha256": "a118c6f3da5b4bd1ed65f4716f889fed889ec89161ff98a86e65b7cba805039c",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "supply-counts",
+        "config_identity": "config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "trial_id": "benchmark-2026-08-13T14-45-19-409Z-16076c42-44e1-478a-ab6f-2dee099e6d58-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-13T14-45-19-409Z-16076c42-44e1-478a-ab6f-2dee099e6d58-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f-invocation-3",
+        "production_step": "announcements_copyedit",
+        "invocation_ordinal": 3,
+        "request_sha256": "cbedf6e2ecf2c1db6f28c4ca87507e86ba7ee8fce23d4a0b3504c5a7578d0e52",
+        "completion_text_sha256": "5ed138e66e2c3a4cca392c846c506ba25f4eda6debefe0e223323d3fde02f079",
+        "parsed_output_sha256": "6a1171c8bfbb9b4500eedc79490080dedeebfefa308175d85858db5670a007d8",
+        "runtime_evidence_sha256": "efa0d9b2b5bb67ffc9238b2688710c33e8f32e20e040a5a7ce9c83ae2197d3b2"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "uncertain",
+          "rationale": "No announcement prose is available to judge.",
+          "uncertainty": "high"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "does_not_meet",
+          "rationale": "The output communicates 0 relevant announcement item(s) against 1 paired noteworthy candidate(s).",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "does_not_meet",
+          "rationale": "Newsworthiness follows coverage of the paired noteworthy candidates.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "uncertain",
+          "rationale": "No prose is available to judge voice.",
+          "uncertainty": "high"
+        }
+      ]
+    },
+    {
+      "review_id": "review-rerun-gemma-12b-qat-20260813-supply-counts-main_story_copyedit",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-13T14-45-19-409Z-16076c42-44e1-478a-ab6f-2dee099e6d58",
+        "benchmark_run_version": 7,
+        "code_commit_sha": "d7a26926541b647fba208d86e24e0a2a8c503ce1",
+        "prepared_evidence_identity_sha256": "a118c6f3da5b4bd1ed65f4716f889fed889ec89161ff98a86e65b7cba805039c",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "supply-counts",
+        "config_identity": "config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "trial_id": "benchmark-2026-08-13T14-45-19-409Z-16076c42-44e1-478a-ab6f-2dee099e6d58-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-13T14-45-19-409Z-16076c42-44e1-478a-ab6f-2dee099e6d58-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f-invocation-4",
+        "production_step": "main_story_copyedit",
+        "invocation_ordinal": 4,
+        "request_sha256": "fff23ebb978db6660ffde62a548a96b7fd2e87d6fd9a729b976b306e465c1616",
+        "completion_text_sha256": "fd9593b9c4e1a23de0b733342e469600695eb20ae26cb8cb391d470710832257",
+        "parsed_output_sha256": "f4f4f92b496e17bea081f0ee7fb61e4e8b4f902f488cab792c186c5b817c14f5",
+        "runtime_evidence_sha256": "e0f9da1bab6133d90d12d9032c17f4a71010ab97c8939d07617b54e2eb42d059"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The structured article presents a readable, connected account.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "partly_meets",
+          "rationale": "Closed-corpus claim and event coverage yields a 61% evidence-usefulness signal.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "meets",
+          "rationale": "The assessment reflects whether the output covers the fixture's paired reportable events or notices.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The prose uses a direct, readable in-world news voice.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-rerun-gemma-12b-qat-20260813-named-rangers-main_story_write",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-13T14-35-55-247Z-aaf3bf65-da2d-4dbd-b183-0bfcf02114ac",
+        "benchmark_run_version": 7,
+        "code_commit_sha": "d7a26926541b647fba208d86e24e0a2a8c503ce1",
+        "prepared_evidence_identity_sha256": "eb9a9add15d02912206ce0f4ee76d8944bfcf38490acffeaaedc3156c03f23f9",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "named-rangers",
+        "config_identity": "config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "trial_id": "benchmark-2026-08-13T14-35-55-247Z-aaf3bf65-da2d-4dbd-b183-0bfcf02114ac-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-13T14-35-55-247Z-aaf3bf65-da2d-4dbd-b183-0bfcf02114ac-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f-invocation-1",
+        "production_step": "main_story_write",
+        "invocation_ordinal": 1,
+        "request_sha256": "bbfb27e6531410993eaca6479d3c3130c5039bf84905033463af914da75cfadf",
+        "completion_text_sha256": "24606f87a7d3f2ecdc344c15f110dad6940ee7fc7f55b3a0db78f607a25c2365",
+        "parsed_output_sha256": "c9ec5daec2883869d6770f61c7bb6e55194b36cdd2893dde3a888dfba04636d2",
+        "runtime_evidence_sha256": "3fbd91b11176a0d54d4327917091d49ca3b6ac585e5ca93d68a97087fa8b2a03"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The structured article presents a readable, connected account.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "partly_meets",
+          "rationale": "Closed-corpus claim and event coverage yields a 50% evidence-usefulness signal.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "partly_meets",
+          "rationale": "The assessment reflects whether the output covers the fixture's paired reportable events or notices.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The prose uses a direct, readable in-world news voice.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-rerun-gemma-12b-qat-20260813-named-rangers-announcements_write",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-13T14-35-55-247Z-aaf3bf65-da2d-4dbd-b183-0bfcf02114ac",
+        "benchmark_run_version": 7,
+        "code_commit_sha": "d7a26926541b647fba208d86e24e0a2a8c503ce1",
+        "prepared_evidence_identity_sha256": "eb9a9add15d02912206ce0f4ee76d8944bfcf38490acffeaaedc3156c03f23f9",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "named-rangers",
+        "config_identity": "config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "trial_id": "benchmark-2026-08-13T14-35-55-247Z-aaf3bf65-da2d-4dbd-b183-0bfcf02114ac-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-13T14-35-55-247Z-aaf3bf65-da2d-4dbd-b183-0bfcf02114ac-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f-invocation-2",
+        "production_step": "announcements_write",
+        "invocation_ordinal": 2,
+        "request_sha256": "685bfb43a9fdc33d08722366d947a74dfcc9d41c60e96ed11210346b4011e102",
+        "completion_text_sha256": "7ad4e5b31ffea687c18ea98d842e6aacf3402546c5f89786d5fe29682635c812",
+        "parsed_output_sha256": "954c913cc84a7bb3707442df29c4fd3610fdcdd7ee4c5f899d2e96f8d3ea01ae",
+        "runtime_evidence_sha256": "022fb5528f5ff6d035cf8f88a7d930205172dd6052cc393e8e06469919f9e089"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The announcement entries are concise and internally readable.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "does_not_meet",
+          "rationale": "The output communicates 0 relevant announcement item(s) against 0 paired noteworthy candidate(s).",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "does_not_meet",
+          "rationale": "The fixture provides no paired noteworthy announcement candidate.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The announcement prose is direct and readable.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-rerun-gemma-12b-qat-20260813-named-rangers-announcements_copyedit",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-13T14-35-55-247Z-aaf3bf65-da2d-4dbd-b183-0bfcf02114ac",
+        "benchmark_run_version": 7,
+        "code_commit_sha": "d7a26926541b647fba208d86e24e0a2a8c503ce1",
+        "prepared_evidence_identity_sha256": "eb9a9add15d02912206ce0f4ee76d8944bfcf38490acffeaaedc3156c03f23f9",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "named-rangers",
+        "config_identity": "config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "trial_id": "benchmark-2026-08-13T14-35-55-247Z-aaf3bf65-da2d-4dbd-b183-0bfcf02114ac-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-13T14-35-55-247Z-aaf3bf65-da2d-4dbd-b183-0bfcf02114ac-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f-invocation-3",
+        "production_step": "announcements_copyedit",
+        "invocation_ordinal": 3,
+        "request_sha256": "6439a8fabf4f17e397dc30e5afdd2cf9ce48e7a739d7c50be998730e67f02ad0",
+        "completion_text_sha256": "2886275de664713d100fe85198fac7e706561f4dd22e02c65e978cbcf179bee4",
+        "parsed_output_sha256": "954c913cc84a7bb3707442df29c4fd3610fdcdd7ee4c5f899d2e96f8d3ea01ae",
+        "runtime_evidence_sha256": "a0549c659409a6dc0edb6993a68febbca51eedd82968af5f4d61e73ad0ab9b6f"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The announcement entries are concise and internally readable.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "does_not_meet",
+          "rationale": "The output communicates 0 relevant announcement item(s) against 0 paired noteworthy candidate(s).",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "does_not_meet",
+          "rationale": "The fixture provides no paired noteworthy announcement candidate.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The announcement prose is direct and readable.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-rerun-gemma-12b-qat-20260813-named-rangers-main_story_copyedit",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-13T14-35-55-247Z-aaf3bf65-da2d-4dbd-b183-0bfcf02114ac",
+        "benchmark_run_version": 7,
+        "code_commit_sha": "d7a26926541b647fba208d86e24e0a2a8c503ce1",
+        "prepared_evidence_identity_sha256": "eb9a9add15d02912206ce0f4ee76d8944bfcf38490acffeaaedc3156c03f23f9",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "named-rangers",
+        "config_identity": "config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "trial_id": "benchmark-2026-08-13T14-35-55-247Z-aaf3bf65-da2d-4dbd-b183-0bfcf02114ac-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-13T14-35-55-247Z-aaf3bf65-da2d-4dbd-b183-0bfcf02114ac-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f-invocation-4",
+        "production_step": "main_story_copyedit",
+        "invocation_ordinal": 4,
+        "request_sha256": "8060f564d0d62f17b29df025bb3cb400802f153ef77474d9a71d17fccf07cd2e",
+        "completion_text_sha256": "24606f87a7d3f2ecdc344c15f110dad6940ee7fc7f55b3a0db78f607a25c2365",
+        "parsed_output_sha256": "c9ec5daec2883869d6770f61c7bb6e55194b36cdd2893dde3a888dfba04636d2",
+        "runtime_evidence_sha256": "ca7fc23fe28499268d228f0635d445694c9f39fda5a90299f8680e18cdc15679"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The structured article presents a readable, connected account.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "partly_meets",
+          "rationale": "Closed-corpus claim and event coverage yields a 50% evidence-usefulness signal.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "partly_meets",
+          "rationale": "The assessment reflects whether the output covers the fixture's paired reportable events or notices.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The prose uses a direct, readable in-world news voice.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-rerun-gemma-12b-qat-20260813-contested-closure-main_story_write",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-13T14-22-41-159Z-b34dbd46-200b-4e3a-a437-e0ea08bfc8b3",
+        "benchmark_run_version": 7,
+        "code_commit_sha": "d7a26926541b647fba208d86e24e0a2a8c503ce1",
+        "prepared_evidence_identity_sha256": "5d260a26adf2c8f776d014ab872cb38e3276eafaf3b1ca2bf74626edd27dc2fc",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "contested-closure",
+        "config_identity": "config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "trial_id": "benchmark-2026-08-13T14-22-41-159Z-b34dbd46-200b-4e3a-a437-e0ea08bfc8b3-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-13T14-22-41-159Z-b34dbd46-200b-4e3a-a437-e0ea08bfc8b3-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f-invocation-1",
+        "production_step": "main_story_write",
+        "invocation_ordinal": 1,
+        "request_sha256": "30df242dc1b9d055bb10923ba5f86ed59133d1a8bb050660a44e7e90e2b2d630",
+        "completion_text_sha256": "3fd28b0056f88427f6c62efe813a5a17427e3eb54306756441241a180efce279",
+        "parsed_output_sha256": "7a0e4b09adf47f9cc6a89823f7edd726aa81ddfb68ee3d80968f8bd9d66c1e1d",
+        "runtime_evidence_sha256": "0c3959f1b310fcf2b68d47b1c5cd683c19eab936cfca0d3a39569490a68eb04e"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The structured article presents a readable, connected account.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "partly_meets",
+          "rationale": "Closed-corpus claim and event coverage yields a 63% evidence-usefulness signal.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "meets",
+          "rationale": "The assessment reflects whether the output covers the fixture's paired reportable events or notices.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The prose uses a direct, readable in-world news voice.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-rerun-gemma-12b-qat-20260813-contested-closure-announcements_write",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-13T14-22-41-159Z-b34dbd46-200b-4e3a-a437-e0ea08bfc8b3",
+        "benchmark_run_version": 7,
+        "code_commit_sha": "d7a26926541b647fba208d86e24e0a2a8c503ce1",
+        "prepared_evidence_identity_sha256": "5d260a26adf2c8f776d014ab872cb38e3276eafaf3b1ca2bf74626edd27dc2fc",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "contested-closure",
+        "config_identity": "config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "trial_id": "benchmark-2026-08-13T14-22-41-159Z-b34dbd46-200b-4e3a-a437-e0ea08bfc8b3-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-13T14-22-41-159Z-b34dbd46-200b-4e3a-a437-e0ea08bfc8b3-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f-invocation-2",
+        "production_step": "announcements_write",
+        "invocation_ordinal": 2,
+        "request_sha256": "421f113385389284684f176e2865c2dfd47ee1f9c39ca7a783bf9eb8e6c502df",
+        "completion_text_sha256": "ba7e34f5e848644cdd01715674a14193203113c23edaaf3dbf11d00ff2b3d61a",
+        "parsed_output_sha256": "19475b8690cd753d1d788b7afc7222528bb9c1551c8e037a4775581569fa8519",
+        "runtime_evidence_sha256": "451db15ea48aa6b99624aeecd2f459131d2f34f2396bca2f03cae8c12b55397d"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The announcement entries are concise and internally readable.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "meets",
+          "rationale": "The output communicates 1 relevant announcement item(s) against 1 paired noteworthy candidate(s).",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "meets",
+          "rationale": "Newsworthiness follows coverage of the paired noteworthy candidates.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The announcement prose is direct and readable.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-rerun-gemma-12b-qat-20260813-contested-closure-main_story_copyedit",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-13T14-22-41-159Z-b34dbd46-200b-4e3a-a437-e0ea08bfc8b3",
+        "benchmark_run_version": 7,
+        "code_commit_sha": "d7a26926541b647fba208d86e24e0a2a8c503ce1",
+        "prepared_evidence_identity_sha256": "5d260a26adf2c8f776d014ab872cb38e3276eafaf3b1ca2bf74626edd27dc2fc",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "contested-closure",
+        "config_identity": "config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "trial_id": "benchmark-2026-08-13T14-22-41-159Z-b34dbd46-200b-4e3a-a437-e0ea08bfc8b3-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-13T14-22-41-159Z-b34dbd46-200b-4e3a-a437-e0ea08bfc8b3-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f-invocation-3",
+        "production_step": "main_story_copyedit",
+        "invocation_ordinal": 3,
+        "request_sha256": "bfc6c6e91f08b246d7ab37cae480902023dace11bcba2f4b557aa0471bbccbe9",
+        "completion_text_sha256": "3fd28b0056f88427f6c62efe813a5a17427e3eb54306756441241a180efce279",
+        "parsed_output_sha256": "7a0e4b09adf47f9cc6a89823f7edd726aa81ddfb68ee3d80968f8bd9d66c1e1d",
+        "runtime_evidence_sha256": "1242d27b9d4933f4bf88ae92faae6960f2a2a8bd527c37f0e875b45ce0d86cf3"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The structured article presents a readable, connected account.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "partly_meets",
+          "rationale": "Closed-corpus claim and event coverage yields a 63% evidence-usefulness signal.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "meets",
+          "rationale": "The assessment reflects whether the output covers the fixture's paired reportable events or notices.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The prose uses a direct, readable in-world news voice.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-rerun-gemma-12b-qat-20260813-contested-closure-announcements_copyedit",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-13T14-22-41-159Z-b34dbd46-200b-4e3a-a437-e0ea08bfc8b3",
+        "benchmark_run_version": 7,
+        "code_commit_sha": "d7a26926541b647fba208d86e24e0a2a8c503ce1",
+        "prepared_evidence_identity_sha256": "5d260a26adf2c8f776d014ab872cb38e3276eafaf3b1ca2bf74626edd27dc2fc",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "contested-closure",
+        "config_identity": "config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "trial_id": "benchmark-2026-08-13T14-22-41-159Z-b34dbd46-200b-4e3a-a437-e0ea08bfc8b3-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-13T14-22-41-159Z-b34dbd46-200b-4e3a-a437-e0ea08bfc8b3-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f-invocation-4",
+        "production_step": "announcements_copyedit",
+        "invocation_ordinal": 4,
+        "request_sha256": "c5cfd0e3156ef0f1c6f3c99774dcd21f8b1f75d2c0d738ab3a57f111cb2ac249",
+        "completion_text_sha256": "ee72f8c7f9232c1f66455f003bc50312c4abfde0c82f82ee11f88b3ebdf182ca",
+        "parsed_output_sha256": "19475b8690cd753d1d788b7afc7222528bb9c1551c8e037a4775581569fa8519",
+        "runtime_evidence_sha256": "53bc7afb45916b0ac0c520134f0d2544d23bd91ee5fb8772ef7513156bdf4a34"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The announcement entries are concise and internally readable.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "meets",
+          "rationale": "The output communicates 1 relevant announcement item(s) against 1 paired noteworthy candidate(s).",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "meets",
+          "rationale": "Newsworthiness follows coverage of the paired noteworthy candidates.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The announcement prose is direct and readable.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-rerun-gemma-12b-qat-20260813-unresolved-departure-main_story_write",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-13T14-47-09-035Z-6b77ff92-1c80-49c2-917f-84352a31207c",
+        "benchmark_run_version": 7,
+        "code_commit_sha": "d7a26926541b647fba208d86e24e0a2a8c503ce1",
+        "prepared_evidence_identity_sha256": "e2abc369c6c39970f04db00012add4f54b1630bd3dfec23659a17a8b4d046c01",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "unresolved-departure",
+        "config_identity": "config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "trial_id": "benchmark-2026-08-13T14-47-09-035Z-6b77ff92-1c80-49c2-917f-84352a31207c-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-13T14-47-09-035Z-6b77ff92-1c80-49c2-917f-84352a31207c-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f-invocation-1",
+        "production_step": "main_story_write",
+        "invocation_ordinal": 1,
+        "request_sha256": "963bd2e49cbd03dae2586a8465e469e4b899c66aba7b56bf1f050429d9fa3786",
+        "completion_text_sha256": "b8909f184a8feb6d40d6b38df1aa09bb3d2857da887f535f0d5d1199c31537f1",
+        "parsed_output_sha256": "238c00be7c5ff175e8f9abccac29acf7f6fd7296d0a5bf611c67a49123c0dc92",
+        "runtime_evidence_sha256": "8a81a8a9aa41608d5932e79cbb750c4c096b1b15fdb6ba1f00f6677fc6bbfc7d"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The structured article presents a readable, connected account.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "partly_meets",
+          "rationale": "Closed-corpus claim and event coverage yields a 63% evidence-usefulness signal.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "meets",
+          "rationale": "The assessment reflects whether the output covers the fixture's paired reportable events or notices.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The prose uses a direct, readable in-world news voice.",
+          "uncertainty": "medium"
+        }
+      ]
+    },
+    {
+      "review_id": "review-rerun-gemma-12b-qat-20260813-unresolved-departure-announcements_write",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-13T14-47-09-035Z-6b77ff92-1c80-49c2-917f-84352a31207c",
+        "benchmark_run_version": 7,
+        "code_commit_sha": "d7a26926541b647fba208d86e24e0a2a8c503ce1",
+        "prepared_evidence_identity_sha256": "e2abc369c6c39970f04db00012add4f54b1630bd3dfec23659a17a8b4d046c01",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "unresolved-departure",
+        "config_identity": "config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "trial_id": "benchmark-2026-08-13T14-47-09-035Z-6b77ff92-1c80-49c2-917f-84352a31207c-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-13T14-47-09-035Z-6b77ff92-1c80-49c2-917f-84352a31207c-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f-invocation-2",
+        "production_step": "announcements_write",
+        "invocation_ordinal": 2,
+        "request_sha256": "4ecd23f4b67f82d1503a58a8674381f11b4a0039ab247dead92a9ecff50e14cf",
+        "completion_text_sha256": "5ed138e66e2c3a4cca392c846c506ba25f4eda6debefe0e223323d3fde02f079",
+        "parsed_output_sha256": "6a1171c8bfbb9b4500eedc79490080dedeebfefa308175d85858db5670a007d8",
+        "runtime_evidence_sha256": "165f8f9f652bf0c6cd708050c57e39f8af987b829e2765a5dd942c8a81850081"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "uncertain",
+          "rationale": "No announcement prose is available to judge.",
+          "uncertainty": "high"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "does_not_meet",
+          "rationale": "The output communicates 0 relevant announcement item(s) against 1 paired noteworthy candidate(s).",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "does_not_meet",
+          "rationale": "Newsworthiness follows coverage of the paired noteworthy candidates.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "uncertain",
+          "rationale": "No prose is available to judge voice.",
+          "uncertainty": "high"
+        }
+      ]
+    },
+    {
+      "review_id": "review-rerun-gemma-12b-qat-20260813-unresolved-departure-announcements_copyedit",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-13T14-47-09-035Z-6b77ff92-1c80-49c2-917f-84352a31207c",
+        "benchmark_run_version": 7,
+        "code_commit_sha": "d7a26926541b647fba208d86e24e0a2a8c503ce1",
+        "prepared_evidence_identity_sha256": "e2abc369c6c39970f04db00012add4f54b1630bd3dfec23659a17a8b4d046c01",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "unresolved-departure",
+        "config_identity": "config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "trial_id": "benchmark-2026-08-13T14-47-09-035Z-6b77ff92-1c80-49c2-917f-84352a31207c-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-13T14-47-09-035Z-6b77ff92-1c80-49c2-917f-84352a31207c-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f-invocation-3",
+        "production_step": "announcements_copyedit",
+        "invocation_ordinal": 3,
+        "request_sha256": "cbedf6e2ecf2c1db6f28c4ca87507e86ba7ee8fce23d4a0b3504c5a7578d0e52",
+        "completion_text_sha256": "5ed138e66e2c3a4cca392c846c506ba25f4eda6debefe0e223323d3fde02f079",
+        "parsed_output_sha256": "6a1171c8bfbb9b4500eedc79490080dedeebfefa308175d85858db5670a007d8",
+        "runtime_evidence_sha256": "f8fdcbe0289829dddddcf7ded5ebda36fae7900a335b6176f54f43c64cec2efa"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "uncertain",
+          "rationale": "No announcement prose is available to judge.",
+          "uncertainty": "high"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "does_not_meet",
+          "rationale": "The output communicates 0 relevant announcement item(s) against 1 paired noteworthy candidate(s).",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "does_not_meet",
+          "rationale": "Newsworthiness follows coverage of the paired noteworthy candidates.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "uncertain",
+          "rationale": "No prose is available to judge voice.",
+          "uncertainty": "high"
+        }
+      ]
+    },
+    {
+      "review_id": "review-rerun-gemma-12b-qat-20260813-unresolved-departure-main_story_copyedit",
+      "output": {
+        "benchmark_run_id": "benchmark-2026-08-13T14-47-09-035Z-6b77ff92-1c80-49c2-917f-84352a31207c",
+        "benchmark_run_version": 7,
+        "code_commit_sha": "d7a26926541b647fba208d86e24e0a2a8c503ce1",
+        "prepared_evidence_identity_sha256": "e2abc369c6c39970f04db00012add4f54b1630bd3dfec23659a17a8b4d046c01",
+        "corpus_manifest_id": "bcn-evaluation-reference-corpus-v2",
+        "corpus_fixture_id": "unresolved-departure",
+        "config_identity": "config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "trial_id": "benchmark-2026-08-13T14-47-09-035Z-6b77ff92-1c80-49c2-917f-84352a31207c-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f",
+        "repetition": 1,
+        "invocation_id": "benchmark-2026-08-13T14-47-09-035Z-6b77ff92-1c80-49c2-917f-84352a31207c-trial-1-config-179297320f6351ed2a3eb6e5cef0e5048d69ee4cda22a485d9330c278dea3e5f-invocation-4",
+        "production_step": "main_story_copyedit",
+        "invocation_ordinal": 4,
+        "request_sha256": "2210d8b2a06c12fd0f6773377e92087b20a27a7ca115fa547340996394dfd122",
+        "completion_text_sha256": "2a4a615bcb33bd41749f277f369023c84915fa12ced3a80a63a00f29cabf2e55",
+        "parsed_output_sha256": "238c00be7c5ff175e8f9abccac29acf7f6fd7296d0a5bf611c67a49123c0dc92",
+        "runtime_evidence_sha256": "a9509f43e7b739a2f671c6f7815eb835a836b4ec29603598919266ef075f2370"
+      },
+      "criteria": [
+        {
+          "criterion": "coherence",
+          "assessment": "meets",
+          "rationale": "The structured article presents a readable, connected account.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "usefulness",
+          "assessment": "partly_meets",
+          "rationale": "Closed-corpus claim and event coverage yields a 63% evidence-usefulness signal.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "newsworthiness",
+          "assessment": "meets",
+          "rationale": "The assessment reflects whether the output covers the fixture's paired reportable events or notices.",
+          "uncertainty": "medium"
+        },
+        {
+          "criterion": "voice",
+          "assessment": "meets",
+          "rationale": "The prose uses a direct, readable in-world news voice.",
+          "uncertainty": "medium"
+        }
+      ]
+    }
+  ]
+}

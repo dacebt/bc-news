@@ -1,0 +1,90 @@
+{
+  "version": 2,
+  "id": "rerun-cloudflare-gemini-3-1-flash-lite-20260813-scorecard-input",
+  "corpus": {
+    "manifest_path": "packages/fixtures/evaluation-corpus/manifest.json"
+  },
+  "configuration_identity": "config-cabd94a622dbafe49cc8e16d5db42daf9f8051b44f61a78c66a7ebae3cb8eed4",
+  "runs": [
+    {
+      "ordinal": 1,
+      "corpus_fixture_id": "dense-market-day",
+      "benchmark_run_id": "benchmark-2026-08-13T18-32-44-360Z-5ec10108-ea43-4a7b-adc8-88efdd7c059c",
+      "path": "apps/eval/scorecard-evidence/rerun-cloudflare-gemini-3-1-flash-lite-20260813/benchmark-runs/benchmark-2026-08-13T18-32-44-360Z-5ec10108-ea43-4a7b-adc8-88efdd7c059c.json"
+    },
+    {
+      "ordinal": 2,
+      "corpus_fixture_id": "sparse-repair-update",
+      "benchmark_run_id": "benchmark-2026-08-13T18-33-55-363Z-259d1bf8-274e-41fe-a5ed-53bcbd2742ea",
+      "path": "apps/eval/scorecard-evidence/rerun-cloudflare-gemini-3-1-flash-lite-20260813/benchmark-runs/benchmark-2026-08-13T18-33-55-363Z-259d1bf8-274e-41fe-a5ed-53bcbd2742ea.json"
+    },
+    {
+      "ordinal": 3,
+      "corpus_fixture_id": "overlapping-deliveries",
+      "benchmark_run_id": "benchmark-2026-08-13T18-34-05-504Z-ce1406a1-b2e9-4276-a3d0-995e5202d6b3",
+      "path": "apps/eval/scorecard-evidence/rerun-cloudflare-gemini-3-1-flash-lite-20260813/benchmark-runs/benchmark-2026-08-13T18-34-05-504Z-ce1406a1-b2e9-4276-a3d0-995e5202d6b3.json"
+    },
+    {
+      "ordinal": 4,
+      "corpus_fixture_id": "conflicting-toll-count",
+      "benchmark_run_id": "benchmark-2026-08-13T18-34-15-601Z-3525712b-0fa3-4a0c-b881-e439326cec02",
+      "path": "apps/eval/scorecard-evidence/rerun-cloudflare-gemini-3-1-flash-lite-20260813/benchmark-runs/benchmark-2026-08-13T18-34-15-601Z-3525712b-0fa3-4a0c-b881-e439326cec02.json"
+    },
+    {
+      "ordinal": 5,
+      "corpus_fixture_id": "unresolved-location",
+      "benchmark_run_id": "benchmark-2026-08-13T18-34-35-816Z-47b5bbcf-97d8-40fa-9835-2416d71491db",
+      "path": "apps/eval/scorecard-evidence/rerun-cloudflare-gemini-3-1-flash-lite-20260813/benchmark-runs/benchmark-2026-08-13T18-34-35-816Z-47b5bbcf-97d8-40fa-9835-2416d71491db.json"
+    },
+    {
+      "ordinal": 6,
+      "corpus_fixture_id": "irrelevant-campfire",
+      "benchmark_run_id": "benchmark-2026-08-13T18-40-27-539Z-3497ab1d-ff97-40cb-984e-50c9fa2573b7",
+      "path": "apps/eval/scorecard-evidence/rerun-cloudflare-gemini-3-1-flash-lite-20260813/benchmark-runs/benchmark-2026-08-13T18-40-27-539Z-3497ab1d-ff97-40cb-984e-50c9fa2573b7.json"
+    },
+    {
+      "ordinal": 7,
+      "corpus_fixture_id": "isolated-bell-test",
+      "benchmark_run_id": "benchmark-2026-08-13T18-40-38-378Z-8ba62065-2a28-4c3c-982f-72ff532fd7ad",
+      "path": "apps/eval/scorecard-evidence/rerun-cloudflare-gemini-3-1-flash-lite-20260813/benchmark-runs/benchmark-2026-08-13T18-40-38-378Z-8ba62065-2a28-4c3c-982f-72ff532fd7ad.json"
+    },
+    {
+      "ordinal": 8,
+      "corpus_fixture_id": "lantern-festival-notice",
+      "benchmark_run_id": "benchmark-2026-08-13T18-40-50-243Z-d5963328-4b8c-4480-929f-419708b85a1e",
+      "path": "apps/eval/scorecard-evidence/rerun-cloudflare-gemini-3-1-flash-lite-20260813/benchmark-runs/benchmark-2026-08-13T18-40-50-243Z-d5963328-4b8c-4480-929f-419708b85a1e.json"
+    },
+    {
+      "ordinal": 9,
+      "corpus_fixture_id": "supply-counts",
+      "benchmark_run_id": "benchmark-2026-08-13T18-40-59-699Z-af1a5bb5-3195-46e7-864f-dc088eb37dab",
+      "path": "apps/eval/scorecard-evidence/rerun-cloudflare-gemini-3-1-flash-lite-20260813/benchmark-runs/benchmark-2026-08-13T18-40-59-699Z-af1a5bb5-3195-46e7-864f-dc088eb37dab.json"
+    },
+    {
+      "ordinal": 10,
+      "corpus_fixture_id": "named-rangers",
+      "benchmark_run_id": "benchmark-2026-08-13T18-41-09-421Z-15544276-ba74-4880-8757-d87e80a453c9",
+      "path": "apps/eval/scorecard-evidence/rerun-cloudflare-gemini-3-1-flash-lite-20260813/benchmark-runs/benchmark-2026-08-13T18-41-09-421Z-15544276-ba74-4880-8757-d87e80a453c9.json"
+    },
+    {
+      "ordinal": 11,
+      "corpus_fixture_id": "contested-closure",
+      "benchmark_run_id": "benchmark-2026-08-13T18-41-19-865Z-a0b3c302-60f7-4c8c-af6e-772afacea6da",
+      "path": "apps/eval/scorecard-evidence/rerun-cloudflare-gemini-3-1-flash-lite-20260813/benchmark-runs/benchmark-2026-08-13T18-41-19-865Z-a0b3c302-60f7-4c8c-af6e-772afacea6da.json"
+    },
+    {
+      "ordinal": 12,
+      "corpus_fixture_id": "unresolved-departure",
+      "benchmark_run_id": "benchmark-2026-08-13T18-41-30-809Z-5cb3f8f7-d2d6-4b33-a210-295abcf8a56f",
+      "path": "apps/eval/scorecard-evidence/rerun-cloudflare-gemini-3-1-flash-lite-20260813/benchmark-runs/benchmark-2026-08-13T18-41-30-809Z-5cb3f8f7-d2d6-4b33-a210-295abcf8a56f.json"
+    }
+  ],
+  "annotations": {
+    "path": "apps/eval/scorecard-evidence/rerun-cloudflare-gemini-3-1-flash-lite-20260813/annotations.json",
+    "bundle_id": "rerun-cloudflare-gemini-3-1-flash-lite-20260813-annotations"
+  },
+  "qualitative_reviews": {
+    "path": "apps/eval/scorecard-evidence/rerun-cloudflare-gemini-3-1-flash-lite-20260813/reviews.json",
+    "bundle_id": "rerun-cloudflare-gemini-3-1-flash-lite-20260813-reviews"
+  }
+}
