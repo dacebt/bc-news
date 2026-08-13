@@ -10,10 +10,10 @@
 		},
 		{
 			"production_steps": {
-				"main_story_write": { "adapter": "cloudflare_ai_gateway", "model": "alibaba/qwen3.5-397b-a17b" },
-				"main_story_copyedit": { "adapter": "cloudflare_ai_gateway", "model": "alibaba/qwen3.5-397b-a17b" },
-				"announcements_write": { "adapter": "cloudflare_ai_gateway", "model": "alibaba/qwen3.5-397b-a17b" },
-				"announcements_copyedit": { "adapter": "cloudflare_ai_gateway", "model": "alibaba/qwen3.5-397b-a17b" }
+				"main_story_write": { "adapter": "cloudflare_ai_gateway", "model": "google/gemini-2.5-flash-lite" },
+				"main_story_copyedit": { "adapter": "cloudflare_ai_gateway", "model": "google/gemini-2.5-flash-lite" },
+				"announcements_write": { "adapter": "cloudflare_ai_gateway", "model": "google/gemini-2.5-flash-lite" },
+				"announcements_copyedit": { "adapter": "cloudflare_ai_gateway", "model": "google/gemini-2.5-flash-lite" }
 			}
 		}
 	],
