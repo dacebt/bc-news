@@ -27,6 +27,8 @@ generated:
 
 At evaluated source commit `10ea9dc`, the adapter sent every hosted model through Cloudflare's OpenAI-compatible `/ai/v1/chat/completions` endpoint, but sent neither a machine-readable output schema nor an explicit output-token allowance. All five retained hosted models expose a Chat Completions request variant through Cloudflare; those variants admit `response_format` and either `max_tokens`, `max_completion_tokens`, or both. GPT-OSS also has a Workers AI native request schema whose `max_tokens` default is 256, which explains the observed truncation when that adapter version omitted the field.
 
+The implemented adapter deliberately leaves those output-token fields unset, so each provider applies its own default ceiling. The model-specific profiles retain only the request format, structured-output encoding, and provider identity.
+
 ---
 
 ## Hosted Model Request Contracts

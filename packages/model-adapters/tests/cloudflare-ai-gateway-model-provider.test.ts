@@ -145,7 +145,6 @@ it("uses the fixed account REST endpoint with the account default Gateway", asyn
 	if (typeof body !== "string") throw new Error("Expected request body to be JSON text");
 	expect(JSON.parse(body) as unknown).toEqual({
 		model: "openai/gpt-4o-mini",
-		max_completion_tokens: 16_384,
 		messages: [
 			{ role: "system", content: "system constraints" },
 			{ role: "user", content: "writer prompt" },
@@ -161,20 +160,15 @@ it("uses the fixed account REST endpoint with the account default Gateway", asyn
 	});
 });
 
-it.each([
-	["openai/gpt-5-nano", "max_completion_tokens"],
-	["openai/gpt-4o-mini", "max_completion_tokens"],
-	["alibaba/qwen3.5-397b-a17b", "max_tokens"],
-	["google/gemini-3.1-flash-lite", "max_tokens"],
-	["@cf/openai/gpt-oss-120b", "max_tokens"],
-] as const)("uses the researched output-token field for %s", async (model, outputTokenField) => {
+it.each(CLOUDFLARE_HOSTED_MODEL_IDS)("leaves the output-token ceiling unset for %s", async (model) => {
 	const fetchCall = vi.spyOn(globalThis, "fetch").mockResolvedValue(completionResponse());
 	await provider(model, model.startsWith("@cf/") ? { selection: "named", id: "default" } : undefined).complete(request());
 	const [, init] = fetchCall.mock.calls[0]!;
 	if (typeof init?.body !== "string") throw new Error("Expected request body to be JSON text");
 	const body = JSON.parse(init.body) as Record<string, unknown>;
-	expect(body[outputTokenField]).toBe(16_384);
-	expect(body[outputTokenField === "max_tokens" ? "max_completion_tokens" : "max_tokens"]).toBeUndefined();
+	expect(body.max_tokens).toBeUndefined();
+	expect(body.max_completion_tokens).toBeUndefined();
+	expect(body.max_output_tokens).toBeUndefined();
 	expect(body.response_format).toEqual({
 		type: "json_schema",
 		json_schema: {
@@ -223,10 +217,6 @@ it.each([
 				structured_output: {
 					format: "openai_chat_json_schema",
 					contract_name: "main_story_write_output",
-				},
-				output_tokens: {
-					field: requestedModel.startsWith("openai/") ? "max_completion_tokens" : "max_tokens",
-					limit: 16_384,
 				},
 			},
 		},

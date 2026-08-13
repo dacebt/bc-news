@@ -90,10 +90,6 @@ test("runs two hosted provider families through the Gateway contract and retains
 			&& provenance.policy.request_format === "chat_completions"
 			&& provenance.policy.structured_output?.format === "openai_chat_json_schema"
 			&& provenance.policy.structured_output.contract_name.endsWith("_output")
-			&& provenance.policy.output_tokens?.limit === 16_384
-			&& provenance.policy.output_tokens.field === (
-				provenance.requested_model.startsWith("openai/") ? "max_completion_tokens" : "max_tokens"
-			)
 			&& provenance.correlation.run_id === result.benchmark.id)).toBe(true);
 		expect(fetchCall).toHaveBeenCalledTimes(8);
 		for (const [, init] of fetchCall.mock.calls) {

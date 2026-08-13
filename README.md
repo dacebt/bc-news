@@ -112,9 +112,9 @@ specific gateway is required. It uses Cloudflare's fixed account REST endpoint,
 skips cache, retains log metadata without prompt/response payloads, attaches run
 and invocation ids, sets one Gateway attempt, and bounds the request at ten
 minutes. The application sends the production step's strict Zod-derived JSON
-Schema through that model profile and sets its documented output-token field to
-16,384. It retains the response-scoped `cf-aig-log-id` when Cloudflare reports
-it, records an explicit unavailable observation when it does not, and retains
+Schema through that model profile and leaves the provider's output-token ceiling
+unset. It retains the response-scoped `cf-aig-log-id` when Cloudflare reports it,
+records an explicit unavailable observation when it does not, and retains
 provider/model identity and token usage. The inference response does not report
 cost, so billing remains `unavailable`; a reported log id can reconcile
 Cloudflare's estimated cost without calling it invoice truth.
@@ -123,13 +123,12 @@ Each of the four production agents has its own complete adapter configuration:
 provider or adapter, model, optional `temperature`, and the adapter-specific
 reasoning or billing declaration. Temperature is the only operator-configurable
 decoding control. LM Studio and profiled Gateway requests always receive the
-production step's strict JSON Schema; Gateway profiles also own a required
-output-token allowance. Omitting temperature measures that agent's
+production step's strict JSON Schema. Omitting temperature measures that agent's
 provider-default candidate; supplying it measures that exact candidate. `top_p`
 and `top_k` are not current configuration fields. A benchmark is an experiment
-used to compare
-candidate configurations for each role and select the configuration that will
-be deployed; it is not a deterministic test or a provider-default quality gate.
+used to compare candidate configurations for each role and select the
+configuration that will be deployed; it is not a deterministic test or a
+provider-default quality gate.
 
 The command incrementally retains every Evaluation Trial and Step Invocation in
 a versioned Benchmark Run. One ordered application owner allocates invocation

@@ -77,10 +77,6 @@ export const ModelRequestProvenanceSchema = z.discriminatedUnion("transport", [
 				format: z.literal("openai_chat_json_schema"),
 				contract_name: z.string().trim().min(1),
 			}).optional(),
-			output_tokens: z.strictObject({
-				field: z.enum(["max_tokens", "max_completion_tokens"]),
-				limit: z.number().int().positive(),
-			}).optional(),
 		}),
 	}),
 ]);

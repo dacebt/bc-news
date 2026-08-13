@@ -320,10 +320,6 @@ export function createCloudflareAiGatewayModelProvider(
 							format: requestProfile.structuredOutputFormat,
 							contract_name: outputContract.name,
 						},
-						output_tokens: {
-							field: requestProfile.outputTokenField,
-							limit: requestProfile.outputTokenLimit,
-						},
 					},
 				},
 				runtime_evidence: gatewayRuntimeEvidence(requestedModel, parsed.data),

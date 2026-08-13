@@ -184,14 +184,14 @@ retains `cf-aig-log-id` for separately authorized reconciliation when Cloudflare
 reports it and otherwise records the response header as unavailable evidence.
 Gateway model selection is closed over researched exact-model request profiles.
 Each profile owns its Cloudflare request format, provider-side structured-output
-encoding, output-token field, and output-token limit. The admitted profiles are
+encoding, and provider identity. The admitted profiles are
 `openai/gpt-5-nano`, `openai/gpt-4o-mini`,
 `alibaba/qwen3.5-397b-a17b`, `google/gemini-3.1-flash-lite`, and
 `@cf/openai/gpt-oss-120b`; an unprofiled model rejects as invalid configuration.
 Every profiled request sends the production step's strict inline JSON Schema and
-a 16,384-token output allowance. Successful Gateway provenance retains the
-request format, structured-output contract name, and output-token field and
-limit in addition to the existing transport policy.
+leaves the provider's output-token ceiling unset. Successful Gateway provenance
+retains the request format and structured-output contract name in addition to
+the existing transport policy.
 Gateway Benchmark Run version 8 alone retains explicit null completion content;
 versions 1 through 7 keep their frozen string-only completion semantics.
 
