@@ -10,81 +10,81 @@
       "ordinal": 1,
       "corpus_fixture_id": "dense-market-day",
       "benchmark_run_id": "benchmark-2026-08-13T18-44-17-544Z-7f580e4f-f52d-42f4-b572-5038f58dff22",
-      "path": "apps/eval/scorecard-evidence/rerun-cloudflare-minimax-m3-20260813/benchmark-runs/benchmark-2026-08-13T18-44-17-544Z-7f580e4f-f52d-42f4-b572-5038f58dff22.json"
+      "path": "apps/eval/baseline/evidence/hosted-minimax-m3/benchmark-runs/benchmark-2026-08-13T18-44-17-544Z-7f580e4f-f52d-42f4-b572-5038f58dff22.json"
     },
     {
       "ordinal": 2,
       "corpus_fixture_id": "sparse-repair-update",
       "benchmark_run_id": "benchmark-2026-08-13T18-45-30-606Z-3543db6e-95cc-4b63-ad89-2d79da9c0d0d",
-      "path": "apps/eval/scorecard-evidence/rerun-cloudflare-minimax-m3-20260813/benchmark-runs/benchmark-2026-08-13T18-45-30-606Z-3543db6e-95cc-4b63-ad89-2d79da9c0d0d.json"
+      "path": "apps/eval/baseline/evidence/hosted-minimax-m3/benchmark-runs/benchmark-2026-08-13T18-45-30-606Z-3543db6e-95cc-4b63-ad89-2d79da9c0d0d.json"
     },
     {
       "ordinal": 3,
       "corpus_fixture_id": "overlapping-deliveries",
       "benchmark_run_id": "benchmark-2026-08-13T18-45-54-477Z-af13a9af-87f8-4576-b69f-3949951b2969",
-      "path": "apps/eval/scorecard-evidence/rerun-cloudflare-minimax-m3-20260813/benchmark-runs/benchmark-2026-08-13T18-45-54-477Z-af13a9af-87f8-4576-b69f-3949951b2969.json"
+      "path": "apps/eval/baseline/evidence/hosted-minimax-m3/benchmark-runs/benchmark-2026-08-13T18-45-54-477Z-af13a9af-87f8-4576-b69f-3949951b2969.json"
     },
     {
       "ordinal": 4,
       "corpus_fixture_id": "conflicting-toll-count",
       "benchmark_run_id": "benchmark-2026-08-13T18-46-25-766Z-27bf4dba-6622-4846-af3f-eff6ca4f287e",
-      "path": "apps/eval/scorecard-evidence/rerun-cloudflare-minimax-m3-20260813/benchmark-runs/benchmark-2026-08-13T18-46-25-766Z-27bf4dba-6622-4846-af3f-eff6ca4f287e.json"
+      "path": "apps/eval/baseline/evidence/hosted-minimax-m3/benchmark-runs/benchmark-2026-08-13T18-46-25-766Z-27bf4dba-6622-4846-af3f-eff6ca4f287e.json"
     },
     {
       "ordinal": 5,
       "corpus_fixture_id": "unresolved-location",
       "benchmark_run_id": "benchmark-2026-08-13T18-46-53-045Z-2b4e01a5-8e1b-4365-9b55-a32b01ef918e",
-      "path": "apps/eval/scorecard-evidence/rerun-cloudflare-minimax-m3-20260813/benchmark-runs/benchmark-2026-08-13T18-46-53-045Z-2b4e01a5-8e1b-4365-9b55-a32b01ef918e.json"
+      "path": "apps/eval/baseline/evidence/hosted-minimax-m3/benchmark-runs/benchmark-2026-08-13T18-46-53-045Z-2b4e01a5-8e1b-4365-9b55-a32b01ef918e.json"
     },
     {
       "ordinal": 6,
       "corpus_fixture_id": "irrelevant-campfire",
       "benchmark_run_id": "benchmark-2026-08-13T18-47-17-175Z-c93532f1-51fc-4e9c-8ae6-5a1916270ed0",
-      "path": "apps/eval/scorecard-evidence/rerun-cloudflare-minimax-m3-20260813/benchmark-runs/benchmark-2026-08-13T18-47-17-175Z-c93532f1-51fc-4e9c-8ae6-5a1916270ed0.json"
+      "path": "apps/eval/baseline/evidence/hosted-minimax-m3/benchmark-runs/benchmark-2026-08-13T18-47-17-175Z-c93532f1-51fc-4e9c-8ae6-5a1916270ed0.json"
     },
     {
       "ordinal": 7,
       "corpus_fixture_id": "isolated-bell-test",
       "benchmark_run_id": "benchmark-2026-08-13T18-47-54-327Z-8f48f4fd-05b0-4c8a-9d4b-54ac6f1e40c5",
-      "path": "apps/eval/scorecard-evidence/rerun-cloudflare-minimax-m3-20260813/benchmark-runs/benchmark-2026-08-13T18-47-54-327Z-8f48f4fd-05b0-4c8a-9d4b-54ac6f1e40c5.json"
+      "path": "apps/eval/baseline/evidence/hosted-minimax-m3/benchmark-runs/benchmark-2026-08-13T18-47-54-327Z-8f48f4fd-05b0-4c8a-9d4b-54ac6f1e40c5.json"
     },
     {
       "ordinal": 8,
       "corpus_fixture_id": "lantern-festival-notice",
       "benchmark_run_id": "benchmark-2026-08-13T18-48-33-157Z-03d8381a-665b-4097-b766-f19cc8a16059",
-      "path": "apps/eval/scorecard-evidence/rerun-cloudflare-minimax-m3-20260813/benchmark-runs/benchmark-2026-08-13T18-48-33-157Z-03d8381a-665b-4097-b766-f19cc8a16059.json"
+      "path": "apps/eval/baseline/evidence/hosted-minimax-m3/benchmark-runs/benchmark-2026-08-13T18-48-33-157Z-03d8381a-665b-4097-b766-f19cc8a16059.json"
     },
     {
       "ordinal": 9,
       "corpus_fixture_id": "supply-counts",
       "benchmark_run_id": "benchmark-2026-08-13T18-49-02-515Z-9dd450b2-4e76-439d-8fa6-f000eeb8b3bb",
-      "path": "apps/eval/scorecard-evidence/rerun-cloudflare-minimax-m3-20260813/benchmark-runs/benchmark-2026-08-13T18-49-02-515Z-9dd450b2-4e76-439d-8fa6-f000eeb8b3bb.json"
+      "path": "apps/eval/baseline/evidence/hosted-minimax-m3/benchmark-runs/benchmark-2026-08-13T18-49-02-515Z-9dd450b2-4e76-439d-8fa6-f000eeb8b3bb.json"
     },
     {
       "ordinal": 10,
       "corpus_fixture_id": "named-rangers",
       "benchmark_run_id": "benchmark-2026-08-13T18-49-48-405Z-0566e276-f359-4e80-a917-d2df964e2967",
-      "path": "apps/eval/scorecard-evidence/rerun-cloudflare-minimax-m3-20260813/benchmark-runs/benchmark-2026-08-13T18-49-48-405Z-0566e276-f359-4e80-a917-d2df964e2967.json"
+      "path": "apps/eval/baseline/evidence/hosted-minimax-m3/benchmark-runs/benchmark-2026-08-13T18-49-48-405Z-0566e276-f359-4e80-a917-d2df964e2967.json"
     },
     {
       "ordinal": 11,
       "corpus_fixture_id": "contested-closure",
       "benchmark_run_id": "benchmark-2026-08-13T18-50-47-751Z-3ca59b7d-77ea-4172-812f-b5a58ad5c2ab",
-      "path": "apps/eval/scorecard-evidence/rerun-cloudflare-minimax-m3-20260813/benchmark-runs/benchmark-2026-08-13T18-50-47-751Z-3ca59b7d-77ea-4172-812f-b5a58ad5c2ab.json"
+      "path": "apps/eval/baseline/evidence/hosted-minimax-m3/benchmark-runs/benchmark-2026-08-13T18-50-47-751Z-3ca59b7d-77ea-4172-812f-b5a58ad5c2ab.json"
     },
     {
       "ordinal": 12,
       "corpus_fixture_id": "unresolved-departure",
       "benchmark_run_id": "benchmark-2026-08-13T18-51-18-169Z-e7e0832e-5378-428d-8039-1e191687f2bb",
-      "path": "apps/eval/scorecard-evidence/rerun-cloudflare-minimax-m3-20260813/benchmark-runs/benchmark-2026-08-13T18-51-18-169Z-e7e0832e-5378-428d-8039-1e191687f2bb.json"
+      "path": "apps/eval/baseline/evidence/hosted-minimax-m3/benchmark-runs/benchmark-2026-08-13T18-51-18-169Z-e7e0832e-5378-428d-8039-1e191687f2bb.json"
     }
   ],
   "annotations": {
-    "path": "apps/eval/scorecard-evidence/rerun-cloudflare-minimax-m3-20260813/annotations.json",
+    "path": "apps/eval/baseline/evidence/hosted-minimax-m3/annotations.json",
     "bundle_id": "rerun-cloudflare-minimax-m3-20260813-annotations"
   },
   "qualitative_reviews": {
-    "path": "apps/eval/scorecard-evidence/rerun-cloudflare-minimax-m3-20260813/reviews.json",
+    "path": "apps/eval/baseline/evidence/hosted-minimax-m3/reviews.json",
     "bundle_id": "rerun-cloudflare-minimax-m3-20260813-reviews"
   }
 }

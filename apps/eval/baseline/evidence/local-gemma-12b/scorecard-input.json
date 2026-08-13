@@ -10,81 +10,81 @@
       "ordinal": 1,
       "corpus_fixture_id": "dense-market-day",
       "benchmark_run_id": "benchmark-2026-08-13T13-00-31-587Z-164652c6-d8d2-4d4a-810c-5a27f141dbed",
-      "path": "apps/eval/scorecard-evidence/rerun-gemma-12b-20260813/benchmark-runs/benchmark-2026-08-13T13-00-31-587Z-164652c6-d8d2-4d4a-810c-5a27f141dbed.json"
+      "path": "apps/eval/baseline/evidence/local-gemma-12b/benchmark-runs/benchmark-2026-08-13T13-00-31-587Z-164652c6-d8d2-4d4a-810c-5a27f141dbed.json"
     },
     {
       "ordinal": 2,
       "corpus_fixture_id": "sparse-repair-update",
       "benchmark_run_id": "benchmark-2026-08-13T13-04-12-995Z-6537c567-052d-4a42-ae9e-376aa2694618",
-      "path": "apps/eval/scorecard-evidence/rerun-gemma-12b-20260813/benchmark-runs/benchmark-2026-08-13T13-04-12-995Z-6537c567-052d-4a42-ae9e-376aa2694618.json"
+      "path": "apps/eval/baseline/evidence/local-gemma-12b/benchmark-runs/benchmark-2026-08-13T13-04-12-995Z-6537c567-052d-4a42-ae9e-376aa2694618.json"
     },
     {
       "ordinal": 3,
       "corpus_fixture_id": "overlapping-deliveries",
       "benchmark_run_id": "benchmark-2026-08-13T13-05-41-842Z-dd2f4300-f314-4485-a376-b41b8b5439f0",
-      "path": "apps/eval/scorecard-evidence/rerun-gemma-12b-20260813/benchmark-runs/benchmark-2026-08-13T13-05-41-842Z-dd2f4300-f314-4485-a376-b41b8b5439f0.json"
+      "path": "apps/eval/baseline/evidence/local-gemma-12b/benchmark-runs/benchmark-2026-08-13T13-05-41-842Z-dd2f4300-f314-4485-a376-b41b8b5439f0.json"
     },
     {
       "ordinal": 4,
       "corpus_fixture_id": "conflicting-toll-count",
       "benchmark_run_id": "benchmark-2026-08-13T13-08-35-591Z-cafdd820-5b02-44df-9b25-3f8b36bd5da4",
-      "path": "apps/eval/scorecard-evidence/rerun-gemma-12b-20260813/benchmark-runs/benchmark-2026-08-13T13-08-35-591Z-cafdd820-5b02-44df-9b25-3f8b36bd5da4.json"
+      "path": "apps/eval/baseline/evidence/local-gemma-12b/benchmark-runs/benchmark-2026-08-13T13-08-35-591Z-cafdd820-5b02-44df-9b25-3f8b36bd5da4.json"
     },
     {
       "ordinal": 5,
       "corpus_fixture_id": "unresolved-location",
       "benchmark_run_id": "benchmark-2026-08-13T13-10-04-734Z-8e01eaa2-0b2c-48b0-88cf-776d0e674834",
-      "path": "apps/eval/scorecard-evidence/rerun-gemma-12b-20260813/benchmark-runs/benchmark-2026-08-13T13-10-04-734Z-8e01eaa2-0b2c-48b0-88cf-776d0e674834.json"
+      "path": "apps/eval/baseline/evidence/local-gemma-12b/benchmark-runs/benchmark-2026-08-13T13-10-04-734Z-8e01eaa2-0b2c-48b0-88cf-776d0e674834.json"
     },
     {
       "ordinal": 6,
       "corpus_fixture_id": "irrelevant-campfire",
       "benchmark_run_id": "benchmark-2026-08-13T13-12-02-575Z-7f0afad8-4d90-442f-8666-03de40848053",
-      "path": "apps/eval/scorecard-evidence/rerun-gemma-12b-20260813/benchmark-runs/benchmark-2026-08-13T13-12-02-575Z-7f0afad8-4d90-442f-8666-03de40848053.json"
+      "path": "apps/eval/baseline/evidence/local-gemma-12b/benchmark-runs/benchmark-2026-08-13T13-12-02-575Z-7f0afad8-4d90-442f-8666-03de40848053.json"
     },
     {
       "ordinal": 7,
       "corpus_fixture_id": "isolated-bell-test",
       "benchmark_run_id": "benchmark-2026-08-13T13-13-14-334Z-6d9a79ae-7ce8-4932-8361-382a1e39220e",
-      "path": "apps/eval/scorecard-evidence/rerun-gemma-12b-20260813/benchmark-runs/benchmark-2026-08-13T13-13-14-334Z-6d9a79ae-7ce8-4932-8361-382a1e39220e.json"
+      "path": "apps/eval/baseline/evidence/local-gemma-12b/benchmark-runs/benchmark-2026-08-13T13-13-14-334Z-6d9a79ae-7ce8-4932-8361-382a1e39220e.json"
     },
     {
       "ordinal": 8,
       "corpus_fixture_id": "lantern-festival-notice",
       "benchmark_run_id": "benchmark-2026-08-13T13-15-04-526Z-bda2df2f-ac7d-427a-8fc0-85cea3612156",
-      "path": "apps/eval/scorecard-evidence/rerun-gemma-12b-20260813/benchmark-runs/benchmark-2026-08-13T13-15-04-526Z-bda2df2f-ac7d-427a-8fc0-85cea3612156.json"
+      "path": "apps/eval/baseline/evidence/local-gemma-12b/benchmark-runs/benchmark-2026-08-13T13-15-04-526Z-bda2df2f-ac7d-427a-8fc0-85cea3612156.json"
     },
     {
       "ordinal": 9,
       "corpus_fixture_id": "supply-counts",
       "benchmark_run_id": "benchmark-2026-08-13T13-17-00-635Z-338bde7f-be5c-47eb-949f-600efa0002f2",
-      "path": "apps/eval/scorecard-evidence/rerun-gemma-12b-20260813/benchmark-runs/benchmark-2026-08-13T13-17-00-635Z-338bde7f-be5c-47eb-949f-600efa0002f2.json"
+      "path": "apps/eval/baseline/evidence/local-gemma-12b/benchmark-runs/benchmark-2026-08-13T13-17-00-635Z-338bde7f-be5c-47eb-949f-600efa0002f2.json"
     },
     {
       "ordinal": 10,
       "corpus_fixture_id": "named-rangers",
       "benchmark_run_id": "benchmark-2026-08-13T13-18-24-494Z-7931b1db-9bc3-4790-a5ad-6b22f589cf33",
-      "path": "apps/eval/scorecard-evidence/rerun-gemma-12b-20260813/benchmark-runs/benchmark-2026-08-13T13-18-24-494Z-7931b1db-9bc3-4790-a5ad-6b22f589cf33.json"
+      "path": "apps/eval/baseline/evidence/local-gemma-12b/benchmark-runs/benchmark-2026-08-13T13-18-24-494Z-7931b1db-9bc3-4790-a5ad-6b22f589cf33.json"
     },
     {
       "ordinal": 11,
       "corpus_fixture_id": "contested-closure",
       "benchmark_run_id": "benchmark-2026-08-13T13-20-45-046Z-d61ba26e-bcab-4b42-8ac5-dcc8ee71b652",
-      "path": "apps/eval/scorecard-evidence/rerun-gemma-12b-20260813/benchmark-runs/benchmark-2026-08-13T13-20-45-046Z-d61ba26e-bcab-4b42-8ac5-dcc8ee71b652.json"
+      "path": "apps/eval/baseline/evidence/local-gemma-12b/benchmark-runs/benchmark-2026-08-13T13-20-45-046Z-d61ba26e-bcab-4b42-8ac5-dcc8ee71b652.json"
     },
     {
       "ordinal": 12,
       "corpus_fixture_id": "unresolved-departure",
       "benchmark_run_id": "benchmark-2026-08-13T13-22-53-727Z-0b53a7f0-1c23-4811-87f4-f738b56acecb",
-      "path": "apps/eval/scorecard-evidence/rerun-gemma-12b-20260813/benchmark-runs/benchmark-2026-08-13T13-22-53-727Z-0b53a7f0-1c23-4811-87f4-f738b56acecb.json"
+      "path": "apps/eval/baseline/evidence/local-gemma-12b/benchmark-runs/benchmark-2026-08-13T13-22-53-727Z-0b53a7f0-1c23-4811-87f4-f738b56acecb.json"
     }
   ],
   "annotations": {
-    "path": "apps/eval/scorecard-evidence/rerun-gemma-12b-20260813/annotations.json",
+    "path": "apps/eval/baseline/evidence/local-gemma-12b/annotations.json",
     "bundle_id": "rerun-gemma-12b-20260813-annotations"
   },
   "qualitative_reviews": {
-    "path": "apps/eval/scorecard-evidence/rerun-gemma-12b-20260813/reviews.json",
+    "path": "apps/eval/baseline/evidence/local-gemma-12b/reviews.json",
     "bundle_id": "rerun-gemma-12b-20260813-reviews"
   }
 }

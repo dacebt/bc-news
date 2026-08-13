@@ -10,81 +10,81 @@
       "ordinal": 1,
       "corpus_fixture_id": "dense-market-day",
       "benchmark_run_id": "benchmark-2026-08-13T12-29-42-873Z-202cd0bf-c070-43eb-9470-35df9c04dc76",
-      "path": "apps/eval/scorecard-evidence/rerun-cloudflare-gemma-4-26b-20260813/benchmark-runs/benchmark-2026-08-13T12-29-42-873Z-202cd0bf-c070-43eb-9470-35df9c04dc76.json"
+      "path": "apps/eval/baseline/evidence/hosted-gemma-4-26b/benchmark-runs/benchmark-2026-08-13T12-29-42-873Z-202cd0bf-c070-43eb-9470-35df9c04dc76.json"
     },
     {
       "ordinal": 2,
       "corpus_fixture_id": "sparse-repair-update",
       "benchmark_run_id": "benchmark-2026-08-13T12-36-04-784Z-1573eea1-a21d-4f28-a186-705c2f1ec425",
-      "path": "apps/eval/scorecard-evidence/rerun-cloudflare-gemma-4-26b-20260813/benchmark-runs/benchmark-2026-08-13T12-36-04-784Z-1573eea1-a21d-4f28-a186-705c2f1ec425.json"
+      "path": "apps/eval/baseline/evidence/hosted-gemma-4-26b/benchmark-runs/benchmark-2026-08-13T12-36-04-784Z-1573eea1-a21d-4f28-a186-705c2f1ec425.json"
     },
     {
       "ordinal": 3,
       "corpus_fixture_id": "overlapping-deliveries",
       "benchmark_run_id": "benchmark-2026-08-13T12-37-03-698Z-db0eb46d-2c2c-4c9a-8d74-fbe9c8e29455",
-      "path": "apps/eval/scorecard-evidence/rerun-cloudflare-gemma-4-26b-20260813/benchmark-runs/benchmark-2026-08-13T12-37-03-698Z-db0eb46d-2c2c-4c9a-8d74-fbe9c8e29455.json"
+      "path": "apps/eval/baseline/evidence/hosted-gemma-4-26b/benchmark-runs/benchmark-2026-08-13T12-37-03-698Z-db0eb46d-2c2c-4c9a-8d74-fbe9c8e29455.json"
     },
     {
       "ordinal": 4,
       "corpus_fixture_id": "conflicting-toll-count",
       "benchmark_run_id": "benchmark-2026-08-13T12-38-30-865Z-d66dbce2-83cf-4371-9d3b-2f05721cd71f",
-      "path": "apps/eval/scorecard-evidence/rerun-cloudflare-gemma-4-26b-20260813/benchmark-runs/benchmark-2026-08-13T12-38-30-865Z-d66dbce2-83cf-4371-9d3b-2f05721cd71f.json"
+      "path": "apps/eval/baseline/evidence/hosted-gemma-4-26b/benchmark-runs/benchmark-2026-08-13T12-38-30-865Z-d66dbce2-83cf-4371-9d3b-2f05721cd71f.json"
     },
     {
       "ordinal": 5,
       "corpus_fixture_id": "unresolved-location",
       "benchmark_run_id": "benchmark-2026-08-13T12-40-17-739Z-6f7b3f2e-bf67-4316-937b-4e67df103596",
-      "path": "apps/eval/scorecard-evidence/rerun-cloudflare-gemma-4-26b-20260813/benchmark-runs/benchmark-2026-08-13T12-40-17-739Z-6f7b3f2e-bf67-4316-937b-4e67df103596.json"
+      "path": "apps/eval/baseline/evidence/hosted-gemma-4-26b/benchmark-runs/benchmark-2026-08-13T12-40-17-739Z-6f7b3f2e-bf67-4316-937b-4e67df103596.json"
     },
     {
       "ordinal": 6,
       "corpus_fixture_id": "irrelevant-campfire",
       "benchmark_run_id": "benchmark-2026-08-13T12-45-46-444Z-92bfae6c-f4f3-4350-b420-426facd9493a",
-      "path": "apps/eval/scorecard-evidence/rerun-cloudflare-gemma-4-26b-20260813/benchmark-runs/benchmark-2026-08-13T12-45-46-444Z-92bfae6c-f4f3-4350-b420-426facd9493a.json"
+      "path": "apps/eval/baseline/evidence/hosted-gemma-4-26b/benchmark-runs/benchmark-2026-08-13T12-45-46-444Z-92bfae6c-f4f3-4350-b420-426facd9493a.json"
     },
     {
       "ordinal": 7,
       "corpus_fixture_id": "isolated-bell-test",
       "benchmark_run_id": "benchmark-2026-08-13T12-47-19-752Z-7ddbf665-0c1e-4c73-a3b0-707abc38fec6",
-      "path": "apps/eval/scorecard-evidence/rerun-cloudflare-gemma-4-26b-20260813/benchmark-runs/benchmark-2026-08-13T12-47-19-752Z-7ddbf665-0c1e-4c73-a3b0-707abc38fec6.json"
+      "path": "apps/eval/baseline/evidence/hosted-gemma-4-26b/benchmark-runs/benchmark-2026-08-13T12-47-19-752Z-7ddbf665-0c1e-4c73-a3b0-707abc38fec6.json"
     },
     {
       "ordinal": 8,
       "corpus_fixture_id": "lantern-festival-notice",
       "benchmark_run_id": "benchmark-2026-08-13T12-48-44-943Z-c21f1d31-5459-4527-bc74-b686e2ff53fe",
-      "path": "apps/eval/scorecard-evidence/rerun-cloudflare-gemma-4-26b-20260813/benchmark-runs/benchmark-2026-08-13T12-48-44-943Z-c21f1d31-5459-4527-bc74-b686e2ff53fe.json"
+      "path": "apps/eval/baseline/evidence/hosted-gemma-4-26b/benchmark-runs/benchmark-2026-08-13T12-48-44-943Z-c21f1d31-5459-4527-bc74-b686e2ff53fe.json"
     },
     {
       "ordinal": 9,
       "corpus_fixture_id": "supply-counts",
       "benchmark_run_id": "benchmark-2026-08-13T12-49-53-893Z-ce96ccbf-f633-4503-b6f4-e44c7b6db560",
-      "path": "apps/eval/scorecard-evidence/rerun-cloudflare-gemma-4-26b-20260813/benchmark-runs/benchmark-2026-08-13T12-49-53-893Z-ce96ccbf-f633-4503-b6f4-e44c7b6db560.json"
+      "path": "apps/eval/baseline/evidence/hosted-gemma-4-26b/benchmark-runs/benchmark-2026-08-13T12-49-53-893Z-ce96ccbf-f633-4503-b6f4-e44c7b6db560.json"
     },
     {
       "ordinal": 10,
       "corpus_fixture_id": "named-rangers",
       "benchmark_run_id": "benchmark-2026-08-13T12-51-00-441Z-1fc5e588-a27b-43b5-b34c-7759cb8ca970",
-      "path": "apps/eval/scorecard-evidence/rerun-cloudflare-gemma-4-26b-20260813/benchmark-runs/benchmark-2026-08-13T12-51-00-441Z-1fc5e588-a27b-43b5-b34c-7759cb8ca970.json"
+      "path": "apps/eval/baseline/evidence/hosted-gemma-4-26b/benchmark-runs/benchmark-2026-08-13T12-51-00-441Z-1fc5e588-a27b-43b5-b34c-7759cb8ca970.json"
     },
     {
       "ordinal": 11,
       "corpus_fixture_id": "contested-closure",
       "benchmark_run_id": "benchmark-2026-08-13T12-51-45-827Z-5c4637b8-1b7b-4573-b97f-e845d9c48a5c",
-      "path": "apps/eval/scorecard-evidence/rerun-cloudflare-gemma-4-26b-20260813/benchmark-runs/benchmark-2026-08-13T12-51-45-827Z-5c4637b8-1b7b-4573-b97f-e845d9c48a5c.json"
+      "path": "apps/eval/baseline/evidence/hosted-gemma-4-26b/benchmark-runs/benchmark-2026-08-13T12-51-45-827Z-5c4637b8-1b7b-4573-b97f-e845d9c48a5c.json"
     },
     {
       "ordinal": 12,
       "corpus_fixture_id": "unresolved-departure",
       "benchmark_run_id": "benchmark-2026-08-13T12-57-27-011Z-0eda6049-5260-4d35-9e4b-8dd89eb372de",
-      "path": "apps/eval/scorecard-evidence/rerun-cloudflare-gemma-4-26b-20260813/benchmark-runs/benchmark-2026-08-13T12-57-27-011Z-0eda6049-5260-4d35-9e4b-8dd89eb372de.json"
+      "path": "apps/eval/baseline/evidence/hosted-gemma-4-26b/benchmark-runs/benchmark-2026-08-13T12-57-27-011Z-0eda6049-5260-4d35-9e4b-8dd89eb372de.json"
     }
   ],
   "annotations": {
-    "path": "apps/eval/scorecard-evidence/rerun-cloudflare-gemma-4-26b-20260813/annotations.json",
+    "path": "apps/eval/baseline/evidence/hosted-gemma-4-26b/annotations.json",
     "bundle_id": "rerun-cloudflare-gemma-4-26b-20260813-annotations"
   },
   "qualitative_reviews": {
-    "path": "apps/eval/scorecard-evidence/rerun-cloudflare-gemma-4-26b-20260813/reviews.json",
+    "path": "apps/eval/baseline/evidence/hosted-gemma-4-26b/reviews.json",
     "bundle_id": "rerun-cloudflare-gemma-4-26b-20260813-reviews"
   }
 }
