@@ -169,9 +169,13 @@ it.each([
 	}
 });
 
-it("leaves a non-OpenAI hosted model's canonical optional fields unchanged", async () => {
-	const fetchCall = vi.spyOn(globalThis, "fetch").mockResolvedValue(completionResponse("gemini-3.1-flash-lite"));
-	await provider("google/gemini-3.1-flash-lite").complete(request());
+it.each([
+	["google/gemini-2.5-flash-lite", "gemini-2.5-flash-lite"],
+	["google/gemini-3.1-flash-lite", "gemini-3.1-flash-lite"],
+	["minimax/m3", "MiniMax-M3"],
+] as const)("leaves %s canonical optional fields unchanged", async (model, responseModel) => {
+	const fetchCall = vi.spyOn(globalThis, "fetch").mockResolvedValue(completionResponse(responseModel));
+	await provider(model).complete(request());
 	const [, init] = fetchCall.mock.calls[0]!;
 	if (typeof init?.body !== "string") throw new Error("Expected request body to be JSON text");
 	const body = JSON.parse(init.body) as {
@@ -186,7 +190,9 @@ it.each([
 	["openai/gpt-4o", "openai"],
 	["openai/gpt-4o-mini", "openai"],
 	["alibaba/qwen3.5-397b-a17b", "alibaba"],
+	["google/gemini-2.5-flash-lite", "google"],
 	["google/gemini-3.1-flash-lite", "google"],
+	["minimax/m3", "minimax"],
 	["@cf/openai/gpt-oss-120b", "workers_ai"],
 	["@cf/google/gemma-4-26b-a4b-it", "workers_ai"],
 ])("derives truthful provider family %s", (model, expected) => {
@@ -490,6 +496,32 @@ it.each([
 		model: "gemini-3.1-flash-lite",
 		choices: [{ message: { content: "completion", extra_content: { provider: "metadata" } } }],
 		usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2, extra_properties: { provider: "metadata" } },
+	}],
+	["MiniMax", "minimax/m3", {
+		id: "minimax-completion",
+		model: "MiniMax-M3",
+		object: "chat.completion",
+		choices: [{
+			message: {
+				role: "assistant",
+				content: "completion",
+				name: "MiniMax AI",
+				audio_content: "",
+				reasoning_content: "provider extension",
+				reasoning_details: [{ type: "reasoning.text", text: "provider extension" }],
+			},
+			finish_reason: "stop",
+		}],
+		usage: {
+			prompt_tokens: 1,
+			completion_tokens: 1,
+			total_tokens: 2,
+			total_characters: 0,
+			prompt_tokens_details: { cached_tokens: 0 },
+		},
+		input_sensitive: false,
+		output_sensitive: false,
+		base_resp: { status_code: 0, status_msg: "" },
 	}],
 ] as const)("accepts %s provider extensions outside consumed completion fields", async (_providerName, requestedModel, response) => {
 	vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json(response));

@@ -7,7 +7,9 @@ export const CLOUDFLARE_HOSTED_MODEL_IDS = [
 	"openai/gpt-4o",
 	"openai/gpt-4o-mini",
 	"alibaba/qwen3.5-397b-a17b",
+	"google/gemini-2.5-flash-lite",
 	"google/gemini-3.1-flash-lite",
+	"minimax/m3",
 	"@cf/openai/gpt-oss-120b",
 	"@cf/google/gemma-4-26b-a4b-it",
 ] as const;
@@ -17,7 +19,7 @@ export type CloudflareHostedModelId = typeof CLOUDFLARE_HOSTED_MODEL_IDS[number]
 export const CloudflareHostedModelIdSchema = z.enum(CLOUDFLARE_HOSTED_MODEL_IDS);
 
 interface CloudflareHostedModelRequestProfile {
-	readonly provider: "openai" | "alibaba" | "google" | "workers_ai";
+	readonly provider: "openai" | "alibaba" | "google" | "minimax" | "workers_ai";
 	readonly requestFormat: "chat_completions";
 	readonly responseDelivery: "buffered" | "streaming";
 	readonly structuredOutputFormat: "openai_chat_json_schema";
@@ -62,8 +64,22 @@ export const CLOUDFLARE_HOSTED_MODEL_REQUEST_PROFILES: Readonly<
 		structuredOutputFormat: "openai_chat_json_schema",
 		structuredOutputSchema: "canonical",
 	},
+	"google/gemini-2.5-flash-lite": {
+		provider: "google",
+		requestFormat: "chat_completions",
+		responseDelivery: "buffered",
+		structuredOutputFormat: "openai_chat_json_schema",
+		structuredOutputSchema: "canonical",
+	},
 	"google/gemini-3.1-flash-lite": {
 		provider: "google",
+		requestFormat: "chat_completions",
+		responseDelivery: "buffered",
+		structuredOutputFormat: "openai_chat_json_schema",
+		structuredOutputSchema: "canonical",
+	},
+	"minimax/m3": {
+		provider: "minimax",
 		requestFormat: "chat_completions",
 		responseDelivery: "buffered",
 		structuredOutputFormat: "openai_chat_json_schema",

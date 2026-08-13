@@ -194,8 +194,9 @@ adapt canonical optional fields
 to required nullable wire fields and normalize returned null placeholders back
 to omitted application fields before canonical parsing. The admitted profiles are
 `openai/gpt-5-nano`, `openai/gpt-5-mini`, `openai/gpt-4o`, `openai/gpt-4o-mini`,
-`alibaba/qwen3.5-397b-a17b`, `google/gemini-3.1-flash-lite`, and
-`@cf/openai/gpt-oss-120b`, and `@cf/google/gemma-4-26b-a4b-it`; an unprofiled
+`alibaba/qwen3.5-397b-a17b`, `google/gemini-2.5-flash-lite`,
+`google/gemini-3.1-flash-lite`, `minimax/m3`, `@cf/openai/gpt-oss-120b`, and
+`@cf/google/gemma-4-26b-a4b-it`; an unprofiled
 model rejects as invalid configuration.
 Every profiled request sends the production step's strict inline JSON Schema and
 leaves the provider's output-token ceiling unset. Successful Gateway provenance

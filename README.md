@@ -96,8 +96,9 @@ payment method but no provider API keys. Hosted model ids are admitted only
 after their Cloudflare request schema has an explicit adapter profile. The
 current profiles are `openai/gpt-5-nano`, `openai/gpt-5-mini`, `openai/gpt-4o`,
 `openai/gpt-4o-mini`,
-`alibaba/qwen3.5-397b-a17b`, `google/gemini-3.1-flash-lite`, and
-`@cf/openai/gpt-oss-120b`, and `@cf/google/gemma-4-26b-a4b-it`. Then run the
+`alibaba/qwen3.5-397b-a17b`, `google/gemini-2.5-flash-lite`,
+`google/gemini-3.1-flash-lite`, `minimax/m3`, `@cf/openai/gpt-oss-120b`, and
+`@cf/google/gemma-4-26b-a4b-it`. Then run the
 checked-in two-provider example after
 reviewing its current model ids and expected spend:
 
