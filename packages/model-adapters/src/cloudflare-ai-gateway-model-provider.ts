@@ -9,6 +9,7 @@ import {
 	type CloudflareAiGatewaySelection,
 	type ModelTemperature,
 } from "./config";
+import { assembleCloudflareChatCompletionStream } from "./cloudflare-chat-completion-stream";
 import {
 	CLOUDFLARE_HOSTED_MODEL_REQUEST_PROFILES,
 	CloudflareHostedModelIdSchema,
@@ -349,14 +350,18 @@ export function createCloudflareAiGatewayModelProvider(
 				);
 			}
 			let candidate: unknown;
-			try {
-				candidate = JSON.parse(body);
-			} catch (cause) {
-				throw new CloudflareAiGatewayDeterministicError(
-					"cloudflare_ai_gateway_invalid_json",
-					"Cloudflare AI Gateway completion response is not valid JSON",
-					{ cause },
-				);
+			if (requestProfile.responseDelivery === "streaming") {
+				candidate = assembleCloudflareChatCompletionStream(body);
+			} else {
+				try {
+					candidate = JSON.parse(body);
+				} catch (cause) {
+					throw new CloudflareAiGatewayDeterministicError(
+						"cloudflare_ai_gateway_invalid_json",
+						"Cloudflare AI Gateway completion response is not valid JSON",
+						{ cause },
+					);
+				}
 			}
 			const parsed = CompletionSchema.safeParse(candidate);
 			if (!parsed.success) {
@@ -400,6 +405,7 @@ export function createCloudflareAiGatewayModelProvider(
 						max_attempts: 1,
 						request_timeout_ms: CLOUDFLARE_AI_GATEWAY_REQUEST_TIMEOUT_MS,
 						request_format: requestProfile.requestFormat,
+						response_delivery: requestProfile.responseDelivery,
 						structured_output: {
 							format: requestProfile.structuredOutputFormat,
 							contract_name: outputContract.name,

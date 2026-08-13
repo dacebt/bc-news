@@ -3,6 +3,7 @@ export type CloudflareAiGatewayDeterministicErrorCode =
 	| "cloudflare_ai_gateway_missing_correlation"
 	| "cloudflare_ai_gateway_http_rejection"
 	| "cloudflare_ai_gateway_invalid_json"
+	| "cloudflare_ai_gateway_invalid_stream"
 	| "cloudflare_ai_gateway_response_contract_rejected"
 	| "cloudflare_ai_gateway_unexpected_transport_failure";
 
@@ -24,6 +25,7 @@ export interface CloudflareAiGatewayContractIssue {
 export interface CloudflareAiGatewayContractFailureDetails {
 	readonly contract:
 		| "cloudflare_ai_gateway_chat_completion_response"
+		| "cloudflare_ai_gateway_chat_completion_stream"
 		| "cloudflare_ai_gateway_http_error_response";
 	readonly http_status?: number;
 	readonly issues: readonly CloudflareAiGatewayContractIssue[];

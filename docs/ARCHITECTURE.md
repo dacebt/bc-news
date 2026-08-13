@@ -187,7 +187,10 @@ error code, message, parameter path, and HTTP status without retaining a raw
 response body.
 Gateway model selection is closed over researched exact-model request profiles.
 Each profile owns its Cloudflare request format, provider-side structured-output
-encoding, and provider identity. OpenAI profiles adapt canonical optional fields
+encoding, buffered-or-streaming response delivery, and provider identity.
+Streaming profiles accumulate the complete SSE response before the unchanged
+strict completion contract and canonical production parser run. OpenAI profiles
+adapt canonical optional fields
 to required nullable wire fields and normalize returned null placeholders back
 to omitted application fields before canonical parsing. The admitted profiles are
 `openai/gpt-5-nano`, `openai/gpt-5-mini`, `openai/gpt-4o`, `openai/gpt-4o-mini`,
@@ -196,8 +199,8 @@ to omitted application fields before canonical parsing. The admitted profiles ar
 model rejects as invalid configuration.
 Every profiled request sends the production step's strict inline JSON Schema and
 leaves the provider's output-token ceiling unset. Successful Gateway provenance
-retains the request format and structured-output contract name in addition to
-the existing transport policy.
+retains the request format, response-delivery mode, and structured-output
+contract name in addition to the existing transport policy.
 Gateway Benchmark Run version 8 alone retains explicit null completion content;
 versions 1 through 7 keep their frozen string-only completion semantics.
 

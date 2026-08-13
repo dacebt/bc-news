@@ -66,6 +66,35 @@ function completionResponseWithContent(content: string, model = "gpt-4o") {
 	}), { headers: { "content-type": "application/json", "cf-aig-log-id": "gateway-log-one" } });
 }
 
+function streamingCompletionResponse(content = "completion", model = "gpt-5-mini", includeDone = true) {
+	const splitAt = Math.max(1, Math.floor(content.length / 2));
+	const events = [
+		{
+			id: "chatcmpl-stream-one",
+			object: "chat.completion.chunk",
+			model,
+			choices: [{ index: 0, delta: { role: "assistant", content: content.slice(0, splitAt) }, finish_reason: null }],
+			usage: null,
+		},
+		{
+			id: "chatcmpl-stream-one",
+			object: "chat.completion.chunk",
+			model,
+			choices: [{ index: 0, delta: { content: content.slice(splitAt) }, finish_reason: "stop" }],
+			usage: null,
+		},
+		{
+			id: "chatcmpl-stream-one",
+			object: "chat.completion.chunk",
+			model,
+			choices: [],
+			usage: { prompt_tokens: 100, completion_tokens: 25, total_tokens: 125 },
+		},
+	];
+	const body = `${events.map((event) => `data: ${JSON.stringify(event)}\n\n`).join("")}${includeDone ? "data: [DONE]\n\n" : ""}`;
+	return new Response(body, { headers: { "content-type": "text/event-stream", "cf-aig-log-id": "gateway-log-stream-one" } });
+}
+
 it("accepts only non-secret Gateway configuration and canonical routed model-id syntax", () => {
 	const candidate = {
 		adapter: "cloudflare_ai_gateway",
@@ -214,7 +243,9 @@ it("uses the fixed account REST endpoint with the account default Gateway", asyn
 });
 
 it.each(CLOUDFLARE_HOSTED_MODEL_IDS)("leaves the output-token ceiling unset for %s", async (model) => {
-	const fetchCall = vi.spyOn(globalThis, "fetch").mockResolvedValue(completionResponse());
+	const fetchCall = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+		model === "openai/gpt-5-mini" ? streamingCompletionResponse() : completionResponse(),
+	);
 	await provider(model, model.startsWith("@cf/") ? { selection: "named", id: "default" } : undefined).complete(request());
 	const [, init] = fetchCall.mock.calls[0]!;
 	if (typeof init?.body !== "string") throw new Error("Expected request body to be JSON text");
@@ -228,6 +259,63 @@ it.each(CLOUDFLARE_HOSTED_MODEL_IDS)("leaves the output-token ceiling unset for 
 			name: "main_story_write_output",
 			strict: true,
 		},
+	});
+});
+
+it("streams only GPT-5 Mini, buffers the full content, and retains reported usage", async () => {
+	const content = JSON.stringify({
+		title: "The Daily",
+		subtitle: "Market report",
+		main_story: {
+			headline: "Trade moved",
+			lede: "Merchants gathered.",
+			body: "The market was active.",
+			image: null,
+		},
+	});
+	const fetchCall = vi.spyOn(globalThis, "fetch").mockResolvedValue(streamingCompletionResponse(content));
+	await expect(provider("openai/gpt-5-mini").complete(request())).resolves.toMatchObject({
+		text: JSON.stringify({
+			title: "The Daily",
+			subtitle: "Market report",
+			main_story: {
+				headline: "Trade moved",
+				lede: "Merchants gathered.",
+				body: "The market was active.",
+			},
+		}),
+		model: "gpt-5-mini",
+		token_usage: { measurement: "reported", input_tokens: 100, output_tokens: 25, total_tokens: 125 },
+		request_provenance: {
+			gateway_log_id: "gateway-log-stream-one",
+			policy: { response_delivery: "streaming" },
+		},
+	});
+	const [, init] = fetchCall.mock.calls[0]!;
+	if (typeof init?.body !== "string") throw new Error("Expected request body to be JSON text");
+	expect(JSON.parse(init.body)).toMatchObject({
+		stream: true,
+		stream_options: { include_usage: true },
+		response_format: { type: "json_schema" },
+	});
+});
+
+it("keeps successful hosted models on buffered delivery", async () => {
+	const fetchCall = vi.spyOn(globalThis, "fetch").mockResolvedValue(completionResponse("gemma-4-26b-a4b-it"));
+	await expect(provider("@cf/google/gemma-4-26b-a4b-it", { selection: "named", id: "default" }).complete(request())).resolves.toMatchObject({
+		request_provenance: { policy: { response_delivery: "buffered" } },
+	});
+	const [, init] = fetchCall.mock.calls[0]!;
+	if (typeof init?.body !== "string") throw new Error("Expected request body to be JSON text");
+	const body = JSON.parse(init.body) as Record<string, unknown>;
+	expect(body.stream).toBeUndefined();
+	expect(body.stream_options).toBeUndefined();
+});
+
+it("classifies a truncated GPT-5 Mini stream as retryable infrastructure failure", async () => {
+	vi.spyOn(globalThis, "fetch").mockResolvedValue(streamingCompletionResponse("completion", "gpt-5-mini", false));
+	await expect(provider("openai/gpt-5-mini").complete(request())).rejects.toMatchObject({
+		code: "cloudflare_ai_gateway_network_failure",
 	});
 });
 

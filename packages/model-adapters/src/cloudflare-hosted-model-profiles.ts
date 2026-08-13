@@ -19,6 +19,7 @@ export const CloudflareHostedModelIdSchema = z.enum(CLOUDFLARE_HOSTED_MODEL_IDS)
 interface CloudflareHostedModelRequestProfile {
 	readonly provider: "openai" | "alibaba" | "google" | "workers_ai";
 	readonly requestFormat: "chat_completions";
+	readonly responseDelivery: "buffered" | "streaming";
 	readonly structuredOutputFormat: "openai_chat_json_schema";
 	readonly structuredOutputSchema: "canonical" | "openai_required_nullable";
 }
@@ -29,48 +30,56 @@ export const CLOUDFLARE_HOSTED_MODEL_REQUEST_PROFILES: Readonly<
 	"openai/gpt-5-nano": {
 		provider: "openai",
 		requestFormat: "chat_completions",
+		responseDelivery: "buffered",
 		structuredOutputFormat: "openai_chat_json_schema",
 		structuredOutputSchema: "openai_required_nullable",
 	},
 	"openai/gpt-5-mini": {
 		provider: "openai",
 		requestFormat: "chat_completions",
+		responseDelivery: "streaming",
 		structuredOutputFormat: "openai_chat_json_schema",
 		structuredOutputSchema: "openai_required_nullable",
 	},
 	"openai/gpt-4o": {
 		provider: "openai",
 		requestFormat: "chat_completions",
+		responseDelivery: "buffered",
 		structuredOutputFormat: "openai_chat_json_schema",
 		structuredOutputSchema: "openai_required_nullable",
 	},
 	"openai/gpt-4o-mini": {
 		provider: "openai",
 		requestFormat: "chat_completions",
+		responseDelivery: "buffered",
 		structuredOutputFormat: "openai_chat_json_schema",
 		structuredOutputSchema: "openai_required_nullable",
 	},
 	"alibaba/qwen3.5-397b-a17b": {
 		provider: "alibaba",
 		requestFormat: "chat_completions",
+		responseDelivery: "buffered",
 		structuredOutputFormat: "openai_chat_json_schema",
 		structuredOutputSchema: "canonical",
 	},
 	"google/gemini-3.1-flash-lite": {
 		provider: "google",
 		requestFormat: "chat_completions",
+		responseDelivery: "buffered",
 		structuredOutputFormat: "openai_chat_json_schema",
 		structuredOutputSchema: "canonical",
 	},
 	"@cf/openai/gpt-oss-120b": {
 		provider: "workers_ai",
 		requestFormat: "chat_completions",
+		responseDelivery: "buffered",
 		structuredOutputFormat: "openai_chat_json_schema",
 		structuredOutputSchema: "canonical",
 	},
 	"@cf/google/gemma-4-26b-a4b-it": {
 		provider: "workers_ai",
 		requestFormat: "chat_completions",
+		responseDelivery: "buffered",
 		structuredOutputFormat: "openai_chat_json_schema",
 		structuredOutputSchema: "canonical",
 	},
@@ -156,6 +165,9 @@ export function cloudflareHostedModelRequestBody(input: {
 	return {
 		model: input.model,
 		...(input.temperature === undefined ? {} : { temperature: input.temperature }),
+		...(profile.responseDelivery === "streaming"
+			? { stream: true, stream_options: { include_usage: true } }
+			: {}),
 		messages: [
 			{ role: "system", content: input.system },
 			{ role: "user", content: input.user },

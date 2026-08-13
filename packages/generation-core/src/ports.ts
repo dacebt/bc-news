@@ -58,6 +58,7 @@ export interface CloudflareAiGatewayRequestProvenance {
 		max_attempts: 1;
 		request_timeout_ms: number;
 		request_format?: "chat_completions" | undefined;
+		response_delivery?: "buffered" | "streaming" | undefined;
 		structured_output?: {
 			format: "openai_chat_json_schema";
 			contract_name: string;

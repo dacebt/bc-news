@@ -73,6 +73,7 @@ export const ModelRequestProvenanceSchema = z.discriminatedUnion("transport", [
 			max_attempts: z.literal(1),
 			request_timeout_ms: z.number().int().positive(),
 			request_format: z.literal("chat_completions").optional(),
+			response_delivery: z.enum(["buffered", "streaming"]).optional(),
 			structured_output: z.strictObject({
 				format: z.literal("openai_chat_json_schema"),
 				contract_name: z.string().trim().min(1),
