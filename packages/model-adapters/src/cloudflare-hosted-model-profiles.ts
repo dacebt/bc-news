@@ -3,6 +3,7 @@ import type { ProductionStepOutputContract } from "./production-step-output-cont
 
 export const CLOUDFLARE_HOSTED_MODEL_IDS = [
 	"openai/gpt-5-nano",
+	"openai/gpt-4o",
 	"openai/gpt-4o-mini",
 	"alibaba/qwen3.5-397b-a17b",
 	"google/gemini-3.1-flash-lite",
@@ -23,6 +24,11 @@ export const CLOUDFLARE_HOSTED_MODEL_REQUEST_PROFILES: Readonly<
 	Record<CloudflareHostedModelId, CloudflareHostedModelRequestProfile>
 > = {
 	"openai/gpt-5-nano": {
+		provider: "openai",
+		requestFormat: "chat_completions",
+		structuredOutputFormat: "openai_chat_json_schema",
+	},
+	"openai/gpt-4o": {
 		provider: "openai",
 		requestFormat: "chat_completions",
 		structuredOutputFormat: "openai_chat_json_schema",

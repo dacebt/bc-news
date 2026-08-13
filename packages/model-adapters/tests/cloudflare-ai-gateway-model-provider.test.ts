@@ -112,6 +112,7 @@ it.each([
 
 it.each([
 	["openai/gpt-5-nano", "openai"],
+	["openai/gpt-4o", "openai"],
 	["openai/gpt-4o-mini", "openai"],
 	["alibaba/qwen3.5-397b-a17b", "alibaba"],
 	["google/gemini-3.1-flash-lite", "google"],

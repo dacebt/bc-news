@@ -185,7 +185,7 @@ reports it and otherwise records the response header as unavailable evidence.
 Gateway model selection is closed over researched exact-model request profiles.
 Each profile owns its Cloudflare request format, provider-side structured-output
 encoding, and provider identity. The admitted profiles are
-`openai/gpt-5-nano`, `openai/gpt-4o-mini`,
+`openai/gpt-5-nano`, `openai/gpt-4o`, `openai/gpt-4o-mini`,
 `alibaba/qwen3.5-397b-a17b`, `google/gemini-3.1-flash-lite`, and
 `@cf/openai/gpt-oss-120b`; an unprofiled model rejects as invalid configuration.
 Every profiled request sends the production step's strict inline JSON Schema and

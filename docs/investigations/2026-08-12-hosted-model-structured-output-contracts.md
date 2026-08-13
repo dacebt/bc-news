@@ -3,7 +3,7 @@ type: investigation
 title: >-
   Investigation: Hosted model structured-output contracts
 description: >-
-  Evidence-backed inventory of the Cloudflare request schemas, structured-output controls, and output-token controls for the five hosted models evaluated by bc-news.
+  Evidence-backed inventory of the Cloudflare request schemas, structured-output controls, and output-token controls for the hosted models evaluated by bc-news.
 tags: [investigation, models, cloudflare, structured-output]
 status: stable
 generated:
@@ -12,12 +12,12 @@ generated:
 ---
 # Investigation Report
 
-**Question:** Which Cloudflare request schema, structured-output control, and output-token control applies to each hosted model already evaluated by bc-news?
+**Question:** Which Cloudflare request schema, structured-output control, and output-token control applies to each hosted model selected for bc-news evaluation?
 
 **Date:** 2026-08-12
 
 **Scope:**
-- **In scope:** The current Cloudflare AI Gateway adapter; the shared production-step output contracts; Cloudflare's current REST, model-catalog, and Workers AI JSON Mode documentation for `openai/gpt-5-nano`, `openai/gpt-4o-mini`, `alibaba/qwen3.5-397b-a17b`, `google/gemini-3.1-flash-lite`, and `@cf/openai/gpt-oss-120b`.
+- **In scope:** The current Cloudflare AI Gateway adapter; the shared production-step output contracts; Cloudflare's current REST, model-catalog, and Workers AI JSON Mode documentation for `openai/gpt-5-nano`, `openai/gpt-4o`, `openai/gpt-4o-mini`, `alibaba/qwen3.5-397b-a17b`, `google/gemini-3.1-flash-lite`, and `@cf/openai/gpt-oss-120b`.
 - **Out of scope (deliberately):** Provider models not present in the retained hosted runs, changes to runtime prompts, deployment, Cloudflare configuration, credential inspection, and paid inference.
 - **Observation:** No model endpoint was invoked because doing so would perform paid inference. Current behavior was established from the live request-construction path and retained artifacts; provider capabilities were checked against public primary documentation fetched on 2026-08-12.
 
@@ -25,7 +25,7 @@ generated:
 
 ## Summary
 
-At evaluated source commit `10ea9dc`, the adapter sent every hosted model through Cloudflare's OpenAI-compatible `/ai/v1/chat/completions` endpoint, but sent neither a machine-readable output schema nor an explicit output-token allowance. All five retained hosted models expose a Chat Completions request variant through Cloudflare; those variants admit `response_format` and either `max_tokens`, `max_completion_tokens`, or both. GPT-OSS also has a Workers AI native request schema whose `max_tokens` default is 256, which explains the observed truncation when that adapter version omitted the field.
+At evaluated source commit `10ea9dc`, the adapter sent every hosted model through Cloudflare's OpenAI-compatible `/ai/v1/chat/completions` endpoint, but sent neither a machine-readable output schema nor an explicit output-token allowance. All six profiled hosted models expose a Chat Completions request variant through Cloudflare; those variants admit `response_format` and either `max_tokens`, `max_completion_tokens`, or both. GPT-OSS also has a Workers AI native request schema whose `max_tokens` default is 256, which explains the observed truncation when that adapter version omitted the field.
 
 The implemented adapter deliberately leaves those output-token fields unset, so each provider applies its own default ceiling. The model-specific profiles retain only the request format, structured-output encoding, and provider identity.
 
@@ -40,6 +40,7 @@ The production-step decode schemas had one canonical source: the Zod schemas con
 | Requested model | Cloudflare request variants | Chat structured-output field | Documented output-token fields |
 | --- | --- | --- | --- |
 | `openai/gpt-5-nano` | Responses, Chat Completions | `response_format` | `max_tokens`, `max_completion_tokens`; Responses uses `max_output_tokens` |
+| `openai/gpt-4o` | Responses, Chat Completions | `response_format` | `max_tokens`, `max_completion_tokens`; Responses uses `max_output_tokens` |
 | `openai/gpt-4o-mini` | Responses, Chat Completions | `response_format` | `max_tokens`, `max_completion_tokens`; Responses uses `max_output_tokens` |
 | `alibaba/qwen3.5-397b-a17b` | Chat Completions, Responses | `response_format` | `max_tokens`, `max_completion_tokens`; Responses uses `max_output_tokens` |
 | `google/gemini-3.1-flash-lite` | Generate Content, Chat Completions | `response_format` in Chat Completions | `max_tokens`, `max_completion_tokens`; native Generate Content uses `generationConfig.maxOutputTokens` |

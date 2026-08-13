@@ -94,7 +94,8 @@ only `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`. The token needs
 the account AI REST endpoint. Unified Billing requires loaded credits and a
 payment method but no provider API keys. Hosted model ids are admitted only
 after their Cloudflare request schema has an explicit adapter profile. The
-current profiles are `openai/gpt-5-nano`, `openai/gpt-4o-mini`,
+current profiles are `openai/gpt-5-nano`, `openai/gpt-4o`,
+`openai/gpt-4o-mini`,
 `alibaba/qwen3.5-397b-a17b`, `google/gemini-3.1-flash-lite`, and
 `@cf/openai/gpt-oss-120b`. Then run the checked-in two-provider example after
 reviewing its current model ids and expected spend:
