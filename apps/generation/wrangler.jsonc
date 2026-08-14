@@ -17,6 +17,13 @@
 			"class_name": "GenerationRun"
 		}
 	],
+	"ratelimits": [
+		{
+			"name": "EDITION_API_RATE_LIMITER",
+			"namespace_id": "262667397",
+			"simple": { "limit": 120, "period": 60 }
+		}
+	],
 	"d1_databases": [
 		{
 			"binding": "DB",

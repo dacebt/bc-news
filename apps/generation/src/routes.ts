@@ -185,30 +185,22 @@ export async function getGenerationRunStatusByPair(url: URL, env: Env): Promise<
 	return jsonResponse(200, response);
 }
 
-export async function getPublishedEdition(url: URL, env: Env): Promise<Response> {
-	const result = GenerationRunParamsSchema.safeParse({
-		active_region_id: url.searchParams.get("active_region_id"),
-		publication_date: url.searchParams.get("publication_date"),
-	});
-	if (!result.success) {
-		return jsonResponse(400, {
-			error: "invalid_edition_request",
-			issues: result.error.issues,
-		});
-	}
-	const { active_region_id, publication_date } = result.data;
-
+export async function getPublishedEdition(
+	params: z.infer<typeof GenerationRunParamsSchema>,
+	env: Env,
+): Promise<Response> {
+	const { active_region_id, publication_date } = params;
 	let edition;
 	try {
 		edition = await readEdition(env.DB, active_region_id, publication_date);
 	} catch (error) {
 		if (error instanceof EditionUnreadableError) {
-			return jsonResponse(500, { error: "edition_unreadable" });
+			return jsonResponse(500, { error: "edition_unreadable" }, { "Cache-Control": "no-store" });
 		}
 		throw error;
 	}
 	if (edition === undefined) {
-		return jsonResponse(404, { error: "edition_not_found" });
+		return jsonResponse(404, { error: "edition_not_found" }, { "Cache-Control": "no-store" });
 	}
-	return jsonResponse(200, edition, { "Cache-Control": "public, max-age=3600" });
+	return jsonResponse(200, edition);
 }

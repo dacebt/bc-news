@@ -2,6 +2,11 @@ import { EditionSchema } from "@bc-news/contracts";
 import type { WalkContext, WalkPhase } from "../phase";
 import { editionUrl } from "../edition-api";
 import { requestGenerationRunStatus } from "../generation-run-status";
+import {
+	assertCacheControl,
+	assertSecurityResponseHeaders,
+	PUBLIC_EDITION_CACHE_CONTROL,
+} from "../security-response-headers";
 import { POLL_INTERVAL_MS, sleep } from "../timing";
 
 const PUBLISH_TIMEOUT_MS = 60_000;
@@ -25,10 +30,14 @@ async function run(ctx: WalkContext): Promise<void> {
 	while (Date.now() < deadline) {
 		const response = await fetch(url);
 		if (response.status === 200) {
+			assertSecurityResponseHeaders(response, "published edition");
+			assertCacheControl(response, PUBLIC_EDITION_CACHE_CONTROL, "published edition");
 			const body = await response.text();
 			EditionSchema.parse(JSON.parse(body));
 			ctx.state.firstServedEditionBody = body;
-			console.log("walk: published edition served and parsed against EditionSchema");
+			console.log(
+				"walk: published edition served with exact security/cache headers and parsed against EditionSchema",
+			);
 			return;
 		}
 		if (response.status !== 404) {

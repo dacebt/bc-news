@@ -108,7 +108,13 @@ published edition wins and is immutable under duplicate invocation. Reads
 serve only by the identity pair and validate `document_json` against the
 same required-`meta` edition schema used at publish; a stored row that
 fails that parse is a distinct `edition_unreadable` failure, never
-masqueraded as absence. Workflow step results are the durable inter-step
+masqueraded as absence. Public reads require exactly one known query parameter
+for each member of an active pair. They pass a per-client-address Cloudflare
+rate limiter before validation, cache, or D1; successful validated editions use
+a fresh canonical pair-addressed Cache API key and one-hour edge TTL, while
+invalid, absent, unreadable, and rate-limited responses are never cached. Cache
+entries are local to one Cloudflare location and are an abuse/cost control, not
+the edition's durable home. Workflow step results are the durable inter-step
 handoff (bounded by the platform's step-result cap and asserted, never
 truncated); no separate artifact store exists, and Workflow instance state
 is never the edition's durable home (ADR-005).
@@ -588,7 +594,11 @@ serves the whole product — dev topology equals production topology. Routing
 is asset-first: a request matching a built asset is served without invoking
 Worker code; every other request reaches the Worker's routes, so an unknown
 path is the Worker's explicit 404, never a silent asset fallback. No Pages
-project exists. The only operator HTTP routes are exact `POST /generation-run`
+project exists. Static assets and dynamic Worker responses share an explicit
+browser policy: same-origin scripts, connections, and fonts; Chakra-compatible
+inline styles; same-origin or data-URI images; no object, worker, form, or frame
+capability; no referrer; no content sniffing; and no framing. The policy adds
+no CORS surface. The only operator HTTP routes are exact `POST /generation-run`
 and exact `GET /generation-run`; both require a bearer token held in the
 `OPERATOR_API_TOKEN` Worker secret, return non-cacheable responses, and fail
 closed when that secret is absent. Pair-addressed status is the complete
@@ -646,6 +656,12 @@ the committed local default — the edition it publishes is generated from the
 `chat_messages` rows the ingest phase just inserted from the stub corpus, not
 from the fixture adapter. The fixture evidence adapter remains registered and
 explicitly selectable for tests and evaluation, but it is not the local default.
+
+The walk observes the security policy on the served HTML and on successful and
+absent edition JSON responses. Its installed-Chrome pass is the compatibility
+proof that the CSP still permits the real React/Chakra newspaper while its
+existing page-error, console-error, failed-request, and external-origin gates
+remain strict.
 
 The same walk uses authenticated
 `GET /generation-run?active_region_id=...&publication_date=...` as the operator

@@ -1,4 +1,5 @@
 import type { WalkContext, WalkPhase } from "../phase";
+import { assertSecurityResponseHeaders } from "../security-response-headers";
 
 async function run(ctx: WalkContext): Promise<void> {
 	const response = await fetch(`${ctx.baseUrl}/`);
@@ -8,7 +9,8 @@ async function run(ctx: WalkContext): Promise<void> {
 			`client HTML expected 200 text/html, got ${response.status} ${contentType}`,
 		);
 	}
-	console.log("walk: client HTML served with 200");
+	assertSecurityResponseHeaders(response, "client HTML");
+	console.log("walk: client HTML served with 200 and exact browser-security headers");
 }
 
 export const walkPhase: WalkPhase = { name: "client-html", run };

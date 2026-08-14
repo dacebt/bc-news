@@ -232,7 +232,12 @@ Workflow-id paths must remain generic 404s with or without credentials. The
 served edition must equal the two copyedited products,
 derive grouped writer/copyeditor provenance from those four usages, and contain
 no internal announcement ids. Duplicate delivery must preserve edition bytes
-and usage, and an unknown pair must remain absent. Browser traffic is
+and usage, and an unknown pair must remain absent. The main document and both
+successful and absent edition responses must carry the declared CSP, framing,
+content-type, referrer, and permissions policy; successful editions additionally
+declare the public browser/edge TTL, while absent responses are non-cacheable.
+The real Chrome page must remain free of CSP-caused page, console, request, or
+origin failures. Browser traffic is
 same-origin-only and exactly two pair-addressed edition 404s are allowed. This
 is the [PRD](PRD.md)'s first success signal and proves the composed deployable
 product. It does not invoke the evaluation, fixture-authoring, context, or
