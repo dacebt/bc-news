@@ -1,4 +1,5 @@
 import { beforeEach, expect, it, vi } from "vitest";
+import type { PollRunEnv } from "../src/poll-run";
 import { handlePoll } from "../src/routes";
 
 const mockPollChatMessages = vi.fn();
@@ -17,7 +18,7 @@ const ENV = {
 	POLL_OVERLAP_SECONDS: "10",
 	POLL_CURSOR_KEY: "chat_firehose",
 	BITJITA_API_BASE: "http://stub.local",
-} satisfies Env & { BITJITA_API_BASE: string };
+} satisfies PollRunEnv;
 
 beforeEach(() => {
 	vi.resetAllMocks();
@@ -67,7 +68,7 @@ it("preserves the manual poll 502 response for a modeled failure", async () => {
 });
 
 it("preserves the manual poll 500 response for invalid configuration", async () => {
-	const invalidEnv: Env = {
+	const invalidEnv: PollRunEnv = {
 		DB: ENV.DB,
 		POLL_LIMIT: ENV.POLL_LIMIT,
 		POLL_OVERLAP_SECONDS: ENV.POLL_OVERLAP_SECONDS,

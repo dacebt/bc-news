@@ -1,5 +1,5 @@
 import { IngestConfigError } from "./config";
-import { runPoll } from "./poll-run";
+import { runPoll, type PollRunEnv } from "./poll-run";
 import type { PollResult } from "./poller";
 
 function jsonResponse(status: number, body: unknown): Response {
@@ -27,7 +27,7 @@ function pollResponseBody(result: PollResult): Record<string, unknown> {
 	return body;
 }
 
-export async function handlePoll(env: Env): Promise<Response> {
+export async function handlePoll(env: PollRunEnv): Promise<Response> {
 	try {
 		const result = await runPoll(env);
 		const status = result.outcome === "complete" ? 200 : 502;
