@@ -1,5 +1,7 @@
 # Direction
 
+- [Shape: BCN-008 production security boundaries](2026-08-14-production-security-boundaries.shape.md) — Session boundaries, loose cadence, and local success signal for hardening the production HTTP, data, and deployment seams.
+- [Capability map: BCN-008 production security boundaries](2026-08-14-production-security-boundaries.map.md) — Risk-ordered vertical capabilities and frozen boundary conventions for production HTTP, browser, data, and deployment security.
 - [Shape: commit-addressed evaluation evidence](2026-08-10-commit-addressed-evaluation-evidence.shape.md) — Replacement boundary for audit-by-commit scorecards whose freshness is reported without blocking evaluation.
 - [Shape: longitudinal per-agent model evaluation scorecards](2026-08-10-longitudinal-model-evaluation-scorecards.shape.md) — Session boundaries, cadence, and success signal for auditable role-specific model evaluation across a varied reference corpus and comparable runs.
 - [Capability map: longitudinal per-agent model evaluation scorecards](2026-08-10-longitudinal-model-evaluation-scorecards.map.md) — Risk-ordered vertical capabilities and feature conventions for observable runtime evidence, reference-backed review, and honest longitudinal comparison.
