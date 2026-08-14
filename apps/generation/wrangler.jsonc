@@ -4,6 +4,9 @@
 	"main": "src/index.ts",
 	"compatibility_date": "2026-08-03",
 	"compatibility_flags": ["nodejs_compat"],
+	"secrets": {
+		"required": ["OPERATOR_API_TOKEN"]
+	},
 	"triggers": {
 		"crons": ["0 0 * * *"]
 	},

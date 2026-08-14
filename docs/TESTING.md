@@ -225,7 +225,11 @@ exactly four recorded responses and no production data, live model, paid
 service, or external origin. The status proof requires all seven generation
 steps in order, exactly four ordered recorded-replay usage records at zero
 external billing, and the exact ordered diagnostics from the representative
-schema-valid copyedit. The served edition must equal the two copyedited products,
+schema-valid copyedit. A fixed walk-only bearer token is injected into local
+Wrangler: unauthenticated launch and pair status must be rejected without a
+created run, authenticated launch and pair status must succeed, and opaque
+Workflow-id paths must remain generic 404s with or without credentials. The
+served edition must equal the two copyedited products,
 derive grouped writer/copyeditor provenance from those four usages, and contain
 no internal announcement ids. Duplicate delivery must preserve edition bytes
 and usage, and an unknown pair must remain absent. Browser traffic is

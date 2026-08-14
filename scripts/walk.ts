@@ -11,6 +11,7 @@ import { walkPhases } from "./walk/phases/index";
 import { POLL_INTERVAL_MS, sleep } from "./walk/timing";
 import { readSingleWranglerCron } from "./walk/wrangler-cron";
 import {
+	WALK_OPERATOR_API_TOKEN,
 	walkGenerationWranglerDevArguments,
 	wranglerDevArguments,
 } from "./walk/wrangler-dev-command";
@@ -364,6 +365,7 @@ async function main(): Promise<void> {
 			};
 			const ctx: WalkContext = {
 				baseUrl,
+				operatorToken: WALK_OPERATOR_API_TOKEN,
 				ingestBaseUrl,
 				generationDir,
 				persistDir,

@@ -165,7 +165,10 @@ it("returns unreadable projection as 500 and keeps failed Workflow observation e
 	expect(await response.json()).toMatchObject({
 		workflow: {
 			observation: "unavailable",
-			error: { name: "Error", message: "workflow unavailable" },
+			error: {
+				name: "WorkflowObservationUnavailable",
+				message: "Workflow status is unavailable",
+			},
 		},
 	});
 });

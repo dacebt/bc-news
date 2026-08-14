@@ -29,10 +29,14 @@ async function run(ctx: WalkContext): Promise<void> {
 
 	await Promise.all(
 		ACTIVE_REGION_IDS.map((activeRegionId) =>
-			fetchGenerationRunStatus(ctx.baseUrl, {
-				active_region_id: activeRegionId,
-				publication_date: ctx.pair.publication_date,
-			}),
+			fetchGenerationRunStatus(
+				ctx.baseUrl,
+				{
+					active_region_id: activeRegionId,
+					publication_date: ctx.pair.publication_date,
+				},
+				ctx.operatorToken,
+			),
 		),
 	);
 	console.log(
@@ -49,7 +53,7 @@ async function run(ctx: WalkContext): Promise<void> {
 	};
 	const deadline = Date.now() + FAILURE_TIMEOUT_MS;
 	while (Date.now() < deadline) {
-		const response = await fetchGenerationRunStatus(ctx.baseUrl, absentPair);
+		const response = await fetchGenerationRunStatus(ctx.baseUrl, absentPair, ctx.operatorToken);
 		if (response.state === "errored") {
 			assertExplicitNoEvidenceFailure(response);
 			console.log(

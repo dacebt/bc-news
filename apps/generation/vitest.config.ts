@@ -22,6 +22,7 @@ export default defineConfig(async () => {
 				wrangler: { configPath: "./tests/wrangler.jsonc" },
 				miniflare: {
 					bindings: {
+						OPERATOR_API_TOKEN: "test-operator-token",
 						EVIDENCE_INPUT: "d1_chat",
 						MODEL_CONFIG: RECORDED_MODEL_CONFIG,
 						LMSTUDIO_BASE_URL: "",

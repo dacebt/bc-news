@@ -9,6 +9,10 @@ import {
 } from "./generation-run-status";
 import { InvalidGenerationRunParamsError, launchGenerationRun } from "./run-launch";
 
+const MAX_GENERATION_RUN_BODY_BYTES = 1024;
+
+class GenerationRunBodyTooLargeError extends Error {}
+
 function jsonResponse(status: number, body: unknown, headers?: Record<string, string>): Response {
 	return new Response(JSON.stringify(body), {
 		status,
@@ -16,11 +20,40 @@ function jsonResponse(status: number, body: unknown, headers?: Record<string, st
 	});
 }
 
-function errorShape(error: unknown): { name: string; message: string } {
-	if (error instanceof Error) {
-		return { name: error.name, message: error.message };
+function hasJsonContentType(request: Request): boolean {
+	const contentType = request.headers.get("Content-Type");
+	return contentType?.split(";", 1)[0]?.trim().toLowerCase() === "application/json";
+}
+
+async function readGenerationRunBody(request: Request): Promise<unknown> {
+	if (request.body === null) return undefined;
+
+	const body: ReadableStream<unknown> = request.body;
+	const reader = body.getReader();
+	const chunks: Uint8Array[] = [];
+	let byteLength = 0;
+	while (true) {
+		const { done, value } = await reader.read();
+		if (done) break;
+		if (!(value instanceof Uint8Array)) {
+			await reader.cancel();
+			throw new TypeError("Request body stream did not provide bytes");
+		}
+		byteLength += value.byteLength;
+		if (byteLength > MAX_GENERATION_RUN_BODY_BYTES) {
+			await reader.cancel();
+			throw new GenerationRunBodyTooLargeError();
+		}
+		chunks.push(value);
 	}
-	return { name: "UnknownError", message: String(error) };
+
+	const bytes = new Uint8Array(byteLength);
+	let offset = 0;
+	for (const chunk of chunks) {
+		bytes.set(chunk, offset);
+		offset += chunk.byteLength;
+	}
+	return JSON.parse(new TextDecoder("utf-8", { fatal: true, ignoreBOM: false }).decode(bytes));
 }
 
 const WorkflowInstanceStateSchema = z.enum([
@@ -58,10 +91,17 @@ export const GenerationRunStatusResponseSchema = GenerationRunProjectionSchema.e
 });
 
 export async function createGenerationRun(request: Request, env: Env): Promise<Response> {
+	if (!hasJsonContentType(request)) {
+		return jsonResponse(415, { error: "unsupported_media_type" });
+	}
+
 	let body: unknown;
 	try {
-		body = await request.json();
-	} catch {
+		body = await readGenerationRunBody(request);
+	} catch (error) {
+		if (error instanceof GenerationRunBodyTooLargeError) {
+			return jsonResponse(413, { error: "request_body_too_large" });
+		}
 		return jsonResponse(400, {
 			error: "invalid_generation_run_params",
 			detail: "Request body is not valid JSON",
@@ -84,20 +124,6 @@ export async function createGenerationRun(request: Request, env: Env): Promise<R
 		active_region_id: launch.params.active_region_id,
 		publication_date: launch.params.publication_date,
 	});
-}
-
-export async function getGenerationRunStatus(instanceId: string, env: Env): Promise<Response> {
-	let instance: WorkflowInstance;
-	try {
-		instance = await env.GENERATION_RUN.get(instanceId);
-	} catch (error) {
-		return jsonResponse(404, {
-			error: "generation_run_not_found",
-			id: instanceId,
-			platform_error: errorShape(error),
-		});
-	}
-	return jsonResponse(200, { id: instanceId, status: await instance.status() });
 }
 
 export async function getGenerationRunStatusByPair(url: URL, env: Env): Promise<Response> {
@@ -140,7 +166,16 @@ export async function getGenerationRunStatusByPair(url: URL, env: Env): Promise<
 		};
 	} catch (error) {
 		if (error instanceof z.ZodError) throw error;
-		workflow = { observation: "unavailable", error: errorShape(error) };
+		console.error("workflow status observation unavailable", {
+			name: error instanceof Error ? error.name : "UnknownError",
+		});
+		workflow = {
+			observation: "unavailable",
+			error: {
+				name: "WorkflowObservationUnavailable",
+				message: "Workflow status is unavailable",
+			},
+		};
 	}
 	const response = GenerationRunStatusResponseSchema.parse({
 		...projection,

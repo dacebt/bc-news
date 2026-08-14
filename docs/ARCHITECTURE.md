@@ -588,7 +588,12 @@ serves the whole product — dev topology equals production topology. Routing
 is asset-first: a request matching a built asset is served without invoking
 Worker code; every other request reaches the Worker's routes, so an unknown
 path is the Worker's explicit 404, never a silent asset fallback. No Pages
-project exists. A second Worker now exists — ingest — but it serves no
+project exists. The only operator HTTP routes are exact `POST /generation-run`
+and exact `GET /generation-run`; both require a bearer token held in the
+`OPERATOR_API_TOKEN` Worker secret, return non-cacheable responses, and fail
+closed when that secret is absent. Pair-addressed status is the complete
+operator read contract; opaque Workflow-id paths are ordinary unknown routes.
+A second Worker now exists — ingest — but it serves no
 client or reader traffic: it exposes only its own poll endpoint, binds the
 same D1 database as the generation Worker, and carries no static assets, so
 the client and `/api/edition` remain exactly the single-origin surface this
@@ -614,7 +619,11 @@ Workers read and write the identical local D1). It dispatches the ingest
 Worker's real local scheduled event until the fixture corpus is drained,
 queries that isolated local D1 to prove the exact fixture row count, and
 dispatches the event again to prove dedup and overlap preserve the count.
-It then dispatches the generation Worker's real local scheduled event at
+It first proves the operator boundary with a walk-owned local token:
+unauthenticated launch and pair status are rejected without creating a run,
+authenticated launch and pair status succeed, and opaque Workflow-id paths
+remain absent with or without credentials. It then dispatches the generation
+Worker's real local scheduled event at
 the fixture publication instant, observes all nine deterministic Workflow
 identities, observes an absent-evidence region fail explicitly without
 blocking region 7, polls region 7's edition read until it serves and parses
@@ -638,8 +647,9 @@ the committed local default — the edition it publishes is generated from the
 from the fixture adapter. The fixture evidence adapter remains registered and
 explicitly selectable for tests and evaluation, but it is not the local default.
 
-The same walk uses `GET /generation-run?active_region_id=...&publication_date=...`
-as the operator surface rather than requiring an opaque Workflow id. It proves
+The same walk uses authenticated
+`GET /generation-run?active_region_id=...&publication_date=...` as the operator
+surface rather than exposing an opaque Workflow id. It proves
 the absent-evidence pair reaches a structured prepare-evidence failure with no
 model usage, and proves region 7 reaches complete with all seven ordered
 generation steps and exactly one recorded-replay usage record for each of the
@@ -714,7 +724,7 @@ and the BitJita stub, removes the walk directory (including D1 and eval output),
 and unregisters SIGINT handling on every path. Cleanup failures are reported
 without replacing the primary result. The JSON response keeps the durable D1 projection
 separate from a strictly parsed, explicitly available or unavailable current
-Workflow observation; the id-addressed route remains a low-level diagnostic.
+Workflow observation; no id-addressed diagnostic route exists.
 
 Settled — scheduled publication is direct Cloudflare shell code, not a third
 port. The ingest Worker runs every minute and directly awaits the same
