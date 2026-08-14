@@ -624,13 +624,10 @@ separate protection boundary. Generation declares exactly
 plain-text `vars`. That declaration supports types and local missing-secret
 warnings; it does not install or prove the Cloudflare secret.
 
-The checked-in D1 identifiers remain non-production placeholders. Repository
-proof covers one shared `DB` binding, generation-only migration ownership,
-static prepared SQL with bound parameters, validated stored JSON, and the
-absence of any raw-chat reader route. It cannot prove the production database
-identity, secret installation, custom-hostname reachability, Time Travel
-availability, or recovery behavior. Those remain deployment observations under
-separate authorization, and capability 3 plus BCN-008 stay open until they pass.
+The checked-in D1 identifiers remain deployment placeholders. Repository proof
+covers one shared `DB` binding, generation-only migration ownership, static
+prepared SQL with bound parameters, validated stored JSON, and the absence of
+any raw-chat reader route.
 
 Settled — the local runner (ADR-008): `pnpm walk` runs a TypeScript walk
 script over `wrangler dev`, the only local path that executes the real

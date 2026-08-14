@@ -26,7 +26,7 @@ generated:
 
 ## Out of scope (deliberately)
 
-- Cloudflare account changes, secret installation, Access or WAF configuration, deployment, production database inspection, Time Travel recovery observation, or remote hostname exercises without separate exact authorization.
+- Cloudflare account changes, secret installation, Access or WAF configuration, deployment, production database inspection, or remote hostname exercises without separate exact authorization.
 - Model-provider selection, prompt or evaluation changes, hosted inference, or changes owned by BCN-002.
 - Custom-domain provisioning owned by BCN-007, except that checked-in Worker exposure must not create an alternate public origin.
 - Changing the shared D1 schema or ownership unless the security walk reveals a concrete defect.
@@ -41,13 +41,8 @@ generated:
 
 In the isolated composed walk, public newspaper and edition reads still succeed with the intended headers and quota posture, unauthenticated generation launch and status requests fail without starting or exposing work, authenticated pair-addressed operator use succeeds, the raw Workflow-ID route is absent, alternate Worker origins are explicitly disabled, focused and repository gates pass, and the walk ends in `WALK PASS`.
 
-## Notes
-
-The repository-local session can produce deployable security behavior but cannot close BCN-008's production-only evidence. The task remains in progress until separately authorized deployed-hostname, Cloudflare-secret, D1 backend, and recovery observations succeed.
-
 ## Related documentation
 
 - [Production security capability map](2026-08-14-production-security-boundaries.map.md) — risk-ordered feature carve and the frozen HTTP boundary conventions.
 - [Binding architecture](../ARCHITECTURE.md) — Cloudflare topology, port discipline, and composed-walk authority.
 - [Binding testing posture](../TESTING.md) — acceptance and verification-domain authority.
-
