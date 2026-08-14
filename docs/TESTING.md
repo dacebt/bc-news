@@ -246,7 +246,14 @@ or acceptance gate cannot replace its own `WALK PASS`.
 
 **Static guarantees** support every domain. Strict TypeScript, lint, and zod
 contracts parse-and-reject at every boundary; they do not prove runtime
-behavior.
+behavior. The production-configuration contract semantically parses both real
+Wrangler JSONC files and locks alternate-origin disablement, ingest route
+absence, named-environment absence, the exact required-secret declaration without a plain-text secret,
+and the single shared D1 binding with generation-only migration ownership.
+Both the production-only and full dependency audits must report zero current
+advisories. These checks do not prove Cloudflare secret installation, a custom
+hostname, the real D1 backend, Time Travel, or recovery; those require the
+separately authorized production observations recorded by BCN-008.
 
 ## Direct verification sequence
 
@@ -263,6 +270,8 @@ pnpm --filter @bc-news/eval verify:evaluation-scorecards
 pnpm --filter @bc-news/eval verify:evaluation-longitudinal-scorecards
 pnpm --filter @bc-news/eval verify:recorded-response-fixture-authoring
 pnpm --filter @bc-news/eval verify:recorded-replay-acceptance
+pnpm audit --prod
+pnpm audit
 pnpm test
 pnpm typecheck
 pnpm lint

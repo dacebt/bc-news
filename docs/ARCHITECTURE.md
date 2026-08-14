@@ -613,6 +613,25 @@ edition schema and the identity pair arrives only via URL query — missing
 or invalid identity renders the explicit no-published-edition state, never
 a fixture default baked into client code.
 
+Settled — repository-owned production prerequisites: both Worker
+configurations explicitly disable `workers.dev` and preview URLs rather than
+inheriting Wrangler defaults. Generation gains its intended public hostname
+only through the later custom-domain deployment owned by BCN-007. Ingest has
+no `route`, `routes`, or static assets; its unauthenticated `POST /poll` handler
+is a local composed-walk harness and must not be deployed unless it receives a
+separate protection boundary. Generation declares exactly
+`OPERATOR_API_TOKEN` under Wrangler's required-secret metadata and never under
+plain-text `vars`. That declaration supports types and local missing-secret
+warnings; it does not install or prove the Cloudflare secret.
+
+The checked-in D1 identifiers remain non-production placeholders. Repository
+proof covers one shared `DB` binding, generation-only migration ownership,
+static prepared SQL with bound parameters, validated stored JSON, and the
+absence of any raw-chat reader route. It cannot prove the production database
+identity, secret installation, custom-hostname reachability, Time Travel
+availability, or recovery behavior. Those remain deployment observations under
+separate authorization, and capability 3 plus BCN-008 stay open until they pass.
+
 Settled — the local runner (ADR-008): `pnpm walk` runs a TypeScript walk
 script over `wrangler dev`, the only local path that executes the real
 Workflow definition — local emulation covers the Workflow, D1, and static
