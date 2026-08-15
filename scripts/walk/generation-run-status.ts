@@ -97,6 +97,12 @@ export interface WalkGenerationRunStatus {
 		| { observation: "unavailable"; error: { name: string; message: string } };
 }
 
+export interface GenerationRunStatusHttpResponse {
+	status: number;
+	body: string;
+	cacheControl: string | null;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -429,6 +435,21 @@ export function generationRunStatusUrl(baseUrl: string, pair: GenerationRunParam
 	return `${baseUrl}/generation-run?${query.toString()}`;
 }
 
+export async function requestGenerationRunStatus(
+	baseUrl: string,
+	pair: GenerationRunParams,
+	operatorToken: string,
+): Promise<GenerationRunStatusHttpResponse> {
+	const response = await fetch(generationRunStatusUrl(baseUrl, pair), {
+		headers: { Authorization: `Bearer ${operatorToken}` },
+	});
+	return {
+		status: response.status,
+		body: await response.text(),
+		cacheControl: response.headers.get("cache-control"),
+	};
+}
+
 export function parseGenerationRunStatusResponse(
 	body: string,
 	expectedPair: GenerationRunParams,
@@ -470,13 +491,21 @@ export function parseGenerationRunStatusResponse(
 export async function fetchGenerationRunStatus(
 	baseUrl: string,
 	pair: GenerationRunParams,
+	operatorToken: string,
 ): Promise<WalkGenerationRunStatus> {
-	const response = await fetch(generationRunStatusUrl(baseUrl, pair));
-	const body = await response.text();
+	const response = await requestGenerationRunStatus(baseUrl, pair, operatorToken);
 	if (response.status !== 200) {
 		throw new Error(
-			`generation run ${pair.active_region_id}/${pair.publication_date} expected status 200, got ${response.status} ${body}`,
+			`generation run ${pair.active_region_id}/${pair.publication_date} expected status 200, got ${response.status} ${response.body}`,
 		);
 	}
-	return parseGenerationRunStatusResponse(body, pair);
+	const cacheDirectives = response.cacheControl
+		?.split(",")
+		.map((directive) => directive.trim().toLowerCase());
+	if (!cacheDirectives?.includes("no-store")) {
+		throw new Error(
+			`generation run ${pair.active_region_id}/${pair.publication_date} expected Cache-Control: no-store, got ${JSON.stringify(response.cacheControl)}`,
+		);
+	}
+	return parseGenerationRunStatusResponse(response.body, pair);
 }

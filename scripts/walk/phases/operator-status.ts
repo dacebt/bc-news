@@ -16,7 +16,7 @@ async function run(ctx: WalkContext): Promise<void> {
 	);
 	const deadline = Date.now() + STATUS_TIMEOUT_MS;
 	while (Date.now() < deadline) {
-		const status = await fetchGenerationRunStatus(ctx.baseUrl, ctx.pair);
+		const status = await fetchGenerationRunStatus(ctx.baseUrl, ctx.pair, ctx.operatorToken);
 		if (status.state !== "complete") {
 			await sleep(POLL_INTERVAL_MS);
 			continue;

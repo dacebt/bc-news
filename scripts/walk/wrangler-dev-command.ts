@@ -5,6 +5,8 @@ export const WALK_RECORDED_MODEL_CONFIG = JSON.stringify({
 	announcements_copyedit: { adapter: "recorded" },
 });
 
+export const WALK_OPERATOR_API_TOKEN = "bc-news-local-walk-operator-token";
+
 export function wranglerDevArguments(input: {
 	readonly port: number;
 	readonly persistDir: string;
@@ -33,6 +35,9 @@ export function walkGenerationWranglerDevArguments(input: {
 }): string[] {
 	return wranglerDevArguments({
 		...input,
-		vars: { MODEL_CONFIG: WALK_RECORDED_MODEL_CONFIG },
+		vars: {
+			MODEL_CONFIG: WALK_RECORDED_MODEL_CONFIG,
+			OPERATOR_API_TOKEN: WALK_OPERATOR_API_TOKEN,
+		},
 	});
 }

@@ -1,5 +1,6 @@
 import { expect, it } from "vitest";
 import {
+	WALK_OPERATOR_API_TOKEN,
 	WALK_RECORDED_MODEL_CONFIG,
 	walkGenerationWranglerDevArguments,
 } from "../../../scripts/walk/wrangler-dev-command";
@@ -23,5 +24,6 @@ it("forces recorded generation adapters ahead of live developer configuration", 
 		announcements_copyedit: { adapter: "recorded" },
 	});
 	expect(args).toContain(`MODEL_CONFIG:${WALK_RECORDED_MODEL_CONFIG}`);
+	expect(args).toContain(`OPERATOR_API_TOKEN:${WALK_OPERATOR_API_TOKEN}`);
 	expect(args.join(" ")).not.toContain(developerModelConfig);
 });

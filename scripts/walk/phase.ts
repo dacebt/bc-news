@@ -9,6 +9,7 @@ export interface WalkState {
 
 export interface WalkContext {
 	baseUrl: string;
+	operatorToken: string;
 	ingestBaseUrl: string;
 	generationDir: string;
 	persistDir: string;

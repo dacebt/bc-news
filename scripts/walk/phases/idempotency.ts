@@ -34,7 +34,7 @@ async function run(ctx: WalkContext): Promise<void> {
 	if (servedAgain !== firstServedEditionBody) {
 		throw new Error("edition served after repeated scheduled generation is not byte-identical");
 	}
-	const status = await fetchGenerationRunStatus(ctx.baseUrl, ctx.pair);
+	const status = await fetchGenerationRunStatus(ctx.baseUrl, ctx.pair, ctx.operatorToken);
 	assertRecordedGenerationEvidenceUnchanged(firstGenerationRunEvidence, status);
 	console.log("walk: repeated scheduled generation served the first edition byte-identically");
 }

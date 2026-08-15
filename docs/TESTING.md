@@ -232,10 +232,19 @@ exactly four recorded responses and no production data, live model, paid
 service, or external origin. The status proof requires all seven generation
 steps in order, exactly four ordered recorded-replay usage records at zero
 external billing, and the exact ordered diagnostics from the representative
-schema-valid copyedit. The served edition must equal the two copyedited products,
+schema-valid copyedit. A fixed walk-only bearer token is injected into local
+Wrangler: unauthenticated launch and pair status must be rejected without a
+created run, authenticated launch and pair status must succeed, and opaque
+Workflow-id paths must remain generic 404s with or without credentials. The
+served edition must equal the two copyedited products,
 derive grouped writer/copyeditor provenance from those four usages, and contain
 no internal announcement ids. Duplicate delivery must preserve edition bytes
-and usage, and an unknown pair must remain absent. Browser traffic is
+and usage, and an unknown pair must remain absent. The main document and both
+successful and absent edition responses must carry the declared CSP, framing,
+content-type, referrer, and permissions policy; successful editions additionally
+declare the public browser/edge TTL, while absent responses are non-cacheable.
+The real Chrome page must remain free of CSP-caused page, console, request, or
+origin failures. Browser traffic is
 same-origin-only and exactly two pair-addressed edition 404s are allowed. This
 is the [PRD](PRD.md)'s first success signal and proves the composed deployable
 product. It does not invoke the evaluation, fixture-authoring, context, or
@@ -244,7 +253,13 @@ or acceptance gate cannot replace its own `WALK PASS`.
 
 **Static guarantees** support every domain. Strict TypeScript, lint, and zod
 contracts parse-and-reject at every boundary; they do not prove runtime
-behavior.
+behavior. The production-configuration contract semantically parses both real
+Wrangler JSONC files and locks alternate-origin disablement, ingest route
+absence, named-environment absence, the exact required-secret declaration
+without a plain-text secret, and the single shared D1 binding with
+generation-only migration ownership.
+Both the production-dependency and full dependency audits must report zero
+current advisories.
 
 ## Direct verification sequence
 
@@ -261,6 +276,8 @@ pnpm --filter @bc-news/eval verify:evaluation-scorecards
 pnpm --filter @bc-news/eval verify:evaluation-longitudinal-scorecards
 pnpm --filter @bc-news/eval verify:recorded-response-fixture-authoring
 pnpm --filter @bc-news/eval verify:recorded-replay-acceptance
+pnpm audit --prod
+pnpm audit
 pnpm test
 pnpm typecheck
 pnpm lint
