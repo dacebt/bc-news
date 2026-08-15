@@ -617,7 +617,7 @@ unauthenticated launch and pair status are rejected without creating a run,
 authenticated launch and pair status succeed, and opaque Workflow-id paths
 remain absent with or without credentials. It then dispatches the generation
 Worker's real local scheduled event at
-the fixture publication instant, observes all nine deterministic Workflow
+the fixture publication instant, observes all 13 deterministic Workflow
 identities, observes an absent-evidence region fail explicitly without
 blocking region 7, polls region 7's edition read until it serves and parses
 the body against the shared edition schema, repeats the scheduled event and
