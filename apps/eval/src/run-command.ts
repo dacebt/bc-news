@@ -13,6 +13,7 @@ export interface RunCommandOptions {
 	readonly configPath: string;
 	readonly resultsDirectory: string;
 	readonly environment?: ModelProviderEnvironment;
+	readonly correlateProviderRequests?: boolean;
 }
 
 export async function runCommand(options: RunCommandOptions): Promise<{ path: string; run: RunFile }> {
@@ -30,8 +31,13 @@ export async function runCommand(options: RunCommandOptions): Promise<{ path: st
 			resolveModelProvider(step as ProductionModelStep, adapter, environment),
 		]),
 	) as Record<ProductionModelStep, ReturnType<typeof resolveModelProvider>>;
+	const runId = generateRunId();
 	const startedAt = new Date().toISOString();
-	const execution = await executeProductionSteps(preparedEvidence, providers);
+	const execution = await executeProductionSteps(
+		preparedEvidence,
+		providers,
+		options.correlateProviderRequests === true ? { correlationRunId: runId } : {},
+	);
 
 	const edition = assembleEdition({
 		mainStory: execution.products.mainStory,
@@ -41,7 +47,7 @@ export async function runCommand(options: RunCommandOptions): Promise<{ path: st
 		modelUsages: execution.steps.map((step) => step.model_usage),
 	});
 	const run: RunFile = {
-		id: generateRunId(),
+		id: runId,
 		config,
 		fixture: {
 			path: relative(WORKSPACE_ROOT, options.fixturePath),

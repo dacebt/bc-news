@@ -48,6 +48,7 @@ export const EVAL_CLI_USAGE = `Usage:
   pnpm --filter @bc-news/eval eval -- benchmark show <benchmark-run-id> [--results-dir <path>]
   pnpm --filter @bc-news/eval eval -- benchmark summary <benchmark-run-id> [--results-dir <path>]
   pnpm --filter @bc-news/eval eval -- benchmark compare <left-id> <right-id> [--results-dir <path>]
+  pnpm --filter @bc-news/eval eval -- scratch run --fixture <path> --config <path> --results-dir <path>
   pnpm --filter @bc-news/eval eval -- acceptance run --fixture <path> [--config <path>] [--results-dir <path>]
   pnpm --filter @bc-news/eval eval -- acceptance list [--results-dir <path>]
   pnpm --filter @bc-news/eval eval -- acceptance show <run-id> [--results-dir <path>]
@@ -75,6 +76,7 @@ function commandArguments(argv: readonly string[]): readonly string[] {
 export function evalCliFailurePrefix(argv: readonly string[]): string {
 	const namespace = commandArguments(argv)[0];
 	if (namespace === "benchmark") return "benchmark failed:";
+	if (namespace === "scratch") return "scratch failed:";
 	if (namespace === "acceptance") return "acceptance failed:";
 	if (namespace === "fixture") return "fixture authoring failed:";
 	if (namespace === "context") return "context benchmark failed:";
@@ -155,6 +157,17 @@ export async function runEvalCliApplication(options: EvalCliApplicationOptions):
 		const left = await loadBenchmarkRun(command.leftRunId, directory);
 		const right = await loadBenchmarkRun(command.rightRunId, directory);
 		writeLine(formatBenchmarkComparison(compareBenchmarkRuns(left, right)));
+		return;
+	}
+	if (command.command === "scratch-run") {
+		const saved = await runCommand({
+			fixturePath: resolve(cwd, command.fixturePath),
+			configPath: resolve(cwd, command.configPath),
+			resultsDirectory: resolve(cwd, command.resultsDirectory),
+			environment: options.environment,
+			correlateProviderRequests: true,
+		});
+		writeLine(formatRunSummary(saved.run, saved.path));
 		return;
 	}
 

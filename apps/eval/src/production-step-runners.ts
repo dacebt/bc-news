@@ -21,6 +21,7 @@ import {
 	type ModelCompletion,
 	type ModelProviderPort,
 	type ModelProviderRequest,
+	type ModelRequestCorrelation,
 	type ModelUsageRecord,
 	type PreparedEvidence,
 	type ProductionModelStep,
@@ -50,11 +51,16 @@ export interface ProductionStepsExecution {
 	readonly observations: readonly ProductionStepObservation[];
 }
 
+export interface ProductionStepsExecutionOptions {
+	readonly correlationRunId?: string;
+}
+
 async function completeStep(input: {
 	readonly productionStep: ProductionModelStep;
 	readonly provider: ModelProviderPort;
 	readonly system: string;
 	readonly user: string;
+	readonly correlation?: ModelRequestCorrelation;
 }): Promise<{
 	readonly request: ModelProviderRequest;
 	readonly completion: ModelCompletion;
@@ -64,6 +70,7 @@ async function completeStep(input: {
 		productionStep: input.productionStep,
 		system: input.system,
 		user: input.user,
+		...(input.correlation === undefined ? {} : { correlation: input.correlation }),
 	};
 	const completion = await input.provider.complete(request);
 	return {
@@ -81,13 +88,22 @@ async function completeStep(input: {
 export async function executeProductionSteps(
 	preparedEvidence: PreparedEvidence,
 	providers: Readonly<Record<ProductionModelStep, ModelProviderPort>>,
+	options: ProductionStepsExecutionOptions = {},
 ): Promise<ProductionStepsExecution> {
+	const correlation = (ordinal: number): { readonly correlation?: ModelRequestCorrelation } =>
+		options.correlationRunId === undefined
+			? {}
+			: { correlation: {
+				run_id: options.correlationRunId,
+				invocation_id: `${options.correlationRunId}-invocation-${String(ordinal)}`,
+			} };
 	const mainStoryWriterUser = buildMainStoryWriterPrompt(preparedEvidence);
 	const mainStoryWriter = await completeStep({
 		productionStep: "main_story_write",
 		provider: providers.main_story_write,
 		system: WRITER_SYSTEM_CONSTRAINTS,
 		user: mainStoryWriterUser,
+		...correlation(1),
 	});
 	const mainStoryDraft = parseMainStoryWriterOutput(mainStoryWriter.completion.text);
 
@@ -97,6 +113,7 @@ export async function executeProductionSteps(
 		provider: providers.main_story_copyedit,
 		system: COPYEDIT_SYSTEM_CONSTRAINTS,
 		user: mainStoryCopyeditUser,
+		...correlation(2),
 	});
 	const mainStory = parseMainStoryCopyeditOutputWithDiagnostics(
 		mainStoryCopyedit.completion.text,
@@ -109,6 +126,7 @@ export async function executeProductionSteps(
 		provider: providers.announcements_write,
 		system: WRITER_SYSTEM_CONSTRAINTS,
 		user: announcementsWriterUser,
+		...correlation(3),
 	});
 	const announcementsDraft = parseAnnouncementsWriterOutput(announcementsWriter.completion.text);
 	const identifiedAnnouncements = attachAnnouncementIds(announcementsDraft);
@@ -119,6 +137,7 @@ export async function executeProductionSteps(
 		provider: providers.announcements_copyedit,
 		system: COPYEDIT_SYSTEM_CONSTRAINTS,
 		user: announcementsCopyeditUser,
+		...correlation(4),
 	});
 	const announcements = parseAnnouncementsCopyeditOutputWithDiagnostics(
 		announcementsCopyedit.completion.text,

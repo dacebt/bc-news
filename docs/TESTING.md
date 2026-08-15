@@ -28,6 +28,7 @@ outcome or silently substitutes for it.
 | Domain | Command | Evidence | Outcome |
 |---|---|---|---|
 | Deterministic tests | `pnpm test` | Isolated warranted invariants, reproduced defects, and high-risk state transitions | Test pass or hard test failure; never a retained model attempt |
+| Scratch model run | `scratch run` | One live four-step production pass saved only to an explicitly selected results directory | Development inspection artifact; never a Benchmark Run, scorecard source, baseline, or acceptance verdict |
 | Model evaluation | `benchmark run/list/show/summary/compare` | Strict versioned Benchmark Runs under `apps/eval/evaluation-results` | Retained model subject and harness outcomes with `evaluation:` observations; never a score or acceptance verdict |
 | Evaluation reference corpus | `corpus show --corpus <manifest-path>` and its direct verifier | Commit-addressed ordered synthetic fixtures and separate exact source-witness references | Auditable source truth and objective variation coverage; never a model result, score, or acceptance verdict |
 | Evaluation scorecards | `scorecard build/show` and `verify:evaluation-scorecards` | Commit-addressed V7 or Gateway V8 runs and corpus sources with Codex annotations and qualitative reviews | Four transparent role-specific measurements plus current/outdated checkout information; never an aggregate score, ranking, recommendation, or acceptance verdict |
@@ -39,6 +40,15 @@ outcome or silently substitutes for it.
 **Deterministic tests** protect warranted invariants, reproduced defects, and
 high-risk state transitions. A failing test is a hard failed test; it is not a
 retained model-evaluation attempt.
+
+**Scratch model runs** use `scratch run --fixture <path> --config <path>
+--results-dir <path>` to execute the current four-step production path against
+local or hosted models while prompts and configurations are still changing.
+The caller must choose the results directory; use a path under `/tmp` for
+disposable comparisons. Hosted requests receive run and invocation correlation.
+Scratch runs do not require a clean worktree, use a frozen Benchmark Run
+contract, enter the retained evaluation-results directory, establish a
+baseline, or supply scorecard or acceptance evidence.
 
 **Model evaluation** uses `benchmark run --fixture <path> --config <path>
 [--results-dir <path>]` to observe an ordered configuration and repetition

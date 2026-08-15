@@ -94,6 +94,27 @@ test("executes the exact dependent four-step production roster serially", async 
 	expect(calls).toEqual(PRODUCTION_MODEL_STEPS);
 });
 
+test("correlates every scratch provider request to its run and invocation", async () => {
+	const requests: ModelProviderRequest[] = [];
+	vi.spyOn(recordedModelProvider, "complete").mockImplementation((request) => {
+		requests.push(request);
+		return Promise.resolve(completion(DIAGNOSTIC_OUTPUTS[request.productionStep]));
+	});
+
+	const { run } = await runCommand({
+		fixturePath: REPRESENTATIVE_FIXTURE_PATH,
+		configPath: RECORDED_REPLAY_CONFIG_PATH,
+		resultsDirectory: await mkdtemp(join(tmpdir(), "bc-news-eval-correlation-")),
+		environment: {},
+		correlateProviderRequests: true,
+	});
+
+	expect(requests.map(({ correlation }) => correlation)).toEqual(PRODUCTION_MODEL_STEPS.map((_, index) => ({
+		run_id: run.id,
+		invocation_id: `${run.id}-invocation-${String(index + 1)}`,
+	})));
+});
+
 test("retains exact requests and completions in production order", async () => {
 	const preparedEvidence = await representativePreparedEvidence();
 	const requests: ModelProviderRequest[] = [];

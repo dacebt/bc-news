@@ -8,6 +8,7 @@ export type EvalCliCommand =
 	| { command: "benchmark-show"; runId: string; resultsDirectory?: string }
 	| { command: "benchmark-summary"; runId: string; resultsDirectory?: string }
 	| { command: "benchmark-compare"; leftRunId: string; rightRunId: string; resultsDirectory?: string }
+	| { command: "scratch-run"; fixturePath: string; configPath: string; resultsDirectory: string }
 	| { command: "acceptance-run"; fixturePath: string; configPath?: string; resultsDirectory?: string }
 	| { command: "acceptance-list"; resultsDirectory?: string }
 	| { command: "acceptance-show"; runId: string; resultsDirectory?: string }
@@ -184,6 +185,17 @@ export function parseEvalCliCommand(argv: readonly string[]): EvalCliCommand {
 	const { positionals, values } = parsed;
 	const namespace = positionals[0];
 	if (namespace === "benchmark") return parseBenchmarkCommand(positionals, values);
+	if (namespace === "scratch") {
+		if (positionals[1] !== "run") throw new CliOptionsError("Expected scratch run");
+		exactPositionals(positionals, 2, "scratch run");
+		rejectUnknownOptions(values, ["fixture", "config", "results-dir"], "scratch run");
+		return {
+			command: "scratch-run",
+			fixturePath: requireStringOption(values.fixture, "fixture"),
+			configPath: requireStringOption(values.config, "config"),
+			resultsDirectory: requireStringOption(values["results-dir"], "results-dir"),
+		};
+	}
 	if (namespace === "acceptance") return parseAcceptanceCommand(positionals, values);
 	if (namespace === "fixture") {
 		if (positionals[1] !== "record-responses") {

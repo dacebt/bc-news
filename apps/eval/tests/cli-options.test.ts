@@ -12,6 +12,12 @@ test("parses every verification ownership route", () => {
 	expect(parseEvalCliCommand(["benchmark", "show", "benchmark-a", "--results-dir", "runs"])).toEqual({ command: "benchmark-show", runId: "benchmark-a", resultsDirectory: "runs" });
 	expect(parseEvalCliCommand(["benchmark", "summary", "benchmark-a", "--results-dir", "runs"])).toEqual({ command: "benchmark-summary", runId: "benchmark-a", resultsDirectory: "runs" });
 	expect(parseEvalCliCommand(["benchmark", "compare", "benchmark-a", "benchmark-b", "--results-dir", "runs"])).toEqual({ command: "benchmark-compare", leftRunId: "benchmark-a", rightRunId: "benchmark-b", resultsDirectory: "runs" });
+	expect(parseEvalCliCommand(["scratch", "run", "--fixture", "fixture.json", "--config", "models.json", "--results-dir", "/tmp/runs"])).toEqual({
+		command: "scratch-run",
+		fixturePath: "fixture.json",
+		configPath: "models.json",
+		resultsDirectory: "/tmp/runs",
+	});
 	expect(parseEvalCliCommand(["acceptance", "run", "--fixture", "fixture.json"])).toEqual({ command: "acceptance-run", fixturePath: "fixture.json" });
 	expect(parseEvalCliCommand(["acceptance", "list", "--results-dir", "runs"])).toEqual({ command: "acceptance-list", resultsDirectory: "runs" });
 	expect(parseEvalCliCommand(["acceptance", "show", "run-a", "--results-dir", "runs"])).toEqual({ command: "acceptance-show", runId: "run-a", resultsDirectory: "runs" });
@@ -26,6 +32,7 @@ test("parses every verification ownership route", () => {
 
 test("keeps options with their owning namespace", () => {
 	expect(parseEvalCliCommand(["benchmark", "run", "--fixture", "fixture.json", "--config", "models.json", "--results-dir", "benchmarks"])).toMatchObject({ resultsDirectory: "benchmarks" });
+	expect(() => parseEvalCliCommand(["scratch", "run", "--fixture", "fixture.json", "--config", "models.json"])).toThrow("--results-dir is required");
 	expect(parseEvalCliCommand(["acceptance", "run", "--fixture", "fixture.json", "--config", "recorded.json", "--results-dir", "acceptance"])).toMatchObject({ configPath: "recorded.json", resultsDirectory: "acceptance" });
 	expect(parseEvalCliCommand(["fixture", "record-responses", "--fixture", "fixture.json", "--config", "models.json", "--response-dir", "responses"])).toMatchObject({ responseDirectory: "responses" });
 	expect(parseEvalCliCommand(["context", "benchmark", "--fixture", "fixture.json", "--results-dir", "contexts"])).toMatchObject({ resultsDirectory: "contexts" });
@@ -54,6 +61,7 @@ test("rejects every removed bare route and omits it from help", () => {
 
 test("formats failures through the recognized verification namespace", () => {
 	expect(formatEvalCliFailure(["benchmark", "unknown"], new Error("bad route"))).toBe("benchmark failed: bad route");
+	expect(formatEvalCliFailure(["scratch", "unknown"], new Error("bad route"))).toBe("scratch failed: bad route");
 	expect(formatEvalCliFailure(["acceptance", "unknown"], new Error("bad route"))).toBe("acceptance failed: bad route");
 	expect(formatEvalCliFailure(["fixture", "unknown"], new Error("bad route"))).toBe("fixture authoring failed: bad route");
 	expect(formatEvalCliFailure(["context", "unknown"], new Error("bad route"))).toBe("context benchmark failed: bad route");
