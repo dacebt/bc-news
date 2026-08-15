@@ -18,9 +18,8 @@
 		{
 			"binding": "DB",
 			"database_name": "bc-news-editions",
-			// Local emulation keys storage by this id; replaced by the real id when
-			// the user provisions the production database (user-led, out of scope).
-			"database_id": "00000000-0000-0000-0000-000000000000",
+			// Shared with the ingest Worker so both services use the same D1 database.
+			"database_id": "5192d247-216a-4ee1-a4db-0d6394a916c7",
 			"migrations_dir": "migrations"
 		}
 	],

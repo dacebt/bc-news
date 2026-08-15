@@ -16,7 +16,7 @@
 			// chat_messages, and poll_state. No migrations_dir here: the migration
 			// chain lives solely in apps/generation/migrations, one owner for a
 			// serial resource.
-			"database_id": "00000000-0000-0000-0000-000000000000"
+			"database_id": "5192d247-216a-4ee1-a4db-0d6394a916c7"
 		}
 	],
 	"vars": {
