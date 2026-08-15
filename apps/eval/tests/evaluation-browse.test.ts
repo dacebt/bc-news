@@ -1,22 +1,13 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { PRODUCTION_MODEL_STEPS } from "@bc-news/generation-core";
 import { expect, test } from "vitest";
-import { evaluationConfigIdentity, type BenchmarkRun } from "../src/evaluation-artifact";
 import { verifyEvaluationBenchmarkBrowsing } from "../src/evaluation-browse-verifier";
 import { summarizeBenchmarkRun } from "../src/evaluation-browse-report";
 import { listBenchmarkRuns, loadBenchmarkRun } from "../src/evaluation-artifact-reader";
 import { compareBenchmarkRuns } from "../src/evaluation-comparison";
-import { V4BenchmarkRunSchema, V4EvalConfigSchema } from "../src/evaluation-artifact-v4";
-import { clone, controlledEvaluation, temporaryRoot } from "./evaluation-artifact-test-support";
+import { controlledEvaluation, temporaryRoot } from "./evaluation-artifact-test-support";
 
 const RESPONSE_DIRECTORY = new URL("../../../packages/fixtures/model-responses/", import.meta.url).pathname;
-
-function first<T>(items: readonly T[], label: string): T {
-	const item = items[0];
-	if (item === undefined) throw new Error(`Expected ${label}`);
-	return item;
-}
 
 async function finalProductRejectedMainStory(): Promise<string> {
 	const retained = JSON.parse(
@@ -76,65 +67,4 @@ test("compares retained diagnostics as behavior", async () => {
 	expect(comparison.behavioralDifferences).toEqual(expect.arrayContaining([
 		expect.stringContaining("tracks.main_story.findings"),
 	]));
-});
-
-test("keeps historical LM Studio sampling configuration in comparison context", async () => {
-	const retainedStates: BenchmarkRun[] = [];
-	await controlledEvaluation((artifact) => { retainedStates.push(artifact); });
-	const initialRetainedState = first(retainedStates, "initial retained benchmark state");
-	const historicalCandidate = clone(initialRetainedState) as unknown as Record<string, unknown>;
-	delete historicalCandidate.runtime_evidence;
-	const explicit = clone(V4BenchmarkRunSchema.parse({
-		...historicalCandidate,
-		version: 4,
-		outcome_counts: {
-			...initialRetainedState.outcome_counts,
-			preservation_rejected: 0,
-			final_product_rejected: 0,
-		},
-	}));
-	const declaration = first(explicit.declaration.configurations, "one declared configuration");
-	declaration.config = V4EvalConfigSchema.parse({
-		production_steps: Object.fromEntries(PRODUCTION_MODEL_STEPS.map((step) => [step, {
-			adapter: "lmstudio",
-			model: `local/${step}`,
-			reasoning_effort: "provider_default",
-			sampling: { temperature: 0, top_p: 1, top_k: 1 },
-		}])),
-	});
-	const explicitIdentity = evaluationConfigIdentity(declaration.config);
-	declaration.identity = explicitIdentity;
-	first(explicit.trial_roster, "one trial roster member").config_identity = explicitIdentity;
-	const explicitTrial = first(explicit.trials, "one evaluation trial");
-	explicitTrial.config_identity = explicitIdentity;
-	for (const invocation of explicitTrial.invocations) {
-		invocation.config_identity = explicitIdentity;
-		if (invocation.transport !== "succeeded") continue;
-		invocation.completion.execution = "local_inference";
-		invocation.completion.provider = "lmstudio";
-		invocation.completion.external_billing = { classification: "none", amount_usd: 0, reason: "local_inference" };
-	}
-	const parsedExplicit = V4BenchmarkRunSchema.parse(explicit);
-	const historicalSummary = summarizeBenchmarkRun(parsedExplicit);
-	expect(historicalSummary.diagnostic_kind_counts).toEqual({});
-	expect(historicalSummary.trials[0]?.tracks.main_story).not.toHaveProperty("diagnostics");
-
-	const providerDefault = clone(parsedExplicit);
-	const providerDefaultDeclaration = first(providerDefault.declaration.configurations, "one provider-default declaration");
-	for (const config of Object.values(providerDefaultDeclaration.config.production_steps)) {
-		if (config.adapter === "lmstudio") delete config.sampling;
-	}
-	const providerDefaultIdentity = evaluationConfigIdentity(providerDefaultDeclaration.config);
-	providerDefaultDeclaration.identity = providerDefaultIdentity;
-	first(providerDefault.trial_roster, "one provider-default roster member").config_identity = providerDefaultIdentity;
-	const providerDefaultTrial = first(providerDefault.trials, "one provider-default trial");
-	providerDefaultTrial.config_identity = providerDefaultIdentity;
-	for (const invocation of providerDefaultTrial.invocations) invocation.config_identity = providerDefaultIdentity;
-	const parsedProviderDefault = V4BenchmarkRunSchema.parse(providerDefault);
-
-	const comparison = compareBenchmarkRuns(parsedExplicit, parsedProviderDefault);
-	expect(comparison.contextDifferences).toEqual(expect.arrayContaining([
-		expect.stringContaining("sampling"),
-	]));
-	expect(comparison.behavioralDifferences).toEqual([]);
 });

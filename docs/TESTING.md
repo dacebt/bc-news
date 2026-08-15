@@ -73,9 +73,8 @@ response-contract rejection retains and prints sanitized schema issue paths,
 codes, expected types, and received structural types without retaining rejected
 values. A provider-reported explicit null completion instead retains successful
 transport, usage, provenance, and runtime evidence, then becomes a strict
-schema-mismatch model-output rejection in Gateway artifact version 8. Versions
-1 through 7 continue to reject null completion content at their frozen artifact
-boundaries. Both tracks quiesce before terminal
+schema-mismatch model-output rejection in Gateway artifact version 8. Current
+non-Gateway version 7 artifacts require textual completion content. Both tracks quiesce before terminal
 aggregation; interruption leaves a strict running version 7 or
 Gateway-only version 8
 artifact browseable through `benchmark list`, `benchmark show`, `benchmark
@@ -89,9 +88,7 @@ Benchmark Run version 7 retains existing live configurations. A
 one lifecycle-matched Gateway-request record for every invocation, including
 the response-scoped log id and declared cache/logging/retry/timeout policy on
 success. New Gateway records additionally retain the exact model-profile
-request format and structured-output contract name; earlier version 8 records
-remain valid without those later evidence fields. Versions 1–7 retain their
-historical meanings. Both current paths retain bounded structured provider-error
+request format and structured-output contract name. Both current paths retain bounded structured provider-error
 details for deterministic Gateway HTTP rejections so an infrastructure failure
 identifies the rejected parameter and provider reason rather than only the
 status code. OpenAI request profiles prove that every wire property is required,
@@ -342,16 +339,11 @@ proves, tests of glue and framework wiring, tests to satisfy coverage.
   however many layers separate them: it holds for every possible edit to that
   input and proves nothing. Relations recomputed from what the run consumed
   and produced are the right shape for the run's *own* fields.
-- **Recorded artifacts are inputs, not byte-level expectations.** Recorded-replay
-  acceptance recomputes relations from the current evidence, the exported
-  prompt builders, the recorded responses, and the run being checked. The
-  recorder writes `prompt_sha256` from the request it actually sends, binding
-  that recorded response to that request. The current committed writer
-  responses are migrated fixtures and the copyedit responses are synthetic
-  fixtures; their stamps are reconstructed request associations, not
-  recorder-authored provenance. No stamp is durable proof that a particular
-  model authored the response text. Editing a recorder-authored stamp by hand
-  asserts provenance that never happened and is never a fix for a red gate.
+- **Recorded artifacts are inputs, not prompt contracts.** A retained
+  `prompt_sha256` describes the request observed when a response was recorded;
+  it is not compared with current prompt bytes by the recorded provider and is
+  not a development gate. Prompt changes do not require editing or regenerating
+  old response artifacts.
 - **Over-broad source digests are provenance, not gates.** Source fingerprints,
   `code_version`, and retained run-file bytes may remain comparison evidence,
   but never become acceptance pins. A guard that fires because unrelated source
@@ -359,22 +351,20 @@ proves, tests of glue and framework wiring, tests to satisfy coverage.
 - Determinism is proved by re-executing recorded-replay acceptance rather than
   against a stored file. Its comparison reports every differing field except
   `id`, `started_at`, and `completed_at`.
-- Recorded-replay verification parses every Run File it produces with the
-  strict historical schema. A human comparison report is not an acceptance
-  gate.
-- Versioned model-evaluation artifacts validate against their own frozen
-  semantics. Version 1 rejects changed contract representations or hashes,
-  prepared-evidence snapshots that no longer match their identity and summary,
-  writer requests that do not exactly match the v1-local prompt and transcript
-  derived from that snapshot, impossible timestamp or duration relations, and
-  fabricated, missing, extra, or drifted final-product findings. Tests also
+- Current Benchmark Runs validate only as version 7 or Gateway version 8.
+  Versions 1 through 6 have no active schemas, parsers, prompt copies, migration
+  path, or development tests. Old run files may remain on disk, but current
+  readers reject them and no gate reparses them.
+- Current artifact tests reject changed prepared-evidence identity, impossible
+  timestamp or duration relations, invalid transition order, detached runtime
+  evidence, and malformed lifecycle state. They do not reconstruct or compare
+  retained prompts, rerun retained completions through current parsers, or
+  derive findings from historical output. Tests also
   force a failure after temporary-file write but before rename and require
   unchanged authoritative bytes. They separately prove successful cleanup and
   prove that an OS cleanup failure stays an explicit harness failure carrying
-  the temporary path while preserving the primary `write_rejected` cause. V1
-  validation does not call mutable production parsers, prompt builders,
-  fencing, or product checks when re-validating historical evidence.
-- Versions 2 and 3 validate serial benchmark lifecycle: the roster is the exact
+  the temporary path while preserving the primary `write_rejected` cause.
+- Current versions validate serial benchmark lifecycle: the roster is the exact
   configuration-order/repetition-order Cartesian product; trials form an
   append-only prefix; only the final trial may run; retries link to the
   immediately previous eligible same-step failure with an identical request;
@@ -385,35 +375,14 @@ proves, tests of glue and framework wiring, tests to satisfy coverage.
   observer snapshot must parse before the verifier prints
   `evaluation: serial benchmark retained linked retries and continued
   later trials`.
-- Version 3 additionally freezes the current corrected writer requests and
-  copyedit-preservation parser. Contract tests require its system messages,
-  writer prompts, and dependent copyedit prompts to equal the production
-  builders at the version boundary, and require boundary-only blank separators
-  to remain non-structural. Version 1 and version 2 validation continue through
-  their frozen original prompt and preservation semantics.
-- Version 4 preserves the version 3 prompt and preservation boundary while
-  retaining sampling posture truthfully. Tests prove provider-default
-  declarations omit all three native SDK properties, explicit declarations
-  retain an unchanged complete tuple, partial tuples reject, and versions 1–3
-  still validate only against their frozen semantics.
-- Version 5 preserves version 4 sampling semantics as a frozen historical
-  contract. It completes schema-valid products with exact
-  preservation and final-product diagnostics and has only `completed`,
-  `parse_rejected`, `contract_rejected`, and `infrastructure_incomplete`
-  outcomes; versions 1–4 continue through their frozen parsers.
-- Version 6 retains exact independent configurations for all four
-  production agents, accepts optional temperature as the only decoding control,
-  and rejects obsolete `sampling`, `top_p`, and `top_k` fields. Versions 1–5
-  continue through their frozen parsers.
-- Version 7 is current. Its top-level runtime-evidence roster must match trial
+- Version 7 is the current non-Gateway artifact. Its top-level runtime-evidence roster must match trial
   order then invocation ordinal exactly. Invocation append and pending evidence
   append are atomic; failed transport resolves only to an unavailable record;
   successful transport resolves only to captured normalized evidence; resolved
   evidence is immutable through parsing and terminal transitions. Tests reject
   missing, duplicate, reordered, detached, prematurely resolved, or mutated
-  records, and prove versions 1–6 still parse without accepting runtime evidence
-  inside their strict completion objects. Each representative historical parser
-  proof includes at least one successful completion.
+  records. Version 8 adds the Gateway-request roster without projecting through
+  or validating against any prior artifact version.
 - The repository-owned trial-retention verifier controls provider release and
   directly observes both writer invocations durably `in_flight` before either
   completes. It then observes deliberate cross-track interleaving, each
@@ -439,10 +408,10 @@ proves, tests of glue and framework wiring, tests to satisfy coverage.
   production roles and requires observed, unknown, and externally controlled
   fields. It proves execution context is comparison context, prediction
   observation is behavior, independently generated run/trial/invocation
-  identities do not create comparison differences, V7 legacy completions do not
+  identities do not create comparison differences, V7 completion objects do not
   gain a runtime key, and the strict roster survives store and reader round trips before printing
   `BENCHMARK RUNTIME EVIDENCE VERIFIED`.
-- V1 code provenance is the clean repository commit itself: repository name,
+- Evaluation code provenance is the clean repository commit itself: repository name,
   validated 40-character commit SHA, and `dirty: false`. Strict validation
   rejects missing, malformed, or extra provenance fields rather than retaining
   a redundant workspace hash.

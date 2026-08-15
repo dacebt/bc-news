@@ -8,12 +8,11 @@ import {
 	EvaluationIdSchema,
 	evaluationConfigIdentity,
 } from "./evaluation-artifact-schemas";
-import { V6ModelAdapterConfigSchema } from "./evaluation-artifact-v6";
-import { V7BenchmarkRunBaseSchema, V7BenchmarkRunSchema } from "./evaluation-artifact-v7";
-import { V1ProductionModelStepSchema } from "./evaluation-artifact-v1-contracts";
+import { V7BenchmarkRunBaseSchema, V7ModelAdapterConfigSchema, refineCurrentBenchmarkRun, type CurrentBenchmarkRunCandidate } from "./evaluation-artifact-v7";
+import { ProductionModelStepSchema } from "@bc-news/generation-core";
 
 export const V8ModelAdapterConfigSchema = z.discriminatedUnion("adapter", [
-	...V6ModelAdapterConfigSchema.options,
+	...V7ModelAdapterConfigSchema.options,
 	CloudflareAiGatewayAdapterConfigSchema,
 ]);
 
@@ -30,7 +29,7 @@ const GatewayRequestIdentitySchema = z.strictObject({
 	trial_id: EvaluationIdSchema,
 	invocation_id: EvaluationIdSchema,
 	config_identity: EvaluationIdSchema,
-	production_step: V1ProductionModelStepSchema,
+	production_step: ProductionModelStepSchema,
 	ordinal: z.number().int().positive(),
 });
 
@@ -81,100 +80,8 @@ export const V8BenchmarkRunBaseSchema = V7BenchmarkRunBaseSchema.omit({
 	gateway_requests: z.array(GatewayRequestRecordSchema),
 });
 
-type V8Candidate = z.infer<typeof V8BenchmarkRunBaseSchema>;
-
-function legacyAdapter(adapter: z.infer<typeof V8ModelAdapterConfigSchema>) {
-	if (adapter.adapter !== "cloudflare_ai_gateway") return adapter;
-	const gatewayIdentity = adapter.gateway === undefined
-		? "account_default"
-		: `named:${adapter.gateway.id}`;
-	return {
-		adapter: "openai_compatible_hosted" as const,
-		provider: `cloudflare_ai_gateway:${cloudflareAiGatewayProviderForModel(adapter.model)}:${gatewayIdentity}`,
-		model: adapter.model,
-		...(adapter.temperature === undefined ? {} : { temperature: adapter.temperature }),
-		billing: {
-			method: "calculated" as const,
-			input_usd_per_million_tokens: 0,
-			output_usd_per_million_tokens: 0,
-			pricing_reference: "v8-legacy-invariant-projection",
-		},
-	};
-}
-
-function legacyProjection(run: V8Candidate): unknown {
-	const declarations = new Map(run.declaration.configurations.map((declaration) => [declaration.identity, declaration.config]));
-	const configurations = run.declaration.configurations.map((declaration) => {
-		const config = {
-			production_steps: {
-				main_story_write: legacyAdapter(declaration.config.production_steps.main_story_write),
-				main_story_copyedit: legacyAdapter(declaration.config.production_steps.main_story_copyedit),
-				announcements_write: legacyAdapter(declaration.config.production_steps.announcements_write),
-				announcements_copyedit: legacyAdapter(declaration.config.production_steps.announcements_copyedit),
-			},
-		};
-		return { originalIdentity: declaration.identity, identity: evaluationConfigIdentity(config), config };
-	});
-	const identities = new Map(configurations.map(({ originalIdentity, identity }) => [originalIdentity, identity]));
-	const projectedDeclarations = new Map(configurations.map(({ originalIdentity, config }) => [originalIdentity, config]));
-	const mapIdentity = (identity: string) => identities.get(identity) ?? identity;
-	const projected = {
-		...run,
-		version: 7,
-		declaration: {
-			...run.declaration,
-			configurations: configurations.map(({ identity, config }) => ({ identity, config })),
-		},
-		trial_roster: run.trial_roster.map((member) => ({ ...member, config_identity: mapIdentity(member.config_identity) })),
-		trials: run.trials.map((trial) => ({
-			...trial,
-			config_identity: mapIdentity(trial.config_identity),
-			invocations: trial.invocations.map((invocation) => {
-				const adapter = declarations.get(invocation.config_identity)?.production_steps[invocation.production_step];
-				const projectedAdapter = projectedDeclarations.get(invocation.config_identity)?.production_steps[invocation.production_step];
-				return {
-					...invocation,
-					config_identity: mapIdentity(invocation.config_identity),
-					...(invocation.transport === "succeeded" ? {
-						completion: {
-							...invocation.completion,
-							text: invocation.completion.text ?? "null",
-							...(adapter?.adapter === "cloudflare_ai_gateway" ? {
-								provider: projectedAdapter?.adapter === "openai_compatible_hosted"
-									? projectedAdapter.provider
-									: invocation.completion.provider,
-								external_billing: {
-									classification: "calculated" as const,
-									amount_usd: 0,
-									pricing_reference: "v8-legacy-invariant-projection",
-								},
-							} : {}),
-						},
-						} : {}),
-				};
-			}),
-		})),
-		runtime_evidence: run.runtime_evidence.map((evidence) => ({
-			...evidence,
-			config_identity: mapIdentity(evidence.config_identity),
-		})),
-	};
-	delete (projected as Partial<typeof projected> & { gateway_requests?: unknown }).gateway_requests;
-	return projected;
-}
-
 export const V8BenchmarkRunSchema = V8BenchmarkRunBaseSchema.superRefine((run, context) => {
-	const legacy = V7BenchmarkRunSchema.safeParse(legacyProjection(run));
-	if (!legacy.success) {
-		for (const issue of legacy.error.issues) {
-			context.addIssue({
-				code: "custom",
-				path: issue.path,
-				message: `artifact version 8 must preserve the version 7 benchmark invariant: ${issue.message}`,
-			});
-		}
-	}
-
+	refineCurrentBenchmarkRun(run as unknown as CurrentBenchmarkRunCandidate, context, true);
 	const identities = new Set<string>();
 	for (const [index, declaration] of run.declaration.configurations.entries()) {
 		if (declaration.identity !== evaluationConfigIdentity(declaration.config)) {

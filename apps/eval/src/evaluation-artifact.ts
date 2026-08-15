@@ -1,34 +1,13 @@
-export {
-	evaluationOutputContractProvenance,
-	V1BenchmarkRunSchema,
-	type V1BenchmarkRun,
-} from "./evaluation-artifact-benchmark";
+export { evaluationOutputContractProvenance } from "./evaluation-output-contract-provenance";
 import { z } from "zod";
-import { V1BenchmarkRunSchema } from "./evaluation-artifact-benchmark";
-import { V2BenchmarkRunSchema } from "./evaluation-artifact-v2";
-import { V3BenchmarkRunSchema } from "./evaluation-artifact-v3";
-import { V4BenchmarkRunSchema } from "./evaluation-artifact-v4";
-import { V5BenchmarkRunSchema } from "./evaluation-artifact-v5";
-import { V6BenchmarkRunSchema } from "./evaluation-artifact-v6";
 import { V7BenchmarkRunSchema } from "./evaluation-artifact-v7";
 import { V8BenchmarkRunSchema } from "./evaluation-artifact-v8";
 
 export const BenchmarkRunSchema = z.discriminatedUnion("version", [
-	V1BenchmarkRunSchema,
-	V2BenchmarkRunSchema,
-	V3BenchmarkRunSchema,
-	V4BenchmarkRunSchema,
-	V5BenchmarkRunSchema,
-	V6BenchmarkRunSchema,
 	V7BenchmarkRunSchema,
 	V8BenchmarkRunSchema,
 ]);
 export type BenchmarkRun = z.infer<typeof BenchmarkRunSchema>;
-export { V2BenchmarkRunSchema, type V2BenchmarkRun } from "./evaluation-artifact-v2";
-export { V3BenchmarkRunSchema, type V3BenchmarkRun } from "./evaluation-artifact-v3";
-export { V4BenchmarkRunSchema, type V4BenchmarkRun } from "./evaluation-artifact-v4";
-export { V5BenchmarkRunSchema, type V5BenchmarkRun, type V5EvaluationTrial, type V5SubjectOutcome } from "./evaluation-artifact-v5";
-export { V6BenchmarkRunSchema, type V6BenchmarkRun, type V6EvaluationTrial } from "./evaluation-artifact-v6";
 export {
 	CapturedRuntimeEvidenceSchema,
 	PendingRuntimeEvidenceSchema,

@@ -83,8 +83,7 @@ export type RecordedModelResponse = z.infer<typeof RecordedModelResponseSchema>;
 
 type RecordedModelProviderErrorCode =
 	| "unknown_production_step"
-	| "recorded_response_step_mismatch"
-	| "recorded_response_prompt_mismatch";
+	| "recorded_response_step_mismatch";
 
 export class RecordedModelProviderError extends Error {
 	readonly code: RecordedModelProviderErrorCode;

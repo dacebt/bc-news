@@ -2,8 +2,6 @@ import { expect, test } from "vitest";
 import {
 	EditorialOutputContractError,
 	attachAnnouncementIds,
-	buildAnnouncementsCopyeditPrompt,
-	buildAnnouncementsWriterPrompt,
 	parseAnnouncementsCopyeditOutput,
 	parseAnnouncementsCopyeditOutputWithDiagnostics,
 	parseAnnouncementsWriterOutput,
@@ -21,32 +19,6 @@ const DRAFT = {
 		},
 	],
 };
-
-function evidence() {
-	return {
-		active_region_id: "7",
-		publication_date: "2026-01-25",
-		raw_count: 0,
-		after_filter_count: 0,
-		after_burst_count: 0,
-		final_count: 0,
-		drop_stats: { empty_after_trim: 0, too_short: 0, burst_merged: 0, sampling_dropped: 0 },
-		messages: [],
-	};
-}
-
-test("writer contract describes announcement fields without copyable placeholder values", () => {
-	const prompt = buildAnnouncementsWriterPrompt(evidence());
-
-	expect(prompt).toContain("Extract every noteworthy achievement and milestone");
-	expect(prompt).toContain("Treat skill grinding as ordinary economic activity");
-	expect(prompt).toContain("Do not rank announcements or select only the most prominent");
-	expect(prompt).toContain("announcements (array): zero or more noteworthy achievements");
-	expect(prompt).toContain("title (string): a brief plain-text achievement headline");
-	expect(prompt).not.toContain("explicit achievement by a named person");
-	expect(prompt).not.toContain("Brief achievement headline, plain text");
-	expect(prompt).not.toContain("What was accomplished, with markdown only");
-});
 
 test("attaches stable internal ids and strips them from the accepted public product", () => {
 	const identified = attachAnnouncementIds(DRAFT);
@@ -67,19 +39,6 @@ test("attaches stable internal ids and strips them from the accepted public prod
 		announcements: edited.announcements.map(({ title, summary }) => ({ title, summary })),
 	});
 	expect(parseAnnouncementsCopyeditOutputWithDiagnostics(JSON.stringify(edited), identified).diagnostics).toEqual([]);
-});
-
-test("copyedit prompt exposes draft ids but no evidence or other editorial product", () => {
-	const prompt = buildAnnouncementsCopyeditPrompt(attachAnnouncementIds(DRAFT));
-
-	expect(prompt).toContain("announcement-1");
-	expect(prompt).toContain("[UNTRUSTED ANNOUNCEMENTS DRAFT DATA]");
-	expect(prompt).not.toContain("[UNTRUSTED CHAT MESSAGE DATA]");
-	expect(prompt).not.toContain("Region:");
-	expect(prompt).not.toContain("Date:");
-	expect(prompt).not.toContain("main_story");
-	expect(prompt).not.toContain("score");
-	expect(prompt).not.toContain("verdict");
 });
 
 test("copyedit reports swapped announcement identities and still returns the product", () => {

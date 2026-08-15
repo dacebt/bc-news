@@ -2,13 +2,6 @@ import { mkdtemp, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, test, vi } from "vitest";
-import {
-	attachAnnouncementIds,
-	buildAnnouncementsCopyeditPrompt,
-	buildMainStoryCopyeditPrompt,
-	parseAnnouncementsWriterOutput,
-	parseMainStoryWriterOutput,
-} from "@bc-news/generation-core";
 import { REPRESENTATIVE_FIXTURE_PATH } from "../src/representative-fixture";
 import { parseEvalCliCommand } from "../src/cli-options";
 import { runContextBenchmark } from "../src/context-benchmark-command";
@@ -229,15 +222,6 @@ test("benchmarks the exact dependent four-step roster at every canonical message
 	expect(nativeSdk.respond).toHaveBeenCalledTimes(20);
 	expect(nativeSdk.dispose).toHaveBeenCalledTimes(20);
 	expect(close).toHaveBeenCalledOnce();
-
-	const mainStoryDraft = parseMainStoryWriterOutput(RESPONSE_TEXT.main_story_write);
-	const announcementsDraft = parseAnnouncementsWriterOutput(RESPONSE_TEXT.announcements_write);
-	for (let offset = 0; offset < requests.length; offset += 4) {
-		expect(requests[offset + 1]?.chat[1].content).toBe(buildMainStoryCopyeditPrompt(mainStoryDraft));
-		expect(requests[offset + 3]?.chat[1].content).toBe(
-			buildAnnouncementsCopyeditPrompt(attachAnnouncementIds(announcementsDraft)),
-		);
-	}
 
 	const temperatures = {
 		main_story_write: 0.7,

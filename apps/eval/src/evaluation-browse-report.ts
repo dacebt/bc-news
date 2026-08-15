@@ -9,20 +9,20 @@ function increment(counts: Record<string, number>, key: string): void {
 	counts[key] = (counts[key] ?? 0) + 1;
 }
 
-function diagnosticProjection(version: BenchmarkRun["version"], findings: TrackFindings) {
-	return version === 5 || version === 6 || version === 7 || version === 8 ? {
+function diagnosticProjection(findings: TrackFindings) {
+	return {
 		diagnostic_count: findings.length,
 		diagnostics: findings,
-	} : {};
+	};
 }
 
-function trackProducts(trial: Trial, trialOrdinal: number, version: BenchmarkRun["version"]) {
+function trackProducts(trial: Trial, trialOrdinal: number) {
 	return Object.entries(trial.tracks).flatMap(([track, state]) => state.product === null ? [] : [{
 		trial_ordinal: trialOrdinal,
 		track,
 		track_outcome: state.subject_outcome,
 		product: state.product,
-		...diagnosticProjection(version, state.findings),
+		...diagnosticProjection(state.findings),
 	}]);
 }
 
@@ -51,7 +51,7 @@ export function summarizeBenchmarkRun(run: BenchmarkRun) {
 			increment(trackOutcomes, track.subject_outcome ?? "pending");
 			for (const finding of track.findings) {
 				increment(findingKinds, finding.kind);
-				if (run.version === 5 || run.version === 6 || run.version === 7 || run.version === 8) increment(diagnosticKinds, finding.kind);
+				increment(diagnosticKinds, finding.kind);
 			}
 		}
 		for (const invocation of trial.invocations) {
@@ -75,7 +75,7 @@ export function summarizeBenchmarkRun(run: BenchmarkRun) {
 		})),
 		policy: {
 			repetition_count: run.declaration.repetition_count,
-			transport_retry_limit: run.version === 1 ? 0 : run.declaration.transport_retry_limit,
+			transport_retry_limit: run.declaration.transport_retry_limit,
 		},
 		trials: run.trials.map((trial, index) => {
 			const configurationOrdinal = run.declaration.configurations.findIndex(
@@ -93,13 +93,13 @@ export function summarizeBenchmarkRun(run: BenchmarkRun) {
 						lifecycle: trial.tracks.main_story.lifecycle,
 						subject_outcome: trial.tracks.main_story.subject_outcome,
 						terminal_production_step: trial.tracks.main_story.terminal_production_step,
-						...diagnosticProjection(run.version, trial.tracks.main_story.findings),
+						...diagnosticProjection(trial.tracks.main_story.findings),
 					},
 					announcements: {
 						lifecycle: trial.tracks.announcements.lifecycle,
 						subject_outcome: trial.tracks.announcements.subject_outcome,
 						terminal_production_step: trial.tracks.announcements.terminal_production_step,
-						...diagnosticProjection(run.version, trial.tracks.announcements.findings),
+						...diagnosticProjection(trial.tracks.announcements.findings),
 					},
 				},
 			};
@@ -108,7 +108,7 @@ export function summarizeBenchmarkRun(run: BenchmarkRun) {
 		track_outcome_counts: trackOutcomes,
 		finding_kind_counts: findingKinds,
 		diagnostic_kind_counts: diagnosticKinds,
-		products: run.trials.flatMap((trial, index) => trackProducts(trial, index + 1, run.version)),
+		products: run.trials.flatMap((trial, index) => trackProducts(trial, index + 1)),
 		invocation_count: run.trials.reduce((count, trial) => count + trial.invocations.length, 0),
 		retry_count: run.trials.reduce(
 			(count, trial) => count + trial.invocations.filter(({ predecessor_invocation_id }) => predecessor_invocation_id !== null).length,
@@ -117,7 +117,7 @@ export function summarizeBenchmarkRun(run: BenchmarkRun) {
 		invocations: run.trials.flatMap((trial, index) => trial.invocations.map(
 			(invocation) => invocationEvidence(invocation, index + 1),
 		)),
-		runtime_evidence: run.version === 7 || run.version === 8 ? run.runtime_evidence : [],
+		runtime_evidence: run.runtime_evidence,
 		gateway_requests: run.version === 8 ? run.gateway_requests : [],
 	};
 }

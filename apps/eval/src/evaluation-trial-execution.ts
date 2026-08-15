@@ -22,7 +22,7 @@ import {
 	type V8BenchmarkRun,
 } from "./evaluation-artifact";
 import { EvaluationArtifactStore } from "./evaluation-artifact-store";
-import { deriveVersion5TrialOutcome } from "./evaluation-artifact-v5-trial-refinement";
+import { deriveCurrentTrialOutcome } from "./evaluation-artifact-v7";
 import { parseFinding, sha256Json, terminalCurrentTrackOutcome, transportErrorIdentity } from "./evaluation-trial-support";
 
 export class EvaluationRuntimeEvidenceError extends Error {
@@ -285,7 +285,7 @@ export async function executeEvaluationTrial(input: {
 
 	await enqueueMutation((current) => {
 		const currentTrial = retainedTrial(current);
-		const outcome = deriveVersion5TrialOutcome(currentTrial);
+		const outcome = deriveCurrentTrialOutcome(currentTrial);
 		const completedAt = new Date().toISOString();
 		const counts = { ...current.outcome_counts };
 		counts[outcome] += 1;

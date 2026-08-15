@@ -7,7 +7,7 @@ import { BenchmarkRunSchema } from "./evaluation-artifact";
 import { canonical, evaluationConfigIdentity, sha256Json } from "./evaluation-artifact-schemas";
 import { V7BenchmarkRunBaseSchema, V7BenchmarkRunSchema, type V7BenchmarkRun } from "./evaluation-artifact-v7";
 import { V8BenchmarkRunBaseSchema, V8BenchmarkRunSchema, type V8BenchmarkRun } from "./evaluation-artifact-v8";
-import { v1OutputContractProvenance } from "./evaluation-artifact-v1-contracts";
+import { evaluationOutputContractProvenance } from "./evaluation-output-contract-provenance";
 import { EvaluationReferenceCorpusError, loadEvaluationReferenceCorpusAtReference, type LoadedEvaluationReferenceCorpus, type LoadedEvaluationReferenceCorpusEntry } from "./evaluation-reference-corpus";
 import { readRepositorySource, sourceReferenceAtHead, type RepositorySourceReference } from "./evaluation-repository-reference";
 import {
@@ -110,7 +110,7 @@ export function parseEvaluationScorecardBenchmark(candidate: unknown, expectedId
 		const selectedConfigurations = base.data.declaration.configurations.filter(({ identity }) => identity === expectedConfigIdentity);
 		if (selectedConfigurations.length !== 1 || evaluationConfigIdentity(selectedConfigurations[0]!.config) !== expectedConfigIdentity) fail("configuration_mismatch", path, "Selected Benchmark configuration is missing, duplicated, or detached from its identity");
 		if (expectedRepetitionCount !== undefined && base.data.declaration.repetition_count !== expectedRepetitionCount) fail("repetition_mismatch", path, "Benchmark repetition count changed within the scorecard evidence set");
-		if (!isDeepStrictEqual(base.data.provenance.output_contracts, v1OutputContractProvenance())) fail("provenance_mismatch", path, "Benchmark output-contract provenance changed");
+		if (!isDeepStrictEqual(base.data.provenance.output_contracts, evaluationOutputContractProvenance())) fail("provenance_mismatch", path, "Benchmark output-contract provenance changed");
 		const prepared = base.data.prepared_evidence;
 		if (prepared.identity_sha256 !== sha256Json(prepared.snapshot) || prepared.active_region_id !== prepared.snapshot.active_region_id || prepared.publication_date !== prepared.snapshot.publication_date || prepared.original_count !== prepared.snapshot.raw_count || prepared.final_count !== prepared.snapshot.final_count) fail("corpus_binding_mismatch", path, "Prepared-evidence identity or summary is detached from its retained snapshot");
 		if (base.data.trials.length !== base.data.trial_roster.length || base.data.trials.some((trial, index) => {

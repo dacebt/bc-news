@@ -1,9 +1,10 @@
 import { z } from "zod";
 import { isAbsolute, normalize } from "node:path";
-import { ModelExecutionContextSchema } from "@bc-news/generation-core";
+import { ModelExecutionContextSchema, ProductionModelStepSchema as V1ProductionModelStepSchema } from "@bc-news/generation-core";
 import { EvaluationIdSchema, EvaluationTimestampSchema } from "./evaluation-artifact-schemas";
-import { V1ProductionModelStepSchema, V1Sha256HashSchema } from "./evaluation-artifact-v1-contracts";
-import { V6ModelAdapterConfigSchema } from "./evaluation-artifact-v6";
+import { V7ModelAdapterConfigSchema as V6ModelAdapterConfigSchema } from "./evaluation-artifact-v7";
+
+const V1Sha256HashSchema = z.string().regex(/^[0-9a-f]{64}$/u);
 
 export const EVALUATION_LONGITUDINAL_V1_ERROR_CODES = [
 	"invalid_longitudinal_declaration_json", "longitudinal_declaration_rejected",

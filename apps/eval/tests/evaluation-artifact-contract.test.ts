@@ -3,13 +3,13 @@ import { join } from "node:path";
 import { PRODUCTION_MODEL_STEPS } from "@bc-news/generation-core";
 import { expect, test } from "vitest";
 import {
-	BenchmarkRunSchema, evaluationConfigIdentity, evaluationOutputContractProvenance,
+	BenchmarkRunSchema, evaluationConfigIdentity,
 } from "../src/evaluation-artifact";
 import { EvaluationArtifactStore } from "../src/evaluation-artifact-store";
 import { REPRESENTATIVE_FIXTURE_PATH } from "../src/representative-fixture";
 import { evaluateTrialCommand } from "../src/evaluation-trial-command";
 import {
-	TEST_SOURCE_PROVENANCE, clone, controlledEvaluation, rejectsWithoutChangingBytes, sha256Json, temporaryRoot,
+	TEST_SOURCE_PROVENANCE, clone, controlledEvaluation, rejectsWithoutChangingBytes, temporaryRoot,
 } from "./evaluation-artifact-test-support";
 
 function first<T>(items: readonly T[], label: string): T {
@@ -83,11 +83,6 @@ test("accepts recovered retry evidence without classifying the trial as infrastr
 	if (retry.transport !== "succeeded") throw new Error("expected successful retry");
 	successfulPredecessor.trials[0]!.invocations[0] = { ...clone(retry), id: originalPredecessor.id, ordinal: 1, predecessor_invocation_id: null };
 	mutations.push(successfulPredecessor);
-	const changedRetryRequest = clone(recovered);
-	const changedRetry = changedRetryRequest.trials[0]!.invocations[1]!;
-	changedRetry.request.user += " changed on retry";
-	changedRetry.request_sha256 = sha256Json(changedRetry.request);
-	mutations.push(changedRetryRequest);
 	for (const mutation of mutations) {
 		expect(BenchmarkRunSchema.safeParse(mutation).success).toBe(false);
 		await rejectsWithoutChangingBytes(store, path, mutation);
@@ -114,19 +109,6 @@ test("rejects unreachable track selections for both editorial tracks", async () 
 		orderMutation.trials[0]!.invocations[copyeditIndex] = { ...writer, ordinal: copyeditIndex + 1 };
 		expect(BenchmarkRunSchema.safeParse(orderMutation).success).toBe(false);
 	}
-});
-
-test("requires the exact frozen version 1 output-contract provenance", async () => {
-	const { result } = await controlledEvaluation();
-	const historical = clone(result.benchmark);
-	const retained = historical.provenance.output_contracts[0];
-	retained.canonical_schema = { title: "historical-v1-contract", type: "string" };
-	retained.schema_sha256 = sha256Json(retained.canonical_schema);
-	expect(BenchmarkRunSchema.safeParse(historical).success).toBe(false);
-	const hashMutation = clone(result.benchmark);
-	hashMutation.provenance.output_contracts[0].schema_sha256 = "f".repeat(64);
-	expect(BenchmarkRunSchema.safeParse(hashMutation).success).toBe(false);
-	expect(result.benchmark.provenance.output_contracts).toEqual(evaluationOutputContractProvenance());
 });
 
 test("binds the complete prepared-evidence snapshot to its identity and summary", async () => {

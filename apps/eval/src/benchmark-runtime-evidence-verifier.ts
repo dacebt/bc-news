@@ -6,27 +6,17 @@ import { PRODUCTION_MODEL_STEPS, type ProductionModelStep } from "@bc-news/gener
 import { RecordedModelResponseSchema } from "@bc-news/fixtures";
 import { evaluateTrialCommand } from "./evaluation-trial-command";
 import {
-	BenchmarkRunSchema,
-	V1BenchmarkRunSchema,
-	V2BenchmarkRunSchema,
-	V3BenchmarkRunSchema,
-	V4BenchmarkRunSchema,
-	V5BenchmarkRunSchema,
-	V6BenchmarkRunSchema,
 	V7BenchmarkRunSchema,
 	type BenchmarkRun,
 	type V7BenchmarkRun,
 } from "./evaluation-artifact";
 import { loadBenchmarkRun } from "./evaluation-artifact-reader";
 import { EvaluationArtifactStore } from "./evaluation-artifact-store";
-import { V1_WRITER_SYSTEM_CONSTRAINTS, buildV1WriterPrompt } from "./evaluation-artifact-v1-writer-prompts";
-import { V3_WRITER_SYSTEM_CONSTRAINTS, buildV3WriterPrompt } from "./evaluation-artifact-v3-writer-prompts";
 import { summarizeBenchmarkRun } from "./evaluation-browse-report";
 import { compareBenchmarkRuns } from "./evaluation-comparison";
 import { projectBenchmarkBehavior, projectBenchmarkContext } from "./evaluation-observation";
 import { REPRESENTATIVE_FIXTURE_PATH } from "./representative-fixture";
 import { startRecordLoopbackServer } from "./record-loopback-server";
-import { sha256Json } from "./evaluation-trial-support";
 
 const RESPONSE_DIRECTORY = new URL("../../../packages/fixtures/model-responses/", import.meta.url).pathname;
 const TEST_PROVENANCE = { repository: "bc-news" as const, commit_sha: "7777777777777777777777777777777777777777", dirty: false as const };
@@ -46,76 +36,6 @@ function assertProof(condition: boolean, code: string, message: string): asserts
 
 function clone<T>(value: T): T {
 	return JSON.parse(JSON.stringify(value)) as T;
-}
-
-function withoutRuntimeEvidence(run: V7BenchmarkRun): Record<string, unknown> {
-	const candidate = clone(run) as unknown as Record<string, unknown>;
-	delete candidate.runtime_evidence;
-	return candidate;
-}
-
-function historicalCandidate(run: V7BenchmarkRun, version: 1 | 2 | 3 | 4 | 5 | 6): Record<string, unknown> {
-	const candidate = clone(run);
-	if (version <= 4) {
-		const writerContract = version <= 2
-			? { system: V1_WRITER_SYSTEM_CONSTRAINTS, build: buildV1WriterPrompt }
-			: { system: V3_WRITER_SYSTEM_CONSTRAINTS, build: buildV3WriterPrompt };
-		for (const trial of candidate.trials) {
-			for (const invocation of trial.invocations) {
-				if (invocation.production_step !== "main_story_write" && invocation.production_step !== "announcements_write") continue;
-				const track = invocation.production_step === "main_story_write" ? "main_story" : "announcements";
-				invocation.request = {
-					production_step: invocation.production_step,
-					system: writerContract.system,
-					user: writerContract.build(track, candidate.prepared_evidence.snapshot),
-				};
-				invocation.request_sha256 = sha256Json(invocation.request);
-			}
-		}
-	}
-	const historical = candidate as unknown as Record<string, unknown>;
-	delete historical.runtime_evidence;
-	historical.version = version;
-	if (version <= 4) {
-		historical.outcome_counts = {
-			...run.outcome_counts,
-			preservation_rejected: 0,
-			final_product_rejected: 0,
-		};
-	}
-	if (version === 1) {
-		const declaration = historical.declaration as Record<string, unknown>;
-		delete declaration.transport_retry_limit;
-	}
-	return historical;
-}
-
-function representativeHistoricalRun(
-	snapshots: readonly V7BenchmarkRun[],
-	version: 1 | 2 | 3 | 4 | 5 | 6,
-	parse: (candidate: unknown) => BenchmarkRun,
-): BenchmarkRun {
-	let lastFailure: unknown;
-	for (const snapshot of [...snapshots].reverse()) {
-		if (!snapshot.trials.flatMap(({ invocations }) => invocations).some(({ transport }) => transport === "succeeded")) continue;
-		try { return parse(historicalCandidate(snapshot, version)); }
-		catch (error: unknown) { lastFailure = error; }
-	}
-	throw new BenchmarkRuntimeEvidenceVerificationError(
-		"historical_representative_missing",
-		`No successful strict V${String(version)} representative could be derived from command/store snapshots: ${lastFailure instanceof Error ? lastFailure.message : String(lastFailure)}`,
-	);
-}
-
-function historicalRuns(snapshots: readonly V7BenchmarkRun[]): readonly BenchmarkRun[] {
-	return [
-		representativeHistoricalRun(snapshots, 1, (candidate) => V1BenchmarkRunSchema.parse(candidate)),
-		representativeHistoricalRun(snapshots, 2, (candidate) => V2BenchmarkRunSchema.parse(candidate)),
-		representativeHistoricalRun(snapshots, 3, (candidate) => V3BenchmarkRunSchema.parse(candidate)),
-		representativeHistoricalRun(snapshots, 4, (candidate) => V4BenchmarkRunSchema.parse(candidate)),
-		representativeHistoricalRun(snapshots, 5, (candidate) => V5BenchmarkRunSchema.parse(candidate)),
-		representativeHistoricalRun(snapshots, 6, (candidate) => V6BenchmarkRunSchema.parse(candidate)),
-	];
 }
 
 function withRewrittenNestedIdentities(run: V7BenchmarkRun): V7BenchmarkRun {
@@ -274,18 +194,6 @@ export async function verifyBenchmarkRuntimeEvidence(temporaryRoot?: string): Pr
 		const summary = summarizeBenchmarkRun(retained);
 		assertProof(summary.runtime_evidence.length === PRODUCTION_MODEL_STEPS.length, "summary_runtime_missing", "Summary did not expose the runtime roster");
 
-		const historical = historicalRuns(snapshots.filter((snapshot): snapshot is V7BenchmarkRun => snapshot.version === 7));
-		assertProof(historical.map(({ version }) => version).join(",") === "1,2,3,4,5,6", "historical_versions_rejected", "Representative strict versions 1 through 6 did not parse");
-		for (const artifact of historical) {
-			assertProof(artifact.trials.flatMap(({ invocations }) => invocations).some(({ transport }) => transport === "succeeded"), "historical_success_missing", `Representative V${String(artifact.version)} lacked a successful completion`);
-			assertProof(BenchmarkRunSchema.safeParse(artifact).success, "historical_union_rejected", `Historical V${String(artifact.version)} failed the union reader`);
-		}
-		const v6Final = V6BenchmarkRunSchema.parse({ ...withoutRuntimeEvidence(retained), version: 6 });
-		const v6WithInjectedCompletionEvidence = clone(v6Final);
-		const firstInvocation = v6WithInjectedCompletionEvidence.trials[0]?.invocations[0];
-		assertProof(firstInvocation?.transport === "succeeded", "v6_injection_setup", "Representative V6 lacked a succeeded invocation");
-		(firstInvocation.completion as unknown as Record<string, unknown>).runtime_evidence = retained.runtime_evidence[0];
-		assertProof(!V6BenchmarkRunSchema.safeParse(v6WithInjectedCompletionEvidence).success, "v6_runtime_injection_accepted", "V6 accepted injected completion runtime evidence");
 	} finally {
 		await server.close();
 		if (temporaryRoot === undefined) await rm(root, { recursive: true, force: true });

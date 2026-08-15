@@ -169,18 +169,7 @@ export function validateBenchmarkRunTransition(current: BenchmarkRun, next: Benc
 		"benchmark identity, declaration, fixture, prepared evidence, provenance, and roster",
 	);
 	if (next.lifecycle !== "running" && next.lifecycle !== "complete") throw new Error("benchmark transition is not monotonic");
-	if (next.lifecycle === "running" && current.version === 1) {
-		requireEqual(current.completed_at, next.completed_at, "running benchmark completion time");
-		requireEqual(current.outcome_counts, next.outcome_counts, "running benchmark outcome counts");
-		requireEqual(current.harness_outcome, next.harness_outcome, "running benchmark harness outcome");
-	}
-	if (current.version === 1 && next.version === 1) {
-		validateTrialTransition(current.trials[0]!, next.trials[0]!);
-		return;
-	}
-	if (current.version !== next.version || (current.version !== 2 && current.version !== 3 && current.version !== 4 && current.version !== 5 && current.version !== 6 && current.version !== 7 && current.version !== 8)) {
-		throw new Error("benchmark artifact version is immutable");
-	}
+	if (current.version !== next.version) throw new Error("benchmark artifact version is immutable");
 	if (next.trials.length < current.trials.length || next.trials.length > current.trials.length + 1) throw new Error("trials may append exactly one roster member and may never be removed");
 	for (const [index, trial] of current.trials.entries()) validateTrialTransition(trial, next.trials[index]!);
 	if (next.trials.length === current.trials.length + 1) {

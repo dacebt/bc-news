@@ -1,14 +1,6 @@
 import { expect, test } from "vitest";
 import {
-	COPYEDIT_SYSTEM_CONSTRAINTS,
-	WRITER_SYSTEM_CONSTRAINTS,
-	attachAnnouncementIds,
-	buildAnnouncementsCopyeditPrompt,
-	buildAnnouncementsWriterPrompt,
-	buildMainStoryCopyeditPrompt,
-	buildMainStoryWriterPrompt,
 	mainStoryFinalProductDiagnostics,
-	parseAnnouncementsWriterOutput,
 	parseMainStoryCopyeditOutputWithDiagnostics,
 	parseMainStoryWriterOutput,
 	prepareEvidence,
@@ -19,8 +11,6 @@ import {
 	RecordedModelResponseV3Schema,
 	createRecordedModelProvider,
 	fixtureEvidenceInput,
-	modelRequestSha256,
-	recordedModelProvider,
 	type RecordedModelResponseRoster,
 } from "../src";
 import announcementsCopyeditResponseJson from "../model-responses/announcements_copyedit.json";
@@ -140,47 +130,6 @@ async function canonicalPreparedEvidence() {
 	});
 }
 
-test("replays the exact dependent requests used by the real workflow", async () => {
-	const preparedEvidence = await canonicalPreparedEvidence();
-	const mainStoryDraftCompletion = await recordedModelProvider.complete({
-		productionStep: "main_story_write",
-		system: WRITER_SYSTEM_CONSTRAINTS,
-		user: buildMainStoryWriterPrompt(preparedEvidence),
-	});
-	const mainStoryDraft = parseMainStoryWriterOutput(mainStoryDraftCompletion.text);
-	const mainStoryCopyeditCompletion = await recordedModelProvider.complete({
-		productionStep: "main_story_copyedit",
-		system: COPYEDIT_SYSTEM_CONSTRAINTS,
-		user: buildMainStoryCopyeditPrompt(mainStoryDraft),
-	});
-	const announcementsDraftCompletion = await recordedModelProvider.complete({
-		productionStep: "announcements_write",
-		system: WRITER_SYSTEM_CONSTRAINTS,
-		user: buildAnnouncementsWriterPrompt(preparedEvidence),
-	});
-	const announcementsDraft = parseAnnouncementsWriterOutput(announcementsDraftCompletion.text);
-	const announcementsCopyeditCompletion = await recordedModelProvider.complete({
-		productionStep: "announcements_copyedit",
-		system: COPYEDIT_SYSTEM_CONSTRAINTS,
-		user: buildAnnouncementsCopyeditPrompt(attachAnnouncementIds(announcementsDraft)),
-	});
-
-	for (const completion of [
-		mainStoryDraftCompletion,
-		mainStoryCopyeditCompletion,
-		announcementsDraftCompletion,
-		announcementsCopyeditCompletion,
-	]) {
-		expect(completion.execution).toBe("recorded_replay");
-		expect(completion.token_usage).toEqual({ measurement: "unavailable" });
-		expect(completion.external_billing).toEqual({
-			classification: "none",
-			amount_usd: 0,
-			reason: "recorded_replay",
-		});
-	}
-});
-
 test("retains representative preservation and final-product diagnostics in the synthetic copyedit", async () => {
 	const preparedEvidence = await canonicalPreparedEvidence();
 	const draft = parseMainStoryWriterOutput(mainStoryWriteResponseJson.text);
@@ -217,32 +166,7 @@ test("retains representative preservation and final-product diagnostics in the s
 	]);
 });
 
-test.each(["system", "user"] as const)("rejects a replay when the real %s prompt bytes differ", async (field) => {
-	const preparedEvidence = await canonicalPreparedEvidence();
-	const request = {
-		productionStep: "main_story_write" as const,
-		system: WRITER_SYSTEM_CONSTRAINTS,
-		user: buildMainStoryWriterPrompt(preparedEvidence),
-	};
-	const mismatchedRequest = { ...request, [field]: `${request[field]} changed` };
-	const requestSha256 = await modelRequestSha256(mismatchedRequest);
-	const recordedPromptSha256 = RecordedModelResponseSchema.parse(
-		mainStoryWriteResponseJson,
-	).prompt_sha256;
-	expect(recordedPromptSha256).not.toBe(requestSha256);
-
-	await expect(recordedModelProvider.complete(mismatchedRequest)).rejects.toEqual(
-		expect.objectContaining({
-			name: "RecordedModelProviderError",
-			code: "recorded_response_prompt_mismatch",
-			productionStep: "main_story_write",
-			message: `Recorded response prompt_sha256 "${recordedPromptSha256}" does not match request sha256 "${requestSha256}" for production step "main_story_write"`,
-		}),
-	);
-});
-
 test("a replay factory rejects a response assigned to a different production step", async () => {
-	const preparedEvidence = await canonicalPreparedEvidence();
 	const provider = createRecordedModelProvider({
 		...committedRoster,
 		main_story_write: committedRoster.announcements_write,
@@ -250,8 +174,8 @@ test("a replay factory rejects a response assigned to a different production ste
 
 	await expect(provider.complete({
 		productionStep: "main_story_write",
-		system: WRITER_SYSTEM_CONSTRAINTS,
-		user: buildMainStoryWriterPrompt(preparedEvidence),
+		system: "unused",
+		user: "unused",
 	})).rejects.toEqual(expect.objectContaining({
 		name: "RecordedModelProviderError",
 		code: "recorded_response_step_mismatch",
@@ -260,7 +184,6 @@ test("a replay factory rejects a response assigned to a different production ste
 });
 
 test("a replay factory validates the selected retained response", async () => {
-	const preparedEvidence = await canonicalPreparedEvidence();
 	const retainedResponseWithExtraKey = {
 		...committedRoster.main_story_write,
 		judge: null,
@@ -272,13 +195,12 @@ test("a replay factory validates the selected retained response", async () => {
 
 	await expect(provider.complete({
 		productionStep: "main_story_write",
-		system: WRITER_SYSTEM_CONSTRAINTS,
-		user: buildMainStoryWriterPrompt(preparedEvidence),
+		system: "unused",
+		user: "unused",
 	})).rejects.toEqual(expect.objectContaining({ name: "ZodError" }));
 });
 
 test("replays v2 response text without treating sampling evidence as an instruction", async () => {
-	const preparedEvidence = await canonicalPreparedEvidence();
 	const currentResponse = RecordedModelResponseV2Schema.parse({
 		...mainStoryWriteResponseJson,
 		version: 2,
@@ -295,8 +217,8 @@ test("replays v2 response text without treating sampling evidence as an instruct
 
 	const completion = await provider.complete({
 		productionStep: "main_story_write",
-		system: WRITER_SYSTEM_CONSTRAINTS,
-		user: buildMainStoryWriterPrompt(preparedEvidence),
+		system: "unused",
+		user: "unused",
 	});
 	expect(completion.text).toBe(mainStoryWriteResponseJson.text);
 	expect(completion.provider).toBe(mainStoryWriteResponseJson.provider);
@@ -304,7 +226,6 @@ test("replays v2 response text without treating sampling evidence as an instruct
 });
 
 test("replays v3 response text without treating retained configuration as an instruction", async () => {
-	const preparedEvidence = await canonicalPreparedEvidence();
 	const currentResponse = RecordedModelResponseV3Schema.parse({
 		...mainStoryWriteResponseJson,
 		version: 3,
@@ -318,8 +239,8 @@ test("replays v3 response text without treating retained configuration as an ins
 	const provider = createRecordedModelProvider({ ...committedRoster, main_story_write: currentResponse });
 	const completion = await provider.complete({
 		productionStep: "main_story_write",
-		system: WRITER_SYSTEM_CONSTRAINTS,
-		user: buildMainStoryWriterPrompt(preparedEvidence),
+		system: "unused",
+		user: "unused",
 	});
 	expect(completion.text).toBe(mainStoryWriteResponseJson.text);
 });

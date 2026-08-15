@@ -1,10 +1,11 @@
 import { z } from "zod";
-import { ModelExecutionContextSchema } from "@bc-news/generation-core";
+import { ModelExecutionContextSchema, ProductionModelStepSchema as V1ProductionModelStepSchema } from "@bc-news/generation-core";
 import { EvaluationIdSchema, EvaluationTimestampSchema } from "./evaluation-artifact-schemas";
-import { V1ProductionModelStepSchema, V1Sha256HashSchema } from "./evaluation-artifact-v1-contracts";
-import { V6EvalConfigSchema, V6ModelAdapterConfigSchema } from "./evaluation-artifact-v6";
+import { V7EvalConfigSchema as V6EvalConfigSchema, V7ModelAdapterConfigSchema as V6ModelAdapterConfigSchema } from "./evaluation-artifact-v7";
 import { V8EvalConfigSchema, V8ModelAdapterConfigSchema } from "./evaluation-artifact-v8";
 import { RepositoryPathSchema, RepositorySourceReferenceSchema } from "./evaluation-repository-reference";
+
+const V1Sha256HashSchema = z.string().regex(/^[0-9a-f]{64}$/u);
 
 export const EVALUATION_SCORECARD_ERROR_CODES = [
 	"invalid_declaration_json", "declaration_rejected", "source_unreadable", "source_hash_mismatch",

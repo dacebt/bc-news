@@ -1,16 +1,17 @@
 import { createHash } from "node:crypto";
 import { z } from "zod";
 import {
-	V1EvalConfigSchema,
-	V1ExternalBillingSchema,
-	V1ProductionModelStepSchema,
-	V1Sha256HashSchema,
-	V1TokenUsageSchema,
-	type V1ProductionModelStep,
-} from "./evaluation-artifact-v1-contracts";
+	ExternalBillingSchema,
+	PreparedEvidenceSchema,
+	ProductionModelStepSchema,
+	TokenUsageSchema,
+	type ProductionModelStep,
+} from "@bc-news/generation-core";
+import { EvalConfigSchema } from "./config";
 
 export const EvaluationTimestampSchema = z.iso.datetime({ offset: true });
 export const EvaluationIdSchema = z.string().regex(/^[A-Za-z0-9][A-Za-z0-9_-]{0,199}$/u);
+export const Sha256HashSchema = z.string().regex(/^[0-9a-f]{64}$/u);
 
 export function sha256Json(value: unknown): string {
 	return createHash("sha256").update(JSON.stringify(value)).digest("hex");
@@ -31,20 +32,20 @@ export function canonicallyEqual(left: unknown, right: unknown): boolean {
 }
 
 export function evaluationConfigIdentity(config: {
-	readonly production_steps: Record<V1ProductionModelStep, object>;
+	readonly production_steps: Record<ProductionModelStep, object>;
 }): string {
 	return `config-${sha256Json(config)}`;
 }
 
 export const EvaluationFindingSchema = z.strictObject({
 	kind: z.enum(["invalid_json", "contract_mismatch", "preservation", "final_product"]),
-	production_step: V1ProductionModelStepSchema,
+	production_step: ProductionModelStepSchema,
 	code: z.string().min(1),
 	message: z.string().min(1),
 });
 
 const RetainedRequestSchema = z.strictObject({
-	production_step: V1ProductionModelStepSchema,
+	production_step: ProductionModelStepSchema,
 	system: z.string(),
 	user: z.string(),
 });
@@ -54,8 +55,8 @@ const ModelCompletionSchema = z.strictObject({
 	provider: z.string().min(1),
 	model: z.string().min(1),
 	execution: z.enum(["recorded_replay", "local_inference", "hosted_inference"]),
-	token_usage: V1TokenUsageSchema,
-	external_billing: V1ExternalBillingSchema,
+	token_usage: TokenUsageSchema,
+	external_billing: ExternalBillingSchema,
 });
 
 const ParsePendingSchema = z.strictObject({ state: z.literal("pending") });
@@ -81,12 +82,12 @@ export type TransportFailureDetails = z.infer<typeof TransportFailureDetailsSche
 
 const InvocationBase = {
 	id: EvaluationIdSchema,
-	production_step: V1ProductionModelStepSchema,
+	production_step: ProductionModelStepSchema,
 	config_identity: EvaluationIdSchema,
 	ordinal: z.number().int().positive(),
 	predecessor_invocation_id: EvaluationIdSchema.nullable(),
 	request: RetainedRequestSchema,
-	request_sha256: V1Sha256HashSchema,
+	request_sha256: Sha256HashSchema,
 	started_at: EvaluationTimestampSchema,
 };
 
@@ -125,7 +126,7 @@ export const SubjectOutcomeSchema = z.enum(["completed", "parse_rejected", "cont
 const TrackStateSchema = z.strictObject({
 	lifecycle: z.enum(["pending", "running", "completed", "rejected"]),
 	subject_outcome: SubjectOutcomeSchema.nullable(),
-	terminal_production_step: V1ProductionModelStepSchema.nullable(),
+	terminal_production_step: ProductionModelStepSchema.nullable(),
 	product: z.record(z.string(), z.unknown()).nullable(),
 	findings: z.array(EvaluationFindingSchema),
 });
@@ -156,15 +157,22 @@ export const EvaluationCodeProvenanceSchema = z.strictObject({
 });
 
 export const OutputContractProvenanceSchema = z.strictObject({
-	production_step: V1ProductionModelStepSchema, canonical_schema: z.json(), schema_sha256: V1Sha256HashSchema,
+	production_step: ProductionModelStepSchema, canonical_schema: z.json(), schema_sha256: Sha256HashSchema,
 });
 
 export const BenchmarkRunBaseSchema = z.strictObject({
 	version: z.literal(1), id: EvaluationIdSchema, lifecycle: z.enum(["running", "complete"]),
 	started_at: EvaluationTimestampSchema, completed_at: EvaluationTimestampSchema.nullable(),
-	declaration: z.strictObject({ configurations: z.tuple([z.strictObject({ identity: EvaluationIdSchema, config: V1EvalConfigSchema })]), repetition_count: z.literal(1) }),
-	fixture: z.strictObject({ path: z.string().min(1), fixture_sha256: V1Sha256HashSchema }),
-	prepared_evidence: z.unknown(),
+	declaration: z.strictObject({ configurations: z.tuple([z.strictObject({ identity: EvaluationIdSchema, config: EvalConfigSchema })]), repetition_count: z.literal(1) }),
+	fixture: z.strictObject({ path: z.string().min(1), fixture_sha256: Sha256HashSchema }),
+	prepared_evidence: z.strictObject({
+		identity_sha256: Sha256HashSchema,
+		active_region_id: z.string().min(1),
+		publication_date: z.iso.date(),
+		original_count: z.number().int().nonnegative(),
+		final_count: z.number().int().nonnegative(),
+		snapshot: PreparedEvidenceSchema,
+	}),
 	provenance: z.strictObject({ code: EvaluationCodeProvenanceSchema, output_contracts: z.tuple([OutputContractProvenanceSchema, OutputContractProvenanceSchema, OutputContractProvenanceSchema, OutputContractProvenanceSchema]) }),
 	trial_roster: z.tuple([z.strictObject({ trial_id: EvaluationIdSchema, config_identity: EvaluationIdSchema, repetition: z.literal(1) })]),
 	trials: z.array(EvaluationTrialSchema).length(1), outcome_counts: SubjectOutcomeCountsSchema,

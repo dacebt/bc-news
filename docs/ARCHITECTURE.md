@@ -203,7 +203,7 @@ leaves the provider's output-token ceiling unset. Successful Gateway provenance
 retains the request format, response-delivery mode, and structured-output
 contract name in addition to the existing transport policy.
 Gateway Benchmark Run version 8 alone retains explicit null completion content;
-versions 1 through 7 keep their frozen string-only completion semantics.
+current non-Gateway version 7 requires textual completion content.
 
 The production workflow has two editorial products and four model steps. The
 main-story writer receives prepared evidence and owns `title`, `subtitle`, and
@@ -304,11 +304,12 @@ processes the requests in parallel. The eval application owns this artifact
 boundary directly, adding no third domain port and changing neither provider
 adapters nor production Workflow scheduling.
 
-Existing live configurations continue to emit Benchmark Run version 7.
+Non-Gateway live configurations emit Benchmark Run version 7.
 Configurations containing `cloudflare_ai_gateway` emit version 8, whose
 additional Gateway-request roster is allocated and resolved atomically beside
-the invocation and runtime-evidence rosters. Versions 1–7 keep their historical
-schemas and meanings.
+the invocation and runtime-evidence rosters. Current readers accept only versions
+7 and 8; old Benchmark Run formats are inert files and have no parser,
+migration, prompt contract, or development gate.
 
 The evaluation reference corpus is selected only through `corpus show
 --corpus <manifest-path>`. Its current version 2 manifest owns positional
@@ -412,10 +413,8 @@ copyedit diagnostic and a top-level runtime-evidence record for every reached
 invocation. Temperature omission and presence are independent
 candidate choices for each role. Obsolete decoding controls reject before
 artifact creation. Its four subject outcomes are `completed`, `parse_rejected`,
-`contract_rejected`, and `infrastructure_incomplete`. Versions 1–5 remain
-version-dispatched historical boundaries, version 6 retains the prior
-per-agent configuration contract without runtime evidence, and all versions
-1–6 keep their frozen semantics.
+`contract_rejected`, and `infrastructure_incomplete`. Version 8 adds Gateway
+request provenance to the same current run structure.
 
 The artifact is exclusively created in `running` state before any provider
 call. One ordered application owner allocates every invocation ordinal and
@@ -446,8 +445,8 @@ retention. Validation, persistence, or an unknown harness rejection prevents
 terminal retained completion. Both concurrently dispatched chains quiesce
 before the application attempts terminal trial aggregation, so no sibling can
 mutate evidence after a terminal result is reported. Interruption leaves the
-last strict running artifact inspectable through the same version-dispatched
-benchmark browse boundary. Ended invocation durations equal their retained
+last strict running artifact inspectable through the current benchmark browse
+boundary. Ended invocation durations equal their retained
 timestamp endpoints exactly, and trial and benchmark completions cannot precede
 any lifecycle event they contain.
 
@@ -488,7 +487,7 @@ persistence stops coordination.
 Retained Benchmark Runs are browsed through the namespaced `benchmark list`,
 `benchmark show`, `benchmark summary`, and `benchmark compare` eval routes.
 Their application boundary reads only `evaluation-results/<id>.json`, validates
-every loaded file through the version-dispatched Benchmark Run contract, binds
+every loaded file through the current Benchmark Run contract, binds
 the filename to the artifact id, and rejects corrupt evidence rather than
 skipping it. Historical Run Files retain their distinct schema and
 `apps/eval/results` directory and are owned only by `acceptance run`,
@@ -513,47 +512,15 @@ chains quiesce before terminal aggregation. Preservation and final-product
 findings are deterministic diagnostics attributed to each track's terminal
 copyedit step; a schema-valid product completes its track with those diagnostics
 retained. Subject outcome describes model behavior, while harness outcome states
-only whether trustworthy evidence was retained. This scheduling change does not
-alter the frozen version 6 artifact schema, its inherited version 5 subject
-semantics, or any historical version meaning.
+only whether trustworthy evidence was retained. Current validation protects
+structure, identity, lifecycle, provenance, retry linkage, and evidence rosters.
+It does not reconstruct prompt text, reparse retained completions, or preserve
+the semantics or loadability of old artifact formats.
 
-Artifact version 1 is a historical-validation boundary, not an alias for the
-current production implementation. Eval-local frozen schemas, parsers, writer
-prompts and transcript fencing derived from retained prepared evidence,
-copyedit prompt/fencing relations, preservation rules, announcement-ID
-attachment, and deterministic final-product checks exclusively validate v1
-artifacts. Its retained output-contract tuple must exactly equal the ordered
-representations and hashes derived from those frozen schemas. The artifact also
-retains the complete prepared-evidence snapshot; its identity hash and summary
-fields bind that snapshot. A completed track requires its selected copyedit
-product with zero derived findings; a final-product rejection requires that
-same selected product with the exact nonempty derived finding set; every other
-rejection retains neither a product nor track-level findings. Production execution continues to use
-the current shared generation implementation. A production behavior change
-therefore requires a new artifact version rather than silently changing the
-meaning of retained v1 evidence.
-
-V1 code provenance is exactly `repository: bc-news`, a validated 40-character
-commit SHA, and `dirty: false`. Evaluation starts only from that clean commit;
-no second unbound workspace digest competes with the commit identity.
-
-Artifact version 1 remains the single-configuration, repetition-one historical
-boundary and retains its original transition semantics. Versions 2 and 3 own
-the serial roster, positive repetitions, linked retries, multi-trial outcome
-counts, and benchmark continuation. Version 2 keeps the original prompt and
-copyedit-preservation semantics frozen. Version 3 freezes the corrected writer
-field-purpose contracts and treats leading or trailing whitespace-only
-separators as boundary whitespace while continuing to protect interior
-paragraph structure. Version 4 adds its frozen provider-default versus complete
-explicit LM Studio sampling contract without changing versions 1–3. Version 5
-retains that historical sampling contract while adding schema-valid
-preservation and final-product diagnostics with completed products and narrowing
-terminal model-output outcomes to malformed JSON or strict schema mismatch.
-Version 6 replaces the run-wide sampling posture with exact independent
-per-agent configurations and optional temperature only. Version 7 is current:
-it preserves those declarations and adds the lifecycle-matched normalized
-runtime-evidence roster while keeping legacy completion objects unchanged. The
-version-dispatched store rejects a cross-version replacement.
+Evaluation code provenance is exactly `repository: bc-news`, a validated
+40-character commit SHA, and `dirty: false`. Evaluation starts only from that
+clean commit; no second unbound workspace digest competes with the commit
+identity.
 
 Model evaluation declarations assign an exact configuration to every role and
 may vary model and temperature independently across those roles. Omitting

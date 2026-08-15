@@ -5,7 +5,7 @@ import {
 	type ProductionModelStep,
 } from "@bc-news/generation-core";
 import type { EvalConfig } from "./config";
-import type { EvaluationFinding, V5SubjectOutcome, V7BenchmarkRun, V7EvaluationTrial } from "./evaluation-artifact";
+import type { EvaluationFinding, V7BenchmarkRun, V7EvaluationTrial } from "./evaluation-artifact";
 import { TransportFailureDetailsSchema, type TransportFailureDetails } from "./evaluation-artifact-schemas";
 import { resolveModelProvider, type ModelProviderEnvironment } from "./model-adapters";
 
@@ -32,7 +32,7 @@ export function parseFinding(error: unknown): EvaluationFinding | undefined {
 	if (error instanceof EditorialOutputContractError) return { kind: error.code, production_step: error.productionStep, code: error.code, message: error.message };
 	return undefined;
 }
-export function terminalCurrentTrackOutcome(trial: V7EvaluationTrial, track: "main_story" | "announcements"): V5SubjectOutcome {
+export function terminalCurrentTrackOutcome(trial: V7EvaluationTrial, track: "main_story" | "announcements"): "completed" | "parse_rejected" | "contract_rejected" | "infrastructure_incomplete" {
 	const writerStep = track === "main_story" ? "main_story_write" : "announcements_write";
 	const copyeditStep = track === "main_story" ? "main_story_copyedit" : "announcements_copyedit";
 	const terminalStep = trial.invocations.some(({ production_step }) => production_step === copyeditStep) ? copyeditStep : writerStep;

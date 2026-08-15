@@ -3,7 +3,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
 	RecordedModelResponseV3Schema,
-	modelRequestSha256,
 	type RecordedModelResponseRoster,
 } from "@bc-news/fixtures";
 import {
@@ -229,7 +228,7 @@ test("rejects an unavailable fixture without mutating recorder state", async () 
 		.toBe(stagingBytesBefore);
 });
 
-test("binds every retained response to the exact dependent live request", async () => {
+test("retains every response from the live production-step roster", async () => {
 	const root = await mkdtemp(join(tmpdir(), "bc-news-record-command-"));
 	const responseDirectory = join(root, "responses");
 	const result = await recordCommand({
@@ -243,7 +242,6 @@ test("binds every retained response to the exact dependent live request", async 
 	const retained = await validateRecordedResponseDirectory(responseDirectory);
 	for (const request of providerState.requests) {
 		const response = RecordedModelResponseV3Schema.parse(retained[request.productionStep]);
-		expect(response.prompt_sha256).toBe(await modelRequestSha256(request));
 		expect(response.provider).toBe(`memory-${request.productionStep}`);
 		expect(response.model).toBe("memory-model");
 		expect(response.configuration).toEqual(explicitProductionSteps()[request.productionStep]);

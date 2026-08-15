@@ -1,8 +1,8 @@
+import type { ProductionModelStep } from "@bc-news/generation-core";
 import type { z } from "zod";
 import { SubjectOutcomeSchema, type EvaluationTrial } from "./evaluation-artifact-schemas";
-import type { V1ProductionModelStep } from "./evaluation-artifact-v1-contracts";
 
-export function stepTrack(step: V1ProductionModelStep): "main_story" | "announcements" {
+export function stepTrack(step: ProductionModelStep): "main_story" | "announcements" {
 	return step.startsWith("main_story") ? "main_story" : "announcements";
 }
 
