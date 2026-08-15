@@ -38,8 +38,12 @@ function evidence() {
 test("writer contract describes announcement fields without copyable placeholder values", () => {
 	const prompt = buildAnnouncementsWriterPrompt(evidence());
 
+	expect(prompt).toContain("Extract every noteworthy achievement and milestone");
+	expect(prompt).toContain("Treat skill grinding as ordinary economic activity");
+	expect(prompt).toContain("Do not rank announcements or select only the most prominent");
 	expect(prompt).toContain("announcements (array): zero or more noteworthy achievements");
 	expect(prompt).toContain("title (string): a brief plain-text achievement headline");
+	expect(prompt).not.toContain("explicit achievement by a named person");
 	expect(prompt).not.toContain("Brief achievement headline, plain text");
 	expect(prompt).not.toContain("What was accomplished, with markdown only");
 });

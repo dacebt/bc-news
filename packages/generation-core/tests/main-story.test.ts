@@ -1,5 +1,6 @@
 import { expect, test } from "vitest";
 import {
+	COPYEDIT_SYSTEM_CONSTRAINTS,
 	EditorialDiagnosticSchema,
 	EditorialOutputContractError,
 	WRITER_SYSTEM_CONSTRAINTS,
@@ -60,11 +61,30 @@ test("writer contract describes field purposes without copyable placeholder valu
 
 	expect(prompt).toContain("title (string): a plain-text regional edition masthead");
 	expect(prompt).toContain("main_story (object)");
+	expect(prompt).toContain("[STORY OF THE DAY]");
+	expect(prompt).toContain("Find the strongest throughline across the day and write one story around it");
+	expect(prompt).toContain("Use multiple updates, events, and achievements when they develop that throughline");
+	expect(prompt).toContain("rather than reading like a list of announcements");
+	expect(prompt).toContain("Omit details that do not strengthen the story");
+	expect(prompt).toContain("never invent factual connections between events");
+	expect(prompt).toContain("headline (string): a plain-text headline naming the day's throughline");
+	expect(prompt).not.toContain("Choose the strongest subject in the chat");
+	expect(prompt).not.toContain("Individual achievements belong in the announcements product");
+	expect(prompt).not.toContain("Cover every substantive discussion");
+	expect(prompt).not.toContain("what it reveals about the region");
+	expect(prompt).not.toContain("give texture");
+	expect(prompt).not.toContain("then widen into the story of the day");
 	expect(prompt).not.toContain("Regional edition masthead, plain text");
 	expect(prompt).not.toContain("What the region focused on today, plain text");
 	expect(WRITER_SYSTEM_CONSTRAINTS).toContain("Valid JSON envelope only");
+	expect(WRITER_SYSTEM_CONSTRAINTS).toContain("[POINT OF VIEW]");
+	expect(WRITER_SYSTEM_CONSTRAINTS).toContain("BitCraft is your world");
+	expect(WRITER_SYSTEM_CONSTRAINTS).toContain("[EVIDENCE]");
+	expect(WRITER_SYSTEM_CONSTRAINTS).toContain("World knowledge helps you understand it; it does not add facts");
 	expect(WRITER_SYSTEM_CONSTRAINTS).toContain("only in main_story.body or announcements[].summary");
 	expect(WRITER_SYSTEM_CONSTRAINTS).not.toContain("No markdown, no code fences");
+	expect(COPYEDIT_SYSTEM_CONSTRAINTS).not.toContain("[POINT OF VIEW]");
+	expect(COPYEDIT_SYSTEM_CONSTRAINTS).not.toContain("[EVIDENCE]");
 });
 
 test("copyedit prompt carries only the typed draft and copyedit assignment", () => {

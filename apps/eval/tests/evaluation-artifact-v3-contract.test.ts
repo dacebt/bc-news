@@ -57,11 +57,16 @@ const ANNOUNCEMENTS = {
 	}],
 };
 
-test("artifact version 3 freezes the corrected production request contract", () => {
-	expect(V3_WRITER_SYSTEM_CONSTRAINTS).toBe(WRITER_SYSTEM_CONSTRAINTS);
+test("artifact version 3 freezes its historical request contract", () => {
+	expect(V3_WRITER_SYSTEM_CONSTRAINTS).not.toBe(WRITER_SYSTEM_CONSTRAINTS);
+	expect(V3_WRITER_SYSTEM_CONSTRAINTS).not.toContain("[POINT OF VIEW]");
+	expect(WRITER_SYSTEM_CONSTRAINTS).toContain("[POINT OF VIEW]");
 	expect(V3_COPYEDIT_SYSTEM_CONSTRAINTS).toBe(COPYEDIT_SYSTEM_CONSTRAINTS);
-	expect(buildV3WriterPrompt("main_story", EVIDENCE)).toBe(buildMainStoryWriterPrompt(EVIDENCE));
-	expect(buildV3WriterPrompt("announcements", EVIDENCE)).toBe(buildAnnouncementsWriterPrompt(EVIDENCE));
+	expect(buildV3WriterPrompt("main_story", EVIDENCE)).toContain("Cover every substantive discussion");
+	expect(buildMainStoryWriterPrompt(EVIDENCE)).toContain("[STORY OF THE DAY]");
+	expect(buildV3WriterPrompt("announcements", EVIDENCE)).toBe(
+		buildAnnouncementsWriterPrompt(EVIDENCE),
+	);
 	expect(buildV3CopyeditPrompt("main_story", MAIN_STORY)).toBe(buildMainStoryCopyeditPrompt(MAIN_STORY));
 	expect(buildV3CopyeditPrompt("announcements", ANNOUNCEMENTS)).toBe(
 		buildAnnouncementsCopyeditPrompt(attachAnnouncementIds(ANNOUNCEMENTS)),
