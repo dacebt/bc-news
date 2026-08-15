@@ -35,7 +35,7 @@ The prototype proved that regional chat can become a useful newspaper, but its g
 ## Product goals
 
 1. Publish one edition for every active region on the intended daily cadence.
-2. Support all active regions — nine today per the verified v1 list — and up to 24 as BitCraft expands.
+2. Support all active regions — 13 today per BitJita's current verified list — and up to 24 as BitCraft expands.
 3. Preserve the proven ingest behavior while allowing contract and efficiency improvements required by the new generator.
 4. Rebuild generation around one durable, inspectable Workflow definition that is invoked separately for each active region and publication date, so no server process must remain alive across the entire newspaper build.
 5. Allow the model used by each production model step to be changed without redesigning the whole generation process.
@@ -130,7 +130,7 @@ own track's typed draft, not a story judge or another evidence-reading editor.
 ## Success signals
 
 - A fixed local conversation can produce and render a complete edition end to end without production data.
-- Every active region's edition — nine today, later up to 24 — runs through the same Workflow definition as a separate instance without requiring one long-lived server invocation.
+- Every active region's edition — 13 today, later up to 24 — runs through the same Workflow definition as a separate instance without requiring one long-lived server invocation.
 - An interrupted generation resumes from durable completed work.
 - Replaying the same evaluation inputs makes prompt and model changes meaningfully comparable.
 - Models can be changed per production model step without rewriting the workflow.

@@ -26,11 +26,12 @@ verbatim in code, schema, tests, and APIs — no synonyms.
   material for a newspaper. Chat reaches us through **BitJita**, the
   third-party community API for BitCraft data.
 - **active region** — a region currently designated to receive a daily
-  newspaper. Nine are active today (v1's verified list); up to 24 as
-  BitCraft expands. The list's starting content is inherited (see Defaults);
-  its authoritative *home* is settled as `packages/contracts/src/active-regions.ts`
-  (see [ARCHITECTURE.md](ARCHITECTURE.md)) — not this document, and not two
-  hand-synced hardcoded copies as in v1.
+  newspaper. Thirteen are active today (BitJita's current verified list); up
+  to 24 as BitCraft expands. The list's starting content is inherited (see
+  Defaults); its authoritative *home* is settled as
+  `packages/contracts/src/active-regions.ts` (see
+  [ARCHITECTURE.md](ARCHITECTURE.md)) — not this document, and not two hand-synced
+  hardcoded copies as in v1.
 - **publication date** — the calendar date an edition is published under.
   Together with an active region it identifies exactly one intended edition.
 - **evidence date** — the calendar day of chat an edition draws on: the
@@ -114,8 +115,8 @@ and each deviation amends this document in the same unit of work.
 Inherited defaults until deliberately changed:
 
 - The edition contract starts from v1's published edition shape.
-- The active regions are v1's nine, with the list's authoritative home a
-  structural choice, not a product one.
+- The active regions are BitJita's current 13, superseding v1's nine, with the
+  list's authoritative home a structural choice, not a product one.
 - A publication date covers the prior day's chat (edition date minus one
   day). The covered day is the *evidence date*.
 - Missing-data and availability behavior follow what v1 observably did.
