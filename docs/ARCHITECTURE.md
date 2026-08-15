@@ -241,7 +241,7 @@ observations do not cross domain boundaries.
 | Evaluation reference corpus | `corpus show --corpus <manifest-path>` | Strict ordered synthetic fixtures and exact source-witness references | Auditable source truth and objective variation coverage; no model result or verdict |
 | Evaluation scorecards | `scorecard build/show` | Commit-addressed retained Benchmark Runs, corpus sources, Codex annotations, and Codex qualitative reviews | Four role-specific transparent evidence reports plus current/outdated checkout information; no aggregate score, ranking, recommendation, or acceptance verdict |
 | Longitudinal evaluation scorecards | `longitudinal build/show` | Exact ordered scorecard audit packs, stable cohort projections, and baseline/subject histories | Four role-specific evidence classifications; no model judge, acceptance verdict, or production decision |
-| Fixture and context tooling | `fixture record-responses` and `context benchmark` | Request-linked response files or strict context-result artifacts | Fixture-authoring or context-measurement tooling observations |
+| Fixture and context tooling | `fixture record-responses` and `context benchmark` | Step-keyed response files or strict context-result artifacts | Fixture-authoring or context-measurement tooling observations |
 | Recorded-replay acceptance | `acceptance run/list/show/compare` | Historical Run Files under `apps/eval/results` | `acceptance:` gate result over controlled recorded evidence |
 | Composed skeleton walk | `pnpm walk` | Running local ingest, generation, D1, API, status, and browser product | Walk-owned `walk:` observations and terminal `WALK PASS` |
 
@@ -267,10 +267,11 @@ decoding controls.
 The committed recorded-response set has exactly four files:
 `main_story_write.json`, `main_story_copyedit.json`,
 `announcements_write.json`, and `announcements_copyedit.json`. Each record's
-`prompt_sha256` binds it to the exact `{system, user}` request represented by
-the artifact, but does not prove model authorship. Automated tests and the
-composed skeleton walk use recorded or repository-owned loopback providers and never
-call configured endpoints. The walk supplies an explicit four-step recorded
+`prompt_sha256` is inert metadata describing the request observed when the
+artifact was created. Current code never compares it with prompt builders or
+uses it as a development gate. Automated tests and the composed skeleton walk
+use recorded or repository-owned loopback providers and never call configured
+endpoints. The walk supplies an explicit four-step recorded
 `MODEL_CONFIG`, overriding any developer `.dev.vars` model assignment.
 
 The `fixture record-responses --fixture <path> --config <path>
@@ -278,9 +279,8 @@ The `fixture record-responses --fixture <path> --config <path>
 live hosted or local adapter for each production step; the committed recorded
 configuration is not a recording default. It executes exactly four dependent
 calls in production-step order, so each copyeditor receives the draft produced
-by its writer. Every retained response carries the exact
-`(production_step, prompt_sha256)` linkage computed from the `{system, user}`
-request actually sent. The recorder stages the exact four-file directory on the
+by its writer. The recorder retains request hashes as observation metadata but
+does not verify them against prompt text. It stages the exact four-file directory on the
 same filesystem, validates every record, replays that staged set through the
 shared runner, and compares only the final main-story and announcements
 products before promotion. Promotion is recoverable and all-or-none at the
@@ -670,7 +670,6 @@ recorded replay deterministic by re-execution rather than against a stored file,
 and every differing path is reported rather than the first. Recorded-replay
 semantics require the exact ordered roster, four recorded-replay
 usages at zero external billing, outputs equal to the parsed recorded responses,
-request stamps recomputed from current builders and each step's actual input,
 ordered diagnostics, and a final assembled edition equal to the two copyedited
 products. Current Run Files require diagnostics; historical files without that
 field report diagnostic evidence as unknown rather than an empty observation.
@@ -680,7 +679,7 @@ explicitly selected boundary and is never an implicit replacement for it.
 Recorded-replay acceptance has no model judge, quality threshold, byte pin, or source
 digest gate; retained output and source fingerprints remain human comparison
 evidence. Its direct verifier prints
-`acceptance: four recorded production steps replayed request-linked and deterministic; diagnostics retained: 4`
+`acceptance: four recorded production steps replayed by step and deterministic; diagnostics retained: 4`
 only after success.
 
 Exact context-budget measurement is invoked as `context benchmark --fixture

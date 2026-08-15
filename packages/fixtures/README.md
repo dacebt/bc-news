@@ -68,14 +68,14 @@ Obsolete decoding fields, invalid temperatures, extra fields, and unknown
 versions reject at the current response boundary. Configuration is retained
 evidence; the recorded provider never applies it during replay.
 
-`prompt_sha256` binds a record to the exact `{system, user}` request rebuilt
-from current builders and dependent upstream output. Replay selection remains
-keyed by `production_step`; canonical verification recomputes every stamp.
-The hash is request provenance, not proof that a named model authored text.
+`prompt_sha256` is inert request-observation metadata. Replay selection remains
+keyed by `production_step`; no verifier rebuilds prompt text or compares current
+prompt bytes with a retained hash. The hash is not a development gate or proof
+that a named model authored text.
 
 The eval recorder requires an explicit live four-step configuration. It makes
-the four dependent production calls, writes each exact
-`(production_step, prompt_sha256)` association and v3 agent configuration into a
+the four dependent production calls and writes each production step's response,
+observed request hash, and v3 agent configuration into a
 same-filesystem staging directory, validates and replays the complete staged
 roster, and compares only the final main-story and announcements products
 before recoverable all-or-none directory promotion. The command report lists
@@ -89,7 +89,7 @@ canonical walk records into its own temporary directory through a
 repository-owned loopback provider; it never changes the committed fixtures or
 contacts a configured external endpoint.
 
-Retained historical eval run files remain human-readable provenance only.
-Canonical replay instead recomputes relationships from current evidence,
-prompt builders, the four records, and the run being checked. Recorded replay
-reports token measurement as unavailable and external billing as none.
+Retained historical eval run files remain inert provenance only. Canonical
+replay checks current evidence and final products without reconstructing prompt
+text or validating stored request hashes. Recorded replay reports token
+measurement as unavailable and external billing as none.

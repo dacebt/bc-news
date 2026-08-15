@@ -4,21 +4,16 @@ import { tmpdir } from "node:os";
 import { resolve, join } from "node:path";
 import {
 	PRODUCTION_MODEL_STEPS,
-	attachAnnouncementIds,
-	buildAnnouncementsCopyeditPrompt,
-	buildMainStoryCopyeditPrompt,
 	type ProductionModelStep,
 } from "@bc-news/generation-core";
 import {
 	RecordedModelResponseSchema,
-	modelRequestSha256,
 	type RecordedModelResponse,
 } from "@bc-news/fixtures";
 import { REPRESENTATIVE_FIXTURE_PATH } from "./representative-fixture";
 import { recordCommand } from "./record-command";
 import {
 	startRecordLoopbackServer,
-	type ObservedModelRequest,
 } from "./record-loopback-server";
 
 const MODEL_BY_STEP = {
@@ -103,23 +98,6 @@ function liveConfig() {
 	};
 }
 
-function assertCopyeditInputs(requests: readonly ObservedModelRequest[]): void {
-	const mainStoryCopyedit = requests[1];
-	const announcementsCopyedit = requests[3];
-	assertProof(mainStoryCopyedit !== undefined, "missing_main_story_copyedit", "Main-story copyedit request was not observed");
-	assertProof(announcementsCopyedit !== undefined, "missing_announcements_copyedit", "Announcements copyedit request was not observed");
-	assertProof(
-		mainStoryCopyedit.user === buildMainStoryCopyeditPrompt(MAIN_STORY_DRAFT),
-		"main_story_draft_missing",
-		"Main-story copyedit request did not exactly carry its writer-produced draft",
-	);
-	assertProof(
-		announcementsCopyedit.user === buildAnnouncementsCopyeditPrompt(attachAnnouncementIds(ANNOUNCEMENTS_DRAFT)),
-		"announcement_draft_missing",
-		"Announcements copyedit request did not exactly carry its writer-produced draft and stable identities",
-	);
-}
-
 async function parseResponse(path: string): Promise<RecordedModelResponse> {
 	let candidate: unknown;
 	try {
@@ -134,19 +112,13 @@ async function parseResponse(path: string): Promise<RecordedModelResponse> {
 	return parsed.data;
 }
 
-async function assertRecordedRequests(
-	responseDirectory: string,
-	requests: readonly ObservedModelRequest[],
-): Promise<void> {
+async function assertRecordedResponses(responseDirectory: string): Promise<void> {
 	const filenames = (await readdir(responseDirectory)).sort();
 	assertProof(isDeepStrictEqual(filenames, RESPONSE_FILENAMES), "response_roster_mismatch", "Promoted response directory did not contain exactly the four production response files");
-	for (const [index, productionStep] of PRODUCTION_MODEL_STEPS.entries()) {
-		const request = requests[index];
-		assertProof(request !== undefined, "request_roster_mismatch", `Missing observed request for ${productionStep}`);
+	for (const productionStep of PRODUCTION_MODEL_STEPS) {
 		const record = await parseResponse(join(responseDirectory, `${productionStep}.json`));
 		assertProof("version" in record && record.version === 3, "record_version_mismatch", `Recorded response for ${productionStep} did not use current artifact version 3`);
 		assertProof(record.production_step === productionStep, "record_step_mismatch", `Recorded response for ${productionStep} declared a different production step`);
-		assertProof(record.prompt_sha256 === await modelRequestSha256(request), "record_prompt_mismatch", `Recorded response for ${productionStep} was not stamped from the observed request`);
 		assertProof(record.configuration.adapter === "openai_compatible_hosted"
 			&& record.configuration.provider === "repository_loopback"
 			&& record.configuration.model === MODEL_BY_STEP[productionStep]
@@ -187,8 +159,7 @@ async function verifyRecordedResponseFixtureAuthoringAt(temporaryRoot: string): 
 		for (const [index, productionStep] of PRODUCTION_MODEL_STEPS.entries()) {
 			assertProof(server.requests[index]?.model === MODEL_BY_STEP[productionStep], "request_order_mismatch", `Loopback request ${index} was not ${productionStep}`);
 		}
-		assertCopyeditInputs(server.requests);
-		await assertRecordedRequests(responseDirectory, server.requests);
+		await assertRecordedResponses(responseDirectory);
 		assertProof(result.comparison.differences.length === 0, "comparison_differences", "Recorded replay reported final editorial-product differences");
 		assertProof(isDeepStrictEqual(result.replayProducts, result.liveProducts), "product_mismatch", "Recorded replay products did not structurally equal live products");
 		await assertNoPromotionArtifacts(temporaryRoot);

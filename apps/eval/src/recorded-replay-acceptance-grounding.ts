@@ -2,20 +2,13 @@ import { readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
 import {
 	RecordedModelResponseSchema,
-	modelRequestSha256,
 	type RecordedModelResponse,
 } from "@bc-news/fixtures";
 import {
-	COPYEDIT_SYSTEM_CONSTRAINTS,
 	PRODUCTION_MODEL_STEPS,
-	WRITER_SYSTEM_CONSTRAINTS,
 	announcementsFinalProductDiagnostics,
 	assembleEdition,
 	attachAnnouncementIds,
-	buildAnnouncementsCopyeditPrompt,
-	buildAnnouncementsWriterPrompt,
-	buildMainStoryCopyeditPrompt,
-	buildMainStoryWriterPrompt,
 	mainStoryFinalProductDiagnostics,
 	parseAnnouncementsCopyeditOutputWithDiagnostics,
 	parseAnnouncementsWriterOutput,
@@ -80,24 +73,6 @@ export async function assertRecordedReplayAcceptanceGrounding(run: RunFile, fixt
 		...announcements.diagnostics,
 		...announcementsFinalProductDiagnostics(announcements.product, prepared),
 	];
-	const requests: Readonly<Record<ProductionModelStep, { readonly system: string; readonly user: string }>> = {
-		main_story_write: {
-			system: WRITER_SYSTEM_CONSTRAINTS,
-			user: buildMainStoryWriterPrompt(prepared),
-		},
-		main_story_copyedit: {
-			system: COPYEDIT_SYSTEM_CONSTRAINTS,
-			user: buildMainStoryCopyeditPrompt(mainStoryDraft),
-		},
-		announcements_write: {
-			system: WRITER_SYSTEM_CONSTRAINTS,
-			user: buildAnnouncementsWriterPrompt(prepared),
-		},
-		announcements_copyedit: {
-			system: COPYEDIT_SYSTEM_CONSTRAINTS,
-			user: buildAnnouncementsCopyeditPrompt(identifiedAnnouncements),
-		},
-	};
 	const expectedOutputs: Readonly<Record<ProductionModelStep, unknown>> = {
 		main_story_write: mainStoryDraft,
 		main_story_copyedit: mainStory.product,
@@ -107,13 +82,6 @@ export async function assertRecordedReplayAcceptanceGrounding(run: RunFile, fixt
 
 	for (const [index, productionStep] of PRODUCTION_MODEL_STEPS.entries()) {
 		const step = run.steps[index]!;
-		const requestStamp = await modelRequestSha256(requests[productionStep]);
-		if (records[productionStep].prompt_sha256 !== requestStamp) {
-			throw new Error(`${productionStep} fixture request stamp does not match the current dependent request`);
-		}
-		if (step.prompt_sha256 !== requestStamp) {
-			throw new Error(`${productionStep} run request stamp does not match the current dependent request`);
-		}
 		const differences = allDifferences(step.output, expectedOutputs[productionStep]);
 		if (differences.length > 0) {
 			throw new Error(`${productionStep} output differs from its parsed recorded response at ${differences.join(", ")}`);

@@ -12,7 +12,7 @@ import { compareRuns } from "../src/compare";
 import { runCommand } from "../src/run-command";
 import { allDifferences } from "../src/run-difference";
 
-test("recorded replay retains the four outputs and recomputed request relations", async () => {
+test("recorded replay retains the four outputs and current product relations", async () => {
 	const { run } = await runCommand({
 		fixturePath: REPRESENTATIVE_FIXTURE_PATH,
 		configPath: RECORDED_REPLAY_CONFIG_PATH,

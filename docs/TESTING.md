@@ -33,7 +33,7 @@ outcome or silently substitutes for it.
 | Evaluation reference corpus | `corpus show --corpus <manifest-path>` and its direct verifier | Commit-addressed ordered synthetic fixtures and separate exact source-witness references | Auditable source truth and objective variation coverage; never a model result, score, or acceptance verdict |
 | Evaluation scorecards | `scorecard build/show` and `verify:evaluation-scorecards` | Commit-addressed V7 or Gateway V8 runs and corpus sources with Codex annotations and qualitative reviews | Four transparent role-specific measurements plus current/outdated checkout information; never an aggregate score, ranking, recommendation, or acceptance verdict |
 | Longitudinal evaluation scorecards | `longitudinal build/show` and `verify:evaluation-longitudinal-scorecards` | Exact ordered scorecard audit packs, stable role cohorts, and baseline/subject histories | Four role-specific context, sufficiency, baseline-variation, or potential-drift observations; never a judge or product gate |
-| Fixture and context tooling | `fixture record-responses` and `context benchmark` | Four request-linked recorded responses, or strict context results | Fixture-authoring or context-measurement tooling result; never acceptance or a walk |
+| Fixture and context tooling | `fixture record-responses` and `context benchmark` | Four step-keyed recorded responses, or strict context results | Fixture-authoring or context-measurement tooling result; never acceptance or a walk |
 | Recorded-replay acceptance | `acceptance run/list/show/compare` and its direct verifier | Historical Run Files under `apps/eval/results` | `acceptance:` result over controlled replay; never a Benchmark Run outcome |
 | Composed skeleton walk | `pnpm walk` | The running local ingest, generation, persistence, API, status, and browser product | Walk-owned `walk:` observations followed by independent terminal `WALK PASS` |
 
@@ -117,7 +117,7 @@ never causes another model call, rejection, or publication stop.
 
 **Fixture and context tooling** owns two different development artifacts.
 `fixture record-responses --fixture <path> --config <path> [--response-dir
-<path>]` writes the exact four request-linked response files only after staged
+<path>]` writes the exact four step-keyed response files only after staged
 replay and comparison. `context benchmark --fixture <path> [--results-dir
 <path>]` writes strict context-measurement results. Neither tool creates a
 Benchmark Run or Run File and neither confers acceptance.
@@ -318,7 +318,7 @@ reopen, and outdated reporting, then ends exactly with
 `EVALUATION LONGITUDINAL SCORECARDS VERIFIED`. Fixture proof ends
 with `fixture authoring: four strict v3 hosted responses retained exact agent
 configurations, replayed, and compared`. Acceptance proof ends with `acceptance: four
-recorded production steps replayed request-linked and deterministic; diagnostics
+recorded production steps replayed by step and deterministic; diagnostics
 retained: 4`. The composed walk prints none
 of those exact verifier observations; it ends with its independent `WALK PASS`.
 
