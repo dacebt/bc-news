@@ -1,5 +1,7 @@
 # Direction
 
+- [Shape: local-only production evaluation evidence](2026-08-17-local-evaluation-evidence.shape.md) — Session boundaries, loose cadence, and success signal for replacing committed evaluation data with a private local evidence workflow and safe aggregate exports.
+- [Capability map: local-only production evaluation evidence](2026-08-17-local-evaluation-evidence.map.md) — Risk-ordered vertical capabilities and feature conventions for private local evaluation evidence and commit-safe aggregate results.
 - [Shape: BCN-008 production security boundaries](2026-08-14-production-security-boundaries.shape.md) — Session boundaries, loose cadence, and local success signal for hardening the production HTTP, data, and deployment seams.
 - [Capability map: BCN-008 production security boundaries](2026-08-14-production-security-boundaries.map.md) — Risk-ordered vertical capabilities and frozen boundary conventions for production HTTP, browser, data, and deployment security.
 - [Shape: commit-addressed evaluation evidence](2026-08-10-commit-addressed-evaluation-evidence.shape.md) — Replacement boundary for audit-by-commit scorecards whose freshness is reported without blocking evaluation.
