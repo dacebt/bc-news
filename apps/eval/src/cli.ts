@@ -1,12 +1,21 @@
-import { mkdir } from "node:fs/promises";
-import { basename, dirname, join, resolve } from "node:path";
+import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { compareRuns } from "./compare";
 import { parseEvalCliCommand } from "./cli-options";
 import { runContextBenchmark } from "./context-benchmark-command";
 import { formatContextBenchmarkReport } from "./context-benchmark-report";
-import { recordCommand } from "./record-command";
-import { evaluateBenchmarkCommand } from "./evaluation-benchmark-command";
+import {
+	buildEvaluationLongitudinalReportForCli,
+	buildEvaluationScorecardReportForCli,
+	compareEvaluationAggregateResultsForCli,
+	exportEvaluationAggregateResultForCli,
+	evalLocalDataRoot,
+	listBenchmarkRunsForCli,
+	loadBenchmarkRunForCli,
+	showEvaluationAggregateResultReportForCli,
+	showEvaluationLongitudinalReportForCli,
+	showEvaluationScorecardReportForCli,
+} from "./evaluation-local-artifact-cli";
 import {
 	formatBenchmarkComparison,
 	formatBenchmarkDetail,
@@ -14,8 +23,12 @@ import {
 	formatBenchmarkSummary,
 } from "./evaluation-browse-report";
 import { compareBenchmarkRuns } from "./evaluation-comparison";
-import { listBenchmarkRuns, loadBenchmarkRun } from "./evaluation-artifact-reader";
 import { formatBenchmarkRunReport } from "./benchmark-run-report";
+import { loadEvaluationReferenceCorpus } from "./evaluation-reference-corpus";
+import { formatEvaluationReferenceCorpusReport } from "./evaluation-reference-corpus-report";
+import { resolveEvaluationRepositoryRoot } from "./evaluation-repository-reference";
+import { evaluateBenchmarkCommand } from "./evaluation-benchmark-command";
+import { recordCommand } from "./record-command";
 import {
 	formatRecordSummary,
 	formatRunComparison,
@@ -25,33 +38,6 @@ import {
 } from "./report";
 import { listRunFiles, loadRunFile } from "./run-file";
 import { runCommand } from "./run-command";
-import { loadEvaluationReferenceCorpus } from "./evaluation-reference-corpus";
-import { formatEvaluationReferenceCorpusReport } from "./evaluation-reference-corpus-report";
-import { buildEvaluationAggregateResult } from "./evaluation-aggregate-result-builder";
-import {
-	compareEvaluationAggregateResults,
-	formatEvaluationAggregateResultComparison,
-} from "./evaluation-aggregate-result-comparison";
-import { EvaluationAggregateResultError } from "./evaluation-aggregate-result";
-import { formatEvaluationAggregateResultReport } from "./evaluation-aggregate-result-report";
-import {
-	createEvaluationAggregateResultArtifact,
-	loadEvaluationAggregateResultArtifact,
-} from "./evaluation-aggregate-result-store";
-import { buildEvaluationScorecard } from "./evaluation-scorecard-builder";
-import { loadEvaluationScorecardInput } from "./evaluation-scorecard-input";
-import { formatEvaluationScorecardReport } from "./evaluation-scorecard-report";
-import { createEvaluationScorecardArtifact, evaluationScorecardFreshness, loadEvaluationScorecardArtifact } from "./evaluation-scorecard-store";
-import { buildEvaluationLongitudinalScorecard } from "./evaluation-longitudinal-scorecard-builder";
-import { loadEvaluationLongitudinalInput } from "./evaluation-longitudinal-scorecard-input";
-import { formatEvaluationLongitudinalScorecardReport } from "./evaluation-longitudinal-scorecard-report";
-import {
-	createEvaluationLongitudinalScorecardArtifact,
-	evaluationLongitudinalFreshness,
-	loadEvaluationLongitudinalScorecardArtifact,
-} from "./evaluation-longitudinal-scorecard-store";
-import { resolveEvaluationRepositoryRoot } from "./evaluation-repository-reference";
-import { safeEvaluationId } from "./evaluation-trial-support";
 
 export const EVAL_CLI_USAGE = `Usage:
   pnpm --filter @bc-news/eval eval -- benchmark run --fixture <path> --config <path> [--results-dir <path>]
@@ -115,68 +101,58 @@ export async function runEvalCliApplication(options: EvalCliApplicationOptions):
 	const command = parseEvalCliCommand(argv);
 	const cwd = options.environment.INIT_CWD ?? options.currentDirectory;
 	const appDirectory = options.appDirectory;
+	const localDataRoot = evalLocalDataRoot(appDirectory);
 	const writeLine = (value: string): void => options.writeOutput(`${value}\n`);
-	const evaluationRepositoryRoot = (): Promise<string> => resolveEvaluationRepositoryRoot(cwd);
-
-	function acceptanceResultsDirectoryFor(resultsDirectory: string | undefined): string {
-		return resultsDirectory === undefined
+	const currentArtifacts = async () => ({
+		currentDirectory: cwd,
+		appDirectory,
+		repositoryRoot: await resolveEvaluationRepositoryRoot(cwd),
+		localDataRoot,
+	});
+	const acceptanceResultsDirectoryFor = (resultsDirectory: string | undefined): string => (
+		resultsDirectory === undefined
 			? resolve(appDirectory, "results")
-			: resolve(cwd, resultsDirectory);
-	}
-
-	function evaluationResultsDirectoryFor(resultsDirectory: string | undefined): string {
-		return resultsDirectory === undefined
-			? resolve(appDirectory, "evaluation-results")
-			: resolve(cwd, resultsDirectory);
-	}
-
-	function scorecardResultsDirectoryFor(resultsDirectory: string | undefined): string {
-		return resultsDirectory === undefined
-			? resolve(appDirectory, "scorecard-results")
-			: resolve(cwd, resultsDirectory);
-	}
-
-	function aggregateResultsDirectoryFor(resultsDirectory: string | undefined): string {
-		return resultsDirectory === undefined
-			? resolve(appDirectory, "summaries")
-			: resolve(cwd, resultsDirectory);
-	}
-
-	function longitudinalResultsDirectoryFor(resultsDirectory: string | undefined): string {
-		return resultsDirectory === undefined
-			? resolve(appDirectory, "longitudinal-scorecard-results")
-			: resolve(cwd, resultsDirectory);
-	}
+			: resolve(cwd, resultsDirectory)
+	);
+	const benchmarkResultsDirectoryFor = (resultsDirectory: string | undefined): string => (
+		resultsDirectory === undefined
+			? resolve(localDataRoot, "evaluation-results")
+			: resolve(cwd, resultsDirectory)
+	);
 
 	if (command.command === "benchmark-run") {
 		const result = await evaluateBenchmarkCommand({
 			fixturePath: resolve(cwd, command.fixturePath),
 			configPath: resolve(cwd, command.configPath),
-			resultsDirectory: evaluationResultsDirectoryFor(command.resultsDirectory),
+			resultsDirectory: benchmarkResultsDirectoryFor(command.resultsDirectory),
 			environment: options.environment,
 		});
 		writeLine(formatBenchmarkRunReport(result.benchmark, result.path));
 		return;
 	}
 	if (command.command === "benchmark-list") {
-		const runs = await listBenchmarkRuns(evaluationResultsDirectoryFor(command.resultsDirectory));
-		writeLine(formatBenchmarkListing(runs));
+		writeLine(formatBenchmarkListing(
+			await listBenchmarkRunsForCli(cwd, appDirectory, command.resultsDirectory),
+		));
 		return;
 	}
 	if (command.command === "benchmark-show") {
-		const run = await loadBenchmarkRun(command.runId, evaluationResultsDirectoryFor(command.resultsDirectory));
-		writeLine(formatBenchmarkDetail(run));
+		writeLine(formatBenchmarkDetail(
+			await loadBenchmarkRunForCli(command.runId, cwd, appDirectory, command.resultsDirectory),
+		));
 		return;
 	}
 	if (command.command === "benchmark-summary") {
-		const run = await loadBenchmarkRun(command.runId, evaluationResultsDirectoryFor(command.resultsDirectory));
-		writeLine(formatBenchmarkSummary(run));
+		writeLine(formatBenchmarkSummary(
+			await loadBenchmarkRunForCli(command.runId, cwd, appDirectory, command.resultsDirectory),
+		));
 		return;
 	}
 	if (command.command === "benchmark-compare") {
-		const directory = evaluationResultsDirectoryFor(command.resultsDirectory);
-		const left = await loadBenchmarkRun(command.leftRunId, directory);
-		const right = await loadBenchmarkRun(command.rightRunId, directory);
+		const [left, right] = await Promise.all([
+			loadBenchmarkRunForCli(command.leftRunId, cwd, appDirectory, command.resultsDirectory),
+			loadBenchmarkRunForCli(command.rightRunId, cwd, appDirectory, command.resultsDirectory),
+		]);
 		writeLine(formatBenchmarkComparison(compareBenchmarkRuns(left, right)));
 		return;
 	}
@@ -191,7 +167,6 @@ export async function runEvalCliApplication(options: EvalCliApplicationOptions):
 		writeLine(formatRunSummary(saved.run, saved.path));
 		return;
 	}
-
 	if (command.command === "acceptance-run") {
 		const defaultConfigPath = resolve(appDirectory, "recorded-replay.config.json");
 		const saved = await runCommand({
@@ -203,13 +178,15 @@ export async function runEvalCliApplication(options: EvalCliApplicationOptions):
 		return;
 	}
 	if (command.command === "acceptance-list") {
-		const runs = await listRunFiles(acceptanceResultsDirectoryFor(command.resultsDirectory));
-		writeLine(formatRunListing(runs));
+		writeLine(formatRunListing(
+			await listRunFiles(acceptanceResultsDirectoryFor(command.resultsDirectory)),
+		));
 		return;
 	}
 	if (command.command === "acceptance-show") {
-		const run = await loadRunFile(command.runId, acceptanceResultsDirectoryFor(command.resultsDirectory));
-		writeLine(formatRunDetail(run));
+		writeLine(formatRunDetail(
+			await loadRunFile(command.runId, acceptanceResultsDirectoryFor(command.resultsDirectory)),
+		));
 		return;
 	}
 	if (command.command === "acceptance-compare") {
@@ -219,7 +196,6 @@ export async function runEvalCliApplication(options: EvalCliApplicationOptions):
 		writeLine(formatRunComparison(compareRuns(left, right)));
 		return;
 	}
-
 	if (command.command === "fixture-record-responses") {
 		const defaultResponseDirectory = resolve(appDirectory, "../../packages/fixtures/model-responses");
 		const result = await recordCommand({
@@ -234,87 +210,70 @@ export async function runEvalCliApplication(options: EvalCliApplicationOptions):
 		return;
 	}
 	if (command.command === "corpus-show") {
-		const repositoryRoot = await evaluationRepositoryRoot();
-		writeLine(formatEvaluationReferenceCorpusReport(await loadEvaluationReferenceCorpus(resolve(cwd, command.corpusPath), repositoryRoot)));
+		writeLine(formatEvaluationReferenceCorpusReport(
+			await loadEvaluationReferenceCorpus(
+				resolve(cwd, command.corpusPath),
+				await resolveEvaluationRepositoryRoot(cwd),
+			),
+		));
 		return;
 	}
 	if (command.command === "scorecard-build") {
-		const repositoryRoot = await evaluationRepositoryRoot();
-		const resultsDirectory = scorecardResultsDirectoryFor(command.resultsDirectory);
-		await mkdir(resultsDirectory, { recursive: true });
-		const input = await loadEvaluationScorecardInput(resolve(cwd, command.inputPath), repositoryRoot);
-		const artifact = buildEvaluationScorecard(input, {
-			id: safeEvaluationId("scorecard"),
-			createdAt: new Date().toISOString(),
-		});
-		await createEvaluationScorecardArtifact(join(resultsDirectory, `${artifact.id}.json`), artifact, repositoryRoot);
-		const saved = await loadEvaluationScorecardArtifact(artifact.id, resultsDirectory, repositoryRoot);
-		writeLine(formatEvaluationScorecardReport(saved, saved.version === 2 ? await evaluationScorecardFreshness(saved, repositoryRoot) : undefined));
+		writeLine(await buildEvaluationScorecardReportForCli(
+			await currentArtifacts(),
+			command.inputPath,
+			command.resultsDirectory,
+		));
 		return;
 	}
 	if (command.command === "scorecard-show") {
-		const repositoryRoot = await evaluationRepositoryRoot();
-		const saved = await loadEvaluationScorecardArtifact(command.scorecardId, scorecardResultsDirectoryFor(command.resultsDirectory), repositoryRoot);
-		writeLine(formatEvaluationScorecardReport(saved, saved.version === 2 ? await evaluationScorecardFreshness(saved, repositoryRoot) : undefined));
+		writeLine(await showEvaluationScorecardReportForCli(
+			await currentArtifacts(),
+			command.scorecardId,
+			command.resultsDirectory,
+		));
 		return;
 	}
 	if (command.command === "aggregate-export") {
-		const repositoryRoot = await evaluationRepositoryRoot();
-		const resolvedInputPath = resolve(cwd, command.inputPath);
-		const sourceArtifact = await loadEvaluationScorecardArtifact(
-			basename(resolvedInputPath, ".json"),
-			dirname(resolvedInputPath),
-			repositoryRoot,
-		);
-		if (sourceArtifact.version !== 2) {
-			throw new EvaluationAggregateResultError(
-				"unsupported_source_scorecard_version",
-				resolvedInputPath,
-				`Aggregate result supports Evaluation Scorecard version 2 only, received v${String(sourceArtifact.version)}`,
-			);
-		}
-		const resultsDirectory = aggregateResultsDirectoryFor(command.resultsDirectory);
-		const artifact = buildEvaluationAggregateResult(sourceArtifact, {
-			id: safeEvaluationId("aggregate-result"),
-			createdAt: new Date().toISOString(),
-			cohortId: command.cohortId,
-		});
-		await createEvaluationAggregateResultArtifact(artifact, resultsDirectory);
-		writeLine(formatEvaluationAggregateResultReport(await loadEvaluationAggregateResultArtifact(artifact.id, resultsDirectory)));
+		writeLine(await exportEvaluationAggregateResultForCli(
+			await currentArtifacts(),
+			command.inputPath,
+			command.cohortId,
+			command.resultsDirectory,
+		));
 		return;
 	}
 	if (command.command === "aggregate-show") {
-		writeLine(formatEvaluationAggregateResultReport(await loadEvaluationAggregateResultArtifact(
+		writeLine(await showEvaluationAggregateResultReportForCli(
+			await currentArtifacts(),
 			command.aggregateId,
-			aggregateResultsDirectoryFor(command.resultsDirectory),
-		)));
+			command.resultsDirectory,
+		));
 		return;
 	}
 	if (command.command === "aggregate-compare") {
-		const directory = aggregateResultsDirectoryFor(command.resultsDirectory);
-		const left = await loadEvaluationAggregateResultArtifact(command.leftAggregateId, directory);
-		const right = await loadEvaluationAggregateResultArtifact(command.rightAggregateId, directory);
-		writeLine(formatEvaluationAggregateResultComparison(compareEvaluationAggregateResults(left, right)));
+		writeLine(await compareEvaluationAggregateResultsForCli(
+			await currentArtifacts(),
+			command.leftAggregateId,
+			command.rightAggregateId,
+			command.resultsDirectory,
+		));
 		return;
 	}
 	if (command.command === "longitudinal-build") {
-		const repositoryRoot = await evaluationRepositoryRoot();
-		const resultsDirectory = longitudinalResultsDirectoryFor(command.resultsDirectory);
-		await mkdir(resultsDirectory, { recursive: true });
-		const input = await loadEvaluationLongitudinalInput(resolve(cwd, command.inputPath), repositoryRoot);
-		const artifact = buildEvaluationLongitudinalScorecard(input, {
-			id: safeEvaluationId("longitudinal-scorecard"),
-			createdAt: new Date().toISOString(),
-		});
-		await createEvaluationLongitudinalScorecardArtifact(join(resultsDirectory, `${artifact.id}.json`), artifact, repositoryRoot);
-		const saved = await loadEvaluationLongitudinalScorecardArtifact(artifact.id, resultsDirectory, repositoryRoot);
-		writeLine(formatEvaluationLongitudinalScorecardReport(saved, saved.version === 2 ? await evaluationLongitudinalFreshness(saved, repositoryRoot) : undefined));
+		writeLine(await buildEvaluationLongitudinalReportForCli(
+			await currentArtifacts(),
+			command.inputPath,
+			command.resultsDirectory,
+		));
 		return;
 	}
 	if (command.command === "longitudinal-show") {
-		const repositoryRoot = await evaluationRepositoryRoot();
-		const saved = await loadEvaluationLongitudinalScorecardArtifact(command.seriesId, longitudinalResultsDirectoryFor(command.resultsDirectory), repositoryRoot);
-		writeLine(formatEvaluationLongitudinalScorecardReport(saved, saved.version === 2 ? await evaluationLongitudinalFreshness(saved, repositoryRoot) : undefined));
+		writeLine(await showEvaluationLongitudinalReportForCli(
+			await currentArtifacts(),
+			command.seriesId,
+			command.resultsDirectory,
+		));
 		return;
 	}
 

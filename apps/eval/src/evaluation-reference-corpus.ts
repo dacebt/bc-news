@@ -3,6 +3,13 @@ import { evidenceDateForPublicationDate, prepareEvidence, type PreparedEvidence 
 import { resolve } from "node:path";
 import { z } from "zod";
 import {
+	EvaluationLocalSourceReferenceSchema,
+	readEvaluationLocalSource,
+	sourceReferenceForLocalFile,
+	listEvaluationLocalSources,
+	type EvaluationLocalSourceReference,
+} from "./evaluation-local-source-reference";
+import {
 	listRepositorySources,
 	readRepositorySource,
 	repositorySourceAtLastChange,
@@ -11,6 +18,7 @@ import {
 } from "./evaluation-repository-reference";
 
 const KEBAB_CASE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const SHA256 = /^[a-f0-9]{64}$/u;
 const TrimmedNonblankSchema = z.string().min(1).refine((value) => value === value.trim(), "String must be trimmed");
 const RecordIdSchema = z.string().min(1).regex(KEBAB_CASE).refine((value) => value === value.trim(), "Record id must be trimmed");
 
@@ -33,10 +41,16 @@ const StatusRecordSchema = z.strictObject({
 	opposing_witnesses: z.array(SourceWitnessSchema),
 	unresolved_witnesses: z.array(SourceWitnessSchema),
 });
+const VariationWitnessSchema = z.strictObject({
+	tag: VariationTagSchema,
+	reference_ids: z.array(TrimmedNonblankSchema),
+	message_ids: z.array(TrimmedNonblankSchema),
+});
+
 export const EvaluationReferenceV1Schema = z.strictObject({
 	version: z.literal(1),
 	fixture_id: RecordIdSchema,
-	evidence_sha256: z.string().regex(/^[a-f0-9]{64}$/u),
+	evidence_sha256: z.string().regex(SHA256),
 	claims: z.array(StatusRecordSchema),
 	events: z.array(StatusRecordSchema),
 	ambiguities: z.array(z.strictObject({ id: RecordIdSchema, witnesses: z.array(SourceWitnessSchema) })),
@@ -65,37 +79,52 @@ export const EvaluationReferenceV1Schema = z.strictObject({
 });
 export const EvaluationReferenceSchema = EvaluationReferenceV1Schema.omit({ evidence_sha256: true }).extend({ version: z.literal(2) }).strict();
 
+const EvaluationReferenceManifestV1FixtureSchema = z.strictObject({
+	ordinal: z.number().int().positive(),
+	id: RecordIdSchema,
+	evidence_path: TrimmedNonblankSchema,
+	evidence_sha256: z.string().regex(SHA256),
+	reference_path: TrimmedNonblankSchema,
+	reference_sha256: z.string().regex(SHA256),
+	variation_tags: z.array(VariationTagSchema).min(1),
+	variation_witnesses: z.array(VariationWitnessSchema),
+});
+
 export const EvaluationReferenceManifestV1Schema = z.strictObject({
 	version: z.literal(1),
 	id: RecordIdSchema,
-	fixtures: z.array(z.strictObject({
-		ordinal: z.number().int().positive(),
-		id: RecordIdSchema,
-		evidence_path: TrimmedNonblankSchema,
-		evidence_sha256: z.string().regex(/^[a-f0-9]{64}$/u),
-		reference_path: TrimmedNonblankSchema,
-		reference_sha256: z.string().regex(/^[a-f0-9]{64}$/u),
-		variation_tags: z.array(VariationTagSchema).min(1),
-		variation_witnesses: z.array(z.strictObject({
-			tag: VariationTagSchema,
-			reference_ids: z.array(TrimmedNonblankSchema),
-			message_ids: z.array(TrimmedNonblankSchema),
-		})),
-	})).min(12),
+	fixtures: z.array(EvaluationReferenceManifestV1FixtureSchema).min(12),
 });
 
 export const EvaluationReferenceManifestSchema = EvaluationReferenceManifestV1Schema.extend({
 	version: z.literal(2),
-	fixtures: z.array(EvaluationReferenceManifestV1Schema.shape.fixtures.element.omit({
+	fixtures: z.array(EvaluationReferenceManifestV1FixtureSchema.omit({
 		evidence_sha256: true,
 		reference_sha256: true,
 	})).min(12),
 }).strict();
 
+const EvaluationReferenceManifestV3FixtureSchema = z.strictObject({
+	ordinal: z.number().int().positive(),
+	id: RecordIdSchema,
+	evidence: EvaluationLocalSourceReferenceSchema,
+	reference: EvaluationLocalSourceReferenceSchema,
+	variation_tags: z.array(VariationTagSchema).min(1),
+	variation_witnesses: z.array(VariationWitnessSchema),
+});
+
+export const EvaluationReferenceManifestV3Schema = z.strictObject({
+	version: z.literal(3),
+	id: RecordIdSchema,
+	fixtures: z.array(EvaluationReferenceManifestV3FixtureSchema).min(1),
+});
+
 export type EvaluationReference = z.infer<typeof EvaluationReferenceSchema>;
 export type EvaluationReferenceManifest = z.infer<typeof EvaluationReferenceManifestSchema>;
+export type EvaluationReferenceManifestV3 = z.infer<typeof EvaluationReferenceManifestV3Schema>;
+export type EvaluationReferenceManifestEntry = EvaluationReferenceManifest["fixtures"][number];
+export type EvaluationReferenceManifestV3Entry = EvaluationReferenceManifestV3["fixtures"][number];
 type SourceWitness = z.infer<typeof SourceWitnessSchema>;
-type ManifestEntry = EvaluationReferenceManifest["fixtures"][number];
 
 export class EvaluationReferenceCorpusError extends Error {
 	readonly code: string;
@@ -109,8 +138,8 @@ export class EvaluationReferenceCorpusError extends Error {
 	}
 }
 
-export interface LoadedEvaluationReferenceCorpusEntry {
-	readonly manifestEntry: ManifestEntry;
+interface LoadedEvaluationReferenceCorpusEntryBase<TManifestEntry> {
+	readonly manifestEntry: TManifestEntry;
 	readonly evidencePath: string;
 	readonly evidenceBytes: Uint8Array;
 	readonly fixture: EvidenceFixture;
@@ -121,6 +150,9 @@ export interface LoadedEvaluationReferenceCorpusEntry {
 	readonly reference: EvaluationReference;
 }
 
+export type LoadedEvaluationReferenceCorpusEntry = LoadedEvaluationReferenceCorpusEntryBase<EvaluationReferenceManifestEntry>;
+export type LoadedLocalEvaluationReferenceCorpusEntry = LoadedEvaluationReferenceCorpusEntryBase<EvaluationReferenceManifestV3Entry>;
+
 export interface LoadedEvaluationReferenceCorpus {
 	readonly sourceReference: RepositorySourceReference;
 	readonly repositoryRoot: string;
@@ -130,10 +162,20 @@ export interface LoadedEvaluationReferenceCorpus {
 	readonly entries: readonly LoadedEvaluationReferenceCorpusEntry[];
 }
 
+export interface LoadedLocalEvaluationReferenceCorpus {
+	readonly sourceReference: EvaluationLocalSourceReference;
+	readonly localDataRoot: string;
+	readonly manifestPath: string;
+	readonly manifestBytes: Uint8Array;
+	readonly manifest: EvaluationReferenceManifestV3;
+	readonly entries: readonly LoadedLocalEvaluationReferenceCorpusEntry[];
+}
+
+export type AnyLoadedEvaluationReferenceCorpus = LoadedEvaluationReferenceCorpus | LoadedLocalEvaluationReferenceCorpus;
+
 function fail(code: string, path: string, message: string): never {
 	throw new EvaluationReferenceCorpusError(code, path, message);
 }
-
 
 function parseJson<T>(bytes: Uint8Array, path: string, schema: z.ZodType<T>): T {
 	let candidate: unknown;
@@ -185,11 +227,7 @@ function validateReferenceCollections(reference: EvaluationReference, path: stri
 				: record.unresolved_witnesses.length > 0;
 		if (!valid) fail("invalid_status_shape", path, `Record ${record.id} does not match status ${record.status}`);
 	}
-	for (const record of [...reference.ambiguities, ...reference.noteworthy_candidates]) {
-		if (record.witnesses.length === 0) fail("missing_witness", path, `Record ${record.id} requires a witness`);
-		unique(record.witnesses.map(witnessKey), path, `${record.id} witnesses`);
-	}
-	for (const record of [...reference.entities, ...reference.numbers]) {
+	for (const record of [...reference.ambiguities, ...reference.noteworthy_candidates, ...reference.entities, ...reference.numbers]) {
 		if (record.witnesses.length === 0) fail("missing_witness", path, `Record ${record.id} requires a witness`);
 		unique(record.witnesses.map(witnessKey), path, `${record.id} witnesses`);
 	}
@@ -208,30 +246,28 @@ function validateReferenceCollections(reference: EvaluationReference, path: stri
 	for (const collection of semanticCollections) unique(collection.map(({ key }) => key), path, "semantic records");
 }
 
-function validateGrounding(entry: LoadedEvaluationReferenceCorpusEntry): void {
-	const { fixture, preparedEvidence, reference, referencePath } = entry;
-	const raw = new Map(fixture.messages.map((message) => [message.id, message]));
-	if (raw.size !== fixture.messages.length) fail("duplicate_message_id", entry.evidencePath, "Raw message ids must be unique");
-	const prepared = new Map(preparedEvidence.messages.map((message) => [message.id, message]));
-	const witnesses = allRecordWitnesses(reference);
-	for (const witness of witnesses) {
+function validateGrounding(entry: LoadedEvaluationReferenceCorpusEntryBase<unknown>): void {
+	const raw = new Map(entry.fixture.messages.map((message) => [message.id, message]));
+	if (raw.size !== entry.fixture.messages.length) fail("duplicate_message_id", entry.evidencePath, "Raw message ids must be unique");
+	const prepared = new Map(entry.preparedEvidence.messages.map((message) => [message.id, message]));
+	for (const witness of allRecordWitnesses(entry.reference)) {
 		const rawMessage = raw.get(witness.message_id);
 		const preparedMessage = prepared.get(witness.message_id);
-		if (rawMessage === undefined || preparedMessage === undefined) fail("dangling_witness", referencePath, `Witness message ${witness.message_id} is not retained`);
+		if (rawMessage === undefined || preparedMessage === undefined) fail("dangling_witness", entry.referencePath, `Witness message ${witness.message_id} is not retained`);
 		const rawValue = rawMessage[witness.field];
 		const preparedValue = preparedMessage[witness.field];
 		if (rawValue === null || !rawValue.includes(witness.excerpt) || !preparedValue.includes(witness.excerpt)) {
-			fail("false_grounding", referencePath, `Witness excerpt is not retained in ${witness.message_id}.${witness.field}`);
+			fail("false_grounding", entry.referencePath, `Witness excerpt is not retained in ${witness.message_id}.${witness.field}`);
 		}
 	}
-	for (const record of reference.entities) {
-		if (!record.witnesses.some((witness) => witness.excerpt.includes(record.value))) fail("false_grounding", referencePath, `Entity ${record.id} value is not grounded`);
+	for (const record of entry.reference.entities) {
+		if (!record.witnesses.some((witness) => witness.excerpt.includes(record.value))) fail("false_grounding", entry.referencePath, `Entity ${record.id} value is not grounded`);
 	}
-	for (const record of reference.numbers) {
-		if (!record.witnesses.some((witness) => witness.excerpt.includes(record.raw))) fail("false_grounding", referencePath, `Number ${record.id} raw value is not grounded`);
+	for (const record of entry.reference.numbers) {
+		if (!record.witnesses.some((witness) => witness.excerpt.includes(record.raw))) fail("false_grounding", entry.referencePath, `Number ${record.id} raw value is not grounded`);
 	}
-	for (const id of reference.irrelevant_message_ids) {
-		if (!raw.has(id) || !prepared.has(id)) fail("dangling_witness", referencePath, `Irrelevant message ${id} is not retained`);
+	for (const id of entry.reference.irrelevant_message_ids) {
+		if (!raw.has(id) || !prepared.has(id)) fail("dangling_witness", entry.referencePath, `Irrelevant message ${id} is not retained`);
 	}
 }
 
@@ -243,25 +279,32 @@ function earliestEventTimestamp(reference: EvaluationReference, fixture: Evidenc
 	return Math.min(...timestamps as number[]);
 }
 
-function validateRelationships(entry: LoadedEvaluationReferenceCorpusEntry): void {
-	const { reference, fixture, referencePath } = entry;
-	for (const relationship of reference.event_relationships) {
-		unique(relationship.event_ids, referencePath, `${relationship.id} event ids`);
-		const timestamps = relationship.event_ids.map((id) => earliestEventTimestamp(reference, fixture, id, referencePath));
+function validateRelationships(entry: LoadedEvaluationReferenceCorpusEntryBase<unknown>): void {
+	for (const relationship of entry.reference.event_relationships) {
+		unique(relationship.event_ids, entry.referencePath, `${relationship.id} event ids`);
+		const timestamps = relationship.event_ids.map((id) => earliestEventTimestamp(entry.reference, entry.fixture, id, entry.referencePath));
 		if (relationship.kind === "overlaps") {
-			if (timestamps.length < 2 || Math.max(...timestamps) - Math.min(...timestamps) > 15 * 60_000) fail("invalid_relationship", referencePath, `${relationship.id} is not overlapping`);
-		} else {
-			if (timestamps.length !== 1) fail("invalid_relationship", referencePath, `${relationship.id} must name one event`);
-			const otherTimes = reference.events.filter(({ id }) => id !== relationship.event_ids[0]).map(({ id }) => earliestEventTimestamp(reference, fixture, id, referencePath));
-			if (otherTimes.some((time) => Math.abs(time - timestamps[0]!) <= 60 * 60_000)) fail("invalid_relationship", referencePath, `${relationship.id} is not isolated`);
+			if (timestamps.length < 2 || Math.max(...timestamps) - Math.min(...timestamps) > 15 * 60_000) fail("invalid_relationship", entry.referencePath, `${relationship.id} is not overlapping`);
+			continue;
 		}
+		if (timestamps.length !== 1) fail("invalid_relationship", entry.referencePath, `${relationship.id} must name one event`);
+		const otherTimes = entry.reference.events.filter(({ id }) => id !== relationship.event_ids[0]).map(({ id }) => earliestEventTimestamp(entry.reference, entry.fixture, id, entry.referencePath));
+		if (otherTimes.some((time) => Math.abs(time - timestamps[0]!) <= 60 * 60_000)) fail("invalid_relationship", entry.referencePath, `${relationship.id} is not isolated`);
 	}
 }
 
-function qualifiedReference(entry: LoadedEvaluationReferenceCorpusEntry, value: string): unknown {
+function qualifiedReference(entry: LoadedEvaluationReferenceCorpusEntryBase<{ variation_tags: readonly string[] }>, value: string): unknown {
 	const [kind, id, ...rest] = value.split(":");
-	if (kind === undefined || rest.length > 0 || id === undefined) return undefined;
-	const collections = { claim: entry.reference.claims, event: entry.reference.events, ambiguity: entry.reference.ambiguities, noteworthy: entry.reference.noteworthy_candidates, entity: entry.reference.entities, number: entry.reference.numbers, relationship: entry.reference.event_relationships } as const;
+	if (kind === undefined || id === undefined || rest.length > 0) return undefined;
+	const collections = {
+		claim: entry.reference.claims,
+		event: entry.reference.events,
+		ambiguity: entry.reference.ambiguities,
+		noteworthy: entry.reference.noteworthy_candidates,
+		entity: entry.reference.entities,
+		number: entry.reference.numbers,
+		relationship: entry.reference.event_relationships,
+	} as const;
 	return kind in collections ? collections[kind as keyof typeof collections].find((record) => record.id === id) : undefined;
 }
 
@@ -272,7 +315,7 @@ function witnessMessageIds(value: unknown): string[] {
 	return groups.flatMap((group) => Array.isArray(group) ? group.map((item) => (item as { message_id?: string }).message_id).filter((id): id is string => id !== undefined) : []);
 }
 
-function validateVariation(entry: LoadedEvaluationReferenceCorpusEntry): void {
+function validateVariation(entry: LoadedEvaluationReferenceCorpusEntryBase<{ id: string; variation_tags: readonly EvaluationCorpusVariationTag[]; variation_witnesses: readonly z.infer<typeof VariationWitnessSchema>[] }>): void {
 	const declared = entry.manifestEntry.variation_tags;
 	unique(declared, entry.manifestEntry.id, "variation tags");
 	if (entry.manifestEntry.variation_witnesses.map(({ tag }) => tag).join("|") !== declared.join("|")) fail("false_variation", entry.manifestEntry.id, "Variation witnesses must match declared tag order");
@@ -317,25 +360,62 @@ function publicationDateForEvidenceDate(evidenceDate: string): string {
 	return candidate;
 }
 
-async function loadEntry(entry: ManifestEntry, repositoryRoot: string, sourceReference: RepositorySourceReference, corpusRoot: string): Promise<LoadedEvaluationReferenceCorpusEntry> {
-	const evidencePath = `${corpusRoot}/evidence/${entry.id}.json`;
-	const referencePath = `${corpusRoot}/references/${entry.id}.json`;
-	if (entry.evidence_path !== evidencePath || entry.reference_path !== referencePath) fail("noncanonical_path", sourceReference.path, `Manifest paths for ${entry.id} are not canonical repository paths`);
-	const [evidenceBytes, referenceBytes] = await Promise.all([
-		readRepositorySource(repositoryRoot, { ...sourceReference, path: evidencePath }),
-		readRepositorySource(repositoryRoot, { ...sourceReference, path: referencePath }),
-	]);
+async function loadEntry<TManifestEntry extends { id: string; variation_tags: readonly EvaluationCorpusVariationTag[]; variation_witnesses: readonly z.infer<typeof VariationWitnessSchema>[] }>(
+	manifestEntry: TManifestEntry,
+	evidencePath: string,
+	referencePath: string,
+	readBytes: () => Promise<readonly [Uint8Array, Uint8Array]>,
+): Promise<LoadedEvaluationReferenceCorpusEntryBase<TManifestEntry>> {
+	const [evidenceBytes, referenceBytes] = await readBytes();
 	const fixture = parseJson(evidenceBytes, evidencePath, EvidenceFixtureSchema);
 	const reference = parseJson(referenceBytes, referencePath, EvaluationReferenceSchema);
-	if (reference.fixture_id !== entry.id) fail("identity_mismatch", referencePath, `Reference identity mismatch for ${entry.id}`);
+	if (reference.fixture_id !== manifestEntry.id) fail("identity_mismatch", referencePath, `Reference identity mismatch for ${manifestEntry.id}`);
 	const publicationDate = publicationDateForEvidenceDate(fixture.evidence_date);
 	const preparedEvidence = prepareEvidence({ activeRegionId: fixture.active_region_id, publicationDate, messages: fixture.messages });
-	const loaded = { manifestEntry: entry, evidencePath, evidenceBytes, fixture, publicationDate, preparedEvidence, referencePath, referenceBytes, reference };
+	const loaded = { manifestEntry, evidencePath, evidenceBytes, fixture, publicationDate, preparedEvidence, referencePath, referenceBytes, reference };
 	validateReferenceCollections(reference, referencePath);
 	validateGrounding(loaded);
 	validateRelationships(loaded);
 	validateVariation(loaded);
 	return loaded;
+}
+
+function localCorpusRoot(manifestPath: string): string {
+	if (!manifestPath.endsWith("/manifest.json")) fail("invalid_manifest_location", manifestPath, "Local corpus manifest must end with /manifest.json");
+	return manifestPath.slice(0, -"/manifest.json".length);
+}
+
+function verifyFixtureRoster<TEntry extends { ordinal: number; id: string }>(entries: readonly TEntry[], path: string): void {
+	unique(entries.map(({ id }) => id), path, "fixture ids");
+	for (const [index, entry] of entries.entries()) {
+		if (entry.ordinal !== index + 1) fail("invalid_order", path, "Fixture ordinals must match manifest positions");
+	}
+}
+
+function closedRoster(expectedPaths: readonly string[], actualPaths: readonly string[], path: string, message: string): void {
+	const expected = [...expectedPaths].sort();
+	const actual = [...actualPaths].sort();
+	if (actual.length !== expected.length || actual.some((value, index) => value !== expected[index])) fail("directory_not_closed", path, message);
+}
+
+async function loadRepositoryEntry(entry: EvaluationReferenceManifestEntry, repositoryRoot: string, sourceReference: RepositorySourceReference, corpusRoot: string): Promise<LoadedEvaluationReferenceCorpusEntry> {
+	const evidencePath = `${corpusRoot}/evidence/${entry.id}.json`;
+	const referencePath = `${corpusRoot}/references/${entry.id}.json`;
+	if (entry.evidence_path !== evidencePath || entry.reference_path !== referencePath) fail("noncanonical_path", sourceReference.path, `Manifest paths for ${entry.id} are not canonical repository paths`);
+	return loadEntry(entry, evidencePath, referencePath, () => Promise.all([
+		readRepositorySource(repositoryRoot, { ...sourceReference, path: evidencePath }),
+		readRepositorySource(repositoryRoot, { ...sourceReference, path: referencePath }),
+	]));
+}
+
+async function loadLocalEntry(entry: EvaluationReferenceManifestV3Entry, localDataRoot: string, corpusRoot: string): Promise<LoadedLocalEvaluationReferenceCorpusEntry> {
+	const evidencePath = `${corpusRoot}/evidence/${entry.id}.json`;
+	const referencePath = `${corpusRoot}/references/${entry.id}.json`;
+	if (entry.evidence.path !== evidencePath || entry.reference.path !== referencePath) fail("noncanonical_path", entry.id, `Manifest paths for ${entry.id} are not canonical local corpus paths`);
+	return loadEntry(entry, evidencePath, referencePath, () => Promise.all([
+		readEvaluationLocalSource(localDataRoot, entry.evidence),
+		readEvaluationLocalSource(localDataRoot, entry.reference),
+	]));
 }
 
 export async function loadEvaluationReferenceCorpusAtReference(repositoryRoot: string, sourceReference: RepositorySourceReference): Promise<LoadedEvaluationReferenceCorpus> {
@@ -345,15 +425,12 @@ export async function loadEvaluationReferenceCorpusAtReference(repositoryRoot: s
 	const corpusReference = await repositorySourceAtLastChange(repositoryRoot, sourceReference, corpusRoot);
 	const manifestBytes = await readRepositorySource(repositoryRoot, corpusReference);
 	const manifest = parseJson(manifestBytes, corpusReference.path, EvaluationReferenceManifestSchema);
-	unique(manifest.fixtures.map(({ id }) => id), corpusReference.path, "fixture ids");
-	for (const [index, entry] of manifest.fixtures.entries()) {
-		if (entry.ordinal !== index + 1) fail("invalid_order", corpusReference.path, "Fixture ordinals must match manifest positions");
-	}
-	const expectedPaths = manifest.fixtures.flatMap(({ id }) => [`${corpusRoot}/evidence/${id}.json`, `${corpusRoot}/references/${id}.json`]).sort();
-	const actualPaths = (await listRepositorySources(repositoryRoot, { ...corpusReference, path: corpusRoot })).filter((path) => path !== corpusReference.path).sort();
-	if (actualPaths.length !== expectedPaths.length || actualPaths.some((path, index) => path !== expectedPaths[index])) fail("directory_not_closed", corpusReference.path, "Committed corpus entries do not exactly match the manifest");
+	verifyFixtureRoster(manifest.fixtures, corpusReference.path);
+	const expectedPaths = manifest.fixtures.flatMap(({ id }) => [`${corpusRoot}/evidence/${id}.json`, `${corpusRoot}/references/${id}.json`]);
+	const actualPaths = (await listRepositorySources(repositoryRoot, { ...corpusReference, path: corpusRoot })).filter((path) => path !== corpusReference.path);
+	closedRoster(expectedPaths, actualPaths, corpusReference.path, "Committed corpus entries do not exactly match the manifest");
 	const entries: LoadedEvaluationReferenceCorpusEntry[] = [];
-	for (const entry of manifest.fixtures) entries.push(await loadEntry(entry, repositoryRoot, corpusReference, corpusRoot));
+	for (const entry of manifest.fixtures) entries.push(await loadRepositoryEntry(entry, repositoryRoot, corpusReference, corpusRoot));
 	const coverage = new Set(manifest.fixtures.flatMap(({ variation_tags }) => variation_tags));
 	if (EVALUATION_CORPUS_VARIATION_TAGS.some((tag) => !coverage.has(tag))) fail("missing_variation_coverage", corpusReference.path, "Manifest does not cover every variation tag");
 	return { sourceReference: corpusReference, repositoryRoot, manifestPath: corpusReference.path, manifestBytes, manifest, entries };
@@ -363,6 +440,33 @@ export async function loadEvaluationReferenceCorpus(manifestPath: string, reposi
 	try {
 		const sourceReference = await sourceReferenceAtHead(repositoryRoot, manifestPath);
 		return await loadEvaluationReferenceCorpusAtReference(repositoryRoot, sourceReference);
+	} catch (error) {
+		if (error instanceof EvaluationReferenceCorpusError) throw error;
+		throw new EvaluationReferenceCorpusError(
+			"corpus_rejected",
+			resolve(manifestPath),
+			`Evaluation reference corpus rejected: ${error instanceof Error ? error.message : String(error)}`,
+			{ cause: error },
+		);
+	}
+}
+
+export async function loadLocalEvaluationReferenceCorpusAtReference(localDataRoot: string, sourceReference: EvaluationLocalSourceReference): Promise<LoadedLocalEvaluationReferenceCorpus> {
+	const manifestBytes = await readEvaluationLocalSource(localDataRoot, sourceReference);
+	const manifest = parseJson(manifestBytes, sourceReference.path, EvaluationReferenceManifestV3Schema);
+	const corpusRoot = localCorpusRoot(sourceReference.path);
+	verifyFixtureRoster(manifest.fixtures, sourceReference.path);
+	const expectedPaths = [sourceReference.path, ...manifest.fixtures.flatMap(({ id }) => [`${corpusRoot}/evidence/${id}.json`, `${corpusRoot}/references/${id}.json`])];
+	const actualPaths = await listEvaluationLocalSources(localDataRoot, corpusRoot);
+	closedRoster(expectedPaths, actualPaths, sourceReference.path, "Local corpus entries do not exactly match the manifest");
+	const entries: LoadedLocalEvaluationReferenceCorpusEntry[] = [];
+	for (const entry of manifest.fixtures) entries.push(await loadLocalEntry(entry, localDataRoot, corpusRoot));
+	return { sourceReference, localDataRoot: resolve(localDataRoot), manifestPath: sourceReference.path, manifestBytes, manifest, entries };
+}
+
+export async function loadLocalEvaluationReferenceCorpus(localDataRoot: string, manifestPath: string): Promise<LoadedLocalEvaluationReferenceCorpus> {
+	try {
+		return await loadLocalEvaluationReferenceCorpusAtReference(localDataRoot, await sourceReferenceForLocalFile(localDataRoot, manifestPath));
 	} catch (error) {
 		if (error instanceof EvaluationReferenceCorpusError) throw error;
 		throw new EvaluationReferenceCorpusError(

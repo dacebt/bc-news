@@ -1,6 +1,30 @@
+import { readFile } from "node:fs/promises";
+import { resolve } from "node:path";
 import { expect, test } from "vitest";
 import { parseEvalCliCommand } from "../src/cli-options";
-import { EVAL_CLI_USAGE, formatEvalCliFailure } from "../src/cli";
+import {
+	EVAL_CLI_USAGE,
+	formatEvalCliFailure,
+	runEvalCliApplication,
+} from "../src/cli";
+import {
+	evalLocalDataRoot,
+	resolveBenchmarkResultsDirectory,
+	resolveCurrentLocalDataInputPath,
+	resolveCurrentLocalDataResultsDirectory,
+} from "../src/evaluation-local-artifact-cli";
+
+async function invokeCli(argv: readonly string[], currentDirectory: string, appDirectory: string): Promise<string> {
+	let output = "";
+	await runEvalCliApplication({
+		argv,
+		currentDirectory,
+		appDirectory,
+		environment: { INIT_CWD: currentDirectory },
+		writeOutput: (text) => { output += text; },
+	});
+	return output;
+}
 
 test("parses every verification ownership route", () => {
 	expect(parseEvalCliCommand(["benchmark", "run", "--fixture", "fixture.json", "--config", "models.json"])).toEqual({
@@ -89,3 +113,52 @@ test("formats failures through the recognized verification namespace", () => {
 	expect(formatEvalCliFailure(["aggregate", "unknown"], new Error("bad route"))).toBe("aggregate failed: bad route");
 	expect(formatEvalCliFailure(["unknown"], new Error("bad route"))).toBe("command failed: bad route");
 });
+
+test("defaults current evaluation storage under the ignored local-data root", () => {
+	const appDirectory = "/workspace/apps/eval";
+	const currentDirectory = "/workspace";
+
+	expect(evalLocalDataRoot(appDirectory)).toBe("/workspace/apps/eval/local-data");
+	expect(resolveBenchmarkResultsDirectory(currentDirectory, appDirectory, undefined)).toBe("/workspace/apps/eval/local-data/evaluation-results");
+	expect(resolveCurrentLocalDataResultsDirectory(currentDirectory, appDirectory, undefined, "scorecards", "Current scorecard results directory")).toBe(
+		"/workspace/apps/eval/local-data/scorecards",
+	);
+	expect(resolveCurrentLocalDataResultsDirectory(currentDirectory, appDirectory, undefined, "longitudinal-scorecards", "Current longitudinal results directory")).toBe(
+		"/workspace/apps/eval/local-data/longitudinal-scorecards",
+	);
+});
+
+test("rejects current declarations and explicit current results outside local-data", () => {
+	const appDirectory = "/workspace/apps/eval";
+	const currentDirectory = "/workspace";
+
+	expect(resolveCurrentLocalDataInputPath(currentDirectory, appDirectory, "apps/eval/local-data/scorecards/declaration.json", "Current scorecard declaration")).toBe(
+		"/workspace/apps/eval/local-data/scorecards/declaration.json",
+	);
+	expect(() => resolveCurrentLocalDataInputPath(currentDirectory, appDirectory, "apps/eval/scorecards/declaration.json", "Current scorecard declaration")).toThrow(
+		"Current scorecard declaration must be contained within /workspace/apps/eval/local-data",
+	);
+	expect(() => resolveCurrentLocalDataResultsDirectory(currentDirectory, appDirectory, "apps/eval/scorecard-results", "scorecards", "Current scorecard results directory")).toThrow(
+		"Current scorecard results directory must be contained within /workspace/apps/eval/local-data",
+	);
+});
+
+test("shows retained V2 scorecards from explicit legacy directories with freshness", async () => {
+	const currentDirectory = resolve(process.cwd(), "../..");
+	const appDirectory = resolve(currentDirectory, "apps/eval");
+	const scorecardPath = resolve(
+		currentDirectory,
+		"apps/eval/scorecard-results/scorecard-2026-08-12T13-25-29-736Z-c2716a90-726b-474f-8329-1b38bdd37336.json",
+	);
+	const retained = JSON.parse(await readFile(scorecardPath, "utf8")) as { id: string };
+
+	const output = await invokeCli(
+		["scorecard", "show", retained.id, "--results-dir", "apps/eval/scorecard-results"],
+		currentDirectory,
+		appDirectory,
+	);
+
+	expect(output).toContain(`Evaluation scorecard v2: ${retained.id}`);
+	expect(output).toContain("Evaluated code:");
+	expect(output).toContain("freshness=");
+}, 30_000);

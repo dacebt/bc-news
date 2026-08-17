@@ -61,11 +61,11 @@ result in another.
 | Surface | Command | Evidence | Successful outcome |
 |---|---|---|---|
 | Deterministic tests | `pnpm test` | Isolated invariants, reproduced defects, and high-risk state transitions | Test pass or hard test failure |
-| Model evaluation | `pnpm --filter @bc-news/eval eval -- benchmark run ...` and `benchmark list/show/summary/compare` | Strict versioned Benchmark Runs in `apps/eval/evaluation-results` | Retained model behavior and harness outcome; no score or acceptance verdict |
+| Model evaluation | `pnpm --filter @bc-news/eval eval -- benchmark run ...` and `benchmark list/show/summary/compare` | Strict versioned Benchmark Runs in `apps/eval/local-data/evaluation-results` by default | Retained model behavior and harness outcome; no score or acceptance verdict |
 | Evaluation reference corpus | `corpus show --corpus packages/fixtures/evaluation-corpus/manifest.json` | Ordered synthetic chats plus separate exact source-witness records | Auditable source truth and variation coverage; no target article, score, or verdict |
-| Evaluation scorecards | `scorecard build --input <declaration-path>` and `scorecard show <scorecard-id>` | Commit-addressed retained runs, corpus sources, Codex annotations, and Codex qualitative reviews | Four transparent role-specific evidence reports; no aggregate score, ranking, recommendation, or acceptance verdict |
-| Aggregate evaluation results | `aggregate export --input <scorecard-artifact-path> --cohort <cohort-id> [--results-dir <path>]`, `aggregate show <aggregate-id>`, and `aggregate compare <left-id> <right-id>` | Strict whitelist-only aggregate JSON in `apps/eval/summaries/` by default | Descriptive role aggregates only: subject descriptor, counts, rates and intervals, aggregate distributions, and qualitative counts; never source or model-output evidence, a winner, a rank, a recommendation, acceptance, production selection, or a walk result |
-| Longitudinal evaluation scorecards | `longitudinal build --input <declaration-path>` and `longitudinal show <series-id>` | Ordered exact scorecard audit packs split into an earlier baseline and later subject observations | Four role-specific context, sufficiency, baseline-variation, or potential-drift classifications; never a judge or production gate |
+| Evaluation scorecards | `scorecard build --input <declaration-path>` and `scorecard show <scorecard-id>` | Current local hash-addressed scorecards in `apps/eval/local-data/scorecards` by default, plus embedded V1 and Git-addressed V2 historical readers | Four transparent role-specific evidence reports; no aggregate score, ranking, recommendation, or acceptance verdict |
+| Aggregate evaluation results | `aggregate export --input <scorecard-artifact-path> --cohort <cohort-id> [--results-dir <path>]`, `aggregate show <aggregate-id>`, and `aggregate compare <left-id> <right-id>` | Strict content-free aggregate JSON in `apps/eval/summaries/` by default, with `cohort.evidence_identity_sha256` bound to the source corpus identity | Descriptive role aggregates only: subject descriptor, counts, rates and intervals, aggregate distributions, and qualitative counts; never source or model-output evidence, a winner, a rank, a recommendation, acceptance, production selection, or a walk result |
+| Longitudinal evaluation scorecards | `longitudinal build --input <declaration-path>` and `longitudinal show <series-id>` | Current local hash-addressed series in `apps/eval/local-data/longitudinal-scorecards` by default, plus embedded V1 and Git-addressed V2 historical readers | Four role-specific context, sufficiency, baseline-variation, or potential-drift classifications; never a judge or production gate |
 | Fixture and context tooling | `fixture record-responses ...` and `context benchmark ...` | Four request-linked recorded responses, or strict context-measurement results | Fixture-authoring or context-measurement tooling result, never a walk or acceptance result |
 | Recorded-replay acceptance | `acceptance run/list/show/compare` and `verify:recorded-replay-acceptance` | Historical Run Files in `apps/eval/results` | `acceptance: four recorded production steps replayed request-linked and deterministic; diagnostics retained: 4` |
 | Composed skeleton walk | `pnpm walk` | The deployed local ingest, generation, D1, API, status, and browser path using committed recorded adapters | Independent `walk:` observations and terminal `WALK PASS` |
@@ -109,7 +109,7 @@ reviewing its current model ids and expected spend:
 pnpm --filter @bc-news/eval eval -- benchmark run \
 	--fixture packages/fixtures/evidence/active-region-7_2026-01-24.json \
 	--config apps/eval/cloudflare-ai-gateway.benchmark.example.json \
-	--results-dir apps/eval/evaluation-results
+	--results-dir apps/eval/local-data/evaluation-results
 ```
 
 The `cloudflare_ai_gateway` adapter uses Cloudflare's account default when
@@ -178,7 +178,7 @@ pnpm --filter @bc-news/eval eval -- benchmark compare <left-id> <right-id>
 ```
 
 Each route accepts `--results-dir`; otherwise it reads
-`apps/eval/evaluation-results`. Loading is strict and rejects malformed,
+`apps/eval/local-data/evaluation-results`. Loading is strict and rejects malformed,
 schema-invalid, or filename-mismatched evidence. Comparison reports input and
 provenance context separately from behavioral differences and produces no
 score, judge result, or acceptance decision.
@@ -218,15 +218,19 @@ reviews:
 ```sh
 pnpm --filter @bc-news/eval eval -- scorecard build \
   --input path/to/scorecard-input.json \
-  --results-dir path/to/scorecard-results
+  --results-dir apps/eval/local-data/scorecards
 pnpm --filter @bc-news/eval eval -- scorecard show <scorecard-id> \
-  --results-dir path/to/scorecard-results
+  --results-dir path/to/local-or-legacy-scorecards
 ```
 
-Without `--results-dir`, scorecards are stored under
-`apps/eval/scorecard-results`. Each artifact stores one source declaration
-reference plus compact semantic source descriptors, then reloads the declaration
-and named evidence through recorded Git references to recompute its identities,
+Current scorecard declarations and explicit current results directories must be
+contained under the ignored `apps/eval/local-data/` root. Without
+`--results-dir`, current scorecards are stored under
+`apps/eval/local-data/scorecards`. Embedded V1 and Git-addressed V2 remain
+historical readers; current V3 is local hash-addressed and portable across
+checkouts because its contained relative references are SHA-256 bound rather
+than raw-byte embedded. The current reader reloads the declaration and named
+evidence through recorded references to recompute identities,
 sample counts, context, rates, Wilson intervals, token and latency
 distributions, and qualitative summaries when read. The
 report keeps `main_story_write`, `main_story_copyedit`, `announcements_write`,
@@ -235,8 +239,11 @@ coverage, announcement relevance, coherence, usefulness, newsworthiness, and
 voice retain their named Codex annotator or reviewer evidence; the application
 does not infer those judgments. A scorecard is not a weighted model-wide score,
 winner, threshold, recommendation, acceptance gate, or production decision.
+The local resolver rejects absolute paths, traversal, symlink escape, and SHA
+mismatch; only `apps/eval/summaries/` remains commit-eligible.
 
-Export a commit-safe aggregate result only from a validated scorecard artifact.
+Export a commit-safe aggregate result only from a current validated local
+scorecard artifact.
 `--cohort` is mandatory, but it is a binding assertion, not a free-form label:
 it must exactly match the validated source scorecard corpus id.
 
@@ -252,7 +259,11 @@ pnpm --filter @bc-news/eval eval -- aggregate compare <left-id> <right-id> \
 ```
 
 Without `--results-dir`, aggregate results are stored under
-`apps/eval/summaries/`. Export is a whitelist projection, never a redaction
+`apps/eval/summaries/`. Current export reads the detailed scorecard from
+`apps/eval/local-data/`, while `aggregate show` and `aggregate compare` still
+reopen explicit legacy directories. Aggregate V2 remains content-free and binds
+`cohort.evidence_identity_sha256` to the validated source corpus identity.
+Export is a whitelist projection, never a redaction
 pass over a full scorecard: it retains only the role-local model subject
 descriptor, counts, rates with intervals, aggregate distributions, and
 qualitative counts. It excludes source or model-output evidence, repository or
@@ -267,17 +278,19 @@ Retain selected scorecard audit packs as one durable longitudinal series:
 ```sh
 pnpm --filter @bc-news/eval eval -- longitudinal build \
   --input path/to/longitudinal-input.json \
-  --results-dir path/to/longitudinal-scorecard-results
+  --results-dir apps/eval/local-data/longitudinal-scorecards
 pnpm --filter @bc-news/eval eval -- longitudinal show <series-id> \
-  --results-dir path/to/longitudinal-scorecard-results
+  --results-dir path/to/local-or-legacy-longitudinal-scorecards
 ```
 
-Without `--results-dir`, series are stored under
-`apps/eval/longitudinal-scorecard-results`, which is deliberately not ignored:
-repository history is the durable audit boundary for selected packs. Every
-series embeds the exact capability-3 scorecard bytes and reconstructs them on
-read. Underlying Benchmark Run rosters must be disjoint; copying one scorecard
-under a new id does not increase the evidence count.
+Current longitudinal declarations and explicit current results directories must
+be contained under the ignored `apps/eval/local-data/` root. Without
+`--results-dir`, current series are stored under
+`apps/eval/local-data/longitudinal-scorecards`. Embedded V1 and Git-addressed
+V2 remain historical readers; current V3 is local hash-addressed and
+reconstructs derived histories from contained SHA-256-bound inputs instead of
+embedding scorecard bytes. Underlying Benchmark Run rosters must be disjoint;
+copying one scorecard under a new id does not increase the evidence count.
 
 Each role first compares a stable cohort identity over corpus and references,
 prepared evidence, prompt and output contracts, exact code commit, declared

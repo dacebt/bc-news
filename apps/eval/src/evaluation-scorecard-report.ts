@@ -3,7 +3,9 @@ import {
 	AnnotationBundleV1Schema,
 	QualitativeReviewBundleV1Schema,
 	type AnyEvaluationScorecardArtifact,
+	type EvaluationScorecardArtifact,
 	type EvaluationScorecardArtifactV1,
+	type EvaluationScorecardArtifactV2,
 } from "./evaluation-scorecard";
 
 const QUALITATIVE_CRITERION_LABELS = [
@@ -14,16 +16,46 @@ const QUALITATIVE_CRITERION_LABELS = [
 ] as const;
 
 function exactEvidence(value: object): string { return JSON.stringify(value, null, 2); }
+function localSource(reference: { path: string; sha256: string }): string { return `${reference.path} | sha256=${reference.sha256}`; }
 
 export function formatEvaluationScorecardReport(artifact: AnyEvaluationScorecardArtifact, freshness?: EvaluationFreshness): string {
 	if (artifact.version === 1) return formatEvaluationScorecardReportV1(artifact);
-	if (freshness === undefined) throw new Error("Current scorecard report requires evaluated-code freshness");
+	if (artifact.version === 2) {
+		if (freshness === undefined) throw new Error("Scorecard V2 report requires evaluated-code freshness");
+		return formatEvaluationScorecardReportV2(artifact, freshness);
+	}
+	if (freshness === undefined) throw new Error("Scorecard V3 report requires evaluated-code freshness");
+	return formatEvaluationScorecardReportV3(artifact, freshness);
+}
+
+function formatEvaluationScorecardReportV2(artifact: EvaluationScorecardArtifactV2, freshness: EvaluationFreshness): string {
 	return [
-		`Evaluation scorecard v${String(artifact.version)}: ${artifact.id}`,
+		`Evaluation scorecard v2: ${artifact.id}`,
 		`Created at: ${artifact.created_at}`,
 		`Source: ${artifact.source_reference.commit_sha}:${artifact.source_reference.path}`,
 		`Evaluated code: ${freshness.evaluated_commit_sha} | checkout=${freshness.checkout_commit_sha} | freshness=${freshness.state}`,
 		`Corpus: ${artifact.corpus.id} | fixtures=${String(artifact.corpus.fixture_count)}`,
+		`Configuration: ${artifact.configuration.identity}`,
+		`Repetition count: ${String(artifact.repetition_count)}`,
+		`Annotation protocol: ${artifact.sources.annotations.protocol_id}`,
+		`Codex annotator: ${artifact.sources.annotations.annotator_id} (${artifact.sources.annotations.annotator_kind})`,
+		`Annotated at: ${artifact.sources.annotations.annotated_at}`,
+		`Codex qualitative reviewer: ${artifact.sources.qualitative_reviews.reviewer_id} (${artifact.sources.qualitative_reviews.reviewer_kind})`,
+		`Qualitative rubric: ${artifact.sources.qualitative_reviews.rubric_id}`,
+		...QUALITATIVE_CRITERION_LABELS.map((label) => `Qualitative criterion — ${label}`),
+		"Benchmark Run evidence:",
+		exactEvidence(artifact.sources.benchmark_runs),
+		...artifact.scorecards.flatMap((scorecard) => ["", `Scorecard role: ${scorecard.production_step}`, "Exact role evidence:", exactEvidence(scorecard)]),
+	].join("\n");
+}
+
+function formatEvaluationScorecardReportV3(artifact: EvaluationScorecardArtifact, freshness: EvaluationFreshness): string {
+	return [
+		`Evaluation scorecard v3: ${artifact.id}`,
+		`Created at: ${artifact.created_at}`,
+		`Source: ${localSource(artifact.source_reference)}`,
+		`Evaluated code: ${freshness.evaluated_commit_sha} | checkout=${freshness.checkout_commit_sha} | freshness=${freshness.state}`,
+		`Corpus: ${artifact.corpus.id} | source=${localSource(artifact.corpus.source_reference)} | fixtures=${String(artifact.corpus.fixture_count)}`,
 		`Configuration: ${artifact.configuration.identity}`,
 		`Repetition count: ${String(artifact.repetition_count)}`,
 		`Annotation protocol: ${artifact.sources.annotations.protocol_id}`,

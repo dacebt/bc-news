@@ -1,114 +1,361 @@
-import { execFile } from "node:child_process";
-import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { cp, mkdir, mkdtemp, readFile, rename, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { dirname, join, relative, resolve, sep } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { promisify } from "node:util";
-import { runEvalCliApplication } from "./cli";
 import {
 	buildEvaluationLongitudinalScorecard,
-	classifyLongitudinalEvidence,
-	compareLongitudinalContexts,
-	projectLongitudinalRoleContext,
 } from "./evaluation-longitudinal-scorecard-builder";
-import { loadEvaluationLongitudinalInput } from "./evaluation-longitudinal-scorecard-input";
+import {
+	loadEvaluationLongitudinalInput,
+	loadEvaluationLongitudinalInputAtReference,
+	localSourceReferenceAtPath,
+	type LoadedEvaluationLongitudinalInput,
+	validateLoadedEvaluationLongitudinalInput,
+} from "./evaluation-longitudinal-scorecard-input";
 import { formatEvaluationLongitudinalScorecardReport } from "./evaluation-longitudinal-scorecard-report";
-import { buildEvaluationScorecard } from "./evaluation-scorecard-builder";
-import { loadEvaluationScorecardInput } from "./evaluation-scorecard-input";
-import { createEvaluationScorecardArtifact } from "./evaluation-scorecard-store";
-import { buildControlledEvaluationScorecardInput, initializeControlledEvaluationRepository } from "./evaluation-scorecard-verifier";
-import { loadEvaluationReferenceCorpus } from "./evaluation-reference-corpus";
+import {
+	EvaluationLongitudinalDeclarationSchema,
+	EvaluationLongitudinalScorecardArtifactSchema,
+	type EvaluationLongitudinalDeclaration,
+	type EvaluationLongitudinalScorecardArtifact,
+} from "./evaluation-longitudinal-scorecard";
 import {
 	createEvaluationLongitudinalScorecardArtifact,
 	evaluationLongitudinalFreshness,
 	loadEvaluationLongitudinalScorecardArtifact,
 } from "./evaluation-longitudinal-scorecard-store";
-import type { EvaluationScorecardArtifact } from "./evaluation-scorecard";
+import { sourceReferenceForLocalFile } from "./evaluation-local-source-reference";
+import { EvaluationReferenceManifestSchema } from "./evaluation-reference-corpus";
+import { buildEvaluationScorecard } from "./evaluation-scorecard-builder";
+import { loadEvaluationScorecardInput } from "./evaluation-scorecard-input";
+import {
+	EvaluationScorecardDeclarationSchema,
+	type EvaluationScorecardArtifact,
+	type EvaluationScorecardDeclaration,
+} from "./evaluation-scorecard";
+import {
+	createEvaluationScorecardArtifact,
+	loadEvaluationScorecardArtifact,
+} from "./evaluation-scorecard-store";
+import {
+	initializeControlledEvaluationRepository,
+	verifyEvaluationScorecards,
+} from "./evaluation-scorecard-verifier";
 
-type JsonObject = Record<string, unknown>;
-const execFileAsync = promisify(execFile);
+type ControlledLocalScorecard = {
+	readonly artifact: EvaluationScorecardArtifact;
+	readonly path: string;
+	readonly createdCursor: number;
+	readonly sourceDeclarationPath: string;
+};
+
 function json(value: object): string { return `${JSON.stringify(value, null, 2)}\n`; }
-function repositoryPath(root: string, path: string): string { return relative(root, path).split(sep).join("/"); }
 function assertProof(condition: boolean, message: string): asserts condition { if (!condition) throw new Error(message); }
-async function git(root: string, ...args: string[]): Promise<string> { const { stdout } = await execFileAsync("git", ["-C", root, ...args], { encoding: "utf8" }); return stdout.trim(); }
-async function invokeCli(argv: readonly string[], repositoryRoot: string, appDirectory: string): Promise<string> {
-	let output = "";
-	await runEvalCliApplication({ argv, currentDirectory: repositoryRoot, appDirectory, environment: { INIT_CWD: repositoryRoot }, writeOutput: (text) => { output += text; } });
-	return output;
+function sha256(value: Uint8Array | string): string { return createHash("sha256").update(value).digest("hex"); }
+
+function parseScorecardDeclaration(raw: string, path: string): EvaluationScorecardDeclaration {
+	const result = EvaluationScorecardDeclarationSchema.safeParse(JSON.parse(raw) as unknown);
+	assertProof(result.success, `Controlled scorecard declaration contract rejected at ${path}: ${result.success ? "" : result.error.message}`);
+	return result.data;
 }
 
-async function buildCommittedScorecard(repositoryRoot: string, manifestPath: string, codeCommit: string, ordinal: number, createdCursor: number): Promise<{ artifact: EvaluationScorecardArtifact; path: string; commit: string; createdCursor: number }> {
-	const controlled = await buildControlledEvaluationScorecardInput(repositoryRoot, manifestPath, { directory: `evidence/scorecard-${String(ordinal)}`, codeCommit });
-	const input = await loadEvaluationScorecardInput(controlled.declarationPath, repositoryRoot);
-	const created = Math.max(Date.parse(controlled.createdAt), createdCursor + 1);
-	const artifact = buildEvaluationScorecard(input, { id: `controlled-scorecard-${String(ordinal)}`, createdAt: new Date(created).toISOString() });
-	const path = join(repositoryRoot, "retained-scorecards", `${artifact.id}.json`); await mkdir(dirname(path), { recursive: true });
-	await createEvaluationScorecardArtifact(path, artifact, repositoryRoot);
-	await git(repositoryRoot, "add", repositoryPath(repositoryRoot, path)); await git(repositoryRoot, "commit", "-m", `Retain controlled scorecard ${String(ordinal)}`);
-	return { artifact, path, commit: await git(repositoryRoot, "rev-parse", "HEAD"), createdCursor: created };
+function parseLongitudinalDeclaration(raw: string, path: string): EvaluationLongitudinalDeclaration {
+	const result = EvaluationLongitudinalDeclarationSchema.safeParse(JSON.parse(raw) as unknown);
+	assertProof(result.success, `Controlled longitudinal declaration contract rejected at ${path}: ${result.success ? "" : result.error.message}`);
+	return result.data;
+}
+
+function parseLongitudinalArtifact(raw: string, path: string): EvaluationLongitudinalScorecardArtifact {
+	const result = EvaluationLongitudinalScorecardArtifactSchema.safeParse(JSON.parse(raw) as unknown);
+	assertProof(result.success, `Controlled longitudinal artifact contract rejected at ${path}: ${result.success ? "" : result.error.message}`);
+	return result.data;
+}
+
+async function expectReject(label: string, operation: () => Promise<unknown>): Promise<void> {
+	let rejected = false;
+	try { await operation(); } catch { rejected = true; }
+	assertProof(rejected, label);
+}
+
+async function rebaseControlledScorecardDeclaration(
+	sourceLocalDataRoot: string,
+	targetLocalDataRoot: string,
+	targetDirectory: string,
+): Promise<string> {
+	const sourceDeclarationPath = join(sourceLocalDataRoot, "scorecard-input.json");
+	const sourceDeclaration = parseScorecardDeclaration(await readFile(sourceDeclarationPath, "utf8"), sourceDeclarationPath);
+	const copiedRoot = join(targetLocalDataRoot, targetDirectory);
+	await cp(sourceLocalDataRoot, copiedRoot, { recursive: true });
+	const rebasePath = (path: string): string => `${targetDirectory}/${path}`;
+	const sharedCorpusDirectory = "sources/shared-corpus";
+	const sharedManifestPath = join(targetLocalDataRoot, sharedCorpusDirectory, "manifest.json");
+	await rm(dirname(sharedManifestPath), { recursive: true, force: true });
+	await cp(
+		dirname(join(sourceLocalDataRoot, sourceDeclaration.corpus.source_reference.path)),
+		dirname(sharedManifestPath),
+		{ recursive: true },
+	);
+	const sourceManifest = EvaluationReferenceManifestSchema.parse(JSON.parse(await readFile(sharedManifestPath, "utf8")) as unknown);
+	await writeFile(sharedManifestPath, json({
+		...sourceManifest,
+		fixtures: sourceManifest.fixtures.map((fixture) => ({
+			...fixture,
+			evidence_path: `${sharedCorpusDirectory}/evidence/${fixture.id}.json`,
+			reference_path: `${sharedCorpusDirectory}/references/${fixture.id}.json`,
+		})),
+	}), "utf8");
+	const rebasedDeclaration: EvaluationScorecardDeclaration = {
+		version: 3,
+		id: sourceDeclaration.id,
+		corpus: { source_reference: await sourceReferenceForLocalFile(targetLocalDataRoot, `${sharedCorpusDirectory}/manifest.json`) },
+		configuration_identity: sourceDeclaration.configuration_identity,
+		runs: await Promise.all(sourceDeclaration.runs.map(async (run) => ({
+			ordinal: run.ordinal,
+			corpus_fixture_id: run.corpus_fixture_id,
+			benchmark_run_id: run.benchmark_run_id,
+			source_reference: await sourceReferenceForLocalFile(targetLocalDataRoot, rebasePath(run.source_reference.path)),
+		}))),
+		annotations: {
+			source_reference: await sourceReferenceForLocalFile(targetLocalDataRoot, rebasePath(sourceDeclaration.annotations.source_reference.path)),
+			bundle_id: sourceDeclaration.annotations.bundle_id,
+		},
+		qualitative_reviews: {
+			source_reference: await sourceReferenceForLocalFile(targetLocalDataRoot, rebasePath(sourceDeclaration.qualitative_reviews.source_reference.path)),
+			bundle_id: sourceDeclaration.qualitative_reviews.bundle_id,
+		},
+	};
+	const rebasedDeclarationPath = join(copiedRoot, "scorecard-input.json");
+	await writeFile(rebasedDeclarationPath, json(rebasedDeclaration), "utf8");
+	return `${targetDirectory}/scorecard-input.json`;
+}
+
+async function buildLocalScorecard(
+	repositoryRoot: string,
+	localDataRoot: string,
+	sourceWorkspaceRoot: string,
+	ordinal: number,
+	createdCursor: number,
+	declarationDirectory: string = `sources/scorecard-${String(ordinal)}`,
+): Promise<ControlledLocalScorecard> {
+	const verifierRoot = join(sourceWorkspaceRoot, `scorecard-${String(ordinal)}`);
+	await verifyEvaluationScorecards(verifierRoot);
+	const verifierLocalDataRoot = join(verifierRoot, "relocated-local-data");
+	const sourceArtifact = await loadEvaluationScorecardArtifact("controlled-evaluation-scorecard-v3", join(verifierRoot, "results"), { localDataRoot: verifierLocalDataRoot });
+	assertProof(sourceArtifact.version === 3, `Controlled scorecard ${String(ordinal)} did not retain V3 local-data evidence`);
+	const sourceDeclarationPath = await rebaseControlledScorecardDeclaration(verifierLocalDataRoot, localDataRoot, declarationDirectory);
+	const input = await loadEvaluationScorecardInput(sourceDeclarationPath, localDataRoot);
+	const created = Math.max(Date.parse(sourceArtifact.created_at), createdCursor + 1);
+	const artifact = buildEvaluationScorecard(input, {
+		id: `controlled-scorecard-${String(ordinal)}`,
+		createdAt: new Date(created).toISOString(),
+	});
+	const path = join(localDataRoot, "scorecards", `${artifact.id}.json`);
+	await mkdir(dirname(path), { recursive: true });
+	await createEvaluationScorecardArtifact(path, artifact, { localDataRoot });
+	const loaded = await loadEvaluationScorecardArtifact(artifact.id, join(localDataRoot, "scorecards"), { repositoryRoot, localDataRoot });
+	assertProof(loaded.version === 3, `Controlled scorecard ${String(ordinal)} did not retain V3 local-data evidence`);
+	return { artifact: loaded, path, createdCursor: created, sourceDeclarationPath };
+}
+
+async function writeLongitudinalDeclaration(
+	localDataRoot: string,
+	name: string,
+	scorecardPaths: readonly string[],
+	scorecardIds: readonly string[],
+	phases: readonly ("baseline" | "subject")[],
+): Promise<string> {
+	const declarationPath = join(localDataRoot, "longitudinal", `${name}.json`);
+	await mkdir(dirname(declarationPath), { recursive: true });
+	const scorecards = [];
+	for (let index = 0; index < scorecardPaths.length; index += 1) {
+		scorecards.push({
+			ordinal: index + 1,
+			phase: phases[index]!,
+			scorecard_id: scorecardIds[index]!,
+			source_reference: await localSourceReferenceAtPath(localDataRoot, scorecardPaths[index]!),
+		});
+	}
+	await writeFile(declarationPath, json({ version: 3, id: name, scorecards }), "utf8");
+	return declarationPath;
 }
 
 export async function verifyEvaluationLongitudinalScorecards(temporaryRoot?: string): Promise<string> {
 	const root = temporaryRoot ?? await mkdtemp(join(tmpdir(), "bc-news-longitudinal-scorecards-")); const cleanup = temporaryRoot === undefined;
 	try {
 		const repositoryRoot = join(root, "repository");
+		const localDataRoot = join(root, "apps/eval/local-data");
+		const relocatedLocalDataRoot = join(root, "relocated/local-data");
 		const corpusSource = resolve(dirname(fileURLToPath(import.meta.url)), "../../../packages/fixtures/evaluation-corpus");
-		const { manifestPath, codeCommit } = await initializeControlledEvaluationRepository(repositoryRoot, corpusSource);
-		await git(repositoryRoot, "checkout", "-b", "evidence");
-		const sources: Array<{ artifact: EvaluationScorecardArtifact; path: string; commit: string; createdCursor: number }> = []; let cursor = 0;
+		await initializeControlledEvaluationRepository(repositoryRoot, corpusSource);
+
+		let cursor = 0;
+		const sources: ControlledLocalScorecard[] = [];
+		const sourceWorkspaceRoot = join(root, "controlled-scorecard-workspaces");
 		for (let ordinal = 1; ordinal <= 5; ordinal += 1) {
-			const source = await buildCommittedScorecard(repositoryRoot, manifestPath, codeCommit, ordinal, cursor); sources.push(source); cursor = source.createdCursor;
+			const source = await buildLocalScorecard(repositoryRoot, localDataRoot, sourceWorkspaceRoot, ordinal, cursor);
+			sources.push(source);
+			cursor = source.createdCursor;
 		}
-		const declarationPath = join(repositoryRoot, "longitudinal", "declaration.json"); await mkdir(dirname(declarationPath), { recursive: true });
-		const declaration = {
-			version: 2, id: "controlled-longitudinal-declaration",
-			scorecards: sources.map((source, index) => ({ ordinal: index + 1, phase: index < 3 ? "baseline" : "subject", scorecard_id: source.artifact.id, source_reference: { repository: "bc-news", commit_sha: source.commit, path: repositoryPath(repositoryRoot, source.path) } })),
-		};
-		await writeFile(declarationPath, json(declaration), "utf8"); await git(repositoryRoot, "add", repositoryPath(repositoryRoot, declarationPath)); await git(repositoryRoot, "commit", "-m", "Add controlled longitudinal declaration");
-		const input = await loadEvaluationLongitudinalInput(declarationPath, repositoryRoot);
+
+		const declarationPath = await writeLongitudinalDeclaration(
+			localDataRoot,
+			"controlled-longitudinal-declaration",
+			sources.map(({ path }) => path),
+			sources.map(({ artifact }) => artifact.id),
+			["baseline", "baseline", "baseline", "subject", "subject"],
+		);
+		const input = await loadEvaluationLongitudinalInput(declarationPath, localDataRoot);
 		const artifact = buildEvaluationLongitudinalScorecard(input, { id: "controlled-longitudinal-series", createdAt: new Date(cursor + 1).toISOString() });
 		const serialized = json(artifact);
+
 		for (const forbidden of ["source_payloads", "base64", "declaration_sha256", "scorecard_sha256", "scorecard_hashes"]) assertProof(!serialized.includes(forbidden), `Current longitudinal artifact retained forbidden byte ownership field ${forbidden}`);
-		assertProof(artifact.version === 2 && artifact.roles.length === 4 && artifact.roles.every(({ classification }) => classification.state === "within_baseline"), "Longitudinal V2 did not retain four unchanged role histories");
-		const manifestBytes = await readFile(manifestPath, "utf8"); await writeFile(manifestPath, `${manifestBytes.trimEnd()}\n\n`, "utf8");
-		await git(repositoryRoot, "add", repositoryPath(repositoryRoot, manifestPath)); await git(repositoryRoot, "commit", "-m", "Revise valid corpus source");
-		const changedCorpus = await loadEvaluationReferenceCorpus(manifestPath, repositoryRoot);
-		const baselineContext = projectLongitudinalRoleContext(sources[0]!.artifact, "main_story_write");
-		const changedScorecard = structuredClone(sources[0]!.artifact); const changedRole = changedScorecard.scorecards[0]!;
-		assertProof(changedRole.scorecard_context.state === "identified", "Controlled changed-corpus proof requires identified context");
-		changedRole.scorecard_context.projection.corpus_source_reference = changedCorpus.sourceReference;
-		const changedContext = projectLongitudinalRoleContext(changedScorecard, "main_story_write");
-		assertProof(baselineContext.state === "identified" && changedContext.state === "identified" && baselineContext.identity !== changedContext.identity, "Changed valid corpus source commit did not change stable context identity");
-		const contextDifferences = compareLongitudinalContexts([{ scorecardId: "baseline-context", ordinal: 1 }, { scorecardId: "changed-context", ordinal: 2 }], [baselineContext, changedContext]);
-		assertProof(contextDifferences.some(({ path }) => path === "projection.corpus_source_reference.commit_sha"), "Corpus source commit difference was not named explicitly");
-		const witness = artifact.roles[0].eligible_signal_witnesses[0]; assertProof(witness !== undefined, "Controlled classification proof lacks an eligible signal witness");
-		const quietWitness = { ...witness, observed: false }; const observedWitness = { ...witness, observed: true };
-		assertProof(classifyLongitudinalEvidence([baselineContext, changedContext], contextDifferences, 3, 2, [observedWitness]).state === "context_changed", "Changed corpus context did not outrank potential drift");
-		assertProof(classifyLongitudinalEvidence([baselineContext], [], 2, 1, [quietWitness]).state === "insufficient_evidence", "Insufficient longitudinal branch changed");
-		assertProof(classifyLongitudinalEvidence([baselineContext], [], 3, 2, [observedWitness]).state === "potential_drift", "Potential-drift longitudinal branch changed");
-		assertProof(classifyLongitudinalEvidence([baselineContext], [], 3, 2, [quietWitness]).state === "within_baseline", "Within-baseline longitudinal branch changed");
-		const results = join(root, "results"); await mkdir(results);
-		await createEvaluationLongitudinalScorecardArtifact(join(results, `${artifact.id}.json`), artifact, repositoryRoot);
-		assertProof((await loadEvaluationLongitudinalScorecardArtifact(artifact.id, results, repositoryRoot)).id === artifact.id, "Stored longitudinal artifact did not reopen");
-		const cliResults = join(root, "cli-results");
-		const buildOutput = await invokeCli(["longitudinal", "build", "--input", repositoryPath(repositoryRoot, declarationPath), "--results-dir", cliResults], repositoryRoot, resolve(dirname(fileURLToPath(import.meta.url)), ".."));
-		assertProof(buildOutput.includes("Longitudinal evaluation scorecard series v2") && buildOutput.includes('"state": "outdated"'), "Longitudinal CLI build omitted V2 freshness evidence");
-		await git(repositoryRoot, "checkout", "main");
-		assertProof((await loadEvaluationLongitudinalScorecardArtifact(artifact.id, results, repositoryRoot)).id === artifact.id, "Historical longitudinal evidence did not reopen after checkout moved");
-		await writeFile(join(repositoryRoot, "unrelated.txt"), "new checkout state\n", "utf8"); await git(repositoryRoot, "add", "unrelated.txt"); await git(repositoryRoot, "commit", "-m", "Advance checkout independently");
+		assertProof(artifact.version === 3 && artifact.roles.length === 4, "Longitudinal V3 did not retain four role histories");
+		assertProof(artifact.roles.every((role) => role.classification.state === "context_changed"), "Controlled longitudinal V3 did not detect distinct evaluated-code contexts");
+		assertProof(artifact.roles.every((role) => role.context_differences.some(({ path }) => path.includes("code_provenance"))), "Controlled longitudinal V3 omitted evaluated-code provenance differences");
+		assertProof(artifact.roles.every(({ stable_contexts }) => stable_contexts.every((context) => context.state === "identified" ? Array.isArray(context.projection.ordered_gateway_requests) : true)), "Gateway provenance did not survive into stable longitudinal contexts");
+
+		const resultsDirectory = join(localDataRoot, "longitudinal-results");
+		await mkdir(resultsDirectory, { recursive: true });
+		await createEvaluationLongitudinalScorecardArtifact(join(resultsDirectory, `${artifact.id}.json`), artifact, { repositoryRoot, localDataRoot });
+		const saved = await loadEvaluationLongitudinalScorecardArtifact(artifact.id, resultsDirectory, { repositoryRoot, localDataRoot });
+		assertProof(saved.version === 3 && saved.id === artifact.id, "Stored longitudinal artifact did not reopen");
+
 		const freshness = await evaluationLongitudinalFreshness(artifact, repositoryRoot);
-		assertProof(freshness.length === 5 && freshness.every(({ code }) => code.state === "outdated"), "Longitudinal source freshness did not report outdated without rejection");
+		assertProof(freshness.length === 5 && freshness.every(({ scorecard_id, code }) => {
+			const source = artifact.scorecard_references.find((reference) => reference.scorecard_id === scorecard_id);
+			return source !== undefined
+				&& code.evaluated_commit_sha === source.evaluated_code_commit_sha
+				&& /^[0-9a-f]{40}$/u.test(code.checkout_commit_sha);
+		}), "Longitudinal code freshness did not stay separate from local-data provenance");
 		const report = formatEvaluationLongitudinalScorecardReport(artifact, freshness);
-		assertProof(report.includes('"state": "outdated"') && report.match(/Longitudinal role:/gu)?.length === 4, "Longitudinal report omitted freshness or role history");
-		const resolvedCliName = (await readdir(cliResults)).find((name) => name.endsWith(".json")); assertProof(resolvedCliName !== undefined, "Longitudinal CLI did not create an external artifact");
-		const cliArtifact = JSON.parse(await readFile(join(cliResults, resolvedCliName), "utf8")) as { id: string };
-		const showOutput = await invokeCli(["longitudinal", "show", cliArtifact.id, "--results-dir", cliResults], repositoryRoot, resolve(dirname(fileURLToPath(import.meta.url)), ".."));
-		assertProof(showOutput.includes('"state": "outdated"') && showOutput.includes("Longitudinal evaluation scorecard series v2"), "Longitudinal CLI show did not render outdated evidence after checkout advanced");
-		const path = join(results, `${artifact.id}.json`); const tampered = JSON.parse(await readFile(path, "utf8")) as JsonObject;
-		(((tampered.roles as JsonObject[])[0]!.phase_count_summaries as JsonObject).baseline as JsonObject).declared_trial_count = 999;
-		await writeFile(path, json(tampered), "utf8"); let rejected = false;
-		try { await loadEvaluationLongitudinalScorecardArtifact(artifact.id, results, repositoryRoot); } catch { rejected = true; }
-		assertProof(rejected, "Derived longitudinal tampering was accepted");
+		assertProof(report.includes("Source local data: longitudinal/controlled-longitudinal-declaration.json") && report.includes('"evaluated_commit_sha"'), "Longitudinal report did not render local-data provenance distinctly from code freshness");
+
+		await cp(localDataRoot, relocatedLocalDataRoot, { recursive: true });
+		const relocated = await loadEvaluationLongitudinalScorecardArtifact(artifact.id, join(relocatedLocalDataRoot, "longitudinal-results"), { repositoryRoot, localDataRoot: relocatedLocalDataRoot });
+		assertProof(relocated.id === artifact.id, "Relocated local-data workspace did not reopen longitudinal evidence");
+
+		const declarationReference = await localSourceReferenceAtPath(localDataRoot, declarationPath);
+		await expectReject("Longitudinal declaration hash mismatch was accepted", async () => {
+			await loadEvaluationLongitudinalInputAtReference(localDataRoot, { ...declarationReference, sha256: "f".repeat(64) });
+		});
+
+		const missingPath = sources[0]!.path;
+		const missingBackup = `${missingPath}.bak`;
+		await rename(missingPath, missingBackup);
+		await expectReject("Missing local longitudinal scorecard was accepted", async () => {
+			await loadEvaluationLongitudinalInput(declarationPath, localDataRoot);
+		});
+		await rename(missingBackup, missingPath);
+
+		const traversalPath = join(localDataRoot, "longitudinal", "invalid-traversal.json");
+		const traversalBase = parseLongitudinalDeclaration(await readFile(declarationPath, "utf8"), declarationPath);
+		const traversalDeclaration: EvaluationLongitudinalDeclaration = {
+			...traversalBase,
+			id: "invalid-traversal",
+			scorecards: traversalBase.scorecards.map((scorecard, index) => index === 0
+				? { ...scorecard, source_reference: { path: "../escape.json", sha256: "a".repeat(64) } }
+				: scorecard),
+		};
+		await writeFile(traversalPath, json(traversalDeclaration), "utf8");
+		await expectReject("Traversal local source was accepted", async () => {
+			await loadEvaluationLongitudinalInput(traversalPath, localDataRoot);
+		});
+
+		const outsidePath = join(root, "outside-scorecard.json");
+		await writeFile(outsidePath, await readFile(sources[1]!.path, "utf8"), "utf8");
+		const symlinkRelativePath = "escape/symlink-scorecard.json";
+		const symlinkSha256 = sha256(await readFile(outsidePath));
+		await mkdir(dirname(join(localDataRoot, symlinkRelativePath)), { recursive: true });
+		await symlink(outsidePath, join(localDataRoot, symlinkRelativePath));
+		const symlinkDeclarationPath = join(localDataRoot, "longitudinal", "invalid-symlink.json");
+		const symlinkBase = parseLongitudinalDeclaration(await readFile(declarationPath, "utf8"), declarationPath);
+		const symlinkDeclaration: EvaluationLongitudinalDeclaration = {
+			...symlinkBase,
+			id: "invalid-symlink",
+			scorecards: symlinkBase.scorecards.map((scorecard, index) => index === 0
+				? { ...scorecard, source_reference: { path: symlinkRelativePath, sha256: symlinkSha256 } }
+				: scorecard),
+		};
+		await writeFile(symlinkDeclarationPath, json(symlinkDeclaration), "utf8");
+		await expectReject("Symlink escape local source was accepted", async () => {
+			await loadEvaluationLongitudinalInput(symlinkDeclarationPath, localDataRoot);
+		});
+
+		const tamperedPath = join(resultsDirectory, `${artifact.id}.json`);
+		const storedArtifact = parseLongitudinalArtifact(await readFile(tamperedPath, "utf8"), tamperedPath);
+		const [firstRole, secondRole, thirdRole, fourthRole] = storedArtifact.roles;
+		const tampered: EvaluationLongitudinalScorecardArtifact = {
+			...storedArtifact,
+			roles: [
+				{
+					...firstRole,
+					phase_count_summaries: {
+						...firstRole.phase_count_summaries,
+						baseline: { ...firstRole.phase_count_summaries.baseline, declared_trial_count: 999 },
+					},
+				},
+				secondRole,
+				thirdRole,
+				fourthRole,
+			],
+		};
+		await writeFile(tamperedPath, json(tampered), "utf8");
+		await expectReject("Derived longitudinal tampering was accepted", async () => {
+			await loadEvaluationLongitudinalScorecardArtifact(artifact.id, resultsDirectory, { repositoryRoot, localDataRoot });
+		});
+		await writeFile(tamperedPath, json(artifact), "utf8");
+
+		const phaseViolationPath = await writeLongitudinalDeclaration(
+			localDataRoot,
+			"invalid-phase-order",
+			sources.map(({ path }) => path),
+			sources.map(({ artifact }) => artifact.id),
+			["baseline", "subject", "baseline", "subject", "subject"],
+		);
+		await expectReject("Longitudinal phase partition violation was accepted", async () => {
+			await loadEvaluationLongitudinalInput(phaseViolationPath, localDataRoot);
+		});
+
+		const chronologyViolationPath = await writeLongitudinalDeclaration(
+			localDataRoot,
+			"invalid-chronology",
+			[sources[0]!.path, sources[2]!.path, sources[1]!.path, sources[3]!.path, sources[4]!.path],
+			[sources[0]!.artifact.id, sources[2]!.artifact.id, sources[1]!.artifact.id, sources[3]!.artifact.id, sources[4]!.artifact.id],
+			["baseline", "baseline", "baseline", "subject", "subject"],
+		);
+		await expectReject("Longitudinal chronology violation was accepted", async () => {
+			await loadEvaluationLongitudinalInput(chronologyViolationPath, localDataRoot);
+		});
+
+		const duplicateArtifact = buildEvaluationScorecard(
+			await loadEvaluationScorecardInput(sources[0]!.sourceDeclarationPath, localDataRoot),
+			{ id: "controlled-scorecard-duplicate-runs", createdAt: new Date(cursor + 100).toISOString() },
+		);
+		const duplicatePath = join(localDataRoot, "scorecards", `${duplicateArtifact.id}.json`);
+		await createEvaluationScorecardArtifact(duplicatePath, duplicateArtifact, { repositoryRoot, localDataRoot });
+		const duplicateRunsPath = await writeLongitudinalDeclaration(
+			localDataRoot,
+			"invalid-duplicate-runs",
+			[sources[0]!.path, duplicatePath, sources[2]!.path, sources[3]!.path, sources[4]!.path],
+			[sources[0]!.artifact.id, duplicateArtifact.id, sources[2]!.artifact.id, sources[3]!.artifact.id, sources[4]!.artifact.id],
+			["baseline", "baseline", "baseline", "subject", "subject"],
+		);
+		await expectReject("Pairwise-disjoint Benchmark Run ids violation was accepted", async () => {
+			await loadEvaluationLongitudinalInput(duplicateRunsPath, localDataRoot);
+		});
+
+		const loadedWithoutContexts: Omit<LoadedEvaluationLongitudinalInput, "stableRoleContexts"> = {
+			localDataRoot: input.localDataRoot,
+			sourceReference: input.sourceReference,
+			declarationPath: input.declarationPath,
+			declarationBytes: input.declarationBytes,
+			declaration: input.declaration,
+			scorecards: input.scorecards,
+		};
+		const validated = validateLoadedEvaluationLongitudinalInput(loadedWithoutContexts);
+		assertProof(validated.scorecards.length === 5, "Validated longitudinal input changed its roster");
+
 		return `${report}\nEVALUATION LONGITUDINAL SCORECARDS VERIFIED`;
 	} finally { if (cleanup) await rm(root, { recursive: true, force: true }); }
 }

@@ -4,23 +4,50 @@ import { basename, dirname, join } from "node:path";
 import { isDeepStrictEqual } from "node:util";
 import { EvaluationIdSchema } from "./evaluation-artifact-schemas";
 import { buildEvaluationLongitudinalScorecard } from "./evaluation-longitudinal-scorecard-builder";
+import { buildEvaluationLongitudinalScorecardV2 } from "./evaluation-longitudinal-scorecard-builder-v2";
 import { loadEvaluationLongitudinalInputAtReference } from "./evaluation-longitudinal-scorecard-input";
+import { loadEvaluationLongitudinalInputAtReferenceV2 } from "./evaluation-longitudinal-scorecard-input-v2";
 import {
+	EvaluationLongitudinalDeclarationV1Schema,
 	EvaluationLongitudinalError,
 	EvaluationLongitudinalScorecardArtifactSchema,
 	type AnyEvaluationLongitudinalScorecardArtifact,
 	type EvaluationLongitudinalScorecardArtifact,
 } from "./evaluation-longitudinal-scorecard";
 import {
-	EvaluationLongitudinalDeclarationV1Schema,
+	EvaluationLongitudinalScorecardArtifactV2Schema,
+	type EvaluationLongitudinalScorecardArtifactV2,
+} from "./evaluation-longitudinal-scorecard-v2";
+import {
 	EvaluationLongitudinalScorecardArtifactV1Schema,
 	type EvaluationLongitudinalScorecardArtifactV1,
 } from "./evaluation-longitudinal-scorecard-v1";
 import { reconstructEvaluationScorecardArtifactV1 } from "./evaluation-scorecard-store";
 import { evaluationFreshness, type EvaluationFreshness } from "./evaluation-repository-reference";
 
+export interface EvaluationLongitudinalArtifactRoots {
+	readonly repositoryRoot?: string;
+	readonly localDataRoot?: string;
+}
+
+type RootsInput = string | EvaluationLongitudinalArtifactRoots | undefined;
+
 function fail(code: EvaluationLongitudinalError["code"], path: string, message: string, cause?: unknown): never {
 	throw new EvaluationLongitudinalError(code, path, message, cause === undefined ? undefined : { cause });
+}
+
+function normalizeRoots(input: RootsInput): EvaluationLongitudinalArtifactRoots {
+	return typeof input === "string" ? { repositoryRoot: input } : input ?? {};
+}
+
+function requireRepositoryRoot(roots: EvaluationLongitudinalArtifactRoots, path: string, code: "series_invalid" | "series_create_rejected"): string {
+	if (roots.repositoryRoot === undefined) fail(code, path, "Repository root is required for repository-addressed longitudinal reconstruction");
+	return roots.repositoryRoot;
+}
+
+function requireLocalDataRoot(roots: EvaluationLongitudinalArtifactRoots, path: string, code: "series_invalid" | "series_create_rejected"): string {
+	if (roots.localDataRoot === undefined) fail(code, path, "Local-data root is required for local longitudinal reconstruction");
+	return roots.localDataRoot;
 }
 
 function hash(bytes: Uint8Array): string { return createHash("sha256").update(bytes).digest("hex"); }
@@ -56,38 +83,57 @@ export function reconstructEvaluationLongitudinalScorecardArtifactV1(candidate: 
 	return artifact;
 }
 
-async function recompute(candidate: EvaluationLongitudinalScorecardArtifact, repositoryRoot: string, sourcePath: string): Promise<EvaluationLongitudinalScorecardArtifact> {
+async function recomputeV2(candidate: EvaluationLongitudinalScorecardArtifactV2, repositoryRoot: string, sourcePath: string): Promise<EvaluationLongitudinalScorecardArtifactV2> {
 	let input;
-	try { input = await loadEvaluationLongitudinalInputAtReference(repositoryRoot, candidate.source_reference); }
-	catch (cause) { return fail("series_artifact_tampered", sourcePath, "Recorded longitudinal evidence cannot be resolved", cause); }
+	try { input = await loadEvaluationLongitudinalInputAtReferenceV2(repositoryRoot, candidate.source_reference); }
+	catch (cause) { return fail("series_artifact_tampered", sourcePath, "Recorded repository longitudinal evidence cannot be resolved", cause); }
+	return buildEvaluationLongitudinalScorecardV2(input, { id: candidate.id, createdAt: candidate.created_at });
+}
+
+async function recomputeV3(candidate: EvaluationLongitudinalScorecardArtifact, localDataRoot: string, sourcePath: string): Promise<EvaluationLongitudinalScorecardArtifact> {
+	let input;
+	try { input = await loadEvaluationLongitudinalInputAtReference(localDataRoot, candidate.source_reference); }
+	catch (cause) { return fail("series_artifact_tampered", sourcePath, "Recorded local longitudinal evidence cannot be resolved", cause); }
 	return buildEvaluationLongitudinalScorecard(input, { id: candidate.id, createdAt: candidate.created_at });
 }
 
-async function validated(candidate: unknown, path: string, repositoryRoot: string, code: "series_invalid" | "series_create_rejected"): Promise<EvaluationLongitudinalScorecardArtifact> {
-	const result = EvaluationLongitudinalScorecardArtifactSchema.safeParse(candidate);
-	if (!result.success) fail(code, path, `Longitudinal artifact contract rejected: ${result.error.message}`, result.error);
-	const rebuilt = await recompute(result.data, repositoryRoot, path);
-	if (!isDeepStrictEqual(rebuilt, result.data)) fail(code === "series_create_rejected" ? code : "series_artifact_tampered", path, "Longitudinal derived evidence does not reconstruct exactly");
+async function validatedV2(candidate: unknown, path: string, repositoryRoot: string, code: "series_invalid" | "series_create_rejected"): Promise<EvaluationLongitudinalScorecardArtifactV2> {
+	const result = EvaluationLongitudinalScorecardArtifactV2Schema.safeParse(candidate);
+	if (!result.success) fail(code, path, `Repository-addressed longitudinal artifact contract rejected: ${result.error.message}`, result.error);
+	const rebuilt = await recomputeV2(result.data, repositoryRoot, path);
+	if (!isDeepStrictEqual(rebuilt, result.data)) fail(code === "series_create_rejected" ? code : "series_artifact_tampered", path, "Repository-addressed longitudinal derived evidence does not reconstruct exactly");
 	return result.data;
 }
 
-export async function createEvaluationLongitudinalScorecardArtifact(path: string, artifact: EvaluationLongitudinalScorecardArtifact, repositoryRoot: string): Promise<EvaluationLongitudinalScorecardArtifact>;
-export async function createEvaluationLongitudinalScorecardArtifact(path: string, artifact: EvaluationLongitudinalScorecardArtifactV1, repositoryRoot?: string): Promise<EvaluationLongitudinalScorecardArtifactV1>;
-export async function createEvaluationLongitudinalScorecardArtifact(path: string, artifact: AnyEvaluationLongitudinalScorecardArtifact, repositoryRoot?: string): Promise<AnyEvaluationLongitudinalScorecardArtifact> {
+async function validatedV3(candidate: unknown, path: string, localDataRoot: string, code: "series_invalid" | "series_create_rejected"): Promise<EvaluationLongitudinalScorecardArtifact> {
+	const result = EvaluationLongitudinalScorecardArtifactSchema.safeParse(candidate);
+	if (!result.success) fail(code, path, `Local-data longitudinal artifact contract rejected: ${result.error.message}`, result.error);
+	const rebuilt = await recomputeV3(result.data, localDataRoot, path);
+	if (!isDeepStrictEqual(rebuilt, result.data)) fail(code === "series_create_rejected" ? code : "series_artifact_tampered", path, "Local-data longitudinal derived evidence does not reconstruct exactly");
+	return result.data;
+}
+
+export async function createEvaluationLongitudinalScorecardArtifact(path: string, artifact: EvaluationLongitudinalScorecardArtifact, roots: EvaluationLongitudinalArtifactRoots): Promise<EvaluationLongitudinalScorecardArtifact>;
+export async function createEvaluationLongitudinalScorecardArtifact(path: string, artifact: EvaluationLongitudinalScorecardArtifactV2, roots: EvaluationLongitudinalArtifactRoots | string): Promise<EvaluationLongitudinalScorecardArtifactV2>;
+export async function createEvaluationLongitudinalScorecardArtifact(path: string, artifact: EvaluationLongitudinalScorecardArtifactV1, roots?: EvaluationLongitudinalArtifactRoots | string): Promise<EvaluationLongitudinalScorecardArtifactV1>;
+export async function createEvaluationLongitudinalScorecardArtifact(path: string, artifact: AnyEvaluationLongitudinalScorecardArtifact, rootsInput?: RootsInput): Promise<AnyEvaluationLongitudinalScorecardArtifact> {
 	if (basename(path) !== `${artifact.id}.json`) fail("series_create_rejected", path, "Longitudinal artifact path must use its id as filename");
+	const roots = normalizeRoots(rootsInput);
 	const candidate = artifact.version === 1
 		? reconstructEvaluationLongitudinalScorecardArtifactV1(artifact, path)
-		: await validated(artifact, path, repositoryRoot ?? fail("series_create_rejected", path, "Repository root is required for current longitudinal reconstruction"), "series_create_rejected");
+		: artifact.version === 2
+			? await validatedV2(artifact, path, requireRepositoryRoot(roots, path, "series_create_rejected"), "series_create_rejected")
+			: await validatedV3(artifact, path, requireLocalDataRoot(roots, path, "series_create_rejected"), "series_create_rejected");
 	try { await writeFile(path, `${JSON.stringify(candidate, null, 2)}\n`, { encoding: "utf8", flag: "wx" }); }
 	catch (cause) { return fail("series_create_rejected", path, "Could not exclusively create longitudinal artifact", cause); }
-	try { return await loadEvaluationLongitudinalScorecardArtifact(candidate.id, dirname(path), repositoryRoot); }
+	try { return await loadEvaluationLongitudinalScorecardArtifact(candidate.id, dirname(path), roots); }
 	catch (cause) {
 		try { await unlink(path); } catch { /* primary create failure remains authoritative */ }
 		return fail("series_create_rejected", path, "Longitudinal read-after-write validation failed", cause);
 	}
 }
 
-export async function loadEvaluationLongitudinalScorecardArtifact(id: string, directory: string, repositoryRoot?: string): Promise<AnyEvaluationLongitudinalScorecardArtifact> {
+export async function loadEvaluationLongitudinalScorecardArtifact(id: string, directory: string, rootsInput?: RootsInput): Promise<AnyEvaluationLongitudinalScorecardArtifact> {
 	const idResult = EvaluationIdSchema.safeParse(id);
 	if (!idResult.success) fail("invalid_series_id", directory, `Invalid longitudinal series id: ${id}`, idResult.error);
 	const path = join(directory, `${idResult.data}.json`); let raw: Uint8Array;
@@ -96,9 +142,12 @@ export async function loadEvaluationLongitudinalScorecardArtifact(id: string, di
 	let candidate: unknown;
 	try { candidate = JSON.parse(Buffer.from(raw).toString("utf8")) as unknown; }
 	catch (cause) { return fail("series_malformed", path, "Malformed longitudinal artifact JSON", cause); }
+	const roots = normalizeRoots(rootsInput);
 	const artifact = typeof candidate === "object" && candidate !== null && "version" in candidate && candidate.version === 1
 		? reconstructEvaluationLongitudinalScorecardArtifactV1(candidate, path)
-		: await validated(candidate, path, repositoryRoot ?? fail("series_invalid", path, "Repository root is required for current longitudinal reconstruction"), "series_invalid");
+		: typeof candidate === "object" && candidate !== null && "version" in candidate && candidate.version === 2
+			? await validatedV2(candidate, path, requireRepositoryRoot(roots, path, "series_invalid"), "series_invalid")
+			: await validatedV3(candidate, path, requireLocalDataRoot(roots, path, "series_invalid"), "series_invalid");
 	if (artifact.id !== idResult.data) fail("series_filename_mismatch", path, "Longitudinal artifact filename identity mismatch");
 	return artifact;
 }

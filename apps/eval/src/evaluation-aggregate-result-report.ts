@@ -1,4 +1,4 @@
-import type { EvaluationAggregateResult } from "./evaluation-aggregate-result";
+import type { AnyEvaluationAggregateResult, EvaluationAggregateResult } from "./evaluation-aggregate-result";
 
 function formatSubject(subject: EvaluationAggregateResult["roles"][number]["subject"]): string {
 	const fields = [`adapter=${subject.adapter}`];
@@ -26,18 +26,19 @@ function formatQualitative(qualitative: EvaluationAggregateResult["roles"][numbe
 	return `${qualitative.criterion}: samples=${String(qualitative.sample_count)} | meets=${String(qualitative.counts.meets)} partly_meets=${String(qualitative.counts.partly_meets)} does_not_meet=${String(qualitative.counts.does_not_meet)} uncertain=${String(qualitative.counts.uncertain)}`;
 }
 
-function cohortLine(aggregate: EvaluationAggregateResult): string {
+function cohortLine(aggregate: AnyEvaluationAggregateResult): string {
 	const fields = [
 		`id=${aggregate.cohort.id}`,
 		`fixtures=${String(aggregate.cohort.fixture_count)}`,
 		`repetitions=${String(aggregate.cohort.repetition_count)}`,
 	];
+	if (aggregate.version === 2) fields.push(`evidence_identity_sha256=${aggregate.cohort.evidence_identity_sha256}`);
 	if (aggregate.cohort.raw_message_count !== undefined) fields.push(`raw_messages=${String(aggregate.cohort.raw_message_count)}`);
 	if (aggregate.cohort.prepared_message_count !== undefined) fields.push(`prepared_messages=${String(aggregate.cohort.prepared_message_count)}`);
 	return fields.join(" | ");
 }
 
-export function formatEvaluationAggregateResultReport(aggregate: EvaluationAggregateResult): string {
+export function formatEvaluationAggregateResultReport(aggregate: AnyEvaluationAggregateResult): string {
 	return [
 		`Evaluation aggregate result v${String(aggregate.version)}: ${aggregate.id}`,
 		`Created at: ${aggregate.created_at}`,

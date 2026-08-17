@@ -1,5 +1,5 @@
 import { allDifferences } from "./run-difference";
-import type { EvaluationAggregateResult } from "./evaluation-aggregate-result";
+import type { AnyEvaluationAggregateResult } from "./evaluation-aggregate-result";
 
 export interface EvaluationAggregateResultComparison {
 	readonly leftId: string;
@@ -7,13 +7,13 @@ export interface EvaluationAggregateResultComparison {
 	readonly differences: readonly string[];
 }
 
-function aggregateDifferences(left: EvaluationAggregateResult, right: EvaluationAggregateResult): readonly string[] {
+function aggregateDifferences(left: AnyEvaluationAggregateResult, right: AnyEvaluationAggregateResult): readonly string[] {
 	return allDifferences(left, right).map((path) => path.replace(/^run/u, "aggregate"));
 }
 
 export function compareEvaluationAggregateResults(
-	left: EvaluationAggregateResult,
-	right: EvaluationAggregateResult,
+	left: AnyEvaluationAggregateResult,
+	right: AnyEvaluationAggregateResult,
 ): EvaluationAggregateResultComparison {
 	return {
 		leftId: left.id,

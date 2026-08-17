@@ -2,13 +2,16 @@ import { createHash } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
 import { PRODUCTION_MODEL_STEPS, type ProductionModelStep } from "@bc-news/generation-core";
 import { canonical } from "./evaluation-artifact-schemas";
-import { validateLoadedEvaluationLongitudinalInput, type LoadedEvaluationLongitudinalInput } from "./evaluation-longitudinal-scorecard-input";
+import { validateLoadedEvaluationLongitudinalInputV2, type LoadedEvaluationLongitudinalInputV2 } from "./evaluation-longitudinal-scorecard-input-v2";
+import { EvaluationLongitudinalError } from "./evaluation-longitudinal-scorecard";
 import {
-	EvaluationLongitudinalError, EvaluationLongitudinalRoleHistorySchema, EvaluationLongitudinalScorecardArtifactSchema,
-	type EvaluationLongitudinalRoleHistory, type EvaluationLongitudinalScorecardArtifact,
-	type StableLongitudinalContext,
-} from "./evaluation-longitudinal-scorecard";
-import type { EvaluationRoleScorecard, EvaluationScorecardArtifact } from "./evaluation-scorecard";
+	EvaluationLongitudinalRoleHistoryV2Schema,
+	EvaluationLongitudinalScorecardArtifactV2Schema,
+	type EvaluationLongitudinalRoleHistoryV2,
+	type EvaluationLongitudinalScorecardArtifactV2,
+	type StableLongitudinalContextV2,
+} from "./evaluation-longitudinal-scorecard-v2";
+import type { EvaluationRoleScorecard, EvaluationScorecardArtifact } from "./evaluation-scorecard-v2";
 
 const COUNT_NAMES = ["declared_trial_count", "step_reached_trial_count", "step_not_reached_trial_count", "invocation_attempt_count", "initial_attempt_count", "retry_attempt_count", "transport_failed_attempt_count", "transport_succeeded_attempt_count", "parse_succeeded_invocation_count", "parse_rejected_invocation_count", "annotated_output_count", "reviewed_output_count"] as const;
 const RATE_NAMES = ["schema_reliability", "copyedit_preservation", "claim_grounding", "required_attribution", "event_coverage", "announcement_relevance"] as const;
@@ -19,7 +22,7 @@ const Z95 = 1.959963984540054;
 function fail(code: EvaluationLongitudinalError["code"], path: string, message: string): never { throw new EvaluationLongitudinalError(code, path, message); }
 function hash(bytes: Uint8Array): string { return createHash("sha256").update(bytes).digest("hex"); }
 function identity(value: unknown): string { return `longitudinal-context-${hash(Buffer.from(JSON.stringify(canonical(value))))}`; }
-function sourceIdentity(source: LoadedEvaluationLongitudinalInput["scorecards"][number]) {
+function sourceIdentity(source: LoadedEvaluationLongitudinalInputV2["scorecards"][number]) {
 	return {
 		ordinal: source.descriptor.ordinal, phase: source.descriptor.phase, scorecard_id: source.artifact.id,
 		source_reference: source.descriptor.source_reference, created_at: source.artifact.created_at,
@@ -36,32 +39,30 @@ function retainedRetryLimit(scorecard: EvaluationScorecardArtifact): number {
 	return [...limits][0]!;
 }
 
-export function projectLongitudinalRoleContext(scorecard: EvaluationScorecardArtifact, productionStep: ProductionModelStep): StableLongitudinalContext {
+export function projectLongitudinalRoleContextV2(scorecard: EvaluationScorecardArtifact, productionStep: ProductionModelStep): StableLongitudinalContextV2 {
 	const role = scorecard.scorecards.find(({ production_step }) => production_step === productionStep);
 	if (role === undefined) fail("longitudinal_evidence_set_mismatch", scorecard.id, `Missing role ${productionStep}`);
 	if (role.scorecard_context.state === "unknown") return { state: "unknown", reason: "no_captured_invocation" };
-	const requestGroups = new Map<string, string>();
+	const groups = new Map<string, string>();
 	for (const request of role.scorecard_context.projection.request_hashes) {
-		const key = `${request.run_id}\0${request.trial_id}`; const previous = requestGroups.get(key);
+		const key = `${request.run_id}\0${request.trial_id}`; const previous = groups.get(key);
 		if (previous !== undefined && previous !== request.request_sha256) fail("cohort_projection_invalid", scorecard.id, `Retry request hashes differ for ${productionStep}`);
-		if (previous === undefined) requestGroups.set(key, request.request_sha256);
+		if (previous === undefined) groups.set(key, request.request_sha256);
 	}
-	const gatewayRequests = role.scorecard_context.projection.gateway_request_hashes ?? [];
 	const source = role.scorecard_context.projection;
 	const projection = {
-		scorecard_version: 3 as const, corpus_manifest_id: source.corpus_manifest_id,
+		scorecard_version: 2 as const, corpus_manifest_id: source.corpus_manifest_id,
 		corpus_source_reference: source.corpus_source_reference,
 		ordered_fixture_prepared_identities: source.fixture_prepared_identities,
 		code_provenance: source.code_provenance, ordered_output_contract_provenance: source.output_contract_provenance,
 		adapter: source.adapter, declared_transport_retry_limit: retainedRetryLimit(scorecard),
-		ordered_requests: [...requestGroups.values()].map((request_sha256, index) => ({ observation_ordinal: index + 1, request_sha256 })),
-		ordered_gateway_requests: gatewayRequests.map((request, index) => ({ observation_ordinal: index + 1, ...request })),
+		ordered_requests: [...groups.values()].map((request_sha256, index) => ({ observation_ordinal: index + 1, request_sha256 })),
 		normalized_execution_context: source.execution_context,
 	};
 	return { state: "identified", identity: identity(projection), projection };
 }
 
-function roleOf(source: LoadedEvaluationLongitudinalInput["scorecards"][number], step: ProductionModelStep): EvaluationRoleScorecard {
+function roleOf(source: LoadedEvaluationLongitudinalInputV2["scorecards"][number], step: ProductionModelStep): EvaluationRoleScorecard {
 	const role = source.artifact.scorecards.find(({ production_step }) => production_step === step);
 	if (role === undefined) return fail("longitudinal_evidence_set_mismatch", source.artifact.id, `Missing role ${step}`);
 	return role;
@@ -89,9 +90,9 @@ function differingPaths(left: unknown, right: unknown, path = "projection", segm
 	return [{ path, segments }];
 }
 
-export function compareLongitudinalContexts(
+export function compareLongitudinalContextsV2(
 	sources: readonly { readonly scorecardId: string; readonly ordinal: number }[],
-	contexts: readonly StableLongitudinalContext[],
+	contexts: readonly StableLongitudinalContextV2[],
 ) {
 	const referenceIndex = contexts.findIndex(({ state }) => state === "identified");
 	if (referenceIndex < 0) return [];
@@ -106,13 +107,13 @@ export function compareLongitudinalContexts(
 	}).sort((left, right) => left.compared_ordinal - right.compared_ordinal || left.path.localeCompare(right.path));
 }
 
-export function classifyLongitudinalEvidence(
-	contexts: readonly StableLongitudinalContext[],
-	differences: ReturnType<typeof compareLongitudinalContexts>,
+export function classifyLongitudinalEvidenceV2(
+	contexts: readonly StableLongitudinalContextV2[],
+	differences: ReturnType<typeof compareLongitudinalContextsV2>,
 	baselinePackCount: number,
 	subjectPackCount: number,
-	witnesses: EvaluationLongitudinalRoleHistory["eligible_signal_witnesses"],
-): EvaluationLongitudinalRoleHistory["classification"] {
+	witnesses: EvaluationLongitudinalRoleHistoryV2["eligible_signal_witnesses"],
+): EvaluationLongitudinalRoleHistoryV2["classification"] {
 	const contextIds = unique(contexts.flatMap((context) => context.state === "identified" ? [context.identity] : []));
 	const insufficient = unique([...(contexts.some(({ state }) => state === "unknown") ? ["unidentified_context" as const] : []), ...(baselinePackCount < 3 ? ["baseline_below_minimum" as const] : []), ...(subjectPackCount < 2 ? ["subject_below_minimum" as const] : []), ...(witnesses.length === 0 ? ["no_eligible_quantitative_measurement" as const] : [])]);
 	return contextIds.length >= 2
@@ -140,7 +141,7 @@ function qualitativeSource(identityValue: ReturnType<typeof sourceIdentity>, val
 	return { ...identityValue, sample_count: value.sample_count, counts: value.counts, evidence: value.evidence };
 }
 
-function buildRole(input: LoadedEvaluationLongitudinalInput, step: ProductionModelStep): EvaluationLongitudinalRoleHistory {
+function buildRole(input: LoadedEvaluationLongitudinalInputV2, step: ProductionModelStep): EvaluationLongitudinalRoleHistoryV2 {
 	const sources = input.scorecards; const roles = sources.map((source) => roleOf(source, step)); const contexts = input.stableRoleContexts.map((entry) => entry[step]);
 	const identities = sources.map(sourceIdentity); const baselineIndexes = sources.flatMap((source, index) => source.descriptor.phase === "baseline" ? [index] : []); const subjectIndexes = sources.flatMap((source, index) => source.descriptor.phase === "subject" ? [index] : []);
 	const phaseTotals = (indexes: readonly number[]) => Object.fromEntries(COUNT_NAMES.map((name) => [name, indexes.reduce((sum, index) => sum + roles[index]!.sample_counts[name]!, 0)]));
@@ -169,20 +170,20 @@ function buildRole(input: LoadedEvaluationLongitudinalInput, step: ProductionMod
 		return { metric, unit: first.unit, baseline, subject, eligibility: eligible ? { state: "eligible" as const } : { state: "ineligible" as const, reasons }, signal_observed: signal, method: "strict_observed_range_disjointness" as const };
 	});
 	const qualitativeHistories = CRITERIA.map((criterion, criterionIndex) => ({ criterion, unit: "review_assessment" as const, sample_unit: "codex_reviewed_output" as const, baseline: baselineIndexes.map((index) => qualitativeSource(identities[index]!, roles[index]!.qualitative[criterionIndex]!)), subject: subjectIndexes.map((index) => qualitativeSource(identities[index]!, roles[index]!.qualitative[criterionIndex]!)) }));
-	const differences = compareLongitudinalContexts(sources.map((source) => ({ scorecardId: source.artifact.id, ordinal: source.descriptor.ordinal })), contexts);
+	const differences = compareLongitudinalContextsV2(sources.map((source) => ({ scorecardId: source.artifact.id, ordinal: source.descriptor.ordinal })), contexts);
 	const witnesses = [
 		...rateHistories.flatMap((history) => history.eligibility.state === "eligible" && history.baseline.pool.state === "measured" && history.subject.pool.state === "measured" ? [{ kind: "rate" as const, metric: history.metric, method: history.method, baseline_interval: { lower: history.baseline.pool.interval.lower, upper: history.baseline.pool.interval.upper }, subject_interval: { lower: history.subject.pool.interval.lower, upper: history.subject.pool.interval.upper }, observed: history.signal_observed }] : []),
 		...distributionHistories.flatMap((history) => history.eligibility.state === "eligible" && history.baseline.summary.state === "measured" && history.subject.summary.state === "measured" ? [{ kind: "distribution" as const, metric: history.metric, method: history.method, baseline_range: { min: history.baseline.summary.min, max: history.baseline.summary.max }, subject_range: { min: history.subject.summary.min, max: history.subject.summary.max }, observed: history.signal_observed }] : []),
 	];
-	const classification = classifyLongitudinalEvidence(contexts, differences, baselineIndexes.length, subjectIndexes.length, witnesses);
+	const classification = classifyLongitudinalEvidenceV2(contexts, differences, baselineIndexes.length, subjectIndexes.length, witnesses);
 	return { production_step: step, baseline_pack_count: baselineIndexes.length, subject_pack_count: subjectIndexes.length, sources: sources.map((source, index) => ({ ...identities[index]!, context: contexts[index]! })), stable_contexts: contexts, context_differences: differences, phase_count_summaries: { baseline: phaseTotals(baselineIndexes), subject: phaseTotals(subjectIndexes) }, count_histories: countHistories, rate_histories: rateHistories, distribution_histories: distributionHistories, qualitative_histories: qualitativeHistories, eligible_signal_witnesses: witnesses, classification };
 }
 
-export function buildEvaluationLongitudinalScorecard(input: LoadedEvaluationLongitudinalInput, options: { readonly id: string; readonly createdAt: string }): EvaluationLongitudinalScorecardArtifact {
-	input = validateLoadedEvaluationLongitudinalInput(input);
+export function buildEvaluationLongitudinalScorecardV2(input: LoadedEvaluationLongitudinalInputV2, options: { readonly id: string; readonly createdAt: string }): EvaluationLongitudinalScorecardArtifactV2 {
+	input = validateLoadedEvaluationLongitudinalInputV2(input);
 	if (Date.parse(options.createdAt) < Math.max(...input.scorecards.map(({ artifact }) => Date.parse(artifact.created_at)))) fail("longitudinal_chronology_mismatch", input.declarationPath, "Series creation cannot predate a source scorecard");
 	const candidate = {
-		version: 3 as const, id: options.id, created_at: options.createdAt,
+		version: 2 as const, id: options.id, created_at: options.createdAt,
 		policy: { minimum_baseline_scorecards: 3 as const, minimum_subject_scorecards: 2 as const, rate_interval: { confidence: 0.95 as const, method: "wilson_score" as const, z: Z95 }, rate_signal_method: "strict_wilson_interval_disjointness" as const, distribution_signal_method: "strict_observed_range_disjointness" as const, classifier_precedence: ["context_changed", "insufficient_evidence", "potential_drift", "within_baseline"] as const },
 		source_reference: input.sourceReference,
 		scorecard_references: input.scorecards.map(({ descriptor, artifact }) => {
@@ -193,10 +194,10 @@ export function buildEvaluationLongitudinalScorecard(input: LoadedEvaluationLong
 		roles: PRODUCTION_MODEL_STEPS.map((step) => buildRole(input, step)),
 	};
 	for (const role of candidate.roles) {
-		const roleResult = EvaluationLongitudinalRoleHistorySchema.safeParse(role);
+		const roleResult = EvaluationLongitudinalRoleHistoryV2Schema.safeParse(role);
 		if (!roleResult.success) fail("longitudinal_evidence_set_mismatch", input.declarationPath, `Built role history violated its contract: ${roleResult.error.message}`);
 	}
-	const result = EvaluationLongitudinalScorecardArtifactSchema.safeParse(candidate);
+	const result = EvaluationLongitudinalScorecardArtifactV2Schema.safeParse(candidate);
 	if (!result.success) fail("longitudinal_evidence_set_mismatch", input.declarationPath, `Built longitudinal scorecard violated its contract: ${result.error.message}`);
 	return result.data;
 }

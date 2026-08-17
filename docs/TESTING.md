@@ -29,11 +29,11 @@ outcome or silently substitutes for it.
 |---|---|---|---|
 | Deterministic tests | `pnpm test` | Isolated warranted invariants, reproduced defects, and high-risk state transitions | Test pass or hard test failure; never a retained model attempt |
 | Scratch model run | `scratch run` | One live four-step production pass saved only to an explicitly selected results directory | Development inspection artifact; never a Benchmark Run, scorecard source, baseline, or acceptance verdict |
-| Model evaluation | `benchmark run/list/show/summary/compare` | Strict versioned Benchmark Runs under `apps/eval/evaluation-results` | Retained model subject and harness outcomes with `evaluation:` observations; never a score or acceptance verdict |
+| Model evaluation | `benchmark run/list/show/summary/compare` | Strict versioned Benchmark Runs under `apps/eval/local-data/evaluation-results` by default | Retained model subject and harness outcomes with `evaluation:` observations; never a score or acceptance verdict |
 | Evaluation reference corpus | `corpus show --corpus <manifest-path>` and its direct verifier | Commit-addressed ordered synthetic fixtures and separate exact source-witness references | Auditable source truth and objective variation coverage; never a model result, score, or acceptance verdict |
-| Evaluation scorecards | `scorecard build/show` and `verify:evaluation-scorecards` | Commit-addressed V7 or Gateway V8 runs and corpus sources with Codex annotations and qualitative reviews | Four transparent role-specific measurements plus current/outdated checkout information; never an aggregate score, ranking, recommendation, or acceptance verdict |
-| Aggregate evaluation results | `aggregate export/show/compare` and `verify:evaluation-aggregate-results` | Strict whitelist-only aggregate JSON under `apps/eval/summaries/` by default | Descriptive role aggregates only: subject descriptor, counts, rates and intervals, aggregate distributions, and qualitative counts; never source or model-output evidence, a winner, a rank, a recommendation, acceptance, or production selection |
-| Longitudinal evaluation scorecards | `longitudinal build/show` and `verify:evaluation-longitudinal-scorecards` | Exact ordered scorecard audit packs, stable role cohorts, and baseline/subject histories | Four role-specific context, sufficiency, baseline-variation, or potential-drift observations; never a judge or product gate |
+| Evaluation scorecards | `scorecard build/show` and `verify:evaluation-scorecards` | Current local hash-addressed scorecards under `apps/eval/local-data/scorecards` by default, plus embedded V1 and Git-addressed V2 historical readers | Four transparent role-specific measurements plus current/outdated checkout information; never an aggregate score, ranking, recommendation, or acceptance verdict |
+| Aggregate evaluation results | `aggregate export/show/compare` and `verify:evaluation-aggregate-results` | Strict content-free aggregate JSON under `apps/eval/summaries/` by default, with `cohort.evidence_identity_sha256` bound to the source corpus identity | Descriptive role aggregates only: subject descriptor, counts, rates and intervals, aggregate distributions, and qualitative counts; never source or model-output evidence, a winner, a rank, a recommendation, acceptance, or production selection |
+| Longitudinal evaluation scorecards | `longitudinal build/show` and `verify:evaluation-longitudinal-scorecards` | Current local hash-addressed series under `apps/eval/local-data/longitudinal-scorecards` by default, plus embedded V1 and Git-addressed V2 historical readers | Four role-specific context, sufficiency, baseline-variation, or potential-drift observations; never a judge or product gate |
 | Fixture and context tooling | `fixture record-responses` and `context benchmark` | Four step-keyed recorded responses, or strict context results | Fixture-authoring or context-measurement tooling result; never acceptance or a walk |
 | Recorded-replay acceptance | `acceptance run/list/show/compare` and its direct verifier | Historical Run Files under `apps/eval/results` | `acceptance:` result over controlled replay; never a Benchmark Run outcome |
 | Composed skeleton walk | `pnpm walk` | The running local ingest, generation, persistence, API, status, and browser product | Walk-owned `walk:` observations followed by independent terminal `WALK PASS` |
@@ -154,7 +154,10 @@ all named evidence with `git show` and recomputes the artifact before reporting
 it. The corpus context uses the commit that last changed the closed corpus
 subtree, not a later scorecard-storage commit. Version 1 human evidence retains
 its frozen historical contract and remains readable through the public store
-and report path.
+and report path. Current declarations and explicit current results directories
+must stay contained under the ignored `apps/eval/local-data/` root, where V3
+artifacts use SHA-256-bound contained relative references instead of embedded
+raw bytes. Embedded V1 and Git-addressed V2 remain historical readers.
 
 The four production roles remain separate. Rates expose their exact numerator,
 denominator, denominator unit, sample count, comparable-context identity, and a
@@ -175,8 +178,8 @@ the Codex assessment that included material is worth reporting without requiring
 one target angle; and `voice` is adherence to the declared in-world,
 straightforward editorial voice.
 
-**Aggregate evaluation results** are exported only from a validated scorecard
-artifact via `aggregate export --input <scorecard-artifact-path> --cohort
+**Aggregate evaluation results** are exported only from a current validated
+local scorecard artifact via `aggregate export --input <scorecard-artifact-path> --cohort
 <cohort-id> [--results-dir <path>]`, where the mandatory `--cohort` value must
 exactly match the validated source scorecard corpus id. They are then
 reopened through `aggregate show <aggregate-id> [--results-dir <path>]` and
@@ -189,20 +192,22 @@ repository or filesystem paths, hashes, context identities, sample-level
 records, and qualitative rationales are excluded by contract. This surface
 remains evaluation-only and descriptive; it does not create a score, winner,
 rank, recommendation, acceptance gate, production decision, or walk result, and
-it is not part of acceptance or skeleton-walk evidence.
+it is not part of acceptance or skeleton-walk evidence. Aggregate V2 remains
+content-free and binds `cohort.evidence_identity_sha256` to the validated
+source corpus identity.
 
-**Longitudinal evaluation scorecards** consume exact commit-addressed scorecard
-audit packs without rewriting historical version 1 evidence. `longitudinal build
+**Longitudinal evaluation scorecards** consume exact scorecard audit packs
+without rewriting historical version 1 evidence. `longitudinal build
 --input <declaration-path> [--results-dir <path>]` requires ordered, unique,
-contained commit-and-path references with pairwise-disjoint underlying Benchmark
+contained current local declarations and pairwise-disjoint underlying Benchmark
 Run ids. Baseline packs are all earlier than subject packs. `longitudinal
 show <series-id> [--results-dir <path>]` reloads every referenced scorecard through
 the existing public reader and recomputes all cohorts, histories, statistics,
-and classifications. The public reader also dispatches frozen version 1
-embedded audit packs through their historical reconstruction/report path.
-Default artifacts live under
-`apps/eval/longitudinal-scorecard-results` and are deliberately commit-eligible;
-repository history is the durable audit boundary.
+and classifications. The public reader also dispatches frozen embedded V1 and
+Git-addressed V2 audit packs through their historical reconstruction/report
+paths. Default current artifacts live under
+`apps/eval/local-data/longitudinal-scorecards`; only `apps/eval/summaries/`
+remains commit-eligible.
 
 Classification is per production role and follows fixed precedence. Any exact
 stable-context mismatch is `context_changed`. Unknown context, fewer than three

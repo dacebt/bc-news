@@ -13,6 +13,7 @@ dist/
 !apps/generation/.dev.vars.example
 
 # generated local benchmark output
+apps/eval/local-data/
 apps/eval/context-results/
 apps/eval/evaluation-results/
 apps/eval/scorecard-evidence/

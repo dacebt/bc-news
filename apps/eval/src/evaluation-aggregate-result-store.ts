@@ -2,8 +2,10 @@ import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { EvaluationIdSchema } from "./evaluation-artifact-schemas";
 import {
+	AnyEvaluationAggregateResultSchema,
 	EvaluationAggregateResultError,
 	EvaluationAggregateResultSchema,
+	type AnyEvaluationAggregateResult,
 	type EvaluationAggregateResult,
 } from "./evaluation-aggregate-result";
 
@@ -25,12 +27,24 @@ function aggregatePath(id: string, resultsDirectory: string): string {
 	return join(resultsDirectory, `${id}.json`);
 }
 
-function validateAggregateResultArtifact(
+function validateCurrentAggregateResultArtifact(
 	candidate: unknown,
 	path: string,
 	invalidCode: "aggregate_result_invalid" | "aggregate_result_create_rejected",
 ): EvaluationAggregateResult {
 	const result = EvaluationAggregateResultSchema.safeParse(candidate);
+	if (!result.success) {
+		fail(invalidCode, path, `Aggregate result contract rejected: ${result.error.message}`, result.error);
+	}
+	return result.data;
+}
+
+function validateStoredAggregateResultArtifact(
+	candidate: unknown,
+	path: string,
+	invalidCode: "aggregate_result_invalid" | "aggregate_result_create_rejected",
+): AnyEvaluationAggregateResult {
+	const result = AnyEvaluationAggregateResultSchema.safeParse(candidate);
 	if (!result.success) {
 		fail(invalidCode, path, `Aggregate result contract rejected: ${result.error.message}`, result.error);
 	}
@@ -43,7 +57,7 @@ export async function createEvaluationAggregateResultArtifact(
 ): Promise<string> {
 	await mkdir(resultsDirectory, { recursive: true });
 	const path = aggregatePath(artifact.id, resultsDirectory);
-	const candidate = validateAggregateResultArtifact(
+	const candidate = validateCurrentAggregateResultArtifact(
 		artifact,
 		path,
 		"aggregate_result_create_rejected",
@@ -82,7 +96,7 @@ export async function createEvaluationAggregateResultArtifact(
 export async function loadEvaluationAggregateResultArtifact(
 	id: string,
 	resultsDirectory: string,
-): Promise<EvaluationAggregateResult> {
+): Promise<AnyEvaluationAggregateResult> {
 	const parsedId = EvaluationIdSchema.safeParse(id);
 	if (!parsedId.success) {
 		fail(
@@ -112,7 +126,7 @@ export async function loadEvaluationAggregateResultArtifact(
 	} catch (cause) {
 		return fail("aggregate_result_malformed", path, "Malformed aggregate result JSON", cause);
 	}
-	const artifact = validateAggregateResultArtifact(
+	const artifact = validateStoredAggregateResultArtifact(
 		candidate,
 		path,
 		"aggregate_result_invalid",

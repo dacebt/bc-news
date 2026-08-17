@@ -4,6 +4,7 @@ import { EvaluationIdSchema, EvaluationTimestampSchema } from "./evaluation-arti
 
 const NonBlankStringSchema = z.string().trim().min(1);
 const NonnegativeSchema = z.number().int().nonnegative();
+const Sha256HashSchema = z.string().regex(/^[0-9a-f]{64}$/u);
 
 export const EVALUATION_AGGREGATE_RESULT_ERROR_CODES = [
 	"unsupported_source_scorecard_version",
@@ -169,11 +170,23 @@ function roleSchema(productionStep: "main_story_write" | "main_story_copyedit" |
 	});
 }
 
-export const EvaluationAggregateResultSchema = z.strictObject({
-	version: z.literal(1),
+const RolesSchema = z.tuple([
+	roleSchema("main_story_write"),
+	roleSchema("main_story_copyedit"),
+	roleSchema("announcements_write"),
+	roleSchema("announcements_copyedit"),
+]);
+
+const AggregateBaseSchema = z.strictObject({
 	id: EvaluationIdSchema,
 	created_at: EvaluationTimestampSchema,
 	evidence_retention: z.literal("local_only"),
+	configuration_identity: EvaluationIdSchema,
+	roles: RolesSchema,
+});
+
+export const EvaluationAggregateResultV1Schema = AggregateBaseSchema.extend({
+	version: z.literal(1),
 	source_scorecard: z.strictObject({
 		version: z.literal(2),
 		id: EvaluationIdSchema,
@@ -186,13 +199,29 @@ export const EvaluationAggregateResultSchema = z.strictObject({
 		raw_message_count: NonnegativeSchema.optional(),
 		prepared_message_count: NonnegativeSchema.optional(),
 	}),
-	configuration_identity: EvaluationIdSchema,
-	roles: z.tuple([
-		roleSchema("main_story_write"),
-		roleSchema("main_story_copyedit"),
-		roleSchema("announcements_write"),
-		roleSchema("announcements_copyedit"),
-	]),
 });
+export type EvaluationAggregateResultV1 = z.infer<typeof EvaluationAggregateResultV1Schema>;
 
+export const EvaluationAggregateResultSchema = AggregateBaseSchema.extend({
+	version: z.literal(2),
+	source_scorecard: z.strictObject({
+		version: z.literal(3),
+		id: EvaluationIdSchema,
+		created_at: EvaluationTimestampSchema,
+	}),
+	cohort: z.strictObject({
+		id: EvaluationIdSchema,
+		evidence_identity_sha256: Sha256HashSchema,
+		fixture_count: z.number().int().positive(),
+		repetition_count: z.number().int().positive(),
+		raw_message_count: NonnegativeSchema.optional(),
+		prepared_message_count: NonnegativeSchema.optional(),
+	}),
+});
 export type EvaluationAggregateResult = z.infer<typeof EvaluationAggregateResultSchema>;
+
+export const AnyEvaluationAggregateResultSchema = z.discriminatedUnion("version", [
+	EvaluationAggregateResultV1Schema,
+	EvaluationAggregateResultSchema,
+]);
+export type AnyEvaluationAggregateResult = z.infer<typeof AnyEvaluationAggregateResultSchema>;

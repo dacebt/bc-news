@@ -1,6 +1,6 @@
-import type { LoadedEvaluationReferenceCorpus } from "./evaluation-reference-corpus";
+import type { AnyLoadedEvaluationReferenceCorpus } from "./evaluation-reference-corpus";
 
-function referenceCounts(entry: LoadedEvaluationReferenceCorpus["entries"][number]): string {
+function referenceCounts(entry: AnyLoadedEvaluationReferenceCorpus["entries"][number]): string {
 	const reference = entry.reference;
 	return [
 		`claims=${reference.claims.length}`,
@@ -12,13 +12,19 @@ function referenceCounts(entry: LoadedEvaluationReferenceCorpus["entries"][numbe
 	].join(" ");
 }
 
-export function formatEvaluationReferenceCorpusReport(corpus: LoadedEvaluationReferenceCorpus): string {
+function sourceLabel(corpus: AnyLoadedEvaluationReferenceCorpus): string {
+	return "commit_sha" in corpus.sourceReference
+		? `${corpus.sourceReference.commit_sha}:${corpus.sourceReference.path}`
+		: `local-data:${corpus.sourceReference.path} sha256=${corpus.sourceReference.sha256}`;
+}
+
+export function formatEvaluationReferenceCorpusReport(corpus: AnyLoadedEvaluationReferenceCorpus): string {
 	const rawTotal = corpus.entries.reduce((total, entry) => total + entry.fixture.messages.length, 0);
 	const preparedTotal = corpus.entries.reduce((total, entry) => total + entry.preparedEvidence.messages.length, 0);
 	const coverage = [...new Set(corpus.manifest.fixtures.flatMap(({ variation_tags }) => variation_tags))];
 	return [
 		`Evaluation reference corpus v${corpus.manifest.version}: ${corpus.manifest.id}`,
-		`Source: ${corpus.sourceReference.commit_sha}:${corpus.sourceReference.path}`,
+		`Source: ${sourceLabel(corpus)}`,
 		`Fixtures: ${corpus.entries.length}`,
 		`Messages: raw=${rawTotal} prepared=${preparedTotal}`,
 		`Variation coverage: ${coverage.join(", ")}`,

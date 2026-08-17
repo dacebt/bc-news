@@ -41,6 +41,31 @@ const BuildEvaluationAggregateResultOptionsSchema = z.strictObject({
 	preparedMessageCount: z.number().int().nonnegative().optional(),
 });
 
+const AggregateSourceScorecardSchema = z.object({
+	version: z.literal(3),
+	id: EvaluationIdSchema,
+	created_at: EvaluationTimestampSchema,
+	corpus: z.object({
+		id: EvaluationIdSchema,
+		fixture_count: z.number().int().positive(),
+		source_reference: z.object({
+			sha256: z.string().regex(/^[0-9a-f]{64}$/u),
+		}),
+	}),
+	configuration: z.object({ identity: EvaluationIdSchema }),
+	repetition_count: z.number().int().positive(),
+	scorecards: z.array(z.unknown()).length(4),
+});
+
+type AggregateSourceScorecard = Omit<EvaluationScorecardArtifact, "version" | "corpus"> & {
+	readonly version: 3;
+	readonly corpus: EvaluationScorecardArtifact["corpus"] & {
+		readonly source_reference: {
+			readonly sha256: string;
+		};
+	};
+};
+
 function fail(code: EvaluationAggregateResultError["code"], path: string, message: string): never {
 	throw new EvaluationAggregateResultError(code, path, message);
 }
@@ -50,7 +75,21 @@ function only<T>(items: readonly T[], code: EvaluationAggregateResultError["code
 	return items[0]!;
 }
 
-function roleScorecard(scorecard: EvaluationScorecardArtifact, step: ProductionModelStep): EvaluationRoleScorecard {
+function assertCurrentSourceScorecard(scorecard: unknown): AggregateSourceScorecard {
+	if (typeof scorecard !== "object" || scorecard === null || !("version" in scorecard) || scorecard.version !== 3) {
+		const candidate = typeof scorecard === "object" && scorecard !== null && "version" in scorecard
+			? `v${String(scorecard.version)}`
+			: "unknown";
+		fail("unsupported_source_scorecard_version", "unknown-scorecard", `Aggregate result supports Evaluation Scorecard version 3 only, received ${candidate}`);
+	}
+	const parsed = AggregateSourceScorecardSchema.safeParse(scorecard);
+	if (!parsed.success) {
+		fail("aggregate_creation_rejected", parsed.error.issues[0]?.path.join(".") ?? "scorecard", `Aggregate result requires the current scorecard v3 cohort witness: ${parsed.error.message}`);
+	}
+	return scorecard as AggregateSourceScorecard;
+}
+
+function roleScorecard(scorecard: AggregateSourceScorecard, step: ProductionModelStep): EvaluationRoleScorecard {
 	return only(
 		scorecard.scorecards.filter((candidate) => candidate.production_step === step),
 		"aggregate_role_roster_mismatch",
@@ -104,7 +143,7 @@ function sampleCounts(source: EvaluationRoleScorecard["sample_counts"]) {
 }
 
 function projectedRate(
-	scorecard: EvaluationScorecardArtifact,
+	scorecard: AggregateSourceScorecard,
 	step: ProductionModelStep,
 	source: EvaluationRoleScorecard["rates"][number],
 	expectedMetric: (typeof RATE_DEFINITIONS)[number][0],
@@ -145,7 +184,7 @@ function projectedRate(
 }
 
 function projectedDistribution(
-	scorecard: EvaluationScorecardArtifact,
+	scorecard: AggregateSourceScorecard,
 	step: ProductionModelStep,
 	source: EvaluationRoleScorecard["distributions"][number],
 	expectedMetric: (typeof DISTRIBUTIONS)[number][0],
@@ -173,7 +212,7 @@ function projectedDistribution(
 }
 
 function projectedQualitative(
-	scorecard: EvaluationScorecardArtifact,
+	scorecard: AggregateSourceScorecard,
 	step: ProductionModelStep,
 	source: EvaluationRoleScorecard["qualitative"][number],
 	expectedCriterion: (typeof CRITERIA)[number],
@@ -195,7 +234,7 @@ function projectedQualitative(
 	};
 }
 
-function roleAggregate(scorecard: EvaluationScorecardArtifact, step: ProductionModelStep) {
+function roleAggregate(scorecard: AggregateSourceScorecard, step: ProductionModelStep) {
 	const source = roleScorecard(scorecard, step);
 	return {
 		production_step: step,
@@ -240,7 +279,7 @@ function roleAggregate(scorecard: EvaluationScorecardArtifact, step: ProductionM
 }
 
 export function buildEvaluationAggregateResult(
-	scorecard: EvaluationScorecardArtifact,
+	scorecard: EvaluationScorecardArtifact | AggregateSourceScorecard,
 	options: {
 		readonly id: string;
 		readonly createdAt: string;
@@ -249,46 +288,45 @@ export function buildEvaluationAggregateResult(
 		readonly preparedMessageCount?: number;
 	},
 ): EvaluationAggregateResult {
-	if (scorecard.version !== 2) {
-		fail("unsupported_source_scorecard_version", scorecard.id, `Aggregate result supports Evaluation Scorecard version 2 only, received v${String(scorecard.version)}`);
-	}
+	const currentScorecard = assertCurrentSourceScorecard(scorecard);
 	const parsedOptions = BuildEvaluationAggregateResultOptionsSchema.safeParse(options);
 	if (!parsedOptions.success) {
-		fail("aggregate_creation_rejected", scorecard.id, `Aggregate result options are invalid: ${parsedOptions.error.message}`);
+		fail("aggregate_creation_rejected", currentScorecard.id, `Aggregate result options are invalid: ${parsedOptions.error.message}`);
 	}
-	if (parsedOptions.data.cohortId !== scorecard.corpus.id) {
+	if (parsedOptions.data.cohortId !== currentScorecard.corpus.id) {
 		fail(
 			"aggregate_creation_rejected",
-			scorecard.id,
-			`Aggregate cohort id must match source scorecard corpus id ${scorecard.corpus.id}, received ${parsedOptions.data.cohortId}`,
+			currentScorecard.id,
+			`Aggregate cohort id must match source scorecard corpus id ${currentScorecard.corpus.id}, received ${parsedOptions.data.cohortId}`,
 		);
 	}
-	if (Date.parse(parsedOptions.data.createdAt) < Date.parse(scorecard.created_at)) {
-		fail("aggregate_chronology_mismatch", scorecard.id, "Aggregate creation cannot predate its source scorecard");
+	if (Date.parse(parsedOptions.data.createdAt) < Date.parse(currentScorecard.created_at)) {
+		fail("aggregate_chronology_mismatch", currentScorecard.id, "Aggregate creation cannot predate its source scorecard");
 	}
 	const candidate = {
-		version: 1 as const,
+		version: 2 as const,
 		id: parsedOptions.data.id,
 		created_at: parsedOptions.data.createdAt,
 		evidence_retention: "local_only" as const,
 		source_scorecard: {
-			version: 2 as const,
-			id: scorecard.id,
-			created_at: scorecard.created_at,
+			version: 3 as const,
+			id: currentScorecard.id,
+			created_at: currentScorecard.created_at,
 		},
 		cohort: {
 			id: parsedOptions.data.cohortId,
-			fixture_count: scorecard.corpus.fixture_count,
-			repetition_count: scorecard.repetition_count,
+			evidence_identity_sha256: currentScorecard.corpus.source_reference.sha256,
+			fixture_count: currentScorecard.corpus.fixture_count,
+			repetition_count: currentScorecard.repetition_count,
 			...(parsedOptions.data.rawMessageCount === undefined ? {} : { raw_message_count: parsedOptions.data.rawMessageCount }),
 			...(parsedOptions.data.preparedMessageCount === undefined ? {} : { prepared_message_count: parsedOptions.data.preparedMessageCount }),
 		},
-		configuration_identity: scorecard.configuration.identity,
-		roles: ROLE_STEPS.map((step) => roleAggregate(scorecard, step)),
+		configuration_identity: currentScorecard.configuration.identity,
+		roles: ROLE_STEPS.map((step) => roleAggregate(currentScorecard, step)),
 	};
 	const result = EvaluationAggregateResultSchema.safeParse(candidate);
 	if (!result.success) {
-		fail("aggregate_artifact_tampered", scorecard.id, `Built aggregate result violated its contract: ${result.error.message}`);
+		fail("aggregate_artifact_tampered", currentScorecard.id, `Built aggregate result violated its contract: ${result.error.message}`);
 	}
 	return result.data;
 }

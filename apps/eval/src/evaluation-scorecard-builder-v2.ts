@@ -1,8 +1,8 @@
 import { isDeepStrictEqual } from "node:util";
 import { PRODUCTION_MODEL_STEPS, type ModelExecutionContext, type ProductionModelStep } from "@bc-news/generation-core";
 import { canonical, sha256Json } from "./evaluation-artifact-schemas";
-import { EvaluationScorecardArtifactSchema, EvaluationScorecardError, type EvaluationRoleScorecard, type EvaluationScorecardArtifact, type ScorecardContext } from "./evaluation-scorecard";
-import { validateLoadedEvaluationScorecardInput, type LoadedEvaluationScorecardInput, type ScorecardBenchmarkRun } from "./evaluation-scorecard-input";
+import { EvaluationScorecardArtifactSchema, EvaluationScorecardError, type EvaluationRoleScorecard, type EvaluationScorecardArtifact, type ScorecardContext } from "./evaluation-scorecard-v2";
+import { validateLoadedEvaluationScorecardInput, type LoadedEvaluationScorecardInput, type ScorecardBenchmarkRun } from "./evaluation-scorecard-input-v2";
 
 const RATE_DEFINITIONS = [
 	["schema_reliability", "terminal_provider_success_invocation"],
@@ -145,34 +145,35 @@ function roleScorecard(input: LoadedEvaluationScorecardInput, step: ProductionMo
 	return { production_step: step, adapter: config.production_steps[step], scorecard_context: context, sample_counts: counts(input, step), rates: rates(input, step, context), distributions: distributions(input, step, context), qualitative: qualitative(input, step, context) };
 }
 
-export function buildEvaluationScorecard(input: LoadedEvaluationScorecardInput, options: { readonly id: string; readonly createdAt: string }): EvaluationScorecardArtifact {
+export function buildEvaluationScorecardV2(input: LoadedEvaluationScorecardInput, options: { readonly id: string; readonly createdAt: string }): EvaluationScorecardArtifact {
 	input = validateLoadedEvaluationScorecardInput(input);
 	const created = Date.parse(options.createdAt);
 	if (!Number.isFinite(created) || created < Date.parse(input.annotations.annotated_at) || created < Date.parse(input.reviews.reviewed_at)) fail("chronology_mismatch", input.declarationPath, "Scorecard creation cannot predate annotation or review");
 	const firstRun = input.runs[0]?.run; const config = firstRun?.declaration.configurations.find(({ identity }) => identity === input.declaration.configuration_identity)?.config;
 	if (firstRun === undefined || config === undefined) fail("configuration_mismatch", input.declarationPath, "Selected configuration is missing");
 	const candidate = {
-		version: 3 as const,
-		id: options.id,
-		created_at: options.createdAt,
+		version: 2 as const, id: options.id, created_at: options.createdAt,
 		source_reference: input.sourceReference,
-		corpus: { id: input.corpus.manifest.id, fixture_count: input.corpus.entries.length, source_reference: input.corpus.sourceReference },
-		configuration: { identity: input.declaration.configuration_identity, exact_config: config },
-		repetition_count: firstRun.declaration.repetition_count,
+		corpus: { id: input.corpus.manifest.id, fixture_count: input.corpus.entries.length },
+		configuration: { identity: input.declaration.configuration_identity, exact_config: config }, repetition_count: firstRun.declaration.repetition_count,
 		sources: {
-			benchmark_runs: input.runs.map(({ declaration, sourceReference, run }) => ({
+			corpus_manifest_path: input.declaration.corpus.manifest_path,
+			benchmark_runs: input.runs.map(({ declaration, run }) => ({
 				ordinal: declaration.ordinal,
 				corpus_fixture_id: declaration.corpus_fixture_id,
 				benchmark_run_id: run.id,
-				...(run.version === 8 ? { benchmark_run_version: 8 as const, gateway_request_sha256s: run.gateway_requests.map((record) => sha256Json(canonical(record))) } : {}),
-				source_reference: sourceReference,
+				...(run.version === 8 ? {
+					benchmark_run_version: 8 as const,
+					gateway_request_sha256s: run.gateway_requests.map((record) => sha256Json(canonical(record))),
+				} : {}),
+				path: declaration.path,
 				code_commit_sha: run.provenance.code.commit_sha,
 				prepared_evidence_identity_sha256: run.prepared_evidence.identity_sha256,
 				output_contract_sha256s: run.provenance.output_contracts.map(({ schema_sha256 }) => schema_sha256),
 				transport_retry_limit: run.declaration.transport_retry_limit,
 			})),
-			annotations: { source_reference: input.declaration.annotations.source_reference, bundle_id: input.annotations.id, protocol_id: input.annotations.protocol.id, annotator_id: input.annotations.annotator.id, annotator_kind: input.annotations.annotator.kind, annotated_at: input.annotations.annotated_at },
-			qualitative_reviews: { source_reference: input.declaration.qualitative_reviews.source_reference, bundle_id: input.reviews.id, rubric_id: input.reviews.rubric.id, reviewer_id: input.reviews.reviewer.id, reviewer_kind: input.reviews.reviewer.kind, reviewed_at: input.reviews.reviewed_at },
+			annotations: { path: input.declaration.annotations.path, bundle_id: input.annotations.id, protocol_id: input.annotations.protocol.id, annotator_id: input.annotations.annotator.id, annotator_kind: input.annotations.annotator.kind, annotated_at: input.annotations.annotated_at },
+			qualitative_reviews: { path: input.declaration.qualitative_reviews.path, bundle_id: input.reviews.id, rubric_id: input.reviews.rubric.id, reviewer_id: input.reviews.reviewer.id, reviewer_kind: input.reviews.reviewer.kind, reviewed_at: input.reviews.reviewed_at },
 		},
 		scorecards: PRODUCTION_MODEL_STEPS.map((step) => roleScorecard(input, step)),
 	};
