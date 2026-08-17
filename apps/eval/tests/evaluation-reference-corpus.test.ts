@@ -23,6 +23,7 @@ test("local corpus manifests retain exact local source references", () => {
 	const manifest = {
 		version: 3,
 		id: "local-corpus-one",
+		selection: { path: "corpora/local-one/selection.json", sha256: HASH },
 		fixtures: [{
 			ordinal: 1,
 			id: "fixture-1",
@@ -33,6 +34,7 @@ test("local corpus manifests retain exact local source references", () => {
 		}],
 	};
 	expect(EvaluationReferenceManifestV3Schema.safeParse(manifest).success).toBe(true);
+	expect(EvaluationReferenceManifestV3Schema.parse(manifest).selection.path).toBe("corpora/local-one/selection.json");
 	expect(EvaluationReferenceManifestV3Schema.parse(manifest).fixtures[0]?.evidence.sha256).toBe(HASH);
 });
 

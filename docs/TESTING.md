@@ -30,7 +30,7 @@ outcome or silently substitutes for it.
 | Deterministic tests | `pnpm test` | Isolated warranted invariants, reproduced defects, and high-risk state transitions | Test pass or hard test failure; never a retained model attempt |
 | Scratch model run | `scratch run` | One live four-step production pass saved only to an explicitly selected results directory | Development inspection artifact; never a Benchmark Run, scorecard source, baseline, or acceptance verdict |
 | Model evaluation | `benchmark run/list/show/summary/compare` | Strict versioned Benchmark Runs under `apps/eval/local-data/evaluation-results` by default | Retained model subject and harness outcomes with `evaluation:` observations; never a score or acceptance verdict |
-| Evaluation reference corpus | `corpus show --corpus <manifest-path>` and its direct verifier | Commit-addressed ordered synthetic fixtures and separate exact source-witness references | Auditable source truth and objective variation coverage; never a model result, score, or acceptance verdict |
+| Evaluation reference corpus | `corpus extract --snapshot <sqlite-path> --selection <selection-path>`, `corpus show --corpus <manifest-path>`, and direct verifiers | Current local V3 selection-bound corpus workspaces under `apps/eval/local-data/corpus-workspaces/` plus historical Git-addressed V2 synthetic readers | Auditable source truth and objective variation coverage; never a model result, score, or acceptance verdict |
 | Evaluation scorecards | `scorecard build/show` and `verify:evaluation-scorecards` | Current local hash-addressed scorecards under `apps/eval/local-data/scorecards` by default, plus embedded V1 and Git-addressed V2 historical readers | Four transparent role-specific measurements plus current/outdated checkout information; never an aggregate score, ranking, recommendation, or acceptance verdict |
 | Aggregate evaluation results | `aggregate export/show/compare` and `verify:evaluation-aggregate-results` | Strict content-free aggregate JSON under `apps/eval/summaries/` by default, with `cohort.evidence_identity_sha256` bound to the source corpus identity | Descriptive role aggregates only: subject descriptor, counts, rates and intervals, aggregate distributions, and qualitative counts; never source or model-output evidence, a winner, a rank, a recommendation, acceptance, or production selection |
 | Longitudinal evaluation scorecards | `longitudinal build/show` and `verify:evaluation-longitudinal-scorecards` | Current local hash-addressed series under `apps/eval/local-data/longitudinal-scorecards` by default, plus embedded V1 and Git-addressed V2 historical readers | Four role-specific context, sufficiency, baseline-variation, or potential-drift observations; never a judge or product gate |
@@ -129,16 +129,26 @@ set temperature for each step; the declaration, not the command name,
 determines the experiment.
 
 **The evaluation reference corpus** is a deterministic input-evidence domain,
-not a model evaluation result. `corpus show --corpus <manifest-path>` explicitly
-selects a strict ordered version 2 manifest whose repository-relative paths
-pair each synthetic chat with one separate reference at the manifest's Git
-commit. References retain exact source excerpts and
-closed classifications only; every cited message and excerpt must survive the
-real evidence-preparation path. Objective witnesses prove every declared
-variation tag, and closed directories reject unlisted evidence. This domain
-supplies future measurements with auditable denominators without prescribing a
-target article, angle, wording, score, or verdict. Existing commands do not
-accept `--corpus` and do not silently select a corpus entry.
+not a model evaluation result. `corpus extract --snapshot <sqlite-path>
+--selection <selection-path>` admits only a content-free committed declaration
+of active-region ids and ordered half-open UTC windows. Content selectors,
+author selectors, keywords, and message-id selectors are rejected. Extraction
+verifies the declared snapshot digest, copies the exact selection bytes,
+replays the unchanged preparation path, and atomically publishes only the
+copied snapshot, copied selection, and derived fixtures beneath the ignored
+`apps/eval/local-data/corpus-workspaces/` root. It prints counts only and
+never emits production chat or calls a model. Root privately authors the
+semantic references and the selection-bound version 3 manifest inside that
+workspace. `corpus show --corpus <manifest-path>` then validates the manifest
+hash binding, closed workspace membership, frozen selection roster, raw and
+prepared counts, and full declared variation coverage before reporting the
+current local corpus. The current scorecard V3 flow consumes that canonical
+current corpus V3. Repository version 2 remains the historical Git-addressed
+synthetic corpus reader. Current V3 sparse coverage is at most 13 prepared
+messages, with the sparse variation witness roster exactly matching the full
+prepared-message roster; historical V2 sparse remains frozen at at most 6. The
+full 13-region day remains a later local stress corpus, not part of this
+capability.
 
 **Evaluation scorecards** consume, but never alter, complete retained version 7
 or Gateway version 8 Benchmark Runs and the full ordered reference corpus. A
@@ -149,10 +159,12 @@ build --input <declaration-path> [--results-dir <path>]` requires one exact
 configuration, every corpus fixture in order, every selected trial and invocation
 attempt, exact source-linked Codex annotations for every parse-success output,
 and a separate exact Codex qualitative review for every such output. `scorecard show
-<scorecard-id> [--results-dir <path>]` resolves the recorded declaration and
-all named evidence with `git show` and recomputes the artifact before reporting
-it. The corpus context uses the commit that last changed the closed corpus
-subtree, not a later scorecard-storage commit. Version 1 human evidence retains
+<scorecard-id> [--results-dir <path>]` reloads current V3 declarations and
+named evidence through the contained local resolver, while historical V2
+artifacts remain Git-addressed readers. It then recomputes the artifact before
+reporting it. Current scorecard V3 artifacts consume the canonical current corpus V3,
+while repository version 2 remains a historical Git-addressed reader. Version
+1 human evidence retains
 its frozen historical contract and remains readable through the public store
 and report path. Current declarations and explicit current results directories
 must stay contained under the ignored `apps/eval/local-data/` root, where V3

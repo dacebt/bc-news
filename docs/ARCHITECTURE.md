@@ -238,7 +238,7 @@ observations do not cross domain boundaries.
 |---|---|---|---|
 | Deterministic tests | `pnpm test` | Isolated invariants, reproduced defects, and high-risk state transitions | Test pass or hard test failure |
 | Model evaluation | `benchmark run/list/show/summary/compare` | Strict versioned Benchmark Runs under `apps/eval/local-data/evaluation-results` by default | Model subject outcome and evidence-retention harness outcome, reported as `evaluation:` observations |
-| Evaluation reference corpus | `corpus show --corpus <manifest-path>` | Strict ordered synthetic fixtures and exact source-witness references | Auditable source truth and objective variation coverage; no model result or verdict |
+| Evaluation reference corpus | `corpus extract --snapshot <sqlite-path> --selection <selection-path>` and `corpus show --corpus <manifest-path>` | Current local V3 selection-bound corpus workspaces under `apps/eval/local-data/corpus-workspaces/` plus historical Git-addressed V2 synthetic readers | Auditable source truth and objective variation coverage; no model result or verdict |
 | Evaluation scorecards | `scorecard build/show` | Current local hash-addressed scorecards under `apps/eval/local-data/scorecards` by default, plus embedded V1 and Git-addressed V2 historical readers | Four role-specific transparent evidence reports plus current/outdated checkout information; no aggregate score, ranking, recommendation, or acceptance verdict |
 | Aggregate evaluation results | `aggregate export/show/compare` | Strict content-free aggregate JSON under `apps/eval/summaries/` by default, with `cohort.evidence_identity_sha256` bound to the source corpus identity | Descriptive role aggregates only: subject descriptor, counts, rates and intervals, aggregate distributions, and qualitative counts; never source or model-output evidence, a winner, a rank, a recommendation, acceptance, or production selection |
 | Longitudinal evaluation scorecards | `longitudinal build/show` | Current local hash-addressed series under `apps/eval/local-data/longitudinal-scorecards` by default, plus embedded V1 and Git-addressed V2 historical readers | Four role-specific evidence classifications; no model judge, acceptance verdict, or production decision |
@@ -318,27 +318,37 @@ the invocation and runtime-evidence rosters. Current readers accept only version
 7 and 8; old Benchmark Run formats are inert files and have no parser,
 migration, prompt contract, or development gate.
 
-The evaluation reference corpus is selected only through `corpus show
---corpus <manifest-path>`. Its current version 2 manifest owns positional
-order, canonical repository-relative fixture/reference paths, and closed
-variation tags with objective witnesses. A Git commit plus one contained path
-owns cross-file identity; the manifest does not duplicate child-file hashes.
-The committed corpus contains twelve synthetic
-conversations. Each separate strict reference uses exact excerpts from named
-message fields for claims, events, ambiguities, noteworthy candidates,
-entities, and raw numeric text; status shapes distinguish established,
-contested, and unresolved evidence without supplying replacement prose.
+The evaluation reference corpus is selected only through `corpus extract
+--snapshot <sqlite-path> --selection <selection-path>` and `corpus show
+--corpus <manifest-path>`. The committed selection declaration is content-free:
+it admits only active-region ids and ordered half-open UTC windows and rejects
+content selectors, author selectors, keywords, and message ids. Extraction
+verifies the declared snapshot digest, copies the exact selection bytes,
+replays the unchanged evidence-preparation path, and atomically publishes only
+the copied snapshot, copied selection, and derived fixtures beneath the ignored
+`apps/eval/local-data/corpus-workspaces/` root. It prints counts only and never
+calls a model. Root privately authors the semantic references and one
+selection-bound version 3 manifest inside that workspace. `corpus show
+--corpus <manifest-path>` validates the manifest hash binding, closed workspace
+membership, frozen selection roster, raw and prepared counts, and full declared
+variation coverage before reporting the local corpus. Repository version 2
+remains the historical Git-addressed synthetic corpus reader. Current V3 sparse
+coverage is at most 13 prepared messages, with the sparse variation witness
+roster exactly matching the full prepared-message roster; historical V2 sparse
+remains frozen at at most 6. The full 13-region day remains a later local
+stress corpus, not part of the current capability.
 
 Loading runs every fixture through `EvidenceFixtureSchema` and the real
 `prepareEvidence` path. Every cited identity and excerpt must survive under the
-same message id. The committed tree beneath the corpus path must exactly match
-the manifest, and strict contained POSIX paths prevent implicit selection or
-unowned evidence. Dense/sparse thresholds,
+same message id. The current local V3 workspace and the historical committed V2
+tree beneath the selected corpus path must each exactly match their manifest,
+and strict contained POSIX paths prevent implicit selection or unowned
+evidence. Dense/sparse thresholds,
 event-time relationships, contradiction roles, unresolved records, grounded
 names/numbers, announcement candidates, and explicit irrelevant-message ids
 make variation tags auditable rather than decorative. Existing valid
 single-fixture commands, artifacts, and outputs remain unchanged; no existing
-namespace accepts `--corpus`.
+namespace silently selects a corpus entry.
 
 Evaluation scorecards are a separate eval-owned evidence boundary selected only
 through `scorecard build --input <declaration-path> [--results-dir <path>]` and
@@ -361,7 +371,9 @@ mismatch. Current loads recompute every output identity, context identity,
 count, rate, 95% Wilson interval, distribution, and qualitative summary before
 accepting the artifact. Version 8 output identities and role contexts
 additionally hash their exact Gateway-request records, while the source
-descriptors retain the complete ordered Gateway-request hash roster.
+descriptors retain the complete ordered Gateway-request hash roster. Current
+scorecard V3 consumes the canonical current corpus V3, while repository version
+2 remains a historical Git-addressed reader.
 Reports contain exactly four separate production-role sections. Deterministic measurements expose named units,
 denominators, sample counts, and unavailable or inapplicable states. Semantic
 grounding, attribution, event coverage, announcement relevance, coherence,

@@ -1,9 +1,11 @@
-import { dirname, resolve } from "node:path";
+import { dirname, isAbsolute, relative, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { compareRuns } from "./compare";
 import { parseEvalCliCommand } from "./cli-options";
 import { runContextBenchmark } from "./context-benchmark-command";
 import { formatContextBenchmarkReport } from "./context-benchmark-report";
+import { extractProductionCorpus } from "./evaluation-corpus-extraction";
+import { formatProductionCorpusExtractionReport } from "./evaluation-corpus-extraction-report";
 import {
 	buildEvaluationLongitudinalReportForCli,
 	buildEvaluationScorecardReportForCli,
@@ -24,7 +26,7 @@ import {
 } from "./evaluation-browse-report";
 import { compareBenchmarkRuns } from "./evaluation-comparison";
 import { formatBenchmarkRunReport } from "./benchmark-run-report";
-import { loadEvaluationReferenceCorpus } from "./evaluation-reference-corpus";
+import { loadEvaluationReferenceCorpus, loadLocalEvaluationReferenceCorpus } from "./evaluation-reference-corpus";
 import { formatEvaluationReferenceCorpusReport } from "./evaluation-reference-corpus-report";
 import { resolveEvaluationRepositoryRoot } from "./evaluation-repository-reference";
 import { evaluateBenchmarkCommand } from "./evaluation-benchmark-command";
@@ -52,6 +54,7 @@ export const EVAL_CLI_USAGE = `Usage:
   pnpm --filter @bc-news/eval eval -- acceptance compare <left-id> <right-id> [--results-dir <path>]
   pnpm --filter @bc-news/eval eval -- fixture record-responses --fixture <path> --config <path> [--response-dir <path>]
   pnpm --filter @bc-news/eval eval -- context benchmark --fixture <path> [--results-dir <path>]
+  pnpm --filter @bc-news/eval eval -- corpus extract --snapshot <path> --selection <path>
   pnpm --filter @bc-news/eval eval -- corpus show --corpus <manifest-path>
   pnpm --filter @bc-news/eval eval -- scorecard build --input <declaration-path> [--results-dir <path>]
   pnpm --filter @bc-news/eval eval -- scorecard show <scorecard-id> [--results-dir <path>]
@@ -90,6 +93,14 @@ export function evalCliFailurePrefix(argv: readonly string[]): string {
 export function formatEvalCliFailure(argv: readonly string[], error: unknown): string {
 	const message = error instanceof Error ? error.message : String(error);
 	return `${evalCliFailurePrefix(argv)} ${message}`;
+}
+
+function localDataRelativeCorpusPath(localDataRoot: string, manifestPath: string): string | undefined {
+	const relativePath = relative(localDataRoot, manifestPath);
+	if (relativePath === "" || relativePath === ".." || relativePath.startsWith(`..${sep}`) || isAbsolute(relativePath)) {
+		return undefined;
+	}
+	return relativePath.split(sep).join("/");
 }
 
 export async function runEvalCliApplication(options: EvalCliApplicationOptions): Promise<void> {
@@ -209,10 +220,28 @@ export async function runEvalCliApplication(options: EvalCliApplicationOptions):
 		writeLine(formatRecordSummary(result));
 		return;
 	}
+	if (command.command === "corpus-extract") {
+		writeLine(formatProductionCorpusExtractionReport(
+			await extractProductionCorpus({
+				snapshotPath: resolve(cwd, command.snapshotPath),
+				selectionPath: resolve(cwd, command.selectionPath),
+				localDataRoot,
+			}),
+		));
+		return;
+	}
 	if (command.command === "corpus-show") {
+		const resolvedCorpusPath = resolve(cwd, command.corpusPath);
+		const localCorpusPath = localDataRelativeCorpusPath(localDataRoot, resolvedCorpusPath);
+		if (localCorpusPath !== undefined) {
+			writeLine(formatEvaluationReferenceCorpusReport(
+				await loadLocalEvaluationReferenceCorpus(localDataRoot, localCorpusPath),
+			));
+			return;
+		}
 		writeLine(formatEvaluationReferenceCorpusReport(
 			await loadEvaluationReferenceCorpus(
-				resolve(cwd, command.corpusPath),
+				resolvedCorpusPath,
 				await resolveEvaluationRepositoryRoot(cwd),
 			),
 		));

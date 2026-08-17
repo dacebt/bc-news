@@ -1,11 +1,14 @@
 import { createHash } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
-import { EvidenceFixtureSchema, type EvidenceFixture } from "@bc-news/contracts";
-import { prepareEvidence, type PreparedEvidence } from "@bc-news/generation-core";
+import { EvidenceFixtureSchema } from "@bc-news/contracts";
+import { prepareEvidence } from "@bc-news/generation-core";
 import { z } from "zod";
 import { canonical, sha256Json } from "./evaluation-artifact-schemas";
 import { type EvaluationLocalSourceReference } from "./evaluation-local-source-reference";
-import { type EvaluationReference, type EvaluationReferenceManifest } from "./evaluation-reference-corpus";
+import {
+	type LoadedLocalEvaluationReferenceCorpus,
+	type LoadedLocalEvaluationReferenceCorpusEntry,
+} from "./evaluation-reference-corpus";
 import { parseEvaluationScorecardBenchmark, type ScorecardBenchmarkRun } from "./evaluation-scorecard-input-v2";
 import {
 	AnnotationBundleSchema,
@@ -18,36 +21,19 @@ import {
 	type QualitativeReviewBundle,
 } from "./evaluation-scorecard";
 
-type ManifestEntry = EvaluationReferenceManifest["fixtures"][number];
 type ScorecardTrial = LoadedScorecardRun["run"]["trials"][number];
 type ScorecardInvocation = ScorecardTrial["invocations"][number];
 
-export interface LoadedEvaluationReferenceCorpusEntry {
-	readonly manifestEntry: ManifestEntry;
-	readonly evidencePath: string;
-	readonly evidenceBytes: Uint8Array;
-	readonly fixture: EvidenceFixture;
-	readonly publicationDate: string;
-	readonly preparedEvidence: PreparedEvidence;
-	readonly referencePath: string;
-	readonly referenceBytes: Uint8Array;
-	readonly reference: EvaluationReference;
-}
-
-export interface LoadedEvaluationReferenceCorpus {
-	readonly sourceReference: EvaluationLocalSourceReference;
-	readonly manifestPath: string;
-	readonly manifestBytes: Uint8Array;
-	readonly manifest: EvaluationReferenceManifest;
-	readonly entries: readonly LoadedEvaluationReferenceCorpusEntry[];
-}
+export type { LoadedLocalEvaluationReferenceCorpus, LoadedLocalEvaluationReferenceCorpusEntry } from "./evaluation-reference-corpus";
+export type LoadedEvaluationReferenceCorpusEntry = LoadedLocalEvaluationReferenceCorpusEntry;
+export type LoadedEvaluationReferenceCorpus = LoadedLocalEvaluationReferenceCorpus;
 
 export interface LoadedScorecardRun {
 	readonly declaration: EvaluationScorecardDeclaration["runs"][number];
 	readonly sourceReference: EvaluationLocalSourceReference;
 	readonly bytes: Uint8Array;
 	readonly run: ScorecardBenchmarkRun;
-	readonly corpusEntry: LoadedEvaluationReferenceCorpusEntry;
+	readonly corpusEntry: LoadedLocalEvaluationReferenceCorpusEntry;
 }
 
 export interface SelectedScorecardOutput {
@@ -64,7 +50,7 @@ export interface LoadedEvaluationScorecardInput {
 	readonly declarationPath: string;
 	readonly declarationBytes: Uint8Array;
 	readonly declaration: EvaluationScorecardDeclaration;
-	readonly corpus: LoadedEvaluationReferenceCorpus;
+	readonly corpus: LoadedLocalEvaluationReferenceCorpus;
 	readonly runs: readonly LoadedScorecardRun[];
 	readonly annotationBytes: Uint8Array;
 	readonly annotations: AnnotationBundle;

@@ -10,6 +10,7 @@ import {
 	OutputIdentitySchema,
 	QualitativeReviewBundleSchema,
 } from "../src/evaluation-scorecard";
+import { EvaluationReferenceManifestSchema, EvaluationReferenceManifestV3Schema } from "../src/evaluation-reference-corpus";
 import { RepositorySourceReferenceSchema } from "../src/evaluation-repository-reference";
 
 const HASH = "1".repeat(64);
@@ -69,4 +70,35 @@ test("current declaration and artifact reject recursive byte ownership fields", 
 	expect(EvaluationScorecardArtifactSchema.safeParse({ version: 3, id: "scorecard-one", source_payloads: {} }).success).toBe(false);
 	expect(EvaluationScorecardArtifactV2Schema.safeParse({ version: 3, id: "scorecard-one", source_reference: LOCAL_SOURCE, corpus: { id: "corpus-one", fixture_count: 1, source_reference: LOCAL_SOURCE }, configuration: { identity: "config-one", exact_config: {} }, repetition_count: 1, sources: {}, scorecards: [] }).success).toBe(false);
 	expect(EvaluationScorecardArtifactV1Schema.safeParse({ version: 2, id: "scorecard-one", source_payloads: {} }).success).toBe(false);
+});
+
+test("current local corpus manifests require selection-bound V3 source references", () => {
+	const localV3 = {
+		version: 3,
+		id: "local-corpus-one",
+		selection: { path: "corpus/selection.json", sha256: HASH },
+		fixtures: [{
+			ordinal: 1,
+			id: "fixture-one",
+			evidence: { path: "corpus/evidence/fixture-one.json", sha256: HASH },
+			reference: { path: "corpus/references/fixture-one.json", sha256: HASH },
+			variation_tags: ["names"],
+			variation_witnesses: [{ tag: "names", reference_ids: ["entity:fixture-one"], message_ids: ["message-one"] }],
+		}],
+	};
+	const localV2Shape = {
+		version: 2,
+		id: "local-corpus-one",
+		fixtures: Array.from({ length: 12 }, (_, index) => ({
+			ordinal: index + 1,
+			id: `fixture-${String(index + 1)}`,
+			evidence_path: `corpus/evidence/fixture-${String(index + 1)}.json`,
+			reference_path: `corpus/references/fixture-${String(index + 1)}.json`,
+			variation_tags: [index === 0 ? "dense" : "names"],
+			variation_witnesses: [{ tag: index === 0 ? "dense" : "names", reference_ids: [], message_ids: ["message-one"] }],
+		})),
+	};
+	expect(EvaluationReferenceManifestV3Schema.safeParse(localV3).success).toBe(true);
+	expect(EvaluationReferenceManifestSchema.safeParse(localV2Shape).success).toBe(true);
+	expect(EvaluationReferenceManifestV3Schema.safeParse(localV2Shape).success).toBe(false);
 });

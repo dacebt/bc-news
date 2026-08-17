@@ -36,7 +36,8 @@ generated:
 | Execution context | Normalized runtime observations that identify what comparable model environment executed an invocation. | Prediction observation |
 | Prediction observation | Volatile response behavior such as stop reason, timing, throughput, speculative counts, and reasoning-content presence. | Execution context |
 | Runtime observation | One strict field state: observed, unknown with a reason, or externally controlled with a reason. | A guessed provider setting |
-| Evaluation reference corpus | One explicitly selected ordered set of synthetic conversations, each path-paired with separate source-witness reference evidence at a recorded Git commit. | A Benchmark Run or target article |
+| Evaluation reference corpus | The current local V3 selection-bound corpus workspace under `apps/eval/local-data/corpus-workspaces/`, plus the historical Git-addressed V2 synthetic corpus reader. | A Benchmark Run or target article |
+| Semantic reference | A root-authored local reference record in a V3 corpus workspace that links selection-bound prepared evidence to claims, events, ambiguities, and variation witnesses without copying production chat into tracked files. | A model output or generated summary |
 | Source witness | An exact excerpt from a named raw message field that remains under the same identity after evidence preparation. | A free-form summary or model output |
 | Variation witness | Qualified reference ids and prepared message ids that mechanically prove one closed corpus variation tag. | A descriptive fixture label |
 | Evaluation scorecard | One auditable report for a single exact configuration across the complete selected corpus, containing four separate production-role scorecards. Current V3 artifacts are local hash-addressed under `apps/eval/local-data/scorecards`; embedded V1 and Git-addressed V2 remain historical readers. | A weighted model-wide score or acceptance gate |
@@ -63,7 +64,7 @@ generated:
 | Acceptance verification | Recorded replay and explicit policies that accept or reject evidence. | It consumes evidence; it does not create a quality verdict. |
 | Composed product verification | The canonical local skeleton walk through deployable entrypoints. | Walking proves composition, not model quality. |
 | Deterministic testing | Isolated assertions over contracts, lifecycle, persistence, and comparison logic. | Tests do not substitute for a live evaluation or walk. |
-| Evaluation source evidence | Strict selection, preparation, linkage, and browsing of the synthetic reference corpus. | It owns source truth and variation coverage, never generated prose, a score, or a verdict. |
+| Evaluation source evidence | Strict content-free selection, preparation, linkage, and browsing of the current local V3 corpus plus the historical V2 synthetic reader. | It owns source truth and variation coverage, never generated prose, a score, or a verdict. |
 | Evaluation measurement | Strict construction and browsing of role-specific scorecards from complete retained runs, corpus sources, output annotations, and qualitative reviews. | It calculates transparent quantities and retains Codex judgments; it does not rank models or decide acceptance. |
 | Aggregate evaluation reporting | Strict export, reopening, and comparison of content-free role aggregates projected from validated scorecards. | It is descriptive and evaluation-only; it does not rank, recommend, accept, select production, or walk. |
 | Longitudinal evaluation measurement | Strict reconstruction and temporal comparison of selected scorecard audit packs inside stable role cohorts. | It classifies evidence and retains uncertainty; it does not judge quality, infer causality, or trigger product behavior. |
@@ -76,7 +77,7 @@ generated:
 | Benchmark Run | The lifecycle, invocation history, and complete runtime-evidence roster for one declared model experiment. |
 | Evaluation Trial | One configuration's two-track behavior and terminal subject outcome within a benchmark. |
 | Step Invocation | Immutable request, response or transport outcome, timing, findings, and retry linkage for one model call. |
-| Evaluation Reference Corpus | Ordered version 2 manifest, commit-addressed synthetic fixtures, exact source-witness references, and objective variation witnesses. |
+| Evaluation Reference Corpus | Current local V3 selection-bound snapshot copy, copied selection, derived fixtures, root-authored semantic references, and objective variation witnesses, plus the historical Git-addressed V2 synthetic reader. |
 | Evaluation Scorecard | A commit-addressed declaration plus compact source descriptors, four role-specific contexts, sample counts, rates, distributions, qualitative summaries, and freshness information. |
 | Aggregate Evaluation Result | A whitelist-only role summary exported from a validated scorecard with `cohort.evidence_identity_sha256` bound to its source corpus identity, with subject descriptor, counts, rates and intervals, aggregate distributions, and qualitative counts only. |
 | Longitudinal Evaluation Scorecard Series | Local hash-addressed current scorecard audit packs plus four stable cohort histories, baseline/subject summaries, signal witnesses, evidence classifications, and per-scorecard freshness information; embedded V1 and Git-addressed V2 remain historical readers. |

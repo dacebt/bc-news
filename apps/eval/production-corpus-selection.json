@@ -1,0 +1,90 @@
+{
+  "version": 1,
+  "id": "production-grounded-2026-08-16",
+  "snapshot_sha256": "2e90ade8170de98cb1c757b13c6be990b1cd1ef760e6d0dcca02c2e1fbee7640",
+  "evidence_date": "2026-08-16",
+  "cases": [
+    {
+      "ordinal": 1,
+      "id": "dense-new-player-progression",
+      "active_region_id": "9",
+      "windows": [
+        {
+          "start_utc": "2026-08-16T09:32:39.000Z",
+          "end_utc": "2026-08-16T11:15:45.001Z"
+        }
+      ],
+      "expected_raw_count": 186,
+      "expected_prepared_count": 39
+    },
+    {
+      "ordinal": 2,
+      "id": "market-pressure-throughline",
+      "active_region_id": "14",
+      "windows": [
+        {
+          "start_utc": "2026-08-16T13:43:26.000Z",
+          "end_utc": "2026-08-16T14:22:53.001Z"
+        },
+        {
+          "start_utc": "2026-08-16T18:54:00.000Z",
+          "end_utc": "2026-08-16T18:59:29.001Z"
+        }
+      ],
+      "expected_raw_count": 97,
+      "expected_prepared_count": 39
+    },
+    {
+      "ordinal": 3,
+      "id": "achievement-inside-promotion",
+      "active_region_id": "7",
+      "windows": [
+        {
+          "start_utc": "2026-08-16T00:32:36.000Z",
+          "end_utc": "2026-08-16T00:35:52.001Z"
+        }
+      ],
+      "expected_raw_count": 29,
+      "expected_prepared_count": 13
+    },
+    {
+      "ordinal": 4,
+      "id": "contested-market-claim",
+      "active_region_id": "19",
+      "windows": [
+        {
+          "start_utc": "2026-08-16T00:50:14.000Z",
+          "end_utc": "2026-08-16T01:03:56.001Z"
+        }
+      ],
+      "expected_raw_count": 26,
+      "expected_prepared_count": 17
+    },
+    {
+      "ordinal": 5,
+      "id": "discovery-and-milestone",
+      "active_region_id": "19",
+      "windows": [
+        {
+          "start_utc": "2026-08-16T12:26:51.000Z",
+          "end_utc": "2026-08-16T18:58:18.001Z"
+        }
+      ],
+      "expected_raw_count": 38,
+      "expected_prepared_count": 33
+    },
+    {
+      "ordinal": 6,
+      "id": "sparse-routine-help",
+      "active_region_id": "15",
+      "windows": [
+        {
+          "start_utc": "2026-08-16T00:00:00.000Z",
+          "end_utc": "2026-08-17T00:00:00.000Z"
+        }
+      ],
+      "expected_raw_count": 9,
+      "expected_prepared_count": 8
+    }
+  ]
+}

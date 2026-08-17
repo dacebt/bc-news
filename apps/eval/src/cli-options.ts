@@ -15,6 +15,7 @@ export type EvalCliCommand =
 	| { command: "acceptance-compare"; leftRunId: string; rightRunId: string; resultsDirectory?: string }
 	| { command: "fixture-record-responses"; fixturePath: string; configPath: string; responseDirectory?: string }
 	| { command: "context-benchmark"; fixturePath: string; resultsDirectory?: string }
+	| { command: "corpus-extract"; snapshotPath: string; selectionPath: string }
 	| { command: "corpus-show"; corpusPath: string }
 	| { command: "scorecard-build"; inputPath: string; resultsDirectory?: string }
 	| { command: "scorecard-show"; scorecardId: string; resultsDirectory?: string }
@@ -24,7 +25,17 @@ export type EvalCliCommand =
 	| { command: "longitudinal-build"; inputPath: string; resultsDirectory?: string }
 	| { command: "longitudinal-show"; seriesId: string; resultsDirectory?: string };
 
-const ALL_OPTIONS = ["fixture", "config", "results-dir", "response-dir", "corpus", "input", "cohort"] as const;
+const ALL_OPTIONS = [
+	"fixture",
+	"config",
+	"results-dir",
+	"response-dir",
+	"snapshot",
+	"selection",
+	"corpus",
+	"input",
+	"cohort",
+] as const;
 
 export class CliOptionsError extends Error {
 	readonly code = "invalid_cli_options";
@@ -62,6 +73,8 @@ function runParseArgs(argv: readonly string[]) {
 			config: { type: "string" },
 			"results-dir": { type: "string" },
 			"response-dir": { type: "string" },
+			snapshot: { type: "string" },
+			selection: { type: "string" },
 			corpus: { type: "string" },
 			input: { type: "string" },
 			cohort: { type: "string" },
@@ -231,10 +244,22 @@ export function parseEvalCliCommand(argv: readonly string[]): EvalCliCommand {
 		};
 	}
 	if (namespace === "corpus") {
-		if (positionals[1] !== "show") throw new CliOptionsError("Expected corpus show");
-		exactPositionals(positionals, 2, "corpus show");
-		rejectUnknownOptions(values, ["corpus"], "corpus show");
-		return { command: "corpus-show", corpusPath: requireStringOption(values.corpus, "corpus") };
+		const route = positionals[1];
+		if (route === "extract") {
+			exactPositionals(positionals, 2, "corpus extract");
+			rejectUnknownOptions(values, ["snapshot", "selection"], "corpus extract");
+			return {
+				command: "corpus-extract",
+				snapshotPath: requireStringOption(values.snapshot, "snapshot"),
+				selectionPath: requireStringOption(values.selection, "selection"),
+			};
+		}
+		if (route === "show") {
+			exactPositionals(positionals, 2, "corpus show");
+			rejectUnknownOptions(values, ["corpus"], "corpus show");
+			return { command: "corpus-show", corpusPath: requireStringOption(values.corpus, "corpus") };
+		}
+		throw new CliOptionsError("Expected corpus extract or show");
 	}
 	if (namespace === "scorecard") {
 		const route = positionals[1];
