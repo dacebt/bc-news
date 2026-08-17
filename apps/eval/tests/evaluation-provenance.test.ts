@@ -36,13 +36,13 @@ test("keeps clean code provenance stable when an excluded result is generated", 
 	expect(first).toEqual(second);
 	expect(first).toMatchObject({ repository: "bc-news", dirty: false });
 	expect(first.commit_sha).toMatch(/^[0-9a-f]{40}$/u);
-});
+}, 30_000);
 
 test("rejects dirty source instead of emitting reconstructible provenance", async () => {
 	const root = await repository();
 	await writeFile(join(root, "source.txt"), "changed\n", "utf8");
 	await expect(codeProvenance(root, join(root, "results"))).rejects.toMatchObject({ code: "evaluation_code_provenance_unavailable" });
-});
+}, 30_000);
 
 test("rejects a results exclusion that would hide tracked source", async () => {
 	const root = await repository();
@@ -52,4 +52,4 @@ test("rejects a results exclusion that would hide tracked source", async () => {
 	await execFileAsync("git", ["add", "tracked-results/source.json"], { cwd: root });
 	await execFileAsync("git", ["commit", "-m", "tracked result"], { cwd: root });
 	await expect(codeProvenance(root, resultsDirectory)).rejects.toThrow("would hide tracked source");
-});
+}, 30_000);

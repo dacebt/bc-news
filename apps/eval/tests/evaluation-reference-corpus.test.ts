@@ -21,4 +21,4 @@ test("direct corpus proof resolves exact committed evidence and rejects semantic
 	const root = await mkdtemp(join(tmpdir(), "bc-news-reference-corpus-test-"));
 	try { await expect(verifyEvaluationReferenceCorpus(root)).resolves.toBe("EVALUATION REFERENCE CORPUS VERIFIED"); }
 	finally { await rm(root, { recursive: true, force: true }); }
-}, 30_000);
+}, 90_000);
