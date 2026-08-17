@@ -89,7 +89,9 @@ canonical walk records into its own temporary directory through a
 repository-owned loopback provider; it never changes the committed fixtures or
 contacts a configured external endpoint.
 
-Retained historical eval run files remain inert provenance only. Canonical
-replay checks current evidence and final products without reconstructing prompt
-text or validating stored request hashes. Recorded replay reports token
-measurement as unavailable and external billing as none.
+Historical eval Run Files remain inert provenance only when reopened through a
+historical reader from an explicit external path or prior Git commit; this repo
+no longer tracks them in `HEAD`. Canonical replay checks current evidence and
+final products without reconstructing prompt text or validating stored request
+hashes. Recorded replay reports token measurement as unavailable and external
+billing as none.

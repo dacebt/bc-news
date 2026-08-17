@@ -13,7 +13,7 @@ generated:
 # Domain Model: bc-news evaluation and verification
 
 **Last updated:** 2026-08-17
-**Update reason:** strict aggregate evaluation results — add whitelist-only aggregate exports while keeping scorecards commit-addressed, Codex-authored, and evaluation-only.
+**Update reason:** strict aggregate evaluation results — add whitelist-only aggregate exports while keeping current V3 scorecards local hash-addressed, Codex-authored, and evaluation-only, with embedded V1 and Git-addressed V2 retained as historical readers.
 
 ## Ubiquitous Language
 
@@ -78,7 +78,7 @@ generated:
 | Evaluation Trial | One configuration's two-track behavior and terminal subject outcome within a benchmark. |
 | Step Invocation | Immutable request, response or transport outcome, timing, findings, and retry linkage for one model call. |
 | Evaluation Reference Corpus | Current local V3 selection-bound snapshot copy, copied selection, derived fixtures, root-authored semantic references, and objective variation witnesses, plus the historical Git-addressed V2 synthetic reader. |
-| Evaluation Scorecard | A commit-addressed declaration plus compact source descriptors, four role-specific contexts, sample counts, rates, distributions, qualitative summaries, and freshness information. |
+| Evaluation Scorecard | A local hash-addressed current V3 declaration plus compact source descriptors, four role-specific contexts, sample counts, rates, distributions, qualitative summaries, and freshness information; embedded V1 and Git-addressed V2 remain historical readers. |
 | Aggregate Evaluation Result | A whitelist-only role summary exported from a validated scorecard with `cohort.evidence_identity_sha256` bound to its source corpus identity, with subject descriptor, counts, rates and intervals, aggregate distributions, and qualitative counts only. |
 | Longitudinal Evaluation Scorecard Series | Local hash-addressed current scorecard audit packs plus four stable cohort histories, baseline/subject summaries, signal witnesses, evidence classifications, and per-scorecard freshness information; embedded V1 and Git-addressed V2 remain historical readers. |
 

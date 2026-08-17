@@ -62,12 +62,12 @@ result in another.
 |---|---|---|---|
 | Deterministic tests | `pnpm test` | Isolated invariants, reproduced defects, and high-risk state transitions | Test pass or hard test failure |
 | Model evaluation | `pnpm --filter @bc-news/eval eval -- benchmark run ...` and `benchmark list/show/summary/compare` | Strict versioned Benchmark Runs in `apps/eval/local-data/evaluation-results` by default | Retained model behavior and harness outcome; no score or acceptance verdict |
-| Evaluation reference corpus | `corpus show --corpus packages/fixtures/evaluation-corpus/manifest.json` | Ordered synthetic chats plus separate exact source-witness records | Auditable source truth and variation coverage; no target article, score, or verdict |
+| Evaluation reference corpus | `corpus extract --snapshot <sqlite-path> --selection <selection-path>` and `corpus show --corpus <manifest-path>` | Current local V3 selection-bound corpus workspaces in `apps/eval/local-data/corpus-workspaces` plus historical Git-addressed V2 synthetic readers | Auditable source truth and variation coverage; no target article, score, or verdict |
 | Evaluation scorecards | `scorecard build --input <declaration-path>` and `scorecard show <scorecard-id>` | Current local hash-addressed scorecards in `apps/eval/local-data/scorecards` by default, plus embedded V1 and Git-addressed V2 historical readers | Four transparent role-specific evidence reports; no aggregate score, ranking, recommendation, or acceptance verdict |
 | Aggregate evaluation results | `aggregate export --input <scorecard-artifact-path> --cohort <cohort-id> [--results-dir <path>]`, `aggregate show <aggregate-id>`, and `aggregate compare <left-id> <right-id>` | Strict content-free aggregate JSON in `apps/eval/summaries/` by default, with `cohort.evidence_identity_sha256` bound to the source corpus identity | Descriptive role aggregates only: subject descriptor, counts, rates and intervals, aggregate distributions, and qualitative counts; never source or model-output evidence, a winner, a rank, a recommendation, acceptance, production selection, or a walk result |
 | Longitudinal evaluation scorecards | `longitudinal build --input <declaration-path>` and `longitudinal show <series-id>` | Current local hash-addressed series in `apps/eval/local-data/longitudinal-scorecards` by default, plus embedded V1 and Git-addressed V2 historical readers | Four role-specific context, sufficiency, baseline-variation, or potential-drift classifications; never a judge or production gate |
 | Fixture and context tooling | `fixture record-responses ...` and `context benchmark ...` | Four request-linked recorded responses, or strict context-measurement results | Fixture-authoring or context-measurement tooling result, never a walk or acceptance result |
-| Recorded-replay acceptance | `acceptance run/list/show/compare` and `verify:recorded-replay-acceptance` | Historical Run Files in `apps/eval/results` | `acceptance: four recorded production steps replayed request-linked and deterministic; diagnostics retained: 4` |
+| Recorded-replay acceptance | `acceptance run/list/show/compare` and `verify:recorded-replay-acceptance` | Current local Run Files in `apps/eval/local-data/acceptance-results` by default, plus historical readers when explicitly addressed | `acceptance: four recorded production steps replayed request-linked and deterministic; diagnostics retained: 4` |
 | Composed skeleton walk | `pnpm walk` | The deployed local ingest, generation, D1, API, status, and browser path using committed recorded adapters | Independent `walk:` observations and terminal `WALK PASS` |
 
 Static guarantees (`pnpm typecheck` and `pnpm lint`) support every row but do
@@ -192,23 +192,29 @@ speculative counts, and reasoning-content presence remain behavior. Missing or
 provider-owned fields are explicit unknown or externally controlled observations;
 raw provider configuration blobs are never retained.
 
-The committed evaluation reference corpus is an explicit source-evidence
-surface, separate from model output:
+The evaluation reference corpus is an explicit source-evidence surface,
+separate from model output. The retained committed contract is the content-free
+selection file, not a tracked corpus workspace:
 
 ```sh
+pnpm --filter @bc-news/eval eval -- corpus extract \
+  --snapshot /path/to/snapshot.sqlite \
+  --selection apps/eval/production-corpus-selection.json
 pnpm --filter @bc-news/eval eval -- corpus show \
-  --corpus packages/fixtures/evaluation-corpus/manifest.json
+  --corpus apps/eval/local-data/corpus-workspaces/<selection-id>/reference-corpus/manifest.json
 ```
 
-Its strict manifest orders twelve synthetic conversations and byte-binds each
-one to a separate reference record. Reference claims, events, ambiguities,
-entities, numbers, and noteworthy candidates use exact excerpts from message
-fields that survive the real evidence-preparation path. Closed variation tags
-carry objective witnesses for dense and sparse chats, overlapping and isolated
-events, contradictions, unresolved ambiguity, names, numbers, announcement
-candidates, and explicitly identified irrelevant chatter. The corpus contains
-no target article, preferred angle, model output, score, or acceptance verdict;
-existing benchmark and tooling commands remain single-fixture boundaries.
+Extraction copies the exact snapshot bytes and the exact content-free selection
+bytes into an ignored local workspace beneath
+`apps/eval/local-data/corpus-workspaces/`, replays the unchanged preparation
+path, and emits only derived fixture material. Root privately authors the
+semantic references and the selection-bound version 3 manifest inside that
+workspace. `corpus show` then validates the workspace membership, selection
+roster, raw and prepared counts, and declared variation coverage before
+reporting the local corpus. Repository version 2 remains the historical
+Git-addressed synthetic reader. The corpus contains no target article,
+preferred angle, model output, score, or acceptance verdict; existing
+benchmark and tooling commands remain single-fixture boundaries.
 
 Build an auditable scorecard only from a complete declaration that binds one
 configuration across the full corpus, retained version 7 or Gateway version 8
@@ -329,10 +335,12 @@ pnpm --filter @bc-news/eval eval -- acceptance compare <left-id> <right-id>
 The default acceptance configuration is
 `apps/eval/recorded-replay.config.json`; `acceptance run` also accepts an
 explicit `--config`, and all acceptance routes accept `--results-dir` where
-applicable. Run Files live in `apps/eval/results` by default. Current Run Files
-require exact ordered diagnostics; historical files without that field report
-diagnostics as unknown, not as observed empty. Production diagnostics are
-operator evidence in generation status and are not part of `EditionSchema`.
+applicable. Without `--results-dir`, Run Files live in
+`apps/eval/local-data/acceptance-results`. Current Run Files require exact
+ordered diagnostics; historical files without that field report diagnostics as
+unknown when reopened through the historical reader, not as observed empty.
+Production diagnostics are operator evidence in generation status and are not
+part of `EditionSchema`.
 
 Fixture authoring and context measurement are tooling surfaces rather than
 evaluation or acceptance:

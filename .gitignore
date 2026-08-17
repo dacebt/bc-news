@@ -12,8 +12,9 @@ dist/
 .dev.vars*
 !apps/generation/.dev.vars.example
 
-# generated local benchmark output
+# generated local evaluation output
 apps/eval/local-data/
+# legacy ignored eval output roots kept to avoid surfacing operator-local artifacts
 apps/eval/context-results/
 apps/eval/evaluation-results/
 apps/eval/scorecard-evidence/

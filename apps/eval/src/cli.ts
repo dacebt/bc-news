@@ -122,7 +122,7 @@ export async function runEvalCliApplication(options: EvalCliApplicationOptions):
 	});
 	const acceptanceResultsDirectoryFor = (resultsDirectory: string | undefined): string => (
 		resultsDirectory === undefined
-			? resolve(appDirectory, "results")
+			? resolve(localDataRoot, "acceptance-results")
 			: resolve(cwd, resultsDirectory)
 	);
 	const benchmarkResultsDirectoryFor = (resultsDirectory: string | undefined): string => (

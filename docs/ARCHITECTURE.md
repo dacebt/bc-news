@@ -243,7 +243,7 @@ observations do not cross domain boundaries.
 | Aggregate evaluation results | `aggregate export/show/compare` | Strict content-free aggregate JSON under `apps/eval/summaries/` by default, with `cohort.evidence_identity_sha256` bound to the source corpus identity | Descriptive role aggregates only: subject descriptor, counts, rates and intervals, aggregate distributions, and qualitative counts; never source or model-output evidence, a winner, a rank, a recommendation, acceptance, or production selection |
 | Longitudinal evaluation scorecards | `longitudinal build/show` | Current local hash-addressed series under `apps/eval/local-data/longitudinal-scorecards` by default, plus embedded V1 and Git-addressed V2 historical readers | Four role-specific evidence classifications; no model judge, acceptance verdict, or production decision |
 | Fixture and context tooling | `fixture record-responses` and `context benchmark` | Step-keyed response files or strict context-result artifacts | Fixture-authoring or context-measurement tooling observations |
-| Recorded-replay acceptance | `acceptance run/list/show/compare` | Historical Run Files under `apps/eval/results` | `acceptance:` gate result over controlled recorded evidence |
+| Recorded-replay acceptance | `acceptance run/list/show/compare` | Current local Run Files under `apps/eval/local-data/acceptance-results` by default, plus historical readers when explicitly addressed | `acceptance:` gate result over controlled recorded evidence |
 | Composed skeleton walk | `pnpm walk` | Running local ingest, generation, D1, API, status, and browser product | Walk-owned `walk:` observations and terminal `WALK PASS` |
 
 Strict TypeScript and lint are supporting static guarantees, not a tenth
@@ -532,10 +532,11 @@ Retained Benchmark Runs are browsed through the namespaced `benchmark list`,
 Their application boundary reads only `evaluation-results/<id>.json`, validates
 every loaded file through the current Benchmark Run contract, binds
 the filename to the artifact id, and rejects corrupt evidence rather than
-skipping it. Historical Run Files retain their distinct schema and
-`apps/eval/results` directory and are owned only by `acceptance run`,
-`acceptance list`, `acceptance show`, and `acceptance compare`; they are never
-relabeled as Benchmark Runs.
+skipping it. Recorded-replay Run Files retain their distinct schema and current
+local default directory `apps/eval/local-data/acceptance-results`, and are
+owned only by `acceptance run`, `acceptance list`, `acceptance show`, and
+`acceptance compare`; historical readers reopen prior Run Files only when they
+are explicitly addressed. They are never relabeled as Benchmark Runs.
 
 Benchmark comparison projects context and behavior independently. Context owns
 the exact fixture and prepared evidence, configuration and retry/repetition

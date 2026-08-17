@@ -35,7 +35,7 @@ outcome or silently substitutes for it.
 | Aggregate evaluation results | `aggregate export/show/compare` and `verify:evaluation-aggregate-results` | Strict content-free aggregate JSON under `apps/eval/summaries/` by default, with `cohort.evidence_identity_sha256` bound to the source corpus identity | Descriptive role aggregates only: subject descriptor, counts, rates and intervals, aggregate distributions, and qualitative counts; never source or model-output evidence, a winner, a rank, a recommendation, acceptance, or production selection |
 | Longitudinal evaluation scorecards | `longitudinal build/show` and `verify:evaluation-longitudinal-scorecards` | Current local hash-addressed series under `apps/eval/local-data/longitudinal-scorecards` by default, plus embedded V1 and Git-addressed V2 historical readers | Four role-specific context, sufficiency, baseline-variation, or potential-drift observations; never a judge or product gate |
 | Fixture and context tooling | `fixture record-responses` and `context benchmark` | Four step-keyed recorded responses, or strict context results | Fixture-authoring or context-measurement tooling result; never acceptance or a walk |
-| Recorded-replay acceptance | `acceptance run/list/show/compare` and its direct verifier | Historical Run Files under `apps/eval/results` | `acceptance:` result over controlled replay; never a Benchmark Run outcome |
+| Recorded-replay acceptance | `acceptance run/list/show/compare` and its direct verifier | Current local Run Files under `apps/eval/local-data/acceptance-results` by default, plus historical readers when explicitly addressed | `acceptance:` result over controlled replay; never a Benchmark Run outcome |
 | Composed skeleton walk | `pnpm walk` | The running local ingest, generation, persistence, API, status, and browser product | Walk-owned `walk:` observations followed by independent terminal `WALK PASS` |
 
 **Deterministic tests** protect warranted invariants, reproduced defects, and
@@ -338,13 +338,15 @@ evidence listed summarized and compared without verdicts`. Runtime-evidence
 verification exercises the real
 command, store, reader, projection, and summary path with controlled providers
 and ends exactly with `BENCHMARK RUNTIME EVIDENCE VERIFIED`. Reference-corpus
-verification loads the committed corpus through the production reader, runs
-the complete corruption matrix, and ends exactly with `EVALUATION REFERENCE
+verification loads the generated synthetic historical V2 repository proof
+through the historical production reader, runs the complete corruption matrix,
+and ends exactly with `EVALUATION REFERENCE
 CORPUS VERIFIED`. Scorecard verification assembles controlled complete version
-7 runs for the committed corpus through the real input, builder, store, reader,
-report, and CLI paths; proves the exact counts, contexts, rates, intervals,
-distributions, Codex-evidence linkage, commit-path resolution, non-blocking
-outdated reporting, and semantic corruption checks; and ends exactly
+7 runs for the generated synthetic historical V2 repository proof through the
+real input, builder, store, reader, report, and CLI paths; proves the exact
+counts, contexts, rates, intervals, distributions, Codex-evidence linkage,
+historical Git-path resolution, non-blocking outdated reporting, and semantic
+corruption checks; and ends exactly
 with `EVALUATION SCORECARDS VERIFIED`. Aggregate-result verification exercises
 the real export, store, show, and compare paths against controlled scorecards,
 proves the exact subject descriptor, counts, rates, intervals, distributions,

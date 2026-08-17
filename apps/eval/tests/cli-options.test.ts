@@ -1,5 +1,6 @@
-import { readFile } from "node:fs/promises";
-import { resolve } from "node:path";
+import { mkdtemp } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { beforeEach, expect, test, vi } from "vitest";
 import { parseEvalCliCommand } from "../src/cli-options";
 import {
@@ -13,6 +14,9 @@ import {
 	resolveCurrentLocalDataInputPath,
 	resolveCurrentLocalDataResultsDirectory,
 } from "../src/evaluation-local-artifact-cli";
+import { RECORDED_REPLAY_CONFIG_PATH } from "../src/recorded-replay-acceptance-verifier";
+import { REPRESENTATIVE_FIXTURE_PATH } from "../src/representative-fixture";
+import { runCommand } from "../src/run-command";
 
 const cliMocks = vi.hoisted(() => ({
 	loadEvaluationReferenceCorpus: vi.fn(),
@@ -86,6 +90,16 @@ async function invokeCli(argv: readonly string[], currentDirectory: string, appD
 		writeOutput: (text) => { output += text; },
 	});
 	return output;
+}
+
+async function seedAcceptanceRun(resultsDirectory: string): Promise<string> {
+	const { run } = await runCommand({
+		fixturePath: REPRESENTATIVE_FIXTURE_PATH,
+		configPath: RECORDED_REPLAY_CONFIG_PATH,
+		resultsDirectory,
+		environment: {},
+	});
+	return run.id;
 }
 
 test("parses every verification ownership route", () => {
@@ -277,22 +291,22 @@ test("keeps local-data prefix counterexamples on the repository corpus loader", 
 	expect(output).toBe("formatted corpus report\n");
 });
 
-test("shows retained V2 scorecards from explicit legacy directories with freshness", async () => {
-	const currentDirectory = resolve(process.cwd(), "../..");
-	const appDirectory = resolve(currentDirectory, "apps/eval");
-	const scorecardPath = resolve(
-		currentDirectory,
-		"apps/eval/scorecard-results/scorecard-2026-08-12T13-25-29-736Z-c2716a90-726b-474f-8329-1b38bdd37336.json",
-	);
-	const retained = JSON.parse(await readFile(scorecardPath, "utf8")) as { id: string };
+test("defaults acceptance browsing to local-data acceptance-results and preserves explicit --results-dir", async () => {
+	const root = await mkdtemp(join(tmpdir(), "bc-news-cli-acceptance-results-"));
+	const currentDirectory = join(root, "workspace");
+	const appDirectory = join(currentDirectory, "apps/eval");
+	const defaultRunId = await seedAcceptanceRun(join(appDirectory, "local-data/acceptance-results"));
+	const explicitRunId = await seedAcceptanceRun(join(appDirectory, "custom-acceptance-results"));
 
-	const output = await invokeCli(
-		["scorecard", "show", retained.id, "--results-dir", "apps/eval/scorecard-results"],
+	const defaultOutput = await invokeCli(["acceptance", "list"], currentDirectory, appDirectory);
+	const explicitOutput = await invokeCli(
+		["acceptance", "list", "--results-dir", "apps/eval/custom-acceptance-results"],
 		currentDirectory,
 		appDirectory,
 	);
 
-	expect(output).toContain(`Evaluation scorecard v2: ${retained.id}`);
-	expect(output).toContain("Evaluated code:");
-	expect(output).toContain("freshness=");
+	expect(defaultOutput).toContain(defaultRunId);
+	expect(defaultOutput).not.toContain(explicitRunId);
+	expect(explicitOutput).toContain(explicitRunId);
+	expect(explicitOutput).not.toContain(defaultRunId);
 }, 30_000);
