@@ -275,6 +275,7 @@ async function readLockOwner(path: string): Promise<RecorderLockOwner> {
 	try {
 		candidate = JSON.parse(await readFile(join(path, "owner.json"), "utf8"));
 	} catch (cause) {
+		if (errorCode(cause) === "ENOENT") throw cause;
 		throw new RecordedResponseDirectoryError(
 			"recorder_lock_rejected",
 			path,
