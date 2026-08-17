@@ -63,7 +63,8 @@ result in another.
 | Deterministic tests | `pnpm test` | Isolated invariants, reproduced defects, and high-risk state transitions | Test pass or hard test failure |
 | Model evaluation | `pnpm --filter @bc-news/eval eval -- benchmark run ...` and `benchmark list/show/summary/compare` | Strict versioned Benchmark Runs in `apps/eval/evaluation-results` | Retained model behavior and harness outcome; no score or acceptance verdict |
 | Evaluation reference corpus | `corpus show --corpus packages/fixtures/evaluation-corpus/manifest.json` | Ordered synthetic chats plus separate exact source-witness records | Auditable source truth and variation coverage; no target article, score, or verdict |
-| Evaluation scorecards | `scorecard build --input <declaration-path>` and `scorecard show <scorecard-id>` | Exact retained runs, corpus bytes, human annotations, and human qualitative reviews | Four transparent role-specific evidence reports; no aggregate score, ranking, recommendation, or acceptance verdict |
+| Evaluation scorecards | `scorecard build --input <declaration-path>` and `scorecard show <scorecard-id>` | Commit-addressed retained runs, corpus sources, Codex annotations, and Codex qualitative reviews | Four transparent role-specific evidence reports; no aggregate score, ranking, recommendation, or acceptance verdict |
+| Aggregate evaluation results | `aggregate export --input <scorecard-artifact-path> --cohort <cohort-id> [--results-dir <path>]`, `aggregate show <aggregate-id>`, and `aggregate compare <left-id> <right-id>` | Strict whitelist-only aggregate JSON in `apps/eval/summaries/` by default | Descriptive role aggregates only: subject descriptor, counts, rates and intervals, aggregate distributions, and qualitative counts; never source or model-output evidence, a winner, a rank, a recommendation, acceptance, production selection, or a walk result |
 | Longitudinal evaluation scorecards | `longitudinal build --input <declaration-path>` and `longitudinal show <series-id>` | Ordered exact scorecard audit packs split into an earlier baseline and later subject observations | Four role-specific context, sufficiency, baseline-variation, or potential-drift classifications; never a judge or production gate |
 | Fixture and context tooling | `fixture record-responses ...` and `context benchmark ...` | Four request-linked recorded responses, or strict context-measurement results | Fixture-authoring or context-measurement tooling result, never a walk or acceptance result |
 | Recorded-replay acceptance | `acceptance run/list/show/compare` and `verify:recorded-replay-acceptance` | Historical Run Files in `apps/eval/results` | `acceptance: four recorded production steps replayed request-linked and deterministic; diagnostics retained: 4` |
@@ -211,7 +212,7 @@ existing benchmark and tooling commands remain single-fixture boundaries.
 
 Build an auditable scorecard only from a complete declaration that binds one
 configuration across the full corpus, retained version 7 or Gateway version 8
-Benchmark Runs, exact human output annotations, and separate human qualitative
+Benchmark Runs, exact Codex output annotations, and separate Codex qualitative
 reviews:
 
 ```sh
@@ -223,15 +224,43 @@ pnpm --filter @bc-news/eval eval -- scorecard show <scorecard-id> \
 ```
 
 Without `--results-dir`, scorecards are stored under
-`apps/eval/scorecard-results`. Each artifact embeds the exact source bytes and
-recomputes its identities, sample counts, context, rates, Wilson intervals,
-token and latency distributions, and qualitative summaries when read. The
+`apps/eval/scorecard-results`. Each artifact stores one source declaration
+reference plus compact semantic source descriptors, then reloads the declaration
+and named evidence through recorded Git references to recompute its identities,
+sample counts, context, rates, Wilson intervals, token and latency
+distributions, and qualitative summaries when read. The
 report keeps `main_story_write`, `main_story_copyedit`, `announcements_write`,
 and `announcements_copyedit` separate. Factual grounding, attribution, event
 coverage, announcement relevance, coherence, usefulness, newsworthiness, and
-voice retain their named human annotator or reviewer evidence; the application
+voice retain their named Codex annotator or reviewer evidence; the application
 does not infer those judgments. A scorecard is not a weighted model-wide score,
 winner, threshold, recommendation, acceptance gate, or production decision.
+
+Export a commit-safe aggregate result only from a validated scorecard artifact.
+`--cohort` is mandatory, but it is a binding assertion, not a free-form label:
+it must exactly match the validated source scorecard corpus id.
+
+```sh
+pnpm --filter @bc-news/eval eval -- aggregate export \
+  --input path/to/scorecard-artifact.json \
+  --cohort <cohort-id> \
+  --results-dir path/to/aggregate-results
+pnpm --filter @bc-news/eval eval -- aggregate show <aggregate-id> \
+  --results-dir path/to/aggregate-results
+pnpm --filter @bc-news/eval eval -- aggregate compare <left-id> <right-id> \
+  --results-dir path/to/aggregate-results
+```
+
+Without `--results-dir`, aggregate results are stored under
+`apps/eval/summaries/`. Export is a whitelist projection, never a redaction
+pass over a full scorecard: it retains only the role-local model subject
+descriptor, counts, rates with intervals, aggregate distributions, and
+qualitative counts. It excludes source or model-output evidence, repository or
+filesystem paths, hashes, context identities, sample-level records, and
+qualitative rationales. `aggregate compare` stays descriptive and
+evaluation-only; it does not produce a winner, rank, recommendation, acceptance
+verdict, production selection, or `WALK PASS`, and this surface is not wired
+into acceptance or the skeleton walk.
 
 Retain selected scorecard audit packs as one durable longitudinal series:
 
@@ -322,6 +351,7 @@ pnpm --filter @bc-news/eval verify:evaluation-browse
 pnpm --filter @bc-news/eval verify:benchmark-runtime-evidence
 pnpm --filter @bc-news/eval verify:evaluation-reference-corpus
 pnpm --filter @bc-news/eval verify:evaluation-scorecards
+pnpm --filter @bc-news/eval verify:evaluation-aggregate-results
 pnpm --filter @bc-news/eval verify:evaluation-longitudinal-scorecards
 pnpm --filter @bc-news/eval verify:recorded-response-fixture-authoring
 pnpm --filter @bc-news/eval verify:recorded-replay-acceptance
@@ -342,7 +372,10 @@ prepared source witnesses, directory closure, and objective variation rules
 pass their positive and corruption proofs.
 Scorecard verification ends with `EVALUATION SCORECARDS VERIFIED` after the
 real builder, strict store/read path, report, both CLI routes, exact context and
-denominator calculations, human-evidence linkage, and corruption matrix pass.
+denominator calculations, Codex-evidence linkage, and corruption matrix pass.
+Aggregate-result verification exercises the real export, store, show, and
+compare paths against controlled scorecards and rejects any forbidden source,
+path, hash, context, sample, or rationale field that escapes the whitelist.
 Longitudinal verification ends with
 `EVALUATION LONGITUDINAL SCORECARDS VERIFIED` after the committed 3+2 audit
 pack, stable cohort normalization, all four classifications, independent

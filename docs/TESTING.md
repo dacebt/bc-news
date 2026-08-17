@@ -32,6 +32,7 @@ outcome or silently substitutes for it.
 | Model evaluation | `benchmark run/list/show/summary/compare` | Strict versioned Benchmark Runs under `apps/eval/evaluation-results` | Retained model subject and harness outcomes with `evaluation:` observations; never a score or acceptance verdict |
 | Evaluation reference corpus | `corpus show --corpus <manifest-path>` and its direct verifier | Commit-addressed ordered synthetic fixtures and separate exact source-witness references | Auditable source truth and objective variation coverage; never a model result, score, or acceptance verdict |
 | Evaluation scorecards | `scorecard build/show` and `verify:evaluation-scorecards` | Commit-addressed V7 or Gateway V8 runs and corpus sources with Codex annotations and qualitative reviews | Four transparent role-specific measurements plus current/outdated checkout information; never an aggregate score, ranking, recommendation, or acceptance verdict |
+| Aggregate evaluation results | `aggregate export/show/compare` and `verify:evaluation-aggregate-results` | Strict whitelist-only aggregate JSON under `apps/eval/summaries/` by default | Descriptive role aggregates only: subject descriptor, counts, rates and intervals, aggregate distributions, and qualitative counts; never source or model-output evidence, a winner, a rank, a recommendation, acceptance, or production selection |
 | Longitudinal evaluation scorecards | `longitudinal build/show` and `verify:evaluation-longitudinal-scorecards` | Exact ordered scorecard audit packs, stable role cohorts, and baseline/subject histories | Four role-specific context, sufficiency, baseline-variation, or potential-drift observations; never a judge or product gate |
 | Fixture and context tooling | `fixture record-responses` and `context benchmark` | Four step-keyed recorded responses, or strict context results | Fixture-authoring or context-measurement tooling result; never acceptance or a walk |
 | Recorded-replay acceptance | `acceptance run/list/show/compare` and its direct verifier | Historical Run Files under `apps/eval/results` | `acceptance:` result over controlled replay; never a Benchmark Run outcome |
@@ -174,6 +175,22 @@ the Codex assessment that included material is worth reporting without requiring
 one target angle; and `voice` is adherence to the declared in-world,
 straightforward editorial voice.
 
+**Aggregate evaluation results** are exported only from a validated scorecard
+artifact via `aggregate export --input <scorecard-artifact-path> --cohort
+<cohort-id> [--results-dir <path>]`, where the mandatory `--cohort` value must
+exactly match the validated source scorecard corpus id. They are then
+reopened through `aggregate show <aggregate-id> [--results-dir <path>]` and
+compared through `aggregate compare <left-id> <right-id> [--results-dir
+<path>]`. Without `--results-dir`, they live under `apps/eval/summaries/`.
+Export is a whitelist projection, not a redaction pass: each role retains only
+the model subject descriptor, counts, rates with intervals, aggregate
+distributions, and qualitative counts. Source or model-output evidence,
+repository or filesystem paths, hashes, context identities, sample-level
+records, and qualitative rationales are excluded by contract. This surface
+remains evaluation-only and descriptive; it does not create a score, winner,
+rank, recommendation, acceptance gate, production decision, or walk result, and
+it is not part of acceptance or skeleton-walk evidence.
+
 **Longitudinal evaluation scorecards** consume exact commit-addressed scorecard
 audit packs without rewriting historical version 1 evidence. `longitudinal build
 --input <declaration-path> [--results-dir <path>]` requires ordered, unique,
@@ -273,6 +290,7 @@ pnpm --filter @bc-news/eval verify:evaluation-browse
 pnpm --filter @bc-news/eval verify:benchmark-runtime-evidence
 pnpm --filter @bc-news/eval verify:evaluation-reference-corpus
 pnpm --filter @bc-news/eval verify:evaluation-scorecards
+pnpm --filter @bc-news/eval verify:evaluation-aggregate-results
 pnpm --filter @bc-news/eval verify:evaluation-longitudinal-scorecards
 pnpm --filter @bc-news/eval verify:recorded-response-fixture-authoring
 pnpm --filter @bc-news/eval verify:recorded-replay-acceptance
@@ -289,12 +307,12 @@ option ownership, namespace-specific failure prefix, and rejection of the old
 bare `evaluate`, `run`, `record`, `context`, `list`, `show`, and `compare`
 routes. After a namespace is recognized, failures begin with `benchmark
 failed:`, `acceptance failed:`, `fixture authoring failed:`, `context
-benchmark failed:`, `corpus failed:`, `scorecard failed:`, or `longitudinal
-scorecard failed:`. Failures before namespace recognition begin with `command
+benchmark failed:`, `corpus failed:`, `scorecard failed:`, `aggregate
+failed:`, or `longitudinal scorecard failed:`. Failures before namespace recognition begin with `command
 failed:`; `eval failed:` is forbidden.
 
-The three evaluation verifiers print `evaluation:` observations. Trial
-retention ends with `evaluation: concurrent tracks retained interleaved
+The benchmark-path verifiers print `evaluation:` observations. Trial retention
+ends with `evaluation: concurrent tracks retained interleaved
 progress, diagnostics, schema rejection, infrastructure failure, interruption
 evidence, and completion`, continuation ends with
 `evaluation: serial benchmark retained
@@ -310,7 +328,12 @@ CORPUS VERIFIED`. Scorecard verification assembles controlled complete version
 report, and CLI paths; proves the exact counts, contexts, rates, intervals,
 distributions, Codex-evidence linkage, commit-path resolution, non-blocking
 outdated reporting, and semantic corruption checks; and ends exactly
-with `EVALUATION SCORECARDS VERIFIED`. Longitudinal verification creates a
+with `EVALUATION SCORECARDS VERIFIED`. Aggregate-result verification exercises
+the real export, store, show, and compare paths against controlled scorecards,
+proves the exact subject descriptor, counts, rates, intervals, distributions,
+and qualitative-count projection, and rejects any forbidden source, path, hash,
+context, sample, or rationale field that escapes the whitelist. Longitudinal
+verification creates a
 compact committed 3+2 audit pack and independently recomputes stable cohort
 normalization, pooled rates, Wilson intervals, raw token/latency distributions,
 four role classifications, store/read/report/CLI behavior, commit-backed

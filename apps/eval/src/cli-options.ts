@@ -18,10 +18,13 @@ export type EvalCliCommand =
 	| { command: "corpus-show"; corpusPath: string }
 	| { command: "scorecard-build"; inputPath: string; resultsDirectory?: string }
 	| { command: "scorecard-show"; scorecardId: string; resultsDirectory?: string }
+	| { command: "aggregate-export"; inputPath: string; cohortId: string; resultsDirectory?: string }
+	| { command: "aggregate-show"; aggregateId: string; resultsDirectory?: string }
+	| { command: "aggregate-compare"; leftAggregateId: string; rightAggregateId: string; resultsDirectory?: string }
 	| { command: "longitudinal-build"; inputPath: string; resultsDirectory?: string }
 	| { command: "longitudinal-show"; seriesId: string; resultsDirectory?: string };
 
-const ALL_OPTIONS = ["fixture", "config", "results-dir", "response-dir", "corpus", "input"] as const;
+const ALL_OPTIONS = ["fixture", "config", "results-dir", "response-dir", "corpus", "input", "cohort"] as const;
 
 export class CliOptionsError extends Error {
 	readonly code = "invalid_cli_options";
@@ -61,6 +64,7 @@ function runParseArgs(argv: readonly string[]) {
 			"response-dir": { type: "string" },
 			corpus: { type: "string" },
 			input: { type: "string" },
+			cohort: { type: "string" },
 		},
 	});
 }
@@ -87,6 +91,12 @@ function scorecardId(value: string): string {
 function longitudinalSeriesId(value: string): string {
 	const parsed = EvaluationIdSchema.safeParse(value);
 	if (!parsed.success) throw new CliOptionsError(`Invalid longitudinal scorecard series id: ${value}`);
+	return parsed.data;
+}
+
+function aggregateResultId(value: string): string {
+	const parsed = EvaluationIdSchema.safeParse(value);
+	if (!parsed.success) throw new CliOptionsError(`Invalid aggregate result id: ${value}`);
 	return parsed.data;
 }
 
@@ -248,6 +258,39 @@ export function parseEvalCliCommand(argv: readonly string[]): EvalCliCommand {
 		}
 		throw new CliOptionsError("Expected scorecard build or show");
 	}
+	if (namespace === "aggregate") {
+		const route = positionals[1];
+		if (route === "export") {
+			exactPositionals(positionals, 2, "aggregate export");
+			rejectUnknownOptions(values, ["input", "cohort", "results-dir"], "aggregate export");
+			return {
+				command: "aggregate-export",
+				inputPath: requireStringOption(values.input, "input"),
+				cohortId: requireStringOption(values.cohort, "cohort"),
+				...optionalResultsDirectory(values["results-dir"]),
+			};
+		}
+		if (route === "show") {
+			exactPositionals(positionals, 3, "aggregate show");
+			rejectUnknownOptions(values, ["results-dir"], "aggregate show");
+			return {
+				command: "aggregate-show",
+				aggregateId: aggregateResultId(positionals[2] ?? ""),
+				...optionalResultsDirectory(values["results-dir"]),
+			};
+		}
+		if (route === "compare") {
+			exactPositionals(positionals, 4, "aggregate compare");
+			rejectUnknownOptions(values, ["results-dir"], "aggregate compare");
+			return {
+				command: "aggregate-compare",
+				leftAggregateId: aggregateResultId(positionals[2] ?? ""),
+				rightAggregateId: aggregateResultId(positionals[3] ?? ""),
+				...optionalResultsDirectory(values["results-dir"]),
+			};
+		}
+		throw new CliOptionsError("Expected aggregate export, show, or compare");
+	}
 	if (namespace === "longitudinal") {
 		const route = positionals[1];
 		if (route === "build") {
@@ -270,5 +313,5 @@ export function parseEvalCliCommand(argv: readonly string[]): EvalCliCommand {
 		}
 		throw new CliOptionsError("Expected longitudinal build or show");
 	}
-	throw new CliOptionsError("Expected the benchmark, acceptance, fixture, context, corpus, scorecard, or longitudinal namespace");
+	throw new CliOptionsError("Expected the benchmark, acceptance, fixture, context, corpus, scorecard, aggregate, or longitudinal namespace");
 }

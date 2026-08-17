@@ -1,5 +1,5 @@
 import { mkdir } from "node:fs/promises";
-import { dirname, join, resolve } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { compareRuns } from "./compare";
 import { parseEvalCliCommand } from "./cli-options";
@@ -27,6 +27,17 @@ import { listRunFiles, loadRunFile } from "./run-file";
 import { runCommand } from "./run-command";
 import { loadEvaluationReferenceCorpus } from "./evaluation-reference-corpus";
 import { formatEvaluationReferenceCorpusReport } from "./evaluation-reference-corpus-report";
+import { buildEvaluationAggregateResult } from "./evaluation-aggregate-result-builder";
+import {
+	compareEvaluationAggregateResults,
+	formatEvaluationAggregateResultComparison,
+} from "./evaluation-aggregate-result-comparison";
+import { EvaluationAggregateResultError } from "./evaluation-aggregate-result";
+import { formatEvaluationAggregateResultReport } from "./evaluation-aggregate-result-report";
+import {
+	createEvaluationAggregateResultArtifact,
+	loadEvaluationAggregateResultArtifact,
+} from "./evaluation-aggregate-result-store";
 import { buildEvaluationScorecard } from "./evaluation-scorecard-builder";
 import { loadEvaluationScorecardInput } from "./evaluation-scorecard-input";
 import { formatEvaluationScorecardReport } from "./evaluation-scorecard-report";
@@ -58,6 +69,9 @@ export const EVAL_CLI_USAGE = `Usage:
   pnpm --filter @bc-news/eval eval -- corpus show --corpus <manifest-path>
   pnpm --filter @bc-news/eval eval -- scorecard build --input <declaration-path> [--results-dir <path>]
   pnpm --filter @bc-news/eval eval -- scorecard show <scorecard-id> [--results-dir <path>]
+  pnpm --filter @bc-news/eval eval -- aggregate export --input <scorecard-artifact-path> --cohort <cohort-id> [--results-dir <path>]
+  pnpm --filter @bc-news/eval eval -- aggregate show <aggregate-id> [--results-dir <path>]
+  pnpm --filter @bc-news/eval eval -- aggregate compare <left-id> <right-id> [--results-dir <path>]
   pnpm --filter @bc-news/eval eval -- longitudinal build --input <declaration-path> [--results-dir <path>]
   pnpm --filter @bc-news/eval eval -- longitudinal show <series-id> [--results-dir <path>]`;
 
@@ -82,6 +96,7 @@ export function evalCliFailurePrefix(argv: readonly string[]): string {
 	if (namespace === "context") return "context benchmark failed:";
 	if (namespace === "corpus") return "corpus failed:";
 	if (namespace === "scorecard") return "scorecard failed:";
+	if (namespace === "aggregate") return "aggregate failed:";
 	if (namespace === "longitudinal") return "longitudinal scorecard failed:";
 	return "command failed:";
 }
@@ -118,6 +133,12 @@ export async function runEvalCliApplication(options: EvalCliApplicationOptions):
 	function scorecardResultsDirectoryFor(resultsDirectory: string | undefined): string {
 		return resultsDirectory === undefined
 			? resolve(appDirectory, "scorecard-results")
+			: resolve(cwd, resultsDirectory);
+	}
+
+	function aggregateResultsDirectoryFor(resultsDirectory: string | undefined): string {
+		return resultsDirectory === undefined
+			? resolve(appDirectory, "summaries")
 			: resolve(cwd, resultsDirectory);
 	}
 
@@ -235,6 +256,45 @@ export async function runEvalCliApplication(options: EvalCliApplicationOptions):
 		const repositoryRoot = await evaluationRepositoryRoot();
 		const saved = await loadEvaluationScorecardArtifact(command.scorecardId, scorecardResultsDirectoryFor(command.resultsDirectory), repositoryRoot);
 		writeLine(formatEvaluationScorecardReport(saved, saved.version === 2 ? await evaluationScorecardFreshness(saved, repositoryRoot) : undefined));
+		return;
+	}
+	if (command.command === "aggregate-export") {
+		const repositoryRoot = await evaluationRepositoryRoot();
+		const resolvedInputPath = resolve(cwd, command.inputPath);
+		const sourceArtifact = await loadEvaluationScorecardArtifact(
+			basename(resolvedInputPath, ".json"),
+			dirname(resolvedInputPath),
+			repositoryRoot,
+		);
+		if (sourceArtifact.version !== 2) {
+			throw new EvaluationAggregateResultError(
+				"unsupported_source_scorecard_version",
+				resolvedInputPath,
+				`Aggregate result supports Evaluation Scorecard version 2 only, received v${String(sourceArtifact.version)}`,
+			);
+		}
+		const resultsDirectory = aggregateResultsDirectoryFor(command.resultsDirectory);
+		const artifact = buildEvaluationAggregateResult(sourceArtifact, {
+			id: safeEvaluationId("aggregate-result"),
+			createdAt: new Date().toISOString(),
+			cohortId: command.cohortId,
+		});
+		await createEvaluationAggregateResultArtifact(artifact, resultsDirectory);
+		writeLine(formatEvaluationAggregateResultReport(await loadEvaluationAggregateResultArtifact(artifact.id, resultsDirectory)));
+		return;
+	}
+	if (command.command === "aggregate-show") {
+		writeLine(formatEvaluationAggregateResultReport(await loadEvaluationAggregateResultArtifact(
+			command.aggregateId,
+			aggregateResultsDirectoryFor(command.resultsDirectory),
+		)));
+		return;
+	}
+	if (command.command === "aggregate-compare") {
+		const directory = aggregateResultsDirectoryFor(command.resultsDirectory);
+		const left = await loadEvaluationAggregateResultArtifact(command.leftAggregateId, directory);
+		const right = await loadEvaluationAggregateResultArtifact(command.rightAggregateId, directory);
+		writeLine(formatEvaluationAggregateResultComparison(compareEvaluationAggregateResults(left, right)));
 		return;
 	}
 	if (command.command === "longitudinal-build") {

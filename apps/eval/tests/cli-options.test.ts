@@ -28,6 +28,22 @@ test("parses every verification ownership route", () => {
 		configPath: "models.json",
 	});
 	expect(parseEvalCliCommand(["context", "benchmark", "--fixture", "fixture.json"])).toEqual({ command: "context-benchmark", fixturePath: "fixture.json" });
+	expect(parseEvalCliCommand(["aggregate", "export", "--input", "scorecard-one.json", "--cohort", "baseline-a"])).toEqual({
+		command: "aggregate-export",
+		inputPath: "scorecard-one.json",
+		cohortId: "baseline-a",
+	});
+	expect(parseEvalCliCommand(["aggregate", "show", "aggregate-a", "--results-dir", "summaries"])).toEqual({
+		command: "aggregate-show",
+		aggregateId: "aggregate-a",
+		resultsDirectory: "summaries",
+	});
+	expect(parseEvalCliCommand(["aggregate", "compare", "aggregate-a", "aggregate-b", "--results-dir", "summaries"])).toEqual({
+		command: "aggregate-compare",
+		leftAggregateId: "aggregate-a",
+		rightAggregateId: "aggregate-b",
+		resultsDirectory: "summaries",
+	});
 });
 
 test("keeps options with their owning namespace", () => {
@@ -36,10 +52,15 @@ test("keeps options with their owning namespace", () => {
 	expect(parseEvalCliCommand(["acceptance", "run", "--fixture", "fixture.json", "--config", "recorded.json", "--results-dir", "acceptance"])).toMatchObject({ configPath: "recorded.json", resultsDirectory: "acceptance" });
 	expect(parseEvalCliCommand(["fixture", "record-responses", "--fixture", "fixture.json", "--config", "models.json", "--response-dir", "responses"])).toMatchObject({ responseDirectory: "responses" });
 	expect(parseEvalCliCommand(["context", "benchmark", "--fixture", "fixture.json", "--results-dir", "contexts"])).toMatchObject({ resultsDirectory: "contexts" });
+	expect(parseEvalCliCommand(["aggregate", "export", "--input", "scorecard-one.json", "--cohort", "baseline-a", "--results-dir", "summaries"])).toMatchObject({
+		resultsDirectory: "summaries",
+	});
 	expect(() => parseEvalCliCommand(["benchmark", "list", "--response-dir", "responses"])).toThrow("--response-dir is not valid for the benchmark list command");
 	expect(() => parseEvalCliCommand(["acceptance", "list", "--config", "recorded.json"])).toThrow("--config is not valid for the acceptance list command");
 	expect(() => parseEvalCliCommand(["fixture", "record-responses", "--fixture", "fixture.json", "--config", "models.json", "--results-dir", "results"])).toThrow("--results-dir is not valid for the fixture record-responses command");
 	expect(() => parseEvalCliCommand(["context", "benchmark", "--fixture", "fixture.json", "--config", "models.json"])).toThrow("--config is not valid for the context benchmark command");
+	expect(() => parseEvalCliCommand(["aggregate", "export", "--input", "scorecard-one.json"])).toThrow("--cohort is required");
+	expect(() => parseEvalCliCommand(["aggregate", "show", "aggregate-a", "--cohort", "baseline-a"])).toThrow("--cohort is not valid for the aggregate show command");
 });
 
 test("rejects every removed bare route and omits it from help", () => {
@@ -65,5 +86,6 @@ test("formats failures through the recognized verification namespace", () => {
 	expect(formatEvalCliFailure(["acceptance", "unknown"], new Error("bad route"))).toBe("acceptance failed: bad route");
 	expect(formatEvalCliFailure(["fixture", "unknown"], new Error("bad route"))).toBe("fixture authoring failed: bad route");
 	expect(formatEvalCliFailure(["context", "unknown"], new Error("bad route"))).toBe("context benchmark failed: bad route");
+	expect(formatEvalCliFailure(["aggregate", "unknown"], new Error("bad route"))).toBe("aggregate failed: bad route");
 	expect(formatEvalCliFailure(["unknown"], new Error("bad route"))).toBe("command failed: bad route");
 });

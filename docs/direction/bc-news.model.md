@@ -12,8 +12,8 @@ generated:
 ---
 # Domain Model: bc-news evaluation and verification
 
-**Last updated:** 2026-08-10
-**Update reason:** commit-addressed scorecard evidence — retain exact historical meaning without recursive byte ownership, and report checkout freshness without turning it into a verdict.
+**Last updated:** 2026-08-17
+**Update reason:** strict aggregate evaluation results — add whitelist-only aggregate exports while keeping scorecards commit-addressed, Codex-authored, and evaluation-only.
 
 ## Ubiquitous Language
 
@@ -40,6 +40,7 @@ generated:
 | Source witness | An exact excerpt from a named raw message field that remains under the same identity after evidence preparation. | A free-form summary or model output |
 | Variation witness | Qualified reference ids and prepared message ids that mechanically prove one closed corpus variation tag. | A descriptive fixture label |
 | Evaluation scorecard | One auditable report for a single exact configuration across the complete selected corpus, containing four separate production-role scorecards. | A weighted model-wide score or acceptance gate |
+| Aggregate evaluation result | One commit-safe role summary exported from one validated scorecard with its cohort id bound to the source corpus identity, retaining only the subject descriptor, counts, rates with intervals, aggregate distributions, and qualitative counts. | A scorecard, source or model-output evidence, or an acceptance verdict |
 | Output annotation | A Codex-authored, exact-span and source-reference-linked classification of factual claims, attribution, event coverage, and announcement relevance. | A deterministic assertion |
 | Qualitative review | A separate Codex review of coherence, usefulness, newsworthiness, and voice with rationale and uncertainty. | A numeric score or acceptance gate |
 | Repository source reference | A repository name, full Git commit SHA, and contained POSIX repository-relative path that identifies one source file. | An embedded payload or child-file hash |
@@ -64,6 +65,7 @@ generated:
 | Deterministic testing | Isolated assertions over contracts, lifecycle, persistence, and comparison logic. | Tests do not substitute for a live evaluation or walk. |
 | Evaluation source evidence | Strict selection, preparation, linkage, and browsing of the synthetic reference corpus. | It owns source truth and variation coverage, never generated prose, a score, or a verdict. |
 | Evaluation measurement | Strict construction and browsing of role-specific scorecards from complete retained runs, corpus sources, output annotations, and qualitative reviews. | It calculates transparent quantities and retains Codex judgments; it does not rank models or decide acceptance. |
+| Aggregate evaluation reporting | Strict export, reopening, and comparison of content-free role aggregates projected from validated scorecards. | It is descriptive and evaluation-only; it does not rank, recommend, accept, select production, or walk. |
 | Longitudinal evaluation measurement | Strict reconstruction and temporal comparison of selected scorecard audit packs inside stable role cohorts. | It classifies evidence and retains uncertainty; it does not judge quality, infer causality, or trigger product behavior. |
 
 ## Aggregates
@@ -76,6 +78,7 @@ generated:
 | Step Invocation | Immutable request, response or transport outcome, timing, findings, and retry linkage for one model call. |
 | Evaluation Reference Corpus | Ordered version 2 manifest, commit-addressed synthetic fixtures, exact source-witness references, and objective variation witnesses. |
 | Evaluation Scorecard | A commit-addressed declaration plus compact source descriptors, four role-specific contexts, sample counts, rates, distributions, qualitative summaries, and freshness information. |
+| Aggregate Evaluation Result | A whitelist-only role summary exported from a validated scorecard with the cohort id bound to its source corpus identity, with subject descriptor, counts, rates and intervals, aggregate distributions, and qualitative counts only. |
 | Longitudinal Evaluation Scorecard Series | Commit-addressed scorecard audit packs plus four stable cohort histories, baseline/subject summaries, signal witnesses, evidence classifications, and per-scorecard freshness information. |
 
 ## Notes
@@ -85,5 +88,5 @@ The binding product vocabulary remains in `docs/DOMAIN.md`; this model adds the 
 ## Related documentation
 
 - [Binding domain model](../DOMAIN.md) — authoritative production vocabulary and identity rules.
-- [Current shape](2026-08-10-longitudinal-model-evaluation-scorecards.shape.md) — session boundary for auditable longitudinal per-role evaluation.
-- [Capability map](2026-08-10-longitudinal-model-evaluation-scorecards.map.md) — risk-ordered delivery sequence for retained evidence, corpus truth, scorecards, and longitudinal classification.
+- [Current shape](2026-08-17-local-evaluation-evidence.shape.md) — current session boundary for private evidence replacement and safe aggregate exports.
+- [Capability map](2026-08-17-local-evaluation-evidence.map.md) — risk-ordered delivery sequence for aggregate exports, local scorecards, local corpus curation, and code-only checkout use.

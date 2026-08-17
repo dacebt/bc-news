@@ -84,6 +84,7 @@ own track's typed draft, not a story judge or another evidence-reading editor.
 
 - The repository must contain a small, representative set of conversation fixtures that can be replayed locally.
 - Prompt, model, and orchestration changes must be comparable on the same inputs, with evidence retained over time.
+- The repository-owned evaluation tool may export strict aggregate result JSON from validated scorecards for commit-safe comparison, retaining only descriptive role summaries and never choosing a winner, declaring acceptance, or selecting production models.
 - Local models, recorded responses, and provider free tiers should be preferred for routine development.
 - Paid evaluation SaaS, scheduled live candidate evaluations, and a recurring model-tuning budget are not required.
 
@@ -153,7 +154,6 @@ product from scratch.
 - Operational observability and telemetry detail.
 - Client history, navigation, and unavailable-state behavior.
 - The local runner and deployment topology. (Language and package layout are settled: TypeScript throughout, v1's monorepo shape.)
-- The evaluation result format and whether a local tool is useful beyond a repository-owned harness.
 
 ## Provenance and navigation
 

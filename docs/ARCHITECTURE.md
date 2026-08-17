@@ -231,7 +231,7 @@ judge call, score, verdict, or automatic revision loop in production.
 
 ### Verification ownership
 
-Verification has eight independent owners. Their artifacts and terminal
+Verification has nine independent owners. Their artifacts and terminal
 observations do not cross domain boundaries.
 
 | Owner | Command surface | Evidence | Outcome owner |
@@ -240,12 +240,13 @@ observations do not cross domain boundaries.
 | Model evaluation | `benchmark run/list/show/summary/compare` | Strict versioned Benchmark Runs under `apps/eval/evaluation-results` | Model subject outcome and evidence-retention harness outcome, reported as `evaluation:` observations |
 | Evaluation reference corpus | `corpus show --corpus <manifest-path>` | Strict ordered synthetic fixtures and exact source-witness references | Auditable source truth and objective variation coverage; no model result or verdict |
 | Evaluation scorecards | `scorecard build/show` | Commit-addressed retained Benchmark Runs, corpus sources, Codex annotations, and Codex qualitative reviews | Four role-specific transparent evidence reports plus current/outdated checkout information; no aggregate score, ranking, recommendation, or acceptance verdict |
+| Aggregate evaluation results | `aggregate export/show/compare` | Strict whitelist-only aggregate JSON under `apps/eval/summaries/` by default | Descriptive role aggregates only: subject descriptor, counts, rates and intervals, aggregate distributions, and qualitative counts; never source or model-output evidence, a winner, a rank, a recommendation, acceptance, or production selection |
 | Longitudinal evaluation scorecards | `longitudinal build/show` | Exact ordered scorecard audit packs, stable cohort projections, and baseline/subject histories | Four role-specific evidence classifications; no model judge, acceptance verdict, or production decision |
 | Fixture and context tooling | `fixture record-responses` and `context benchmark` | Step-keyed response files or strict context-result artifacts | Fixture-authoring or context-measurement tooling observations |
 | Recorded-replay acceptance | `acceptance run/list/show/compare` | Historical Run Files under `apps/eval/results` | `acceptance:` gate result over controlled recorded evidence |
 | Composed skeleton walk | `pnpm walk` | Running local ingest, generation, D1, API, status, and browser product | Walk-owned `walk:` observations and terminal `WALK PASS` |
 
-Strict TypeScript and lint are supporting static guarantees, not a ninth
+Strict TypeScript and lint are supporting static guarantees, not a tenth
 runtime result and not a substitute for any row.
 
 For local development, copy `apps/generation/.dev.vars.example` to the ignored
@@ -369,6 +370,24 @@ closed corpus subtree, so later evidence-storage commits do not manufacture a
 context change; a real corpus revision changes that explicit commit-and-path
 identity. Public readers continue to dispatch and reconstruct frozen version 1
 embedded-source artifacts without adding byte ownership to version 2.
+
+Aggregate evaluation results remain inside that same eval-owned filesystem
+boundary and add no domain port. `aggregate export --input
+<scorecard-artifact-path> --cohort <cohort-id> [--results-dir <path>]` binds
+one validated scorecard export to its exact corpus identity: the mandatory
+`--cohort` value must equal the validated source scorecard corpus id. The
+result is then stored under `apps/eval/summaries/` by default. `aggregate show <aggregate-id>
+[--results-dir <path>]` and `aggregate compare <left-id> <right-id>
+[--results-dir <path>]` reopen and compare those aggregate files. Export is a
+whitelist projection, never a redaction pass over a full scorecard: each role
+retains only the model subject descriptor, counts, rates with intervals,
+aggregate distributions, and qualitative counts. It excludes source or
+model-output evidence, repository or filesystem paths, hashes, context
+identities, sample-level records, and qualitative rationales. The result stays
+descriptive and evaluation-only; it adds no score, winner, rank,
+recommendation, acceptance verdict, production selection, walk phase, or third
+domain port, and it does not participate in acceptance or skeleton-walk
+verification.
 
 Longitudinal evaluation remains inside that same eval-owned filesystem evidence
 boundary and adds no domain port. `longitudinal build --input
