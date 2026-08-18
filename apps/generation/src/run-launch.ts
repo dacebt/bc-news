@@ -47,6 +47,10 @@ export async function launchGenerationRun(
 	const inserted = await queueGenerationRunStatus(db, params, queuedAtUtc);
 
 	try {
+		// The status insert is an observation, not launch authority. Always ask
+		// the platform for the deterministic Workflow id so its same-id behavior
+		// owns duplicate delivery; an existing status row must not suppress that
+		// request or become a repository-invented duplicate classification.
 		await workflow.create({ id: instanceId, params });
 	} catch (error) {
 		if (inserted) {

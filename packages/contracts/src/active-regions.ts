@@ -1,6 +1,6 @@
-// The one authoritative active-region home (DOMAIN.md). Every consumer -- the
-// scheduler and the client alike -- reads this one export instead of minting
-// its own list.
+// The authoritative active-region roster required by DOMAIN.md. Every
+// consumer -- the scheduler and the client alike -- reads this export instead
+// of minting its own list.
 export const ACTIVE_REGION_IDS: readonly string[] = [
 	"3",
 	"7",

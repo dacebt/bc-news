@@ -11,6 +11,10 @@ import { BenchmarkRunSchema } from "../src/evaluation-artifact";
 import { verifyEvaluationBenchmarkContinuation } from "../src/evaluation-benchmark-verifier";
 import { clone, temporaryRoot } from "./evaluation-artifact-test-support";
 
+// This integration exercise exceeds Vitest's five-second default when the
+// workspace packages execute in parallel; the wider deadline is not a retry.
+const WORKSPACE_PARALLELISM_TIMEOUT_MS = 10_000;
+
 function hostedConfiguration(modelPrefix: string) {
 	return {
 		production_steps: Object.fromEntries(PRODUCTION_MODEL_STEPS.map((step) => [step, {
@@ -50,7 +54,7 @@ test("retains retries and continues independent tracks and later trials", async 
 	if (!identityResult.success) {
 		expect(identityResult.error.issues.some(({ path }) => path.join(".") === "trials.2.invocations.0.config_identity")).toBe(true);
 	}
-}, 10_000);
+}, WORKSPACE_PARALLELISM_TIMEOUT_MS);
 
 test("rejects ambiguous or unbounded benchmark declarations", () => {
 	const configuration = hostedConfiguration("test/configuration");

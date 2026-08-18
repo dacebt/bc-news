@@ -15,6 +15,8 @@ export type EvidenceMessage = z.infer<typeof EvidenceMessageSchema>;
 
 export const EvidenceFixtureSchema = z.strictObject({
 	active_region_id: ActiveRegionIdSchema,
+	// Evidence and publication dates are distinct domain concepts that share
+	// the same strict UTC calendar-date representation.
 	evidence_date: PublicationDateSchema,
 	messages: z.array(EvidenceMessageSchema).min(1),
 });
