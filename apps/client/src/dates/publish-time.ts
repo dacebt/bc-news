@@ -7,7 +7,7 @@ export const EXPECTED_EDITION_AVAILABILITY_UTC_MINUTES = 10 * 60;
 // after the expected-availability target before the client reports failure.
 export const EDITION_WAITING_CUTOFF_UTC_MINUTES = EXPECTED_EDITION_AVAILABILITY_UTC_MINUTES + 30;
 
-// Human-readable UTC label for the publish-time fact above. The alert owns
+// Human-readable UTC label for the expected-availability fact above. The alert owns
 // the surrounding sentence, but not a second copy of the hour itself.
 export function formatUtcExpectedAvailabilityTime(): string {
 	const hours = Math.floor(EXPECTED_EDITION_AVAILABILITY_UTC_MINUTES / 60);

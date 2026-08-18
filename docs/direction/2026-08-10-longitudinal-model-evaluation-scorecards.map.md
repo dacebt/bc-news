@@ -8,7 +8,7 @@ tags: [wsd, direction, capability-map, evaluation, scorecards, drift]
 status: deprecated
 generated:
   by: ebt-wsd/okf-v0.2
-  at: "2026-08-18T14:54:16Z"
+  at: "2026-08-18T15:13:37Z"
 ---
 # Capability map: longitudinal per-agent model evaluation scorecards
 
@@ -39,7 +39,7 @@ The runtime fingerprint is the first dependency because a baseline cannot be int
 ## Related documentation
 
 - [Successor commit-addressed shape](2026-08-10-commit-addressed-evaluation-evidence.shape.md) — supersedes this actor-visible carve's original evidence-storage boundary.
-- [Paired shape](2026-08-10-longitudinal-model-evaluation-scorecards.shape.md) — cadence, scope, cuts, risks, and success signal governing this map.
+- [Paired historical shape](2026-08-10-longitudinal-model-evaluation-scorecards.shape.md) — cadence, scope, cuts, risks, and success signal that governed this map.
 - [WSD domain model](bc-news.model.md) — existing Benchmark Run, trial, track, invocation, and verification vocabulary.
 - [Binding testing posture](../TESTING.md) — owns the separation between evaluation observations and acceptance.
 - [Binding architecture](../ARCHITECTURE.md) — owns strict artifacts and the two-port constraint.

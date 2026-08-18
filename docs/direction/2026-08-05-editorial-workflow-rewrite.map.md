@@ -8,7 +8,7 @@ tags: [wsd, direction, capability-map, generation, evaluation]
 status: deprecated
 generated:
   by: ebt-wsd/okf-v0.2
-  at: "2026-08-07T22:08:38Z"
+  at: "2026-08-18T15:13:37Z"
 ---
 # Capability map: two-track editorial workflow
 
@@ -38,6 +38,6 @@ Tool-calling research agents and iterative critic loops remain possible future c
 
 ## Related documentation
 
-- [Current rewrite shape](2026-08-05-editorial-workflow-rewrite.shape.md) — session boundary governing this map.
+- [Paired historical rewrite shape](2026-08-05-editorial-workflow-rewrite.shape.md) — session boundary that governed this map.
 - [Product requirements](../PRD.md) — evaluation-led and replaceable-model requirements this carve serves.
 - [Domain model](../DOMAIN.md) — vocabulary authority amended by the first capability.

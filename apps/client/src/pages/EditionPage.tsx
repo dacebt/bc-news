@@ -66,11 +66,11 @@ function utcCalendarDate(instant: Date): string {
 	return instant.toISOString().slice(0, 10);
 }
 
-// The generation window's close is a wall-clock fact the same way UTC
+// The waiting cutoff is a wall-clock fact the same way UTC
 // midnight is for the date-range rollover in use-edition-date-range.ts: a
 // tab left open across it must regrade an already-rendered "waiting" alert
 // into "absent" on its own, without the reader touching a control.
-function msUntilGenerationWindowEnd(instant: Date): number {
+function msUntilEditionWaitingCutoff(instant: Date): number {
 	const boundaryToday = Date.UTC(
 		instant.getUTCFullYear(),
 		instant.getUTCMonth(),
@@ -96,10 +96,10 @@ export function EditionPage() {
 	const [edition, setEdition] = useState<Edition | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [alert, setAlert] = useState<EditionAlert | null>(null);
-	// Exists only to force a re-render when the generation window boundary
+	// Exists only to force a re-render when the waiting cutoff
 	// crosses on an open tab - `now` is read fresh every render, but nothing
 	// else schedules one at all across that boundary.
-	const [, forceRerenderAtGenerationWindowEnd] = useState(0);
+	const [, forceRerenderAtEditionWaitingCutoff] = useState(0);
 
 	useEffect(() => {
 		const controller = new AbortController();
@@ -172,9 +172,9 @@ export function EditionPage() {
 		// day's boundary rather than only the first one after mount.
 		const scheduleBoundary = () => {
 			timer = window.setTimeout(() => {
-				forceRerenderAtGenerationWindowEnd((tick) => tick + 1);
+				forceRerenderAtEditionWaitingCutoff((tick) => tick + 1);
 				scheduleBoundary();
-			}, msUntilGenerationWindowEnd(new Date()));
+			}, msUntilEditionWaitingCutoff(new Date()));
 		};
 		scheduleBoundary();
 		return () => window.clearTimeout(timer);

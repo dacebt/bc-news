@@ -103,8 +103,8 @@ verbatim in code, schema, tests, and APIs — no synonyms.
    termination, deployment, and later-step failure, and retries never repeat
    successful expensive work.
 
-These four rules restate the invariant floor in the repo router; the full
-required behavior lives in the [product requirements](PRD.md).
+These four rules restate the invariant floor in the tracked [product
+requirements](PRD.md), which own the full required behavior.
 
 ## Defaults
 

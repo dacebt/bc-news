@@ -227,6 +227,29 @@ test("rejects recorded scratch configuration before creating an artifact directo
 	await expect(access(resultsDirectory)).rejects.toMatchObject({ code: "ENOENT" });
 });
 
+test("rejects scratch artifacts inside current and legacy benchmark stores before loading configuration", async () => {
+	const root = await mkdtemp(join(tmpdir(), "bc-news-cli-scratch-results-boundary-"));
+	const appDirectory = join(root, "apps/eval");
+	for (const resultsDirectory of [
+		join(appDirectory, "local-data/evaluation-results/scratch"),
+		join(appDirectory, "evaluation-results/scratch"),
+	]) {
+		await expect(invokeCli([
+			"scratch",
+			"run",
+			"--fixture",
+			REPRESENTATIVE_FIXTURE_PATH,
+			"--config",
+			RECORDED_REPLAY_CONFIG_PATH,
+			"--results-dir",
+			resultsDirectory,
+		], root, appDirectory)).rejects.toMatchObject({
+			code: "scratch_results_directory_reserved",
+		});
+		await expect(access(resultsDirectory)).rejects.toMatchObject({ code: "ENOENT" });
+	}
+});
+
 test("defaults current evaluation storage under the ignored local-data root", () => {
 	const appDirectory = "/workspace/apps/eval";
 	const currentDirectory = "/workspace";

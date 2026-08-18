@@ -8,7 +8,7 @@ tags: [wsd, direction, capability-map, evaluation, verification]
 status: deprecated
 generated:
   by: ebt-wsd/okf-v0.2
-  at: "2026-08-07T22:08:38Z"
+  at: "2026-08-18T15:13:37Z"
 ---
 # Capability map: real model evaluation harness
 
@@ -39,6 +39,6 @@ Artifact persistence remains an eval-application boundary under the existing two
 
 ## Related documentation
 
-- [Current shape](2026-08-06-real-model-evaluation-harness.shape.md) — session boundary governing this map.
+- [Paired historical shape](2026-08-06-real-model-evaluation-harness.shape.md) — session boundary that governed this map.
 - [WSD domain model](bc-news.model.md) — vocabulary authority for these capabilities.
 - [Structural discipline](../ARCHITECTURE.md) — binding two-port constraint this carve preserves.

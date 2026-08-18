@@ -8,7 +8,7 @@ tags: [wsd, direction, capability-map]
 status: deprecated
 generated:
   by: ebt-wsd/okf-v0.2
-  at: "2026-08-06T01:22:13Z"
+  at: "2026-08-18T15:13:37Z"
 ---
 # Capability map: v2 full rebuild
 
@@ -42,6 +42,6 @@ Skeleton first (done). Config-dispatched ports next because every other capabili
 
 ## Related documentation
 
-- [Shape: v2 full rebuild](2026-08-04-v2-full-rebuild.shape.md) — the session this map is grown through.
+- [Paired historical shape](2026-08-04-v2-full-rebuild.shape.md) — the session through which this map was grown.
 - [Binding domain model](../DOMAIN.md) — vocabulary authority for every capability id.
 - [v1 reference map](../v1-reference.md) — where each carried-forward behavior lives in the predecessor.

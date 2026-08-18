@@ -122,6 +122,10 @@ function benchmarkBrowseDirectories(
 	if (resultsDirectory !== undefined) {
 		return [resolve(currentDirectory, resultsDirectory)];
 	}
+	return resolveDefaultBenchmarkBrowseDirectories(appDirectory);
+}
+
+export function resolveDefaultBenchmarkBrowseDirectories(appDirectory: string): readonly string[] {
 	return [
 		resolve(evalLocalDataRoot(appDirectory), BENCHMARK_RESULTS_DIRECTORY),
 		resolve(appDirectory, BENCHMARK_RESULTS_DIRECTORY),

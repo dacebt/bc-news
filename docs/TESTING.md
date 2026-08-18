@@ -380,8 +380,8 @@ normalization, pooled rates, Wilson intervals, raw token/latency distributions,
 four role classifications, store/read/report/CLI behavior, commit-backed
 reopen, and outdated reporting, then ends exactly with
 `EVALUATION LONGITUDINAL SCORECARDS VERIFIED`. Fixture proof ends
-with `fixture authoring: four strict v3 hosted responses retained exact agent
-configurations, replayed, and compared`. Acceptance proof ends with `acceptance: four
+with `fixture authoring: four strict v3 hosted responses retained exact
+production-step configurations, replayed, and compared`. Acceptance proof ends with `acceptance: four
 recorded production steps replayed by step and deterministic; diagnostics
 retained: 4`. The composed walk prints none
 of those exact verifier observations; it ends with its independent `WALK PASS`.

@@ -183,7 +183,7 @@ export async function verifyRecordedResponseFixtureAuthoring(temporaryRoot?: str
 
 if (import.meta.url === `file://${process.argv[1]}`) {
 	verifyRecordedResponseFixtureAuthoring().then(() => {
-		console.log("fixture authoring: four strict v3 hosted responses retained exact agent configurations, replayed, and compared");
+		console.log("fixture authoring: four strict v3 hosted responses retained exact production-step configurations, replayed, and compared");
 	}).catch((error: unknown) => {
 		process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
 		process.exitCode = 1;

@@ -8,7 +8,7 @@ tags: [wsd, direction, capability-map, lm-studio, evaluation]
 status: deprecated
 generated:
   by: ebt-wsd/okf-v0.2
-  at: "2026-08-18T14:53:44Z"
+  at: "2026-08-18T15:13:37Z"
 ---
 # Capability map: production-aligned LM Studio sampling
 
@@ -38,7 +38,7 @@ Historical outcome: `8af8233` implemented the all-or-none sampling posture descr
 
 ## Related documentation
 
-- [Current shape](2026-08-08-lm-studio-sampling-postures.shape.md) — session boundary governing this map.
+- [Paired historical shape](2026-08-08-lm-studio-sampling-postures.shape.md) — session boundary that governed this map.
 - [WSD domain model](bc-news.model.md) — existing vocabulary authority for model evaluation and verification.
 - [Current structural discipline](../ARCHITECTURE.md) — binding authority for independent per-agent optional temperature and truthful artifact-version boundaries.
 - [Test and verification posture](../TESTING.md) — separates behavioral evidence, deterministic evidence, tests, and the composed walk.

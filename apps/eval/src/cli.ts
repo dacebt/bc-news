@@ -14,6 +14,7 @@ import {
 	evalLocalDataRoot,
 	listBenchmarkRunsForCli,
 	loadBenchmarkRunForCli,
+	resolveDefaultBenchmarkBrowseDirectories,
 	showEvaluationAggregateResultReportForCli,
 	showEvaluationLongitudinalReportForCli,
 	showEvaluationScorecardReportForCli,
@@ -70,6 +71,15 @@ export interface EvalCliApplicationOptions {
 	readonly appDirectory: string;
 	readonly environment: NodeJS.ProcessEnv;
 	readonly writeOutput: (text: string) => void;
+}
+
+export class ScratchResultsDirectoryError extends Error {
+	readonly code = "scratch_results_directory_reserved";
+
+	constructor(directory: string) {
+		super(`Scratch results directory must remain outside the retained benchmark store: ${directory}`);
+		this.name = "ScratchResultsDirectoryError";
+	}
 }
 
 function commandArguments(argv: readonly string[]): readonly string[] {
@@ -130,6 +140,19 @@ export async function runEvalCliApplication(options: EvalCliApplicationOptions):
 			? resolve(localDataRoot, "evaluation-results")
 			: resolve(cwd, resultsDirectory)
 	);
+	const scratchResultsDirectoryFor = (resultsDirectory: string): string => {
+		const directory = resolve(cwd, resultsDirectory);
+		for (const benchmarkDirectory of resolveDefaultBenchmarkBrowseDirectories(appDirectory)) {
+			const relativePath = relative(benchmarkDirectory, directory);
+			if (
+				relativePath === ""
+				|| (relativePath !== ".." && !relativePath.startsWith(`..${sep}`) && !isAbsolute(relativePath))
+			) {
+				throw new ScratchResultsDirectoryError(directory);
+			}
+		}
+		return directory;
+	};
 
 	if (command.command === "benchmark-run") {
 		const result = await evaluateBenchmarkCommand({
@@ -171,7 +194,7 @@ export async function runEvalCliApplication(options: EvalCliApplicationOptions):
 		const saved = await runLiveCommand({
 			fixturePath: resolve(cwd, command.fixturePath),
 			configPath: resolve(cwd, command.configPath),
-			resultsDirectory: resolve(cwd, command.resultsDirectory),
+			resultsDirectory: scratchResultsDirectoryFor(command.resultsDirectory),
 			environment: options.environment,
 			correlateProviderRequests: true,
 		});

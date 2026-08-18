@@ -85,6 +85,9 @@ same-filesystem staging directory, validates and replays the complete staged
 roster, and compares only the final main-story and announcements products
 before recoverable all-or-none directory promotion. The command report lists
 each production step's retained model and optional temperature.
+Only one recorder may own a response directory at a time. A concurrent recorder
+is rejected; one stale owner may be quarantined before recovery, and a recorder
+whose lock ownership changes cannot release the replacement owner's lock.
 Promotion does not promise continuous visibility to concurrent readers. There
 is no judge, threshold, byte pin, or source-digest acceptance gate.
 
