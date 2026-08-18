@@ -1,421 +1,65 @@
 # bc-news
 
-A clean rebuild (v2) of the daily regional newspaper for the BitCraft
-community: validated BitJita chat activity becomes one complete edition per
-active region and publication date, generated durably on Cloudflare.
+`bc-news` is a Cloudflare-native rebuild of the daily regional newspaper for
+the BitCraft community. Validated BitJita chat activity becomes one durable,
+complete edition per active region and publication date.
 
-**Status: walking skeleton.** The end-to-end path runs locally: a
-committed fixture conversation in, one generation run through the single
-Cloudflare Workflow definition, a durable edition in local D1, and the
-client renders the paper.
+**Status: walking skeleton.** The composed local product path runs end to end
+with committed conversation and recorded-model fixtures.
 
-## The walk
+## Quickstart
+
+Prerequisites: Node 22+, pnpm, and an installed Chrome browser. Dependency
+installation can use the network; after dependencies are present, the walk
+uses only localhost, local Cloudflare emulation, and committed fixtures.
 
 ```sh
 pnpm install
 pnpm walk
 ```
 
-Prerequisites: Node 22+ and pnpm. Nothing else — no Cloudflare account,
-no network beyond localhost. `wrangler dev` runs the Workflow, D1, and
-static assets entirely in local emulation; evidence comes from the
-committed fixture and the model provider is a recorded response.
+The walk builds the workspace, migrates an isolated temporary D1 database,
+starts a BitJita HTTP stub, then runs the ingest and generation Workers through
+two local Wrangler processes. Generation uses `WALK_PORT` (default `8787`) and
+ingest uses the next port; both ports must be free. The assertions cover the operator boundary,
+scheduled ingest and generation, an isolated sibling failure, durable
+publication, the edition and status APIs, idempotent replay, and browser parity.
+Success ends with `WALK PASS`.
 
-The walk builds the workspace, migrates an isolated per-run local D1,
-starts `wrangler dev`, then proves the composed product sequence:
+The default command holds the local product open for inspection; press Ctrl-C
+to stop. Use `pnpm walk --non-interactive` or `WALK_NON_INTERACTIVE=1` to shut
+down after the assertions. The walk never authors fixtures or contacts a live
+model endpoint.
 
-- triggering a generation run for the fixture pair (active region 7,
-  publication date 2026-01-25) is accepted, and `/api/edition` serves an
-  edition that parses against the shared edition schema;
-- re-triggering the same pair never produces a second edition — the
-  served edition is byte-identical, and the duplicate signal is recorded;
-- an unknown pair answers 404, and the client HTML serves from the same
-  origin.
+## Documentation authority
 
-On success it prints its own `walk:` observations followed by the independent
-terminal result `WALK PASS`, plus the edition URL, and holds
-`wrangler dev` so a browser can observe the rendered paper — Ctrl-C to
-stop. `pnpm walk --non-interactive` (or `WALK_NON_INTERACTIVE=1`) shuts
-down after the assertions instead; the exit code reflects the assertions
-either way. On timeout the walk prints the generation run's status.
-`WALK_PORT` overrides the port `wrangler dev` binds to (default `8787`).
-The walk does not run or inherit a result from model evaluation,
-recorded-response fixture authoring, context measurement, or recorded-replay
-acceptance.
+Start with the [documentation index](docs/index.md). It routes the complete OKF
+documentation bundle and states which documents are binding or descriptive.
 
-Where authority lives:
+- [Product requirements](docs/PRD.md) — binding product direction.
+- [Domain model](docs/DOMAIN.md) — binding vocabulary and identity rules.
+- [Structural discipline](docs/ARCHITECTURE.md) — binding architecture posture.
+- [Test and verification posture](docs/TESTING.md) — binding evidence discipline.
+- [Evaluation operations](docs/evaluation-operations.md) — descriptive command and artifact guide.
+- [Model admission and pricing](docs/model-pricing.md) — descriptive current model register and mutable price sources.
+- [v1 reference map](docs/v1-reference.md) — descriptive map of the frozen predecessor.
 
-- [CLAUDE.md](CLAUDE.md) — the router: canonical docs, invariant floor,
-  vocabulary, documentation discipline. Read it first.
-- [docs/index.md](docs/index.md) — the documentation bundle root.
-- [docs/PRD.md](docs/PRD.md) — binding product requirements.
-- [docs/DOMAIN.md](docs/DOMAIN.md) — binding domain vocabulary.
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — binding structural discipline.
-- [docs/TESTING.md](docs/TESTING.md) — binding evidence discipline.
+## Command index
 
-## Verification ownership
+Each evidence surface owns its outcome. See [evaluation operations](docs/evaluation-operations.md)
+for arguments, artifact locations, and interpretation boundaries.
 
-Each surface answers a different question. A result in one row never becomes a
-result in another.
+| Question | Command |
+|---|---|
+| Do deterministic invariants hold? | `pnpm test` |
+| Do static guarantees hold? | `pnpm typecheck` and `pnpm lint` |
+| Does one disposable live configuration complete the four production steps? | `pnpm --filter @bc-news/eval eval -- scratch run ...` |
+| What behavior did a declared model benchmark retain? | `pnpm --filter @bc-news/eval eval -- benchmark run/list/show/summary/compare ...` |
+| What source corpus, scorecard, aggregate, or longitudinal evidence exists? | `pnpm --filter @bc-news/eval eval -- corpus ...`, `scorecard ...`, `aggregate ...`, or `longitudinal ...` |
+| Can a live four-step response set be recorded, or context measured? | `pnpm --filter @bc-news/eval eval -- fixture record-responses ...` and `context benchmark ...` |
+| Do committed recorded responses replay deterministically? | `pnpm --filter @bc-news/eval eval -- acceptance run --fixture packages/fixtures/evidence/active-region-7_2026-01-24.json` |
+| Does the composed local product run end to end? | `pnpm walk` |
 
-| Surface | Command | Evidence | Successful outcome |
-|---|---|---|---|
-| Deterministic tests | `pnpm test` | Isolated invariants, reproduced defects, and high-risk state transitions | Test pass or hard test failure |
-| Model evaluation | `pnpm --filter @bc-news/eval eval -- benchmark run ...` and `benchmark list/show/summary/compare` | Strict versioned Benchmark Runs in `apps/eval/local-data/evaluation-results` by default | Retained model behavior and harness outcome; no score or acceptance verdict |
-| Evaluation reference corpus | `corpus extract --snapshot <sqlite-path> --selection <selection-path>` and `corpus show --corpus <manifest-path>` | Current local V3 selection-bound corpus workspaces in `apps/eval/local-data/corpus-workspaces` plus historical Git-addressed V2 synthetic readers | Auditable source truth and variation coverage; no target article, score, or verdict |
-| Evaluation scorecards | `scorecard build --input <declaration-path>` and `scorecard show <scorecard-id>` | Current local hash-addressed scorecards in `apps/eval/local-data/scorecards` by default, plus embedded V1 and Git-addressed V2 historical readers | Four transparent role-specific evidence reports; no aggregate score, ranking, recommendation, or acceptance verdict |
-| Aggregate evaluation results | `aggregate export --input <scorecard-artifact-path> --cohort <cohort-id> [--results-dir <path>]`, `aggregate show <aggregate-id>`, and `aggregate compare <left-id> <right-id>` | Strict content-free aggregate JSON in `apps/eval/summaries/` by default, with `cohort.evidence_identity_sha256` bound to the source corpus identity | Descriptive role aggregates only: subject descriptor, counts, rates and intervals, aggregate distributions, and qualitative counts; never source or model-output evidence, a winner, a rank, a recommendation, acceptance, production selection, or a walk result |
-| Longitudinal evaluation scorecards | `longitudinal build --input <declaration-path>` and `longitudinal show <series-id>` | Current local hash-addressed series in `apps/eval/local-data/longitudinal-scorecards` by default, plus embedded V1 and Git-addressed V2 historical readers | Four role-specific context, sufficiency, baseline-variation, or potential-drift classifications; never a judge or production gate |
-| Fixture and context tooling | `fixture record-responses ...` and `context benchmark ...` | Four request-linked recorded responses, or strict context-measurement results | Fixture-authoring or context-measurement tooling result, never a walk or acceptance result |
-| Recorded-replay acceptance | `acceptance run/list/show/compare` and `verify:recorded-replay-acceptance` | Current local Run Files in `apps/eval/local-data/acceptance-results` by default, plus historical readers when explicitly addressed | `acceptance: four recorded production steps replayed request-linked and deterministic; diagnostics retained: 4` |
-| Composed skeleton walk | `pnpm walk` | The deployed local ingest, generation, D1, API, status, and browser path using committed recorded adapters | Independent `walk:` observations and terminal `WALK PASS` |
-
-Static guarantees (`pnpm typecheck` and `pnpm lint`) support every row but do
-not replace its runtime evidence.
-
-## Model evaluation
-
-Run a declared live benchmark with a strict configuration file containing an
-ordered nonempty list of four-step configurations, a positive
-`repetition_count`, and a bounded `transport_retry_limit` from zero through
-three. The declared configuration/repetition roster remains serial; within each
-Evaluation Trial, the main-story and announcements writer-to-copyeditor chains
-dispatch concurrently:
-
-```sh
-pnpm --filter @bc-news/eval eval -- benchmark run \
-	--fixture packages/fixtures/evidence/active-region-7_2026-01-24.json \
-	--config path/to/eval.config.json \
-	--results-dir path/to/evaluation-results
-```
-
-For Cloudflare AI Gateway, create the ignored `apps/generation/.dev.vars` with
-only `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`. The token needs
-**Account > Workers AI > Read**; an AI Gateway-only token is not sufficient for
-the account AI REST endpoint. Unified Billing requires loaded credits and a
-payment method but no provider API keys. Hosted model ids are admitted only
-after their Cloudflare request schema has an explicit adapter profile. The
-admitted transport profiles are `openai/gpt-5-nano`, `openai/gpt-5-mini`,
-`openai/gpt-4o`, `openai/gpt-4o-mini`,
-`alibaba/qwen3.5-397b-a17b`, `google/gemini-2.5-flash-lite`,
-`google/gemini-3.1-flash-lite`, `minimax/m3`, `@cf/openai/gpt-oss-120b`, and
-`@cf/google/gemma-4-26b-a4b-it`. Profile admission records a verified request
-contract; it does not make a model an active evaluation or deployment candidate.
-The checked-in example uses two active candidates and deliberately omits excluded
-GPT-5 Mini, GPT-4o, GPT-OSS-120B, and hosted Qwen models. Run it only after
-reviewing its current model ids and expected spend:
-
-```sh
-pnpm --filter @bc-news/eval eval -- benchmark run \
-	--fixture packages/fixtures/evidence/active-region-7_2026-01-24.json \
-	--config apps/eval/cloudflare-ai-gateway.benchmark.example.json \
-	--results-dir apps/eval/local-data/evaluation-results
-```
-
-The `cloudflare_ai_gateway` adapter uses Cloudflare's account default when
-`gateway` is omitted. A named selection with an `id` is available when a
-specific gateway is required. It uses Cloudflare's fixed account REST endpoint,
-skips cache, retains log metadata without prompt/response payloads, attaches run
-and invocation ids, sets one Gateway attempt, and bounds the request at ten
-minutes. The application sends the production step's strict Zod-derived JSON
-Schema through that model profile and leaves the provider's output-token ceiling
-unset. It retains the response-scoped `cf-aig-log-id` when Cloudflare reports it,
-records an explicit unavailable observation when it does not, and retains
-provider/model identity and token usage. The inference response does not report
-cost, so billing remains `unavailable`; a reported log id can reconcile
-Cloudflare's estimated cost without calling it invoice truth.
-
-Each of the four production agents has its own complete adapter configuration:
-provider or adapter, model, optional `temperature`, and the adapter-specific
-reasoning or billing declaration. Temperature is the only operator-configurable
-decoding control. LM Studio and profiled Gateway requests always receive the
-production step's strict JSON Schema. Omitting temperature measures that agent's
-provider-default candidate; supplying it measures that exact candidate. `top_p`
-and `top_k` are not current configuration fields. A benchmark is an experiment
-used to compare candidate configurations for each role and select the
-configuration that will be deployed; it is not a deterministic test or a
-provider-default quality gate.
-
-The command incrementally retains every Evaluation Trial and Step Invocation in
-a versioned Benchmark Run. One ordered application owner allocates invocation
-ordinals and applies every current transition, retaining each invocation and
-its pending runtime-evidence record before provider transport. The two
-concurrently dispatched chains therefore form one truthful interleaved history,
-and the artifact store's atomic full-file replacement never races. Each writer
-still precedes its own copyeditor. Expected
-schema rejection or provider exhaustion closes only its track without
-suppressing the sibling; both tracks quiesce before terminal aggregation.
-Validation, persistence, or an unknown harness rejection prevents terminal
-retained completion, leaving the last strict running artifact inspectable
-through the benchmark browse routes.
-
-Version 7 remains current for LM Studio and the legacy hosted adapter. A
-configuration that selects `cloudflare_ai_gateway` emits version 8, adding one
-lifecycle-matched Gateway-request provenance record per invocation while
-preserving version 7's runtime-evidence and execution invariants. Versions 1–7
-keep their historical meanings. Both current paths retain every exact per-agent
-configuration, schema-valid copyedit diagnostic, and one lifecycle-matched
-normalized runtime record per invocation. Their four subject outcomes are `completed`,
-`parse_rejected`, `contract_rejected`, and `infrastructure_incomplete`, separate
-from whether the harness retained trustworthy evidence. Malformed JSON or
-strict schema mismatch is the only terminal model-output failure;
-infrastructure failure is separate. Every schema-valid grammar, punctuation,
-markdown, wording, preservation, or editorial-policy finding remains a
-non-terminal diagnostic after one copyedit pass and never causes another model
-call, rejection, or publication stop. Concurrent dispatch is an eval-harness
-guarantee, not a guarantee that the selected model runtime processes requests
-in parallel. It changes neither provider adapters nor the serial four-step
-production Workflow, and is independent of recorded-replay acceptance, fixture
-authoring, context measurement, and `pnpm walk`.
-
-Browse retained Benchmark Runs through the same explicit namespace:
-
-```sh
-pnpm --filter @bc-news/eval eval -- benchmark list
-pnpm --filter @bc-news/eval eval -- benchmark show <benchmark-run-id>
-pnpm --filter @bc-news/eval eval -- benchmark summary <benchmark-run-id>
-pnpm --filter @bc-news/eval eval -- benchmark compare <left-id> <right-id>
-```
-
-Each route accepts `--results-dir`; otherwise it reads
-`apps/eval/local-data/evaluation-results`. Loading is strict and rejects malformed,
-schema-invalid, or filename-mismatched evidence. Comparison reports input and
-provenance context separately from behavioral differences and produces no
-score, judge result, or acceptance decision.
-
-Runtime evidence is visible in `benchmark show`, `benchmark summary`, and
-`benchmark compare`. Comparable execution context includes the client/provider
-runtime, distinct selected and response model identities with reported architecture,
-parameter-count, quantization, vision, and tool-use capabilities, context/load identity,
-and declared reasoning posture. Stop reason, prediction timing and throughput,
-speculative counts, and reasoning-content presence remain behavior. Missing or
-provider-owned fields are explicit unknown or externally controlled observations;
-raw provider configuration blobs are never retained.
-
-The evaluation reference corpus is an explicit source-evidence surface,
-separate from model output. The retained committed contract is the content-free
-selection file, not a tracked corpus workspace:
-
-```sh
-pnpm --filter @bc-news/eval eval -- corpus extract \
-  --snapshot /path/to/snapshot.sqlite \
-  --selection apps/eval/production-corpus-selection.json
-pnpm --filter @bc-news/eval eval -- corpus show \
-  --corpus apps/eval/local-data/corpus-workspaces/<selection-id>/reference-corpus/manifest.json
-```
-
-Extraction copies the exact snapshot bytes and the exact content-free selection
-bytes into an ignored local workspace beneath
-`apps/eval/local-data/corpus-workspaces/`, replays the unchanged preparation
-path, and emits only derived fixture material. Root privately authors the
-semantic references and the selection-bound version 3 manifest inside that
-workspace. `corpus show` then validates the workspace membership, selection
-roster, raw and prepared counts, and declared variation coverage before
-reporting the local corpus. Repository version 2 remains the historical
-Git-addressed synthetic reader. The corpus contains no target article,
-preferred angle, model output, score, or acceptance verdict; existing
-benchmark and tooling commands remain single-fixture boundaries.
-
-Build an auditable scorecard only from a complete declaration that binds one
-configuration across the full corpus, retained version 7 or Gateway version 8
-Benchmark Runs, exact Codex output annotations, and separate Codex qualitative
-reviews:
-
-```sh
-pnpm --filter @bc-news/eval eval -- scorecard build \
-  --input path/to/scorecard-input.json \
-  --results-dir apps/eval/local-data/scorecards
-pnpm --filter @bc-news/eval eval -- scorecard show <scorecard-id> \
-  --results-dir path/to/local-or-legacy-scorecards
-```
-
-Current scorecard declarations and explicit current results directories must be
-contained under the ignored `apps/eval/local-data/` root. Without
-`--results-dir`, current scorecards are stored under
-`apps/eval/local-data/scorecards`. Embedded V1 and Git-addressed V2 remain
-historical readers; current V3 is local hash-addressed and portable across
-checkouts because its contained relative references are SHA-256 bound rather
-than raw-byte embedded. The current reader reloads the declaration and named
-evidence through recorded references to recompute identities,
-sample counts, context, rates, Wilson intervals, token and latency
-distributions, and qualitative summaries when read. The
-report keeps `main_story_write`, `main_story_copyedit`, `announcements_write`,
-and `announcements_copyedit` separate. Factual grounding, attribution, event
-coverage, announcement relevance, coherence, usefulness, newsworthiness, and
-voice retain their named Codex annotator or reviewer evidence; the application
-does not infer those judgments. A scorecard is not a weighted model-wide score,
-winner, threshold, recommendation, acceptance gate, or production decision.
-The local resolver rejects absolute paths, traversal, symlink escape, and SHA
-mismatch; only `apps/eval/summaries/` remains commit-eligible.
-
-Export a commit-safe aggregate result only from a current validated local
-scorecard artifact.
-`--cohort` is mandatory, but it is a binding assertion, not a free-form label:
-it must exactly match the validated source scorecard corpus id.
-
-```sh
-pnpm --filter @bc-news/eval eval -- aggregate export \
-  --input path/to/scorecard-artifact.json \
-  --cohort <cohort-id> \
-  --results-dir path/to/aggregate-results
-pnpm --filter @bc-news/eval eval -- aggregate show <aggregate-id> \
-  --results-dir path/to/aggregate-results
-pnpm --filter @bc-news/eval eval -- aggregate compare <left-id> <right-id> \
-  --results-dir path/to/aggregate-results
-```
-
-Without `--results-dir`, aggregate results are stored under
-`apps/eval/summaries/`. Current export reads the detailed scorecard from
-`apps/eval/local-data/`, while `aggregate show` and `aggregate compare` still
-reopen explicit legacy directories. Aggregate V2 remains content-free and binds
-`cohort.evidence_identity_sha256` to the validated source corpus identity.
-Export is a whitelist projection, never a redaction
-pass over a full scorecard: it retains only the role-local model subject
-descriptor, counts, rates with intervals, aggregate distributions, and
-qualitative counts. It excludes source or model-output evidence, repository or
-filesystem paths, hashes, context identities, sample-level records, and
-qualitative rationales. `aggregate compare` stays descriptive and
-evaluation-only; it does not produce a winner, rank, recommendation, acceptance
-verdict, production selection, or `WALK PASS`, and this surface is not wired
-into acceptance or the skeleton walk.
-
-Retain selected scorecard audit packs as one durable longitudinal series:
-
-```sh
-pnpm --filter @bc-news/eval eval -- longitudinal build \
-  --input path/to/longitudinal-input.json \
-  --results-dir apps/eval/local-data/longitudinal-scorecards
-pnpm --filter @bc-news/eval eval -- longitudinal show <series-id> \
-  --results-dir path/to/local-or-legacy-longitudinal-scorecards
-```
-
-Current longitudinal declarations and explicit current results directories must
-be contained under the ignored `apps/eval/local-data/` root. Without
-`--results-dir`, current series are stored under
-`apps/eval/local-data/longitudinal-scorecards`. Embedded V1 and Git-addressed
-V2 remain historical readers; current V3 is local hash-addressed and
-reconstructs derived histories from contained SHA-256-bound inputs instead of
-embedding scorecard bytes. Underlying Benchmark Run rosters must be disjoint;
-copying one scorecard under a new id does not increase the evidence count.
-
-Each role first compares a stable cohort identity over corpus and references,
-prepared evidence, prompt and output contracts, exact code commit, declared
-role configuration and retry policy, model/runtime identity, and normalized
-execution context. Generated ids, timestamps, realized retries, token and
-latency values, and prediction observations are behavior rather than context.
-A genuine mismatch is `context_changed`. An unchanged cohort needs at least
-three earlier baseline packs and two later subject packs plus one eligible
-quantitative measurement; otherwise it is `insufficient_evidence`. Measured
-rates pool exact numerators and denominators and signal only when their 95%
-Wilson intervals are strictly disjoint. Each token and latency dimension stays
-separate and signals only when observed ranges are strictly disjoint. Any such
-named witness yields `potential_drift`; otherwise the role is
-`within_baseline`. Qualitative histories remain visible, categorical human
-evidence and never drive the classifier.
-
-These labels are conservative observations, not causality, equivalence,
-quality, model ranking, recommendation, retry behavior, acceptance, or a
-production decision. Exact commit identity means even an unrelated commit is
-changed context; copyeditor prompt hashes also include the variable writer
-draft. Counted units within one output may be correlated, range checks can be
-masked by baseline extremes, inspecting several named metrics has multiplicity
-risk, and human evidence may vary without proving model drift.
-
-The historical artifact is a **Run File**, not a Benchmark Run. Recorded-replay
-acceptance alone owns it and its separate default directory:
-
-```sh
-pnpm --filter @bc-news/eval eval -- acceptance run \
-  --fixture packages/fixtures
-pnpm --filter @bc-news/eval eval -- acceptance list
-pnpm --filter @bc-news/eval eval -- acceptance show <run-file-id>
-pnpm --filter @bc-news/eval eval -- acceptance compare <left-id> <right-id>
-```
-
-The default acceptance configuration is
-`apps/eval/recorded-replay.config.json`; `acceptance run` also accepts an
-explicit `--config`, and all acceptance routes accept `--results-dir` where
-applicable. Without `--results-dir`, Run Files live in
-`apps/eval/local-data/acceptance-results`. Current Run Files require exact
-ordered diagnostics; historical files without that field report diagnostics as
-unknown when reopened through the historical reader, not as observed empty.
-Production diagnostics are operator evidence in generation status and are not
-part of `EditionSchema`.
-
-Fixture authoring and context measurement are tooling surfaces rather than
-evaluation or acceptance:
-
-```sh
-pnpm --filter @bc-news/eval eval -- fixture record-responses \
-  --fixture packages/fixtures \
-  --config path/to/live.config.json
-pnpm --filter @bc-news/eval eval -- context benchmark \
-  --fixture packages/fixtures
-```
-
-Fixture authoring defaults to `packages/fixtures/model-responses` and accepts
-`--response-dir`. Current recorded-response version 3 artifacts retain the
-exact configuration of their production step. Context measurement defaults to
-`apps/eval/context-results` and accepts `--results-dir`. Current context-result
-version 3 artifacts retain all four exact agent configurations. Historical
-versions keep their original meaning. Either tool may omit or independently set
-temperature for each step; the declaration determines the experiment. Explicit
-paths are resolved relative to the invoking workspace. The old bare `evaluate`,
-`run`, `record`, `context`, `list`, `show`, and `compare` routes do not exist.
-
-Repository-owned runtime proofs are direct package commands:
-
-```sh
-pnpm --filter @bc-news/eval verify:evaluation-trial-retention
-pnpm --filter @bc-news/eval verify:evaluation-benchmark-continuation
-pnpm --filter @bc-news/eval verify:evaluation-browse
-pnpm --filter @bc-news/eval verify:benchmark-runtime-evidence
-pnpm --filter @bc-news/eval verify:evaluation-reference-corpus
-pnpm --filter @bc-news/eval verify:evaluation-scorecards
-pnpm --filter @bc-news/eval verify:evaluation-aggregate-results
-pnpm --filter @bc-news/eval verify:evaluation-longitudinal-scorecards
-pnpm --filter @bc-news/eval verify:recorded-response-fixture-authoring
-pnpm --filter @bc-news/eval verify:recorded-replay-acceptance
-```
-
-The evaluation proofs print `evaluation:` observations. Trial retention ends
-with `evaluation: concurrent tracks retained interleaved progress, diagnostics,
-schema rejection, infrastructure failure, interruption evidence, and
-completion`; the continuation and browse proofs respectively end with
-`evaluation: serial benchmark retained linked retries and continued later trials`
-and
-`evaluation: evidence listed summarized and compared without verdicts`.
-Runtime-evidence verification ends with
-`BENCHMARK RUNTIME EVIDENCE VERIFIED`.
-Reference-corpus verification ends with
-`EVALUATION REFERENCE CORPUS VERIFIED` after the committed manifest, hashes,
-prepared source witnesses, directory closure, and objective variation rules
-pass their positive and corruption proofs.
-Scorecard verification ends with `EVALUATION SCORECARDS VERIFIED` after the
-real builder, strict store/read path, report, both CLI routes, exact context and
-denominator calculations, Codex-evidence linkage, and corruption matrix pass.
-Aggregate-result verification exercises the real export, store, show, and
-compare paths against controlled scorecards and rejects any forbidden source,
-path, hash, context, sample, or rationale field that escapes the whitelist.
-Longitudinal verification ends with
-`EVALUATION LONGITUDINAL SCORECARDS VERIFIED` after the committed 3+2 audit
-pack, stable cohort normalization, all four classifications, independent
-pooled-statistic calculations, exact store/read/report/CLI path, and corruption
-matrix pass.
-Fixture proof prints
-`fixture authoring: four strict v3 hosted responses retained exact agent configurations, replayed, and compared`;
-recorded-replay proof prints
-`acceptance: four recorded production steps replayed request-linked and deterministic; diagnostics retained: 4`.
-None of these commands prints or confers `WALK PASS`.
-
-Local benchmark declarations may compare Qwen, Bonsai, Gemma, or other loaded
-models and independent temperatures for each of the four roles. A declaration
-may also omit temperature for any role to include its provider default as one
-candidate. Run declarations through `benchmark run`, inspect each returned id
-through `benchmark summary`, and use the retained products, diagnostics, usage,
-and infrastructure evidence to choose each production agent's configuration.
-Trial outcomes are observations, not grammar-based quality failures or
-acceptance verdicts.
-
-The frozen v1 (`bc-news-worker` and siblings, in the parent directory) is
-reference material only — see the [v1 reference map](docs/v1-reference.md).
+Deterministic tests, model experiments, retained evaluation artifacts,
+recorded-replay acceptance, and the composed walk are separate evidence
+domains; no result silently substitutes for another.

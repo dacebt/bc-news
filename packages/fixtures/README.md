@@ -5,7 +5,8 @@ The skeleton walk feeds the committed BitJita wire corpus at
 D1-backed generation path. The evidence corpus at
 `evidence/active-region-7_2026-01-24.json` feeds the explicitly selected
 `fixtureEvidenceInput` adapter for tests and evaluation. The recorded model
-provider remains deterministic.
+provider remains deterministic. See [evaluation operations](../../docs/evaluation-operations.md)
+for the commands that consume or replace these fixtures.
 
 ## Evidence fixture provenance
 
@@ -13,9 +14,12 @@ provider remains deterministic.
 `7` on evidence date `2026-01-24` (UTC).
 
 - **Source repo**: `bc-news-worker` (frozen v1 monorepo, read-only reference),
-  commit `94b5174`.
+  commit `94b5174`; this identifies the derivation environment, not retained
+  source bytes.
 - **Source file**: `apps/eval/fixtures/raw_messages/messages_2026-01-24.json`
-  (gitignored in v1; single local-disk copy).
+  (gitignored in v1). The original untracked source bytes are not retained in
+  this repository, so a clean clone cannot reproduce the derivation from the
+  commit alone.
 - **Filter**: flatten every page's `results[]`; keep rows with
   `region_id === 7` and `timestamp_ts` in
   `[2026-01-24T00:00:00Z, 2026-01-25T00:00:00Z)` (end-exclusive).
@@ -28,8 +32,9 @@ provider remains deterministic.
 - **Derivation**: `scripts/derive-evidence-fixture.ts`, run once via
   `pnpm --filter @bc-news/fixtures derive-evidence-fixture <source-file>`.
   The script validates the envelope against `EvidenceFixtureSchema` and
-  refuses to write output above 250 KB. The committed JSON is canonical; the
-  script is provenance.
+  refuses to write output above 250 KB. The committed derived JSON is the
+  canonical fixture; the script records the transformation but is not a
+  reproducibility guarantee without the original source bytes.
 
 The v1 `prep_output_*.json` files were deliberately not reused (dead
 Python-era mapping); deterministic preparation recomputes everything
@@ -59,8 +64,8 @@ response retains the exact adapter configuration accepted for that production
 step: provider, model, optional temperature, reasoning declaration, and hosted
 billing evidence where applicable.
 
-Temperature omission means that exact agent used its provider default for that
-run. Temperature presence records the exact value sent. Current configuration
+Temperature omission means that exact production model step used its provider
+default for that run. Temperature presence records the exact value sent. Current configuration
 does not admit or send `top_p` or `top_k`, and there is no run-wide sampling
 posture: every production step is independently configurable.
 
@@ -75,7 +80,7 @@ that a named model authored text.
 
 The eval recorder requires an explicit live four-step configuration. It makes
 the four dependent production calls and writes each production step's response,
-observed request hash, and v3 agent configuration into a
+observed request hash, and v3 production-step configuration into a
 same-filesystem staging directory, validates and replays the complete staged
 roster, and compares only the final main-story and announcements products
 before recoverable all-or-none directory promotion. The command report lists
@@ -83,11 +88,15 @@ each production step's retained model and optional temperature.
 Promotion does not promise continuous visibility to concurrent readers. There
 is no judge, threshold, byte pin, or source-digest acceptance gate.
 
+The current recorder accepts LM Studio and the legacy OpenAI-compatible hosted
+adapter. It rejects `recorded` and `cloudflare_ai_gateway` configurations;
+Gateway benchmarks retain a different evidence contract.
+
 Committed files in `model-responses/` are overwritten only when a developer
-explicitly runs the `record` command with that directory as the target. The
-canonical walk records into its own temporary directory through a
-repository-owned loopback provider; it never changes the committed fixtures or
-contacts a configured external endpoint.
+explicitly runs `fixture record-responses` with that directory as the target.
+The canonical walk reads the committed responses through the recorded adapter,
+uses an isolated temporary D1 database, and never changes the committed
+fixtures or contacts a configured external model endpoint.
 
 Historical eval Run Files remain inert provenance only when reopened through a
 historical reader from an explicit external path or prior Git commit; this repo
