@@ -1,0 +1,1032 @@
+{
+  "id": "aggregate-result-2026-08-18T02-44-07-521Z-407fec02-52a6-43cf-ba62-2aa1a3e76170",
+  "created_at": "2026-08-18T02:44:07.521Z",
+  "evidence_retention": "local_only",
+  "configuration_identity": "config-91c26a7acbc40fd2bd30fba277c4ee004e9d698a15867390ab4adc7b6b8918a3",
+  "roles": [
+    {
+      "production_step": "main_story_write",
+      "subject": {
+        "adapter": "lmstudio",
+        "model": "prism-ml/bonsai-27b",
+        "reasoning_effort": "provider_default"
+      },
+      "sample_counts": {
+        "declared_trial_count": 6,
+        "step_reached_trial_count": 6,
+        "step_not_reached_trial_count": 0,
+        "invocation_attempt_count": 6,
+        "initial_attempt_count": 6,
+        "retry_attempt_count": 0,
+        "transport_failed_attempt_count": 0,
+        "transport_succeeded_attempt_count": 6,
+        "parse_succeeded_invocation_count": 6,
+        "parse_rejected_invocation_count": 0,
+        "annotated_output_count": 6,
+        "reviewed_output_count": 6
+      },
+      "rates": [
+        {
+          "state": "measured",
+          "metric": "schema_reliability",
+          "unit": "ratio",
+          "denominator_unit": "terminal_provider_success_invocation",
+          "numerator": 6,
+          "denominator": 6,
+          "sample_count": 6,
+          "value": 1,
+          "interval": {
+            "confidence": 0.95,
+            "method": "wilson_score",
+            "lower": 0.6096657120978346,
+            "upper": 1
+          }
+        },
+        {
+          "state": "not_applicable",
+          "metric": "copyedit_preservation",
+          "unit": "ratio",
+          "denominator_unit": "parse_success_copyedit_output",
+          "reason": "role_not_applicable",
+          "numerator": 0,
+          "denominator": 0,
+          "sample_count": 0,
+          "interval": {
+            "state": "not_applicable"
+          }
+        },
+        {
+          "state": "measured",
+          "metric": "claim_grounding",
+          "unit": "ratio",
+          "denominator_unit": "codex_annotated_factual_claim",
+          "numerator": 5,
+          "denominator": 91,
+          "sample_count": 91,
+          "value": 0.054945054945054944,
+          "interval": {
+            "confidence": 0.95,
+            "method": "wilson_score",
+            "lower": 0.02369509970342678,
+            "upper": 0.12224802467282925
+          }
+        },
+        {
+          "state": "measured",
+          "metric": "required_attribution",
+          "unit": "ratio",
+          "denominator_unit": "codex_annotated_required_attribution_claim",
+          "numerator": 17,
+          "denominator": 29,
+          "sample_count": 29,
+          "value": 0.5862068965517241,
+          "interval": {
+            "confidence": 0.95,
+            "method": "wilson_score",
+            "lower": 0.4073783598787858,
+            "upper": 0.744868226586776
+          }
+        },
+        {
+          "state": "measured",
+          "metric": "event_coverage",
+          "unit": "ratio",
+          "denominator_unit": "source_event_output_pair",
+          "numerator": 8,
+          "denominator": 10,
+          "sample_count": 10,
+          "value": 0.8,
+          "interval": {
+            "confidence": 0.95,
+            "method": "wilson_score",
+            "lower": 0.49016247153664183,
+            "upper": 0.9433178485456247
+          }
+        },
+        {
+          "state": "not_applicable",
+          "metric": "announcement_relevance",
+          "unit": "ratio",
+          "denominator_unit": "parsed_announcement",
+          "reason": "role_not_applicable",
+          "numerator": 0,
+          "denominator": 0,
+          "sample_count": 0,
+          "interval": {
+            "state": "not_applicable"
+          }
+        }
+      ],
+      "distributions": [
+        {
+          "metric": "input_tokens",
+          "unit": "tokens",
+          "sample_count": 6,
+          "observed_sample_count": 6,
+          "unavailable_sample_count": 0,
+          "summary": {
+            "state": "measured",
+            "min": 1103,
+            "median": 1818.5,
+            "mean": 1843.1666666666667,
+            "max": 2548
+          }
+        },
+        {
+          "metric": "output_tokens",
+          "unit": "tokens",
+          "sample_count": 6,
+          "observed_sample_count": 6,
+          "unavailable_sample_count": 0,
+          "summary": {
+            "state": "measured",
+            "min": 3968,
+            "median": 5025.5,
+            "mean": 5189.833333333333,
+            "max": 7011
+          }
+        },
+        {
+          "metric": "total_tokens",
+          "unit": "tokens",
+          "sample_count": 6,
+          "observed_sample_count": 6,
+          "unavailable_sample_count": 0,
+          "summary": {
+            "state": "measured",
+            "min": 5284,
+            "median": 6720.5,
+            "mean": 7033,
+            "max": 9422
+          }
+        },
+        {
+          "metric": "application_latency_ms",
+          "unit": "milliseconds",
+          "sample_count": 6,
+          "observed_sample_count": 6,
+          "unavailable_sample_count": 0,
+          "summary": {
+            "state": "measured",
+            "min": 80638,
+            "median": 103011,
+            "mean": 106221.66666666667,
+            "max": 146963
+          }
+        },
+        {
+          "metric": "provider_time_to_first_token_ms",
+          "unit": "milliseconds",
+          "sample_count": 6,
+          "observed_sample_count": 6,
+          "unavailable_sample_count": 0,
+          "summary": {
+            "state": "measured",
+            "min": 1980.725,
+            "median": 3113.9139999999998,
+            "mean": 3144.4871666666663,
+            "max": 4162.63
+          }
+        },
+        {
+          "metric": "provider_total_time_ms",
+          "unit": "milliseconds",
+          "sample_count": 6,
+          "observed_sample_count": 6,
+          "unavailable_sample_count": 0,
+          "summary": {
+            "state": "measured",
+            "min": 79338.622,
+            "median": 102082.052,
+            "mean": 105040.6875,
+            "max": 145126.846
+          }
+        }
+      ],
+      "qualitative": [
+        {
+          "criterion": "coherence",
+          "unit": "review_assessment",
+          "sample_unit": "codex_reviewed_output",
+          "sample_count": 6,
+          "counts": {
+            "meets": 4,
+            "partly_meets": 2,
+            "does_not_meet": 0,
+            "uncertain": 0
+          }
+        },
+        {
+          "criterion": "usefulness",
+          "unit": "review_assessment",
+          "sample_unit": "codex_reviewed_output",
+          "sample_count": 6,
+          "counts": {
+            "meets": 1,
+            "partly_meets": 4,
+            "does_not_meet": 1,
+            "uncertain": 0
+          }
+        },
+        {
+          "criterion": "newsworthiness",
+          "unit": "review_assessment",
+          "sample_unit": "codex_reviewed_output",
+          "sample_count": 6,
+          "counts": {
+            "meets": 3,
+            "partly_meets": 3,
+            "does_not_meet": 0,
+            "uncertain": 0
+          }
+        },
+        {
+          "criterion": "voice",
+          "unit": "review_assessment",
+          "sample_unit": "codex_reviewed_output",
+          "sample_count": 6,
+          "counts": {
+            "meets": 0,
+            "partly_meets": 5,
+            "does_not_meet": 1,
+            "uncertain": 0
+          }
+        }
+      ]
+    },
+    {
+      "production_step": "main_story_copyedit",
+      "subject": {
+        "adapter": "lmstudio",
+        "model": "prism-ml/bonsai-27b",
+        "reasoning_effort": "provider_default"
+      },
+      "sample_counts": {
+        "declared_trial_count": 6,
+        "step_reached_trial_count": 6,
+        "step_not_reached_trial_count": 0,
+        "invocation_attempt_count": 6,
+        "initial_attempt_count": 6,
+        "retry_attempt_count": 0,
+        "transport_failed_attempt_count": 0,
+        "transport_succeeded_attempt_count": 6,
+        "parse_succeeded_invocation_count": 6,
+        "parse_rejected_invocation_count": 0,
+        "annotated_output_count": 6,
+        "reviewed_output_count": 6
+      },
+      "rates": [
+        {
+          "state": "measured",
+          "metric": "schema_reliability",
+          "unit": "ratio",
+          "denominator_unit": "terminal_provider_success_invocation",
+          "numerator": 6,
+          "denominator": 6,
+          "sample_count": 6,
+          "value": 1,
+          "interval": {
+            "confidence": 0.95,
+            "method": "wilson_score",
+            "lower": 0.6096657120978346,
+            "upper": 1
+          }
+        },
+        {
+          "state": "measured",
+          "metric": "copyedit_preservation",
+          "unit": "ratio",
+          "denominator_unit": "parse_success_copyedit_output",
+          "numerator": 4,
+          "denominator": 6,
+          "sample_count": 6,
+          "value": 0.6666666666666666,
+          "interval": {
+            "confidence": 0.95,
+            "method": "wilson_score",
+            "lower": 0.299993315138392,
+            "upper": 0.9032285888942195
+          }
+        },
+        {
+          "state": "measured",
+          "metric": "claim_grounding",
+          "unit": "ratio",
+          "denominator_unit": "codex_annotated_factual_claim",
+          "numerator": 5,
+          "denominator": 89,
+          "sample_count": 89,
+          "value": 0.056179775280898875,
+          "interval": {
+            "confidence": 0.95,
+            "method": "wilson_score",
+            "lower": 0.024232878420720118,
+            "upper": 0.12485416735078494
+          }
+        },
+        {
+          "state": "measured",
+          "metric": "required_attribution",
+          "unit": "ratio",
+          "denominator_unit": "codex_annotated_required_attribution_claim",
+          "numerator": 17,
+          "denominator": 29,
+          "sample_count": 29,
+          "value": 0.5862068965517241,
+          "interval": {
+            "confidence": 0.95,
+            "method": "wilson_score",
+            "lower": 0.4073783598787858,
+            "upper": 0.744868226586776
+          }
+        },
+        {
+          "state": "measured",
+          "metric": "event_coverage",
+          "unit": "ratio",
+          "denominator_unit": "source_event_output_pair",
+          "numerator": 8,
+          "denominator": 10,
+          "sample_count": 10,
+          "value": 0.8,
+          "interval": {
+            "confidence": 0.95,
+            "method": "wilson_score",
+            "lower": 0.49016247153664183,
+            "upper": 0.9433178485456247
+          }
+        },
+        {
+          "state": "not_applicable",
+          "metric": "announcement_relevance",
+          "unit": "ratio",
+          "denominator_unit": "parsed_announcement",
+          "reason": "role_not_applicable",
+          "numerator": 0,
+          "denominator": 0,
+          "sample_count": 0,
+          "interval": {
+            "state": "not_applicable"
+          }
+        }
+      ],
+      "distributions": [
+        {
+          "metric": "input_tokens",
+          "unit": "tokens",
+          "sample_count": 6,
+          "observed_sample_count": 6,
+          "unavailable_sample_count": 0,
+          "summary": {
+            "state": "measured",
+            "min": 606,
+            "median": 811,
+            "mean": 816.3333333333334,
+            "max": 1092
+          }
+        },
+        {
+          "metric": "output_tokens",
+          "unit": "tokens",
+          "sample_count": 6,
+          "observed_sample_count": 6,
+          "unavailable_sample_count": 0,
+          "summary": {
+            "state": "measured",
+            "min": 3737,
+            "median": 5304,
+            "mean": 5083.5,
+            "max": 6093
+          }
+        },
+        {
+          "metric": "total_tokens",
+          "unit": "tokens",
+          "sample_count": 6,
+          "observed_sample_count": 6,
+          "unavailable_sample_count": 0,
+          "summary": {
+            "state": "measured",
+            "min": 4343,
+            "median": 6202.5,
+            "mean": 5899.833333333333,
+            "max": 6938
+          }
+        },
+        {
+          "metric": "application_latency_ms",
+          "unit": "milliseconds",
+          "sample_count": 6,
+          "observed_sample_count": 6,
+          "unavailable_sample_count": 0,
+          "summary": {
+            "state": "measured",
+            "min": 61895,
+            "median": 92534.5,
+            "mean": 88849.66666666667,
+            "max": 104677
+          }
+        },
+        {
+          "metric": "provider_time_to_first_token_ms",
+          "unit": "milliseconds",
+          "sample_count": 6,
+          "observed_sample_count": 6,
+          "unavailable_sample_count": 0,
+          "summary": {
+            "state": "measured",
+            "min": 442.178,
+            "median": 905.7529999999999,
+            "mean": 853.4593333333333,
+            "max": 1242.111
+          }
+        },
+        {
+          "metric": "provider_total_time_ms",
+          "unit": "milliseconds",
+          "sample_count": 6,
+          "observed_sample_count": 6,
+          "unavailable_sample_count": 0,
+          "summary": {
+            "state": "measured",
+            "min": 60910.199,
+            "median": 91537.73300000001,
+            "mean": 87798.15133333334,
+            "max": 103595.05600000001
+          }
+        }
+      ],
+      "qualitative": [
+        {
+          "criterion": "coherence",
+          "unit": "review_assessment",
+          "sample_unit": "codex_reviewed_output",
+          "sample_count": 6,
+          "counts": {
+            "meets": 4,
+            "partly_meets": 2,
+            "does_not_meet": 0,
+            "uncertain": 0
+          }
+        },
+        {
+          "criterion": "usefulness",
+          "unit": "review_assessment",
+          "sample_unit": "codex_reviewed_output",
+          "sample_count": 6,
+          "counts": {
+            "meets": 1,
+            "partly_meets": 4,
+            "does_not_meet": 1,
+            "uncertain": 0
+          }
+        },
+        {
+          "criterion": "newsworthiness",
+          "unit": "review_assessment",
+          "sample_unit": "codex_reviewed_output",
+          "sample_count": 6,
+          "counts": {
+            "meets": 3,
+            "partly_meets": 3,
+            "does_not_meet": 0,
+            "uncertain": 0
+          }
+        },
+        {
+          "criterion": "voice",
+          "unit": "review_assessment",
+          "sample_unit": "codex_reviewed_output",
+          "sample_count": 6,
+          "counts": {
+            "meets": 0,
+            "partly_meets": 5,
+            "does_not_meet": 1,
+            "uncertain": 0
+          }
+        }
+      ]
+    },
+    {
+      "production_step": "announcements_write",
+      "subject": {
+        "adapter": "lmstudio",
+        "model": "prism-ml/bonsai-27b",
+        "reasoning_effort": "provider_default"
+      },
+      "sample_counts": {
+        "declared_trial_count": 6,
+        "step_reached_trial_count": 6,
+        "step_not_reached_trial_count": 0,
+        "invocation_attempt_count": 6,
+        "initial_attempt_count": 6,
+        "retry_attempt_count": 0,
+        "transport_failed_attempt_count": 0,
+        "transport_succeeded_attempt_count": 6,
+        "parse_succeeded_invocation_count": 6,
+        "parse_rejected_invocation_count": 0,
+        "annotated_output_count": 6,
+        "reviewed_output_count": 6
+      },
+      "rates": [
+        {
+          "state": "measured",
+          "metric": "schema_reliability",
+          "unit": "ratio",
+          "denominator_unit": "terminal_provider_success_invocation",
+          "numerator": 6,
+          "denominator": 6,
+          "sample_count": 6,
+          "value": 1,
+          "interval": {
+            "confidence": 0.95,
+            "method": "wilson_score",
+            "lower": 0.6096657120978346,
+            "upper": 1
+          }
+        },
+        {
+          "state": "not_applicable",
+          "metric": "copyedit_preservation",
+          "unit": "ratio",
+          "denominator_unit": "parse_success_copyedit_output",
+          "reason": "role_not_applicable",
+          "numerator": 0,
+          "denominator": 0,
+          "sample_count": 0,
+          "interval": {
+            "state": "not_applicable"
+          }
+        },
+        {
+          "state": "measured",
+          "metric": "claim_grounding",
+          "unit": "ratio",
+          "denominator_unit": "codex_annotated_factual_claim",
+          "numerator": 8,
+          "denominator": 22,
+          "sample_count": 22,
+          "value": 0.36363636363636365,
+          "interval": {
+            "confidence": 0.95,
+            "method": "wilson_score",
+            "lower": 0.19733204670366122,
+            "upper": 0.5704829190986899
+          }
+        },
+        {
+          "state": "measured",
+          "metric": "required_attribution",
+          "unit": "ratio",
+          "denominator_unit": "codex_annotated_required_attribution_claim",
+          "numerator": 1,
+          "denominator": 2,
+          "sample_count": 2,
+          "value": 0.5,
+          "interval": {
+            "confidence": 0.95,
+            "method": "wilson_score",
+            "lower": 0.09453120573423074,
+            "upper": 0.9054687942657693
+          }
+        },
+        {
+          "state": "measured",
+          "metric": "event_coverage",
+          "unit": "ratio",
+          "denominator_unit": "source_event_output_pair",
+          "numerator": 5,
+          "denominator": 10,
+          "sample_count": 10,
+          "value": 0.5,
+          "interval": {
+            "confidence": 0.95,
+            "method": "wilson_score",
+            "lower": 0.236593090512564,
+            "upper": 0.7634069094874361
+          }
+        },
+        {
+          "state": "measured",
+          "metric": "announcement_relevance",
+          "unit": "ratio",
+          "denominator_unit": "parsed_announcement",
+          "numerator": 3,
+          "denominator": 11,
+          "sample_count": 11,
+          "value": 0.2727272727272727,
+          "interval": {
+            "confidence": 0.95,
+            "method": "wilson_score",
+            "lower": 0.09746059290024889,
+            "upper": 0.5656453011761291
+          }
+        }
+      ],
+      "distributions": [
+        {
+          "metric": "input_tokens",
+          "unit": "tokens",
+          "sample_count": 6,
+          "observed_sample_count": 6,
+          "unavailable_sample_count": 0,
+          "summary": {
+            "state": "measured",
+            "min": 998,
+            "median": 1713.5,
+            "mean": 1738.1666666666667,
+            "max": 2443
+          }
+        },
+        {
+          "metric": "output_tokens",
+          "unit": "tokens",
+          "sample_count": 6,
+          "observed_sample_count": 6,
+          "unavailable_sample_count": 0,
+          "summary": {
+            "state": "measured",
+            "min": 1657,
+            "median": 3344.5,
+            "mean": 3060,
+            "max": 4163
+          }
+        },
+        {
+          "metric": "total_tokens",
+          "unit": "tokens",
+          "sample_count": 6,
+          "observed_sample_count": 6,
+          "unavailable_sample_count": 0,
+          "summary": {
+            "state": "measured",
+            "min": 2655,
+            "median": 5412.5,
+            "mean": 4798.166666666667,
+            "max": 6469
+          }
+        },
+        {
+          "metric": "application_latency_ms",
+          "unit": "milliseconds",
+          "sample_count": 6,
+          "observed_sample_count": 6,
+          "unavailable_sample_count": 0,
+          "summary": {
+            "state": "measured",
+            "min": 35168,
+            "median": 70017,
+            "mean": 63575,
+            "max": 87563
+          }
+        },
+        {
+          "metric": "provider_time_to_first_token_ms",
+          "unit": "milliseconds",
+          "sample_count": 6,
+          "observed_sample_count": 6,
+          "unavailable_sample_count": 0,
+          "summary": {
+            "state": "measured",
+            "min": 1979.332,
+            "median": 3071.8334999999997,
+            "mean": 3109.3269999999998,
+            "max": 4265.299
+          }
+        },
+        {
+          "metric": "provider_total_time_ms",
+          "unit": "milliseconds",
+          "sample_count": 6,
+          "observed_sample_count": 6,
+          "unavailable_sample_count": 0,
+          "summary": {
+            "state": "measured",
+            "min": 33264.895,
+            "median": 69019.938,
+            "mean": 62333.39416666667,
+            "max": 85742.05900000001
+          }
+        }
+      ],
+      "qualitative": [
+        {
+          "criterion": "coherence",
+          "unit": "review_assessment",
+          "sample_unit": "codex_reviewed_output",
+          "sample_count": 6,
+          "counts": {
+            "meets": 4,
+            "partly_meets": 0,
+            "does_not_meet": 0,
+            "uncertain": 2
+          }
+        },
+        {
+          "criterion": "usefulness",
+          "unit": "review_assessment",
+          "sample_unit": "codex_reviewed_output",
+          "sample_count": 6,
+          "counts": {
+            "meets": 0,
+            "partly_meets": 4,
+            "does_not_meet": 2,
+            "uncertain": 0
+          }
+        },
+        {
+          "criterion": "newsworthiness",
+          "unit": "review_assessment",
+          "sample_unit": "codex_reviewed_output",
+          "sample_count": 6,
+          "counts": {
+            "meets": 2,
+            "partly_meets": 2,
+            "does_not_meet": 2,
+            "uncertain": 0
+          }
+        },
+        {
+          "criterion": "voice",
+          "unit": "review_assessment",
+          "sample_unit": "codex_reviewed_output",
+          "sample_count": 6,
+          "counts": {
+            "meets": 3,
+            "partly_meets": 1,
+            "does_not_meet": 0,
+            "uncertain": 2
+          }
+        }
+      ]
+    },
+    {
+      "production_step": "announcements_copyedit",
+      "subject": {
+        "adapter": "lmstudio",
+        "model": "prism-ml/bonsai-27b",
+        "reasoning_effort": "provider_default"
+      },
+      "sample_counts": {
+        "declared_trial_count": 6,
+        "step_reached_trial_count": 6,
+        "step_not_reached_trial_count": 0,
+        "invocation_attempt_count": 6,
+        "initial_attempt_count": 6,
+        "retry_attempt_count": 0,
+        "transport_failed_attempt_count": 0,
+        "transport_succeeded_attempt_count": 6,
+        "parse_succeeded_invocation_count": 6,
+        "parse_rejected_invocation_count": 0,
+        "annotated_output_count": 6,
+        "reviewed_output_count": 6
+      },
+      "rates": [
+        {
+          "state": "measured",
+          "metric": "schema_reliability",
+          "unit": "ratio",
+          "denominator_unit": "terminal_provider_success_invocation",
+          "numerator": 6,
+          "denominator": 6,
+          "sample_count": 6,
+          "value": 1,
+          "interval": {
+            "confidence": 0.95,
+            "method": "wilson_score",
+            "lower": 0.6096657120978346,
+            "upper": 1
+          }
+        },
+        {
+          "state": "measured",
+          "metric": "copyedit_preservation",
+          "unit": "ratio",
+          "denominator_unit": "parse_success_copyedit_output",
+          "numerator": 6,
+          "denominator": 6,
+          "sample_count": 6,
+          "value": 1,
+          "interval": {
+            "confidence": 0.95,
+            "method": "wilson_score",
+            "lower": 0.6096657120978346,
+            "upper": 1
+          }
+        },
+        {
+          "state": "measured",
+          "metric": "claim_grounding",
+          "unit": "ratio",
+          "denominator_unit": "codex_annotated_factual_claim",
+          "numerator": 8,
+          "denominator": 22,
+          "sample_count": 22,
+          "value": 0.36363636363636365,
+          "interval": {
+            "confidence": 0.95,
+            "method": "wilson_score",
+            "lower": 0.19733204670366122,
+            "upper": 0.5704829190986899
+          }
+        },
+        {
+          "state": "measured",
+          "metric": "required_attribution",
+          "unit": "ratio",
+          "denominator_unit": "codex_annotated_required_attribution_claim",
+          "numerator": 1,
+          "denominator": 2,
+          "sample_count": 2,
+          "value": 0.5,
+          "interval": {
+            "confidence": 0.95,
+            "method": "wilson_score",
+            "lower": 0.09453120573423074,
+            "upper": 0.9054687942657693
+          }
+        },
+        {
+          "state": "measured",
+          "metric": "event_coverage",
+          "unit": "ratio",
+          "denominator_unit": "source_event_output_pair",
+          "numerator": 5,
+          "denominator": 10,
+          "sample_count": 10,
+          "value": 0.5,
+          "interval": {
+            "confidence": 0.95,
+            "method": "wilson_score",
+            "lower": 0.236593090512564,
+            "upper": 0.7634069094874361
+          }
+        },
+        {
+          "state": "measured",
+          "metric": "announcement_relevance",
+          "unit": "ratio",
+          "denominator_unit": "parsed_announcement",
+          "numerator": 3,
+          "denominator": 11,
+          "sample_count": 11,
+          "value": 0.2727272727272727,
+          "interval": {
+            "confidence": 0.95,
+            "method": "wilson_score",
+            "lower": 0.09746059290024889,
+            "upper": 0.5656453011761291
+          }
+        }
+      ],
+      "distributions": [
+        {
+          "metric": "input_tokens",
+          "unit": "tokens",
+          "sample_count": 6,
+          "observed_sample_count": 6,
+          "unavailable_sample_count": 0,
+          "summary": {
+            "state": "measured",
+            "min": 327,
+            "median": 459.5,
+            "mean": 437.5,
+            "max": 534
+          }
+        },
+        {
+          "metric": "output_tokens",
+          "unit": "tokens",
+          "sample_count": 6,
+          "observed_sample_count": 6,
+          "unavailable_sample_count": 0,
+          "summary": {
+            "state": "measured",
+            "min": 1186,
+            "median": 2471.5,
+            "mean": 2290.5,
+            "max": 3220
+          }
+        },
+        {
+          "metric": "total_tokens",
+          "unit": "tokens",
+          "sample_count": 6,
+          "observed_sample_count": 6,
+          "unavailable_sample_count": 0,
+          "summary": {
+            "state": "measured",
+            "min": 1513,
+            "median": 2931,
+            "mean": 2728,
+            "max": 3738
+          }
+        },
+        {
+          "metric": "application_latency_ms",
+          "unit": "milliseconds",
+          "sample_count": 6,
+          "observed_sample_count": 6,
+          "unavailable_sample_count": 0,
+          "summary": {
+            "state": "measured",
+            "min": 23669,
+            "median": 52899,
+            "mean": 47915.166666666664,
+            "max": 69198
+          }
+        },
+        {
+          "metric": "provider_time_to_first_token_ms",
+          "unit": "milliseconds",
+          "sample_count": 6,
+          "observed_sample_count": 6,
+          "unavailable_sample_count": 0,
+          "summary": {
+            "state": "measured",
+            "min": 460.761,
+            "median": 597.953,
+            "mean": 601.7673333333333,
+            "max": 753.23
+          }
+        },
+        {
+          "metric": "provider_total_time_ms",
+          "unit": "milliseconds",
+          "sample_count": 6,
+          "observed_sample_count": 6,
+          "unavailable_sample_count": 0,
+          "summary": {
+            "state": "measured",
+            "min": 23056.360999999997,
+            "median": 51735.1105,
+            "mean": 46918.5045,
+            "max": 67852.266
+          }
+        }
+      ],
+      "qualitative": [
+        {
+          "criterion": "coherence",
+          "unit": "review_assessment",
+          "sample_unit": "codex_reviewed_output",
+          "sample_count": 6,
+          "counts": {
+            "meets": 4,
+            "partly_meets": 0,
+            "does_not_meet": 0,
+            "uncertain": 2
+          }
+        },
+        {
+          "criterion": "usefulness",
+          "unit": "review_assessment",
+          "sample_unit": "codex_reviewed_output",
+          "sample_count": 6,
+          "counts": {
+            "meets": 0,
+            "partly_meets": 4,
+            "does_not_meet": 2,
+            "uncertain": 0
+          }
+        },
+        {
+          "criterion": "newsworthiness",
+          "unit": "review_assessment",
+          "sample_unit": "codex_reviewed_output",
+          "sample_count": 6,
+          "counts": {
+            "meets": 2,
+            "partly_meets": 2,
+            "does_not_meet": 2,
+            "uncertain": 0
+          }
+        },
+        {
+          "criterion": "voice",
+          "unit": "review_assessment",
+          "sample_unit": "codex_reviewed_output",
+          "sample_count": 6,
+          "counts": {
+            "meets": 3,
+            "partly_meets": 1,
+            "does_not_meet": 0,
+            "uncertain": 2
+          }
+        }
+      ]
+    }
+  ],
+  "version": 2,
+  "source_scorecard": {
+    "version": 3,
+    "id": "scorecard-2026-08-18T02-43-19-514Z-1ba6783c-fb1e-4895-a344-2f01f8cdf822",
+    "created_at": "2026-08-18T02:43:19.515Z"
+  },
+  "cohort": {
+    "id": "production-grounded-2026-08-16",
+    "evidence_identity_sha256": "61097508df66b5c2656a7db1a0fd23b886b231b86746c805e5cc3cbae7190501",
+    "fixture_count": 6,
+    "repetition_count": 1
+  }
+}
