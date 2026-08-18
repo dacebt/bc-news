@@ -8,7 +8,7 @@ tags: [documentation, testing, verification, evaluation]
 status: stable
 generated:
   by: ebt-skills/okf-v0.2
-  at: "2026-08-06T21:23:59Z"
+  at: "2026-08-18T14:55:35Z"
 authority: binding
 ---
 
@@ -23,7 +23,8 @@ binds how that discipline's evidence domains apply to *this* project, so
 ## Separate verification domains
 
 These surfaces answer different questions. None inherits another surface's
-outcome or silently substitutes for it.
+outcome or silently substitutes for it. There are ten runtime evidence owners;
+TypeScript and lint are supporting static guarantees, not an eleventh result.
 
 | Domain | Command | Evidence | Outcome |
 |---|---|---|---|
@@ -37,6 +38,15 @@ outcome or silently substitutes for it.
 | Fixture and context tooling | `fixture record-responses` and `context benchmark` | Four step-keyed recorded responses, or strict context results | Fixture-authoring or context-measurement tooling result; never acceptance or a walk |
 | Recorded-replay acceptance | `acceptance run/list/show/compare` and its direct verifier | Current local Run Files under `apps/eval/local-data/acceptance-results` by default, plus historical readers when explicitly addressed | `acceptance:` result over controlled replay; never a Benchmark Run outcome |
 | Composed skeleton walk | `pnpm walk` | The running local ingest, generation, persistence, API, status, and browser product | Walk-owned `walk:` observations followed by independent terminal `WALK PASS` |
+
+Committed recorded responses and conversation fixtures are controlled replay
+inputs for tests, fixture-backed acceptance, and the composed walk; they are not
+retained live-model evaluation evidence. Current detailed corpus workspaces,
+Benchmark Runs, scorecards, and longitudinal series stay under the ignored
+`apps/eval/local-data/` root. Only the content-free selection declaration and
+whitelist-only aggregate summaries are commit-eligible current evaluation
+records. Historical readers keep prior committed formats readable without
+turning them into current evidence.
 
 **Deterministic tests** protect warranted invariants, reproduced defects, and
 high-risk state transitions. A failing test is a hard failed test; it is not a
@@ -95,7 +105,7 @@ identifies the rejected parameter and provider reason rather than only the
 status code. OpenAI request profiles prove that every wire property is required,
 canonical optional properties are nullable, and returned null placeholders
 normalize back to the canonical optional shape. Both current paths
-retain every exact per-agent configuration, schema-valid copyedit diagnostic,
+retain every exact per-role configuration, schema-valid copyedit diagnostic,
 and a lifecycle-matched runtime-evidence record for every invocation. Each role
 independently chooses a provider, model, and optional temperature; omission
 includes that role's provider default as a candidate. Temperature is the only
@@ -118,8 +128,11 @@ never causes another model call, rejection, or publication stop.
 
 **Fixture and context tooling** owns two different development artifacts.
 `fixture record-responses --fixture <path> --config <path> [--response-dir
-<path>]` writes the exact four step-keyed response files only after staged
-replay and comparison. `context benchmark --fixture <path> [--results-dir
+<path>]` accepts only `lmstudio` and `openai_compatible_hosted` production-step
+adapters and writes the exact four step-keyed response files only after staged
+replay and comparison. The `recorded` adapter rejects because it is not live;
+`cloudflare_ai_gateway` rejects because the current recorder format cannot
+retain its Gateway request provenance. `context benchmark --fixture <path> [--results-dir
 <path>]` writes strict context-measurement results. Neither tool creates a
 Benchmark Run or Run File and neither confers acceptance.
 Current recorded-response version 3 and context-result version 3 artifacts
@@ -252,9 +265,9 @@ run identity and timestamps, carry the exact ordered roster and usage, match
 parsed recorded responses, recompute request relations from the requests
 actually built, and assemble the final edition from the two copyedited
 products. This is an explicit acceptance gate over controlled evidence, not a
-live model evaluation. Its artifact is the historical Run File, not a
-Benchmark Run. Current Run Files require exact ordered diagnostics; historical
-files without the field report diagnostics as unknown, never as observed empty.
+live model evaluation. Its artifact is a distinct Run File, not a Benchmark
+Run. Current Run Files require exact ordered diagnostics; historical files
+without the field report diagnostics as unknown, never as observed empty.
 
 **The composed skeleton walk** runs a fixed local conversation through the whole
 pipeline: ingest into a fresh isolated D1 database; the real scheduled
@@ -291,7 +304,12 @@ behavior. The production-configuration contract semantically parses both real
 Wrangler JSONC files and locks alternate-origin disablement, ingest route
 absence, named-environment absence, the exact required-secret declaration
 without a plain-text secret, and the single shared D1 binding with
-generation-only migration ownership.
+generation-only migration ownership. Together with disabled `workers.dev` and
+preview URLs, the ingest Worker's missing `route`, `routes`, and assets prove
+that its source-level `POST /poll` handler has no checked-in public hostname;
+they do not prove remote dashboard state. The D1 check proves only one nonblank,
+matching configured database name and id, not remote existence, deployed
+binding state, or applied migrations.
 Both the production-dependency and full dependency audits must report zero
 current advisories.
 
@@ -306,6 +324,7 @@ pnpm --filter @bc-news/eval verify:evaluation-benchmark-continuation
 pnpm --filter @bc-news/eval verify:evaluation-browse
 pnpm --filter @bc-news/eval verify:benchmark-runtime-evidence
 pnpm --filter @bc-news/eval verify:evaluation-reference-corpus
+pnpm --filter @bc-news/eval verify:evaluation-corpus-extraction
 pnpm --filter @bc-news/eval verify:evaluation-scorecards
 pnpm --filter @bc-news/eval verify:evaluation-aggregate-results
 pnpm --filter @bc-news/eval verify:evaluation-longitudinal-scorecards
@@ -323,7 +342,7 @@ The command-contract tests additionally exercise every namespaced CLI route,
 option ownership, namespace-specific failure prefix, and rejection of the old
 bare `evaluate`, `run`, `record`, `context`, `list`, `show`, and `compare`
 routes. After a namespace is recognized, failures begin with `benchmark
-failed:`, `acceptance failed:`, `fixture authoring failed:`, `context
+failed:`, `scratch failed:`, `acceptance failed:`, `fixture authoring failed:`, `context
 benchmark failed:`, `corpus failed:`, `scorecard failed:`, `aggregate
 failed:`, or `longitudinal scorecard failed:`. Failures before namespace recognition begin with `command
 failed:`; `eval failed:` is forbidden.
@@ -341,7 +360,10 @@ and ends exactly with `BENCHMARK RUNTIME EVIDENCE VERIFIED`. Reference-corpus
 verification loads the generated synthetic historical V2 repository proof
 through the historical production reader, runs the complete corruption matrix,
 and ends exactly with `EVALUATION REFERENCE
-CORPUS VERIFIED`. Scorecard verification assembles controlled complete version
+CORPUS VERIFIED`. Corpus-extraction verification exercises successful private
+snapshot extraction, staging and cleanup, strict timestamp filtering, selected
+snapshot isolation, rejection paths, and non-leaking failure output before
+ending exactly with `EVALUATION CORPUS EXTRACTION VERIFIED`. Scorecard verification assembles controlled complete version
 7 runs for the generated synthetic historical V2 repository proof through the
 real input, builder, store, reader, report, and CLI paths; proves the exact
 counts, contexts, rates, intervals, distributions, Codex-evidence linkage,
@@ -372,7 +394,10 @@ Write one only when it earns its place:
   [domain model](DOMAIN.md): one region + date → one edition, no duplicate
   publication on retry, isolation of regional failure.
 - **Date and window arithmetic** — publication-date and evidence-window
-  logic; v1's calendar-date rejection lessons carry forward.
+  logic; v1's calendar-date rejection lessons carry forward. Reader timing
+  distinguishes the 00:00 UTC generation schedule, the 10:00 UTC expected
+  availability target, and the 10:30 UTC cutoff where a still-absent current-day
+  edition becomes a failure.
 - **State transitions in the generation run** — resume-after-failure
   branching, durable-step semantics, anything where a wrong branch spends
   model money or duplicates an edition.
@@ -490,7 +515,7 @@ proves, tests of glue and framework wiring, tests to satisfy coverage.
   never invoke LM Studio. The accepted representative run requires exactly one
   already-loaded local Qwen model, rejects any hosted or mixed-model config,
   and never loads, unloads, or switches model state.
-- Current context-result version 3 tests require every per-agent model and
+- Current context-result version 3 tests require every production-step model and
   optional temperature to survive write and reparse independently. Version 2
   and absent-version context results continue through their frozen parsers.
 - The representative corpus prepares to 208 messages under the unchanged
@@ -507,8 +532,9 @@ proves, tests of glue and framework wiring, tests to satisfy coverage.
   input and completion usage, total, and remaining headroom. Component sums and
   model identity are rejecting contracts; unsupported attribution is never
   estimated.
-- The live recorder requires an explicit four-step live eval configuration and
-  performs four dependent calls. It stages and validates the exact four-file
+- The live recorder requires an explicit four-step eval configuration using
+  only `lmstudio` or `openai_compatible_hosted` adapters and performs four
+  dependent calls. It stages and validates the exact four-file
   set on the target filesystem, replays the staged records through the shared
   runner, compares only the final editorial products, and promotes the response
   directory all-or-none with recoverable backup handling. It does not promise

@@ -3,12 +3,12 @@ type: doc
 title: >-
   bc-news structural discipline
 description: >-
-  The binding architecture posture for bc-news v2 — TypeScript throughout, exactly two ports (model provider, evidence input), functional core with zod-validated rejecting boundaries, and deliberate Cloudflare coupling everywhere else.
+  The binding architecture posture for bc-news v2 — TypeScript application code throughout, exactly two ports (model provider, evidence input), functional core with zod-validated rejecting boundaries, and deliberate Cloudflare coupling everywhere else.
 tags: [documentation, architecture, ports, typescript]
 status: stable
 generated:
   by: ebt-skills/okf-v0.2
-  at: "2026-08-06T21:23:59Z"
+  at: "2026-08-18T14:55:35Z"
 authority: binding
 ---
 
@@ -22,10 +22,13 @@ ADR-014, ADR-015).
 
 ## Language
 
-The repository is **TypeScript throughout** — workers, the Workflow, the
-eval harness, the client, and shared contract packages. No second language
-enters the repo; v1 already paid once to unwind a split stack (see the
-[v1 reference map](v1-reference.md)).
+The application implementation is **TypeScript throughout** — workers, the
+Workflow, the eval harness, the client, shared contract packages, and the local
+walk. Repository support material still uses the formats its tools require,
+including SQL migrations, JSON/JSONC configuration, shell entrypoints, and
+Markdown documentation; none forms a second application stack. v1 already paid
+once to unwind a split application stack (see the [v1 reference
+map](v1-reference.md)).
 
 ## Posture: selective ports, not hexagonal
 
@@ -231,12 +234,13 @@ judge call, score, verdict, or automatic revision loop in production.
 
 ### Verification ownership
 
-Verification has nine independent owners. Their artifacts and terminal
+Verification has ten independent owners. Their artifacts and terminal
 observations do not cross domain boundaries.
 
 | Owner | Command surface | Evidence | Outcome owner |
 |---|---|---|---|
 | Deterministic tests | `pnpm test` | Isolated invariants, reproduced defects, and high-risk state transitions | Test pass or hard test failure |
+| Scratch model run | `scratch run` | One caller-directed live four-step inspection artifact | Development observation only; no Benchmark Run, scorecard, baseline, or acceptance verdict |
 | Model evaluation | `benchmark run/list/show/summary/compare` | Strict versioned Benchmark Runs under `apps/eval/local-data/evaluation-results` by default | Model subject outcome and evidence-retention harness outcome, reported as `evaluation:` observations |
 | Evaluation reference corpus | `corpus extract --snapshot <sqlite-path> --selection <selection-path>` and `corpus show --corpus <manifest-path>` | Current local V3 selection-bound corpus workspaces under `apps/eval/local-data/corpus-workspaces/` plus historical Git-addressed V2 synthetic readers | Auditable source truth and objective variation coverage; no model result or verdict |
 | Evaluation scorecards | `scorecard build/show` | Current local hash-addressed scorecards under `apps/eval/local-data/scorecards` by default, plus embedded V1 and Git-addressed V2 historical readers | Four role-specific transparent evidence reports plus current/outdated checkout information; no aggregate score, ranking, recommendation, or acceptance verdict |
@@ -246,8 +250,11 @@ observations do not cross domain boundaries.
 | Recorded-replay acceptance | `acceptance run/list/show/compare` | Current local Run Files under `apps/eval/local-data/acceptance-results` by default, plus historical readers when explicitly addressed | `acceptance:` gate result over controlled recorded evidence |
 | Composed skeleton walk | `pnpm walk` | Running local ingest, generation, D1, API, status, and browser product | Walk-owned `walk:` observations and terminal `WALK PASS` |
 
-Strict TypeScript and lint are supporting static guarantees, not a tenth
-runtime result and not a substitute for any row.
+Strict TypeScript and lint are supporting static guarantees, not an eleventh
+runtime result and not a substitute for any row. The binding [test and
+verification posture](TESTING.md) owns the full commands, artifact contracts,
+and success observations for all ten surfaces; this table preserves only their
+architectural separation.
 
 For local development, copy `apps/generation/.dev.vars.example` to the ignored
 `apps/generation/.dev.vars`. Wrangler loads that file for the generation Worker.
@@ -276,9 +283,12 @@ endpoints. The walk supplies an explicit four-step recorded
 `MODEL_CONFIG`, overriding any developer `.dev.vars` model assignment.
 
 The `fixture record-responses --fixture <path> --config <path>
-[--response-dir <path>]` tooling surface requires an explicit eval configuration with one
-live hosted or local adapter for each production step; the committed recorded
-configuration is not a recording default. It executes exactly four dependent
+[--response-dir <path>]` tooling surface requires an explicit eval configuration
+with either `lmstudio` or `openai_compatible_hosted` for each production step.
+The `recorded` adapter rejects because replay is not live recording, and
+`cloudflare_ai_gateway` rejects because the current recorder contract cannot
+retain its Gateway request provenance. The committed recorded configuration is
+not a recording default. The recorder executes exactly four dependent
 calls in production-step order, so each copyeditor receives the draft produced
 by its writer. The recorder retains request hashes as observation metadata but
 does not verify them against prompt text. It stages the exact four-file directory on the
@@ -450,104 +460,49 @@ commit with the explicitly resolved repository-root `HEAD`. `current` and
 source reference, prevents reconstruction, blocks a build/show command, or
 decides whether another evaluation may run.
 
-Current Benchmark Run artifact version 7 retains every exact per-agent adapter,
-model, optional temperature, and adapter-specific declaration plus every exact
-copyedit diagnostic and a top-level runtime-evidence record for every reached
-invocation. Temperature omission and presence are independent
-candidate choices for each role. Obsolete decoding controls reject before
-artifact creation. Its four subject outcomes are `completed`, `parse_rejected`,
-`contract_rejected`, and `infrastructure_incomplete`. Version 8 adds Gateway
-request provenance to the same current run structure.
+Current Benchmark Run version 7 is the non-Gateway contract. It retains each
+role's exact adapter configuration, diagnostics, invocation lifecycle, and
+normalized runtime evidence. Version 8 is the Gateway contract: it preserves
+that structure and adds one lifecycle-matched Gateway-request record per
+invocation. Current readers accept only versions 7 and 8; neither version is a
+migration or reinterpretation of older inert artifact formats. Both expose the
+same four subject outcomes: `completed`, `parse_rejected`,
+`contract_rejected`, and `infrastructure_incomplete`.
 
-The artifact is exclusively created in `running` state before any provider
-call. One ordered application owner allocates every invocation ordinal and
-applies every retained version 7 mutation. Before each transport call, that
-owner atomically retains the exact assembled `{production_step, system, user}`
-request, request hash, configuration identity, ordinal, predecessor link,
-timestamp, `transport: in_flight`, and `parse: pending` together with an
-identity-matched `runtime_evidence: pending` record. Concurrent track work
-therefore enters one monotonic interleaved history, and the artifact store's
-atomic full-file replacement is never invoked concurrently. A successful
-application-facing completion is retained without its optional provider-facing
-runtime field while its roster record atomically becomes `captured` and parse
-remains pending before editorial parsing. A transport failure atomically makes
-its runtime record `unavailable: transport_failed` and is retained with
-classification pending and then classified in a separate write. An eligible failure may append at most
-the declared number of retries; each retry points to the immediately previous
-same-step invocation and retains the exact same request and request hash.
-Deterministic transport failures, malformed JSON, and strict schema mismatch
-never retry. Preservation and final-product findings complete their track with
-the schema-valid product and retained diagnostics, also without retry. Every
-replacement validates and reparses before becoming authoritative. A failed
-pre-rename replacement always attempts to remove its unique temporary file
-without changing the authoritative bytes.
-Cleanup is best-effort: a cleanup failure remains an explicit harness-failure
-detail with the temporary path while the primary error stays classified as
-`write_rejected`. Evidence-write failure stops the harness and never claims
-retention. Validation, persistence, or an unknown harness rejection prevents
-terminal retained completion. Both concurrently dispatched chains quiesce
-before the application attempts terminal trial aggregation, so no sibling can
-mutate evidence after a terminal result is reported. Interruption leaves the
-last strict running artifact inspectable through the current benchmark browse
-boundary. Ended invocation durations equal their retained
-timestamp endpoints exactly, and trial and benchmark completions cannot precede
-any lifecycle event they contain.
+One ordered application owner creates the run in `running` state before
+transport, allocates invocation ordinals, and applies every current V7/V8
+transition. It atomically retains each request, configuration identity,
+invocation state, runtime-evidence state, and, for V8, Gateway-request state.
+Concurrent editorial tracks therefore enter one monotonic interleaved history
+without concurrent authoritative-file replacement. Eligible retries link to the
+immediately preceding same-step failure and preserve the request; deterministic
+failures never retry. Both tracks quiesce before terminal aggregation, while a
+validation, persistence, or unknown harness failure leaves the last strict
+running artifact inspectable rather than claiming retained completion.
 
-Runtime evidence uses application-owned strict observations rather than raw
-provider configuration. Every field is `observed`, `unknown`, or
-`externally_controlled` with a closed reason; invalid strings, counts, context
-lengths, timing, throughput, or speculative-token relations become canonical
-unknowns rather than nulls, non-finite JSON, or guessed descriptions. The
-execution context owns the pinned client SDK release, provider runtime,
-distinct selected and response model identities including reported architecture,
-parameter-count, quantization, vision, and tool-use capabilities, load/context identity,
-requested and effective reasoning posture, and speculative draft-model
-identity. Prediction observation owns stop reason, first-token and total time,
-throughput, speculative counts, and reasoning-content presence. LM Studio uses
-only stable public SDK observations; deprecated raw load and prediction config
-objects and the SDK's incorrect GPU-layer statistic are not retained. Auxiliary
-version, model-info, or context observation failure or observation timeout does
-not turn successful inference into a transport failure. Hosted adapters retain
-the identities and stable response observations they receive without treating a
-requested alias as an observed selected identity, and explicitly mark
-provider-owned or unreported runtime fields. A successful live completion
-without runtime evidence is an evaluator evidence failure that leaves the
-provider-success attempt represented by an in-flight invocation with pending
-evidence in the last strict running artifact rather than fabricating a transport
-failure.
+Runtime evidence uses application-owned `observed`, `unknown`, or
+`externally_controlled` states instead of retaining raw provider configuration or
+inventing missing values. Comparable execution context remains separate from
+volatile prediction observations. The [test and verification
+posture](TESTING.md) owns the exact lifecycle invariants, verifier observations,
+and corruption cases that prove this structure.
 
-Artifact version 2 retains the exact declared configuration-order and
-repetition-order trial roster. Its trials are an append-only prefix: only the
-final retained trial may run, terminal predecessors are immutable, and outcome
-counts exactly reflect every retained terminal trial. Provider exhaustion
-closes only the affected editorial track as infrastructure-incomplete; expected
-provider exhaustion or subject rejection is track-local and does not suppress
-the concurrently advancing sibling. A rejected or infrastructure-incomplete
-trial does not suppress later serial roster members. A benchmark becomes
-retained only after every declared trial is terminal. Invalid artifact state or
-persistence stops coordination.
+The current V7/V8 roster follows declared configuration order and repetition
+order. Trials form an append-only prefix, only the final retained trial may be
+running, terminal predecessors are immutable, and a benchmark becomes retained
+only after every declared trial is terminal. A track-local subject rejection or
+provider exhaustion does not suppress its sibling or later serial roster
+members. Invalid state or failed persistence stops coordination.
 
-Retained Benchmark Runs are browsed through the namespaced `benchmark list`,
-`benchmark show`, `benchmark summary`, and `benchmark compare` eval routes.
-Their application boundary reads only `evaluation-results/<id>.json`, validates
-every loaded file through the current Benchmark Run contract, binds
-the filename to the artifact id, and rejects corrupt evidence rather than
-skipping it. Recorded-replay Run Files retain their distinct schema and current
-local default directory `apps/eval/local-data/acceptance-results`, and are
-owned only by `acceptance run`, `acceptance list`, `acceptance show`, and
-`acceptance compare`; historical readers reopen prior Run Files only when they
-are explicitly addressed. They are never relabeled as Benchmark Runs.
-
-Benchmark comparison projects context and behavior independently. Context owns
-the exact fixture and prepared evidence, configuration and retry/repetition
-policy, code/output-contract provenance, and version 7 execution-context
-evidence. Behavior owns lifecycle and
-harness outcome, ordered trial and track outcomes, findings, products,
-requests, completions or failures, usage, billing, duration, and stable
-retry/selection relationships plus version 7 prediction observations. Run,
-trial, and invocation ids plus absolute timestamps do not create behavioral differences. This observation boundary
-reports exhaustive paths only; it owns no score, judge, recommendation, or
-acceptance decision.
+Retained Benchmark Runs are browsed through `benchmark list`, `benchmark show`,
+`benchmark summary`, and `benchmark compare`; strict reads bind filename to
+artifact identity and reject corrupt evidence. Recorded-replay Run Files remain
+a distinct contract under `apps/eval/local-data/acceptance-results` by default,
+owned only by the `acceptance` routes. They are never relabeled as Benchmark
+Runs. Comparison keeps exact evidence, configuration, retry policy, provenance,
+and V7/V8 execution context separate from lifecycle, outputs, failures, usage,
+billing, duration, retry relationships, and V7/V8 prediction observations. It
+owns no score, judge, recommendation, or acceptance decision.
 
 Main-story and announcements evaluation tracks dispatch concurrently and
 execute independently as two track-local writer-to-copyeditor chains. A
@@ -621,18 +576,23 @@ a fixture default baked into client code.
 Settled — repository-owned production prerequisites: both Worker
 configurations explicitly disable `workers.dev` and preview URLs rather than
 inheriting Wrangler defaults. Generation gains its intended public hostname
-only through the later custom-domain deployment owned by BCN-007. Ingest has
-no `route`, `routes`, or static assets; its unauthenticated `POST /poll` handler
-is a local composed-walk harness and must not be deployed unless it receives a
-separate protection boundary. Generation declares exactly
+only through an explicitly configured custom domain; repository inspection does
+not establish that deployment. Ingest has
+no `route`, `routes`, or static assets. Its source-level unauthenticated `POST
+/poll` handler remains reachable to the local composed walk, but the checked-in
+production configuration gives it no public hostname; scheduled invocation is
+the only configured production entrypoint. A future public route would require
+a separate protection boundary. Generation declares exactly
 `OPERATOR_API_TOKEN` under Wrangler's required-secret metadata and never under
 plain-text `vars`. That declaration supports types and local missing-secret
 warnings; it does not install or prove the Cloudflare secret.
 
-The checked-in D1 identifiers remain deployment placeholders. Repository proof
-covers one shared `DB` binding, generation-only migration ownership, static
-prepared SQL with bound parameters, validated stored JSON, and the absence of
-any raw-chat reader route.
+Both checked-in Worker configurations name the same concrete D1 database and
+database id. Repository proof is deliberately limited to one nonblank matching
+`DB` identity, generation-only migration ownership, static prepared SQL with
+bound parameters, validated stored JSON, and the absence of any raw-chat reader
+route. It does not establish that the configured id exists remotely, that the
+binding is deployed, or that the migration chain has run against it.
 
 Settled — the local runner (ADR-008): `pnpm walk` runs a TypeScript walk
 script over `wrangler dev`, the only local path that executes the real
@@ -700,25 +660,16 @@ context, or recorded-replay acceptance verifiers. It owns only its composed
 product observations and terminal `WALK PASS`; the exact successful observations
 from those direct verifiers must not appear in walk output.
 
-Recorded-replay acceptance executes the four dependent production steps twice,
-writes only below its owned temporary directory when no results directory is
-supplied, and reloads through the strict Run File schema. The two executions
-must be identical apart from run identity and the two timestamps, which proves
-recorded replay deterministic by re-execution rather than against a stored file,
-and every differing path is reported rather than the first. Recorded-replay
-semantics require the exact ordered roster, four recorded-replay
-usages at zero external billing, outputs equal to the parsed recorded responses,
-ordered diagnostics, and a final assembled edition equal to the two copyedited
-products. Current Run Files require diagnostics; historical files without that
-field report diagnostic evidence as unknown rather than an empty observation.
-The legacy single evidence fixture remains identified by workspace-relative
-path and current bytes. The nested evaluation reference corpus is a separate
-explicitly selected boundary and is never an implicit replacement for it.
-Recorded-replay acceptance has no model judge, quality threshold, byte pin, or source
-digest gate; retained output and source fingerprints remain human comparison
-evidence. Its direct verifier prints
-`acceptance: four recorded production steps replayed by step and deterministic; diagnostics retained: 4`
-only after success.
+Recorded-replay acceptance executes the four dependent production steps twice
+against explicitly selected committed replay fixtures, then reloads its distinct
+Run File contract. It proves deterministic replay by re-execution, not by
+comparing current behavior with a stored expected Run File, and it remains
+separate from live model evaluation and its ignored local evidence. Current Run
+Files retain diagnostics; historical readers preserve the older unknown state
+when that field is absent. This acceptance boundary has no model judge, quality
+threshold, byte pin, or source-digest gate. The [test and verification
+posture](TESTING.md) owns its exact assertions, commands, and terminal
+observation.
 
 Exact context-budget measurement is invoked as `context benchmark --fixture
 <path> [--results-dir <path>]`. It is eval tooling, not a production port.
@@ -730,7 +681,7 @@ Qwen model and the same model id across all four production-step configs; it
 never loads, switches, unloads, or contacts a hosted model.
 
 Current context-result version 3 artifacts retain the exact four independent LM
-Studio agent configurations and optional temperatures. Version 2 and
+Studio production-step configurations and optional temperatures. Version 2 and
 absent-version context results retain their historical meanings. The command
 requires one loaded model because it measures one runtime context, but each role
 still retains and uses its own temperature choice.
@@ -778,11 +729,16 @@ with every failed active-region/publication-date pair. Production duplicate
 error classification remains an explicit deployment observation obligation.
 Workflow execution remains independently isolated per region; missing evidence
 therefore fails that region's run explicitly and never creates an empty or
-synthetic edition for it.
+synthetic edition for it. Midnight is the generation schedule and publication
+date boundary, not the reader-facing availability promise. The client describes
+today's absent edition as expected by 10:00 UTC, keeps that state in the waiting
+window through 10:29 UTC, and reclassifies it as failed at the 10:30 UTC cutoff.
 
 ## Links
 
 - [Product requirements](PRD.md) — the constraints this posture serves.
 - [Domain model](DOMAIN.md) — the vocabulary these structures implement.
+- [Test and verification posture](TESTING.md) — owns the commands, evidence
+  contracts, and success observations that prove this structure.
 - [v1 reference map](v1-reference.md) — the prior art and the failure
   modes this discipline is designed against.
