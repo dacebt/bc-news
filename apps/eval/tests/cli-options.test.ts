@@ -13,6 +13,7 @@ import {
 	resolveBenchmarkResultsDirectory,
 	resolveCurrentLocalDataInputPath,
 	resolveCurrentLocalDataResultsDirectory,
+	resolveCurrentLocalDataSourcePath,
 } from "../src/evaluation-local-artifact-cli";
 import { RECORDED_REPLAY_CONFIG_PATH } from "../src/recorded-replay-acceptance-verifier";
 import { REPRESENTATIVE_FIXTURE_PATH } from "../src/representative-fixture";
@@ -227,6 +228,9 @@ test("rejects current declarations and explicit current results outside local-da
 
 	expect(resolveCurrentLocalDataInputPath(currentDirectory, appDirectory, "apps/eval/local-data/scorecards/declaration.json", "Current scorecard declaration")).toBe(
 		"/workspace/apps/eval/local-data/scorecards/declaration.json",
+	);
+	expect(resolveCurrentLocalDataSourcePath(currentDirectory, appDirectory, "apps/eval/local-data/scorecards/declaration.json", "Current scorecard declaration")).toBe(
+		"scorecards/declaration.json",
 	);
 	expect(() => resolveCurrentLocalDataInputPath(currentDirectory, appDirectory, "apps/eval/scorecards/declaration.json", "Current scorecard declaration")).toThrow(
 		"Current scorecard declaration must be contained within /workspace/apps/eval/local-data",

@@ -1,5 +1,5 @@
 import { mkdir } from "node:fs/promises";
-import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import type { BenchmarkRun } from "./evaluation-artifact";
 import { BenchmarkRunReadError, listBenchmarkRuns, loadBenchmarkRun } from "./evaluation-artifact-reader";
 import { buildEvaluationAggregateResult } from "./evaluation-aggregate-result-builder";
@@ -205,6 +205,18 @@ export function resolveCurrentLocalDataInputPath(
 	return resolvedPath;
 }
 
+export function resolveCurrentLocalDataSourcePath(
+	currentDirectory: string,
+	appDirectory: string,
+	inputPath: string,
+	label: string,
+): string {
+	return relative(
+		evalLocalDataRoot(appDirectory),
+		resolveCurrentLocalDataInputPath(currentDirectory, appDirectory, inputPath, label),
+	).split(sep).join("/");
+}
+
 export function resolveCurrentLocalDataResultsDirectory(
 	currentDirectory: string,
 	appDirectory: string,
@@ -257,7 +269,7 @@ export async function buildEvaluationScorecardReportForCli(
 	inputPath: string,
 	resultsDirectory: string | undefined,
 ): Promise<string> {
-	const declarationPath = resolveCurrentLocalDataInputPath(
+	const declarationPath = resolveCurrentLocalDataSourcePath(
 		context.currentDirectory,
 		context.appDirectory,
 		inputPath,
@@ -366,7 +378,7 @@ export async function buildEvaluationLongitudinalReportForCli(
 	inputPath: string,
 	resultsDirectory: string | undefined,
 ): Promise<string> {
-	const declarationPath = resolveCurrentLocalDataInputPath(
+	const declarationPath = resolveCurrentLocalDataSourcePath(
 		context.currentDirectory,
 		context.appDirectory,
 		inputPath,
