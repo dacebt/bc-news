@@ -75,15 +75,22 @@ describe("EditionPage url-driven fetching", () => {
 		expect(request.signal).toBeInstanceOf(AbortSignal);
 	});
 
-	it("shows today's absent edition as waiting before the generation cutoff", async () => {
-		const alert = await renderAbsentEditionAt("2026-03-15T10:29:00.000Z", "2026-03-15");
+	it("shows today's absent edition as waiting before the expected availability target", async () => {
+		const alert = await renderAbsentEditionAt("2026-03-15T09:59:00.000Z", "2026-03-15");
 
 		expect(alert.getAttribute("data-status")).toBe("info");
-		expect(alert.textContent).toContain("10:00 AM UTC");
+		expect(alert.textContent).toContain("expected by 10:00 AM UTC");
 	});
 
-	it("shows today's absent edition as a failure after the generation cutoff", async () => {
-		const alert = await renderAbsentEditionAt("2026-03-15T10:31:00.000Z", "2026-03-15");
+	it("keeps today's absent edition waiting during the availability grace period", async () => {
+		const alert = await renderAbsentEditionAt("2026-03-15T10:29:59.000Z", "2026-03-15");
+
+		expect(alert.getAttribute("data-status")).toBe("info");
+		expect(alert.textContent).toContain("expected by 10:00 AM UTC");
+	});
+
+	it("shows today's absent edition as a failure at the waiting cutoff", async () => {
+		const alert = await renderAbsentEditionAt("2026-03-15T10:30:00.000Z", "2026-03-15");
 
 		expect(alert.getAttribute("data-status")).toBe("error");
 		expect(alert.textContent).toContain("No published edition for this region/date.");

@@ -10,7 +10,10 @@ import { MainStory } from "../components/MainStory";
 import { Masthead } from "../components/Masthead";
 import { PaperContent, PaperTextureLayer, PaperWrapper } from "../components/PaperSurface";
 import { useEditionDateRange } from "../dates/use-edition-date-range";
-import { formatLocalPublishTime, GENERATION_PUBLISH_UTC_MINUTES } from "../dates/publish-time";
+import {
+	EDITION_WAITING_CUTOFF_UTC_MINUTES,
+	formatLocalExpectedAvailabilityTime,
+} from "../dates/publish-time";
 import type { EditionSelection } from "../selection/edition-selection";
 import { useEditionSelection } from "../selection/use-edition-selection";
 
@@ -37,15 +40,6 @@ function PublishedPaper({ edition }: { edition: Edition }) {
 	);
 }
 
-// Grace period after the publish time before an absent today's edition means
-// generation failed rather than simply hasn't run yet. Ported from the
-// deployed v0.1.4 client's isWaitingForTodaysEdition (bc-newspaper
-// src/pages/EditionPage.tsx), where this was folded into a single literal;
-// split out here so the publish hour itself lives once, in
-// dates/publish-time.ts, and this file only adds the grace period on top.
-const WAITING_GRACE_PERIOD_MINUTES = 30;
-const GENERATION_WINDOW_END_UTC_MINUTES = GENERATION_PUBLISH_UTC_MINUTES + WAITING_GRACE_PERIOD_MINUTES;
-
 // Waiting only applies to the pair a completed response actually answered
 // for, never the reader's still-pending selection - a fetch that resolved to
 // "not found" grades against the request that produced that answer, not
@@ -60,7 +54,7 @@ function isWaitingForTodaysEdition(pairDate: string, todayUtc: string, now: Date
 		return false;
 	}
 	const currentUtcMinutes = now.getUTCHours() * 60 + now.getUTCMinutes();
-	return currentUtcMinutes < GENERATION_WINDOW_END_UTC_MINUTES;
+	return currentUtcMinutes < EDITION_WAITING_CUTOFF_UTC_MINUTES;
 }
 
 // The actual UTC calendar date `now` falls on - never `maxServableDate(now)`,
@@ -82,7 +76,7 @@ function msUntilGenerationWindowEnd(instant: Date): number {
 		instant.getUTCMonth(),
 		instant.getUTCDate(),
 		0,
-		GENERATION_WINDOW_END_UTC_MINUTES,
+		EDITION_WAITING_CUTOFF_UTC_MINUTES,
 	);
 	const nextBoundary = boundaryToday > instant.getTime() ? boundaryToday : boundaryToday + 24 * 60 * 60 * 1000;
 	return nextBoundary - instant.getTime();
@@ -225,7 +219,7 @@ export function EditionPage() {
 							<EditionOutcomeAlert
 								outcome={alert.outcome}
 								isWaitingForTodaysEdition={isWaiting}
-								localGenerationTime={isWaiting ? formatLocalPublishTime(now) : ""}
+								localExpectedAvailabilityTime={isWaiting ? formatLocalExpectedAvailabilityTime(now) : ""}
 							/>
 						</Box>
 					)}

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Alert, AlertIcon, Box } from "@chakra-ui/react";
 import type { EditionFetchOutcome } from "../api/edition";
-import { formatUtcPublishTime } from "../dates/publish-time";
+import { formatUtcExpectedAvailabilityTime } from "../dates/publish-time";
 
 // Every non-published outcome getEdition can produce except `aborted` (a
 // cancelled request never reaches this component - EditionPage filters it
@@ -16,12 +16,12 @@ export type EditionDisplayError =
 interface EditionOutcomeAlertProps {
 	outcome: EditionDisplayError;
 	isWaitingForTodaysEdition: boolean;
-	localGenerationTime: string;
+	localExpectedAvailabilityTime: string;
 }
 
 // Static, single-sentence messages for the outcomes that don't need any
 // per-render data beyond the outcome itself. 'absent' (depends on
-// isWaitingForTodaysEdition/localGenerationTime) and 'service_error'
+// isWaitingForTodaysEdition/localExpectedAvailabilityTime) and 'service_error'
 // (depends on the HTTP status) render distinct structured content instead
 // and are handled directly in the switch below.
 const STATIC_MESSAGES: Record<
@@ -45,7 +45,7 @@ const STATIC_MESSAGES: Record<
 export function EditionOutcomeAlert({
 	outcome,
 	isWaitingForTodaysEdition,
-	localGenerationTime,
+	localExpectedAvailabilityTime,
 }: EditionOutcomeAlertProps) {
 	let status: "info" | "error";
 	let content: ReactNode;
@@ -55,8 +55,8 @@ export function EditionOutcomeAlert({
 			status = isWaitingForTodaysEdition ? "info" : "error";
 			content = isWaitingForTodaysEdition ? (
 				<Box>
-					No edition published for this region for today's date. A new edition is published daily
-					at {formatUtcPublishTime()} ({localGenerationTime} your time). Check back later or select
+					Today's edition is not available yet. It is expected by {formatUtcExpectedAvailabilityTime()}
+					 ({localExpectedAvailabilityTime} your time). Check back later or select
 					a previous date to view past editions!
 				</Box>
 			) : (
