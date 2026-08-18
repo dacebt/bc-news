@@ -5,10 +5,10 @@ title: >-
 description: >-
   The invariant-coupled capability and feature conventions for truthful provider-default and explicit LM Studio sampling postures.
 tags: [wsd, direction, capability-map, lm-studio, evaluation]
-status: stable
+status: deprecated
 generated:
   by: ebt-wsd/okf-v0.2
-  at: "2026-08-09T02:58:38Z"
+  at: "2026-08-18T14:53:44Z"
 ---
 # Capability map: production-aligned LM Studio sampling
 
@@ -34,9 +34,11 @@ The composed recorded-provider acceptance spine is green. Production, benchmark,
 
 This carve supersedes the three-capability map after pre-construction seam review and consumer tracing exposed artifact-version and shared-configuration invariants across every live surface.
 
+Historical outcome: `8af8233` implemented the all-or-none sampling posture described above. `30cc89f` later superseded it with independent per-agent optional temperature; [structural discipline](../ARCHITECTURE.md) owns the current request contract.
+
 ## Related documentation
 
 - [Current shape](2026-08-08-lm-studio-sampling-postures.shape.md) — session boundary governing this map.
 - [WSD domain model](bc-news.model.md) — existing vocabulary authority for model evaluation and verification.
-- [Structural discipline](../ARCHITECTURE.md) — binds provider behavior changes to truthful artifact-version boundaries.
+- [Current structural discipline](../ARCHITECTURE.md) — binding authority for independent per-agent optional temperature and truthful artifact-version boundaries.
 - [Test and verification posture](../TESTING.md) — separates behavioral evidence, deterministic evidence, tests, and the composed walk.

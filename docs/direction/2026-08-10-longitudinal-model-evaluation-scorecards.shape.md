@@ -5,10 +5,10 @@ title: >-
 description: >-
   Session boundaries, cadence, and success signal for auditable role-specific model evaluation across a varied reference corpus and comparable runs.
 tags: [wsd, direction, shape, evaluation, scorecards, drift]
-status: stable
+status: deprecated
 generated:
   by: ebt-wsd/okf-v0.2
-  at: "2026-08-10T04:27:40Z"
+  at: "2026-08-18T14:54:16Z"
 ---
 # Shape: longitudinal per-agent model evaluation scorecards
 
@@ -53,6 +53,7 @@ The corpus is synthetic and test-only: each conversation establishes its own gro
 
 ## Related documentation
 
+- [Successor commit-addressed shape](2026-08-10-commit-addressed-evaluation-evidence.shape.md) — supersedes this session's original evidence-storage boundary.
 - [Capability map](2026-08-10-longitudinal-model-evaluation-scorecards.map.md) — risk-ordered actor-visible slices governed by this shape.
 - [Evaluation and verification model](bc-news.model.md) — established vocabulary and bounded contexts.
 - [Binding testing posture](../TESTING.md) — verification-domain authority that this unit deliberately narrows.

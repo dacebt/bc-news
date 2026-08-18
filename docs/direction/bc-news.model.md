@@ -8,12 +8,12 @@ tags: [wsd, direction, domain-model, evaluation, verification]
 status: stable
 generated:
   by: ebt-wsd/okf-v0.2
-  at: "2026-08-10T04:53:07Z"
+  at: "2026-08-18T14:54:16Z"
 ---
 # Domain Model: bc-news evaluation and verification
 
-**Last updated:** 2026-08-17
-**Update reason:** strict aggregate evaluation results — add whitelist-only aggregate exports while keeping current V3 scorecards local hash-addressed, Codex-authored, and evaluation-only, with embedded V1 and Git-addressed V2 retained as historical readers.
+**Last updated:** 2026-08-18
+**Update reason:** V3 evidence vocabulary — distinguish local hash-addressed source references from evaluated-code provenance while retaining repository source references for historical V2 readers.
 
 ## Ubiquitous Language
 
@@ -44,9 +44,11 @@ generated:
 | Aggregate evaluation result | One commit-safe role summary exported from one validated scorecard with `cohort.evidence_identity_sha256` bound to the source corpus identity, retaining only the subject descriptor, counts, rates with intervals, aggregate distributions, and qualitative counts. | A scorecard, source or model-output evidence, or an acceptance verdict |
 | Output annotation | A Codex-authored, exact-span and source-reference-linked classification of factual claims, attribution, event coverage, and announcement relevance. | A deterministic assertion |
 | Qualitative review | A separate Codex review of coherence, usefulness, newsworthiness, and voice with rationale and uncertainty. | A numeric score or acceptance gate |
-| Repository source reference | A repository name, full Git commit SHA, and contained POSIX repository-relative path that identifies one source file. | An embedded payload or child-file hash |
+| Local source reference | A contained POSIX path relative to `apps/eval/local-data/` plus the file's SHA-256 identity; this is the current V3 evidence-storage boundary. | A repository source reference or evaluated-code provenance |
+| Repository source reference | A repository name, full Git commit SHA, and contained POSIX repository-relative path that identifies one historical V2 source file. | A local source reference or evaluated-code provenance |
+| Evaluated-code provenance | The `bc-news` repository, full Git commit SHA, and clean-worktree state that identify the code observed by a benchmark and carried into a scorecard context. | An evidence-storage reference or evaluation freshness |
 | Evaluation freshness | Current or outdated information from comparing an evaluated code commit with an explicitly resolved repository-root HEAD. | Artifact validity, a gate, or permission to evaluate |
-| Scorecard context identity | The exact corpus source commit and path, provenance, role configuration, ordered requests, and observed execution context to which one role's measurements belong. | A scorecard evidence-storage commit or model identity alone |
+| Scorecard context identity | The exact local corpus source reference and prepared-evidence identities, evaluated-code and output-contract provenance, role configuration, ordered requests, and observed execution context to which one role's measurements belong; historical V2 contexts use a repository source reference instead. | A scorecard evidence-storage reference or model identity alone |
 | Wilson score interval | The declared 95% interval attached to one observed counted rate and its denominator. | A longitudinal drift classification or production threshold |
 | Longitudinal scorecard series | One ordered durable audit pack containing an earlier baseline partition and later subject partition of exact Evaluation Scorecards. Current V3 series are local hash-addressed under `apps/eval/local-data/longitudinal-scorecards`; embedded V1 and Git-addressed V2 remain historical readers. | A list of rendered summaries without their source evidence |
 | Stable cohort identity | A role-specific comparable-context identity normalized away from generated run/trial locators while retaining corpus, request, contract, code, role configuration, retry policy, and execution context. | The capability-3 scorecard context hash or model name alone |

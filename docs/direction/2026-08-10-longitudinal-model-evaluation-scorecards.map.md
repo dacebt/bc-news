@@ -5,10 +5,10 @@ title: >-
 description: >-
   Risk-ordered vertical capabilities and feature conventions for observable runtime evidence, reference-backed review, and honest longitudinal comparison.
 tags: [wsd, direction, capability-map, evaluation, scorecards, drift]
-status: stable
+status: deprecated
 generated:
   by: ebt-wsd/okf-v0.2
-  at: "2026-08-10T04:27:40Z"
+  at: "2026-08-18T14:54:16Z"
 ---
 # Capability map: longitudinal per-agent model evaluation scorecards
 
@@ -38,7 +38,8 @@ The runtime fingerprint is the first dependency because a baseline cannot be int
 
 ## Related documentation
 
-- [Current shape](2026-08-10-longitudinal-model-evaluation-scorecards.shape.md) — cadence, scope, cuts, risks, and success signal governing this map.
+- [Successor commit-addressed shape](2026-08-10-commit-addressed-evaluation-evidence.shape.md) — supersedes this actor-visible carve's original evidence-storage boundary.
+- [Paired shape](2026-08-10-longitudinal-model-evaluation-scorecards.shape.md) — cadence, scope, cuts, risks, and success signal governing this map.
 - [WSD domain model](bc-news.model.md) — existing Benchmark Run, trial, track, invocation, and verification vocabulary.
 - [Binding testing posture](../TESTING.md) — owns the separation between evaluation observations and acceptance.
 - [Binding architecture](../ARCHITECTURE.md) — owns strict artifacts and the two-port constraint.

@@ -8,12 +8,12 @@ tags: [wsd, direction, capability-map, evaluation, privacy]
 status: stable
 generated:
   by: ebt-wsd/okf-v0.2
-  at: "2026-08-17T13:05:21Z"
+  at: "2026-08-18T14:54:16Z"
 ---
 # Capability map: local-only production evaluation evidence
 
 **Declared:** 2026-08-17
-**Domain model:** `docs/direction/bc-news.model.md`
+**Domain model:** [bc-news evaluation and verification](bc-news.model.md)
 
 ## New conventions
 

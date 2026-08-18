@@ -8,7 +8,7 @@ tags: [wsd, direction, capability-map, security, cloudflare, deployment]
 status: stable
 generated:
   by: ebt-wsd/okf-v0.2
-  at: "2026-08-14T13:07:09Z"
+  at: "2026-08-18T14:54:16Z"
 ---
 # Capability map: BCN-008 production security boundaries
 
@@ -38,7 +38,7 @@ Dependency audit work supports all three capabilities and remains a gate rather 
 
 ## Related documentation
 
-- [Current production security shape](2026-08-14-production-security-boundaries.shape.md) — cadence, worktree, session scope, and local success signal.
+- [Production security shape](2026-08-14-production-security-boundaries.shape.md) — cadence, worktree, session scope, and local success signal.
 - [Binding domain model](../DOMAIN.md) — reader, operator, edition, and generation-run vocabulary.
 - [Binding architecture](../ARCHITECTURE.md) — Worker, Workflow, D1, and same-origin client authority.
 - [Binding testing posture](../TESTING.md) — composed walk and focused-test authority.

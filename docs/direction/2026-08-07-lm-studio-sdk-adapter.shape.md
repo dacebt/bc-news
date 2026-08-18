@@ -5,10 +5,10 @@ title: >-
 description: >-
   Session boundaries, cadence, and success signal for replacing local OpenAI-compatible inference with the native LM Studio SDK.
 tags: [wsd, direction, shape, lm-studio, model-adapters]
-status: stable
+status: deprecated
 generated:
   by: ebt-wsd/okf-v0.2
-  at: "2026-08-07T19:31:52Z"
+  at: "2026-08-18T14:53:44Z"
 ---
 # Shape: native LM Studio inference adapter
 
@@ -56,6 +56,7 @@ so no capability map or domain-model revision is introduced at shape time.
 
 ## Related documentation
 
-- [Structural discipline](../ARCHITECTURE.md) — binds the existing model-provider port and rejecting boundaries.
+- [Follow-on shape: LM Studio sampling postures](2026-08-08-lm-studio-sampling-postures.shape.md) — the follow-on session boundary declared after the native adapter landed.
+- [Current structural discipline](../ARCHITECTURE.md) — binding authority for the native model-provider adapter and rejecting boundaries.
 - [Test and verification posture](../TESTING.md) — keeps live model evaluation distinct from the composed recorded-provider walk.
 - [WSD domain model](bc-news.model.md) — supplies the established evaluation vocabulary.

@@ -5,10 +5,10 @@ title: >-
 description: >-
   Session boundaries, cadence, and success signal for replacing the inherited three-stage generator and judge-centered eval with two writer-to-copyedit tracks and measured local-model context budgets.
 tags: [wsd, direction, shape, generation, evaluation]
-status: stable
+status: deprecated
 generated:
   by: ebt-wsd/okf-v0.2
-  at: "2026-08-06T01:22:13Z"
+  at: "2026-08-18T14:53:44Z"
 ---
 # Shape: two-track editorial workflow rewrite
 
@@ -49,5 +49,7 @@ Change is expected before deployment. Compatibility with undeployed v2 local sta
 ## Related documentation
 
 - [Editorial workflow capability map](2026-08-05-editorial-workflow-rewrite.map.md) — risk-ordered verticals for this rewrite.
+- [Follow-on shape: real model evaluation harness](2026-08-06-real-model-evaluation-harness.shape.md) — the follow-on session boundary declared after this rewrite landed.
+- [Current structural discipline](../ARCHITECTURE.md) — binding authority for the four-step production topology now implemented.
 - [Product requirements](../PRD.md) — permits editorial-role and autonomy redesign during build planning.
 - [Domain model](../DOMAIN.md) — binding vocabulary to amend as the new roster lands.

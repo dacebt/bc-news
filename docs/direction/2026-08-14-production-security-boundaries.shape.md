@@ -5,10 +5,10 @@ title: >-
 description: >-
   Session boundaries, loose cadence, and local success signal for hardening the production HTTP, data, and deployment seams.
 tags: [wsd, direction, shape, security, cloudflare, deployment]
-status: deprecated
+status: stable
 generated:
   by: ebt-wsd/okf-v0.2
-  at: "2026-08-17T13:05:21Z"
+  at: "2026-08-18T14:54:16Z"
 ---
 # Shape: BCN-008 production security boundaries
 

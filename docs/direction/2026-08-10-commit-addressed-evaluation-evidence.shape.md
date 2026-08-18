@@ -5,10 +5,10 @@ title: >-
 description: >-
   Replacement boundary for audit-by-commit scorecards whose freshness is reported without blocking evaluation.
 tags: [wsd, direction, shape, evaluation, scorecards, provenance]
-status: stable
+status: deprecated
 generated:
   by: ebt-wsd/okf-v0.2
-  at: "2026-08-11T02:09:41Z"
+  at: "2026-08-18T14:54:16Z"
 ---
 # Shape: commit-addressed evaluation evidence
 
@@ -52,6 +52,7 @@ Git history is the immutable audit boundary. The artifact says what repository s
 
 ## Related documentation
 
+- [Successor local-evaluation shape](2026-08-17-local-evaluation-evidence.shape.md) — supersedes the commit-addressed storage boundary with current V3 local hash-addressed evidence.
 - [Prior longitudinal shape](2026-08-10-longitudinal-model-evaluation-scorecards.shape.md) — superseded session boundary whose delivered capability is being repaired.
 - [Longitudinal capability map](2026-08-10-longitudinal-model-evaluation-scorecards.map.md) — original actor-visible carve retained as historical context.
 - [Evaluation and verification model](bc-news.model.md) — vocabulary to update with commit-addressed evidence and non-blocking freshness.
