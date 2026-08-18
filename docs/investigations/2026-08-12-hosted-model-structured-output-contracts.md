@@ -8,13 +8,16 @@ tags: [investigation, models, cloudflare, structured-output]
 status: stable
 generated:
   by: ebt-skills/okf-v0.2
-  at: "2026-08-13T01:38:32Z"
+  at: "2026-08-18T14:53:45Z"
 ---
 # Investigation Report
 
 **Question:** Which Cloudflare request schema, structured-output control, and output-token control applies to each hosted model selected for bc-news evaluation?
 
 **Date:** 2026-08-12
+
+**Snapshot:** Evaluated source commit `10ea9dc` and public provider
+documentation observed on 2026-08-12.
 
 **Scope:**
 - **In scope:** The current Cloudflare AI Gateway adapter; the shared production-step output contracts; Cloudflare's current REST, model-catalog, and Workers AI JSON Mode documentation for `openai/gpt-5-nano`, `openai/gpt-4o`, `openai/gpt-4o-mini`, `alibaba/qwen3.5-397b-a17b`, `google/gemini-3.1-flash-lite`, and `@cf/openai/gpt-oss-120b`.
@@ -28,6 +31,16 @@ generated:
 At evaluated source commit `10ea9dc`, the adapter sent every hosted model through Cloudflare's OpenAI-compatible `/ai/v1/chat/completions` endpoint, but sent neither a machine-readable output schema nor an explicit output-token allowance. All six profiled hosted models expose a Chat Completions request variant through Cloudflare; those variants admit `response_format` and either `max_tokens`, `max_completion_tokens`, or both. GPT-OSS also has a Workers AI native request schema whose `max_tokens` default is 256, which explains the observed truncation when that adapter version omitted the field.
 
 The implemented adapter deliberately leaves those output-token fields unset, so each provider applies its own default ceiling. The model-specific profiles retain only the request format, structured-output encoding, and provider identity.
+
+**Follow-up (verified 2026-08-18):** `c80785b` replaced the generic hosted
+request path with an enumerated model roster and per-production-step
+`response_format`; `527bea1` deliberately retained provider-controlled output
+ceilings. The current roster contains ten profiles, so the six-model table below
+is the researched 2026-08-12 selection rather than the current roster. The
+retained hosted artifacts used as observation inputs are unavailable in the
+current checkout; current request behavior is owned by
+`cloudflare-hosted-model-profiles.ts` and
+`cloudflare-ai-gateway-model-provider.ts`.
 
 ---
 

@@ -8,7 +8,7 @@ tags: [investigation, evaluation, vitest, concurrency, bcn-006]
 status: stable
 generated:
   by: ebt-skills/okf-v0.2
-  at: "2026-08-10T06:00:58Z"
+  at: "2026-08-18T14:53:45Z"
 ---
 # Investigation Report
 
@@ -16,6 +16,9 @@ generated:
 intermittently time out during the broad workspace test run?
 
 **Date:** 2026-08-10
+
+**Snapshot:** Repository state at `16e31c6`, before the timeout change that
+landed with this report.
 
 **Scope:**
 - **In scope:** The first test in
@@ -47,6 +50,12 @@ asynchronous test body still writes benchmark files. That race caused an
 `ENOTEMPTY` cleanup error in one reproduced root run and made two neighboring
 tests appear failed; it is a consequence of the timeout, not the initiating
 failure.
+
+**Follow-up (verified 2026-08-18):** `a879cf7`, the commit that added this
+report, also gave the integration test an explicit ten-second deadline. That
+mitigates the observed five-second scheduling threshold; it does not establish
+that the underlying integration exercise became faster. This documentation
+sweep did not rerun the broad overlapping workspace load.
 
 ---
 

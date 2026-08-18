@@ -1,20 +1,24 @@
 ---
 type: investigation
 title: >-
-  Investigation: Prompt claims and current markdown rendering
+  Investigation: Prompt claims and markdown rendering at the 2026-08-07 snapshot
 description: >-
-  Verification of the prompt-contract review claims and the client path that parses, filters, and presents model-authored markdown.
+  Point-in-time verification of the prompt-contract review claims and the client path that parsed, filtered, and presented model-authored markdown.
 tags: [investigation, prompts, markdown, client, rendering]
 status: stable
 generated:
   by: ebt-skills/okf-v0.2
-  at: "2026-08-07T08:15:24Z"
+  at: "2026-08-18T14:53:45Z"
 ---
 # Investigation Report
 
 **Question:** "yeah let's verify claims and we need to make markdown rendering stronger actually. I have ideas to improve the frontend using better tech."
 
 **Date:** 2026-08-07
+
+**Snapshot:** Repository state at `6062d12` for the observed renderer and prompt
+behavior. Unqualified code paths and line references below describe that
+point-in-time source tree.
 
 **Scope:**
 - **In scope:** The four current runtime prompt contracts, their schemas and retained benchmark evidence, the client components that render edition prose, markdown filtering and normalization, current markdown dependencies, client tests, and the code surfaces coupled to a rendering-technology change.
@@ -27,7 +31,13 @@ generated:
 
 The prompt-contract claims are confirmed with two qualifications: the alleged main-story fabrications are more precisely unsupported or distorted synthesis, and the copyeditor no-op observation applies to the one retained four-model benchmark rather than all possible runs. The client currently accepts a substantially broader CommonMark surface than the prompts authorize, gives main-story bodies and announcement summaries different newline semantics, and has no newspaper-specific element renderers. Its active-content posture held in direct rendering, but its presentation contract is permissive, thinly styled, and coupled to a manually enumerated markdown dependency chunk.
 
-**Follow-up:** Commit `ec7025f` subsequently replaced the two renderer paths with one sanitized, allowlisted `NewspaperText` boundary. The renderer sections below preserve the directly observed pre-change evidence that motivated that correction; they do not describe the post-commit client implementation.
+**Follow-up (verified 2026-08-18):** `ec7025f` replaced the two renderer paths
+with one sanitized, allowlisted `NewspaperText` boundary, and `9642aa3`
+resolved the writer's contradictory markdown instructions. The optional-image
+mismatch identified below remains. The benchmark artifact cited below and the
+old `MainStoryBody.tsx` and `MarkdownText.tsx` paths are unavailable in the
+current checkout; the renderer and benchmark sections preserve point-in-time
+evidence rather than current implementation guidance.
 
 ---
 

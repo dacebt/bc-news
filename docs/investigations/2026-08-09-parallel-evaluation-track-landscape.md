@@ -3,12 +3,12 @@ type: investigation
 title: >-
   Investigation: parallel evaluation-track landscape
 description: >-
-  Multi-pass trace of current trial scheduling, retained-artifact ownership, concurrency constraints, proof surfaces, and documentation boundaries for BCN-005.
+  Multi-pass trace of pre-BCN-005 trial scheduling, retained-artifact ownership, concurrency constraints, proof surfaces, and documentation boundaries.
 tags: [investigation, evaluation, concurrency, retained-evidence, bcn-005]
 status: stable
 generated:
   by: ebt-skills/okf-v0.2
-  at: "2026-08-09T16:47:00Z"
+  at: "2026-08-18T14:53:45Z"
 ---
 # Investigation Report
 
@@ -19,9 +19,9 @@ change?
 
 **Date:** 2026-08-09
 
-**Snapshot:** Current `main` at `ad54026`; isolated BCN-005 worktree at
-`8af8233`. Code and binding-document line references below describe current
-`main`, not the older worktree base.
+**Snapshot:** Repository `main` at `ad54026`; isolated BCN-005 worktree at
+`8af8233`. Code and binding-document line references below describe that
+point-in-time `main`, not the older worktree base.
 
 **Scope:**
 - **In scope:** Evaluation-trial and benchmark execution, model-provider
@@ -90,6 +90,13 @@ only one invocation append per retained transition
 (`apps/eval/src/evaluation-artifact-transition.ts:62-95`). The schema therefore
 represents truthful interleaving already; no observed contract rule alone
 establishes a need for artifact version 6.
+
+**Follow-up (verified 2026-08-18):** `fe1b575`, `eefe6ec`, and merge `0cc33d6`
+landed BCN-005. Current trial execution runs both tracks concurrently, waits for
+both to settle, and serializes retained-state mutations through one queue. The
+v4 benchmark files and v5 source paths cited below are unavailable in the
+current checkout; the report remains the pre-change landscape, not current
+scheduling guidance.
 
 ## Execution and Failure Trace
 

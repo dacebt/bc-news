@@ -8,7 +8,7 @@ tags: [investigation, lm-studio, models, reasoning, structured-output]
 status: stable
 generated:
   by: ebt-skills/okf-v0.2
-  at: "2026-08-08T06:35:23Z"
+  at: "2026-08-18T14:53:45Z"
 ---
 # Investigation Report
 
@@ -16,6 +16,10 @@ generated:
 the zero parsed-output result caused by our response handling?
 
 **Date:** 2026-08-08
+
+**Snapshot:** Repository state at `af09997` plus the local LM Studio observations
+recorded on 2026-08-08. Unqualified code paths and line references below
+describe that point-in-time source tree.
 
 **Scope:**
 - **In scope:** The native LM Studio adapter, the generation-core JSON parsers,
@@ -48,6 +52,13 @@ calls timed out before the model emitted any non-reasoning content, so no
 application parser ran. The historical working path had explicitly disabled
 reasoning; there is no verified thinking-enabled production baseline in the
 repository evidence examined here.
+
+**Follow-up (verified 2026-08-18):** `e78899b` fixed the response-selection
+defect; the current adapter returns `result.nonReasoningContent`. That change
+does not disprove the separate long-reasoning-before-answer timeout finding,
+and no fresh thinking-enabled inference was run during this documentation
+sweep. The two retained benchmark artifacts cited below are unavailable in the
+current checkout, so their observations survive here as historical evidence.
 
 ---
 

@@ -1,19 +1,22 @@
 ---
 type: investigation
-title: "Investigation: Current runtime model instruction contracts"
+title: "Investigation: Runtime model instruction contracts at the 2026-08-06 snapshot"
 description: >-
-  Evidence-backed trace of how bc-news assembles, constrains, validates, and executes the four runtime model instructions.
+  Evidence-backed snapshot of how bc-news assembled, constrained, validated, and executed the four runtime model instructions at the time of investigation.
 tags: [investigation, prompts, generation, model-contracts]
 status: stable
 generated:
   by: ebt-skills/okf-v0.2
-  at: "2026-08-06T14:08:21Z"
+  at: "2026-08-18T14:53:45Z"
 ---
 # Investigation Report
 
 **Question:** "I know we still need to apply prompt-craft to the instructions and I need to take a look at those instructions myself. research and create a task for that."
 
 **Date:** 2026-08-06
+
+**Snapshot:** Repository state at `16a3087`. Unqualified code paths and line
+references below describe that point-in-time source tree.
 
 **Scope:**
 
@@ -26,6 +29,14 @@ generated:
 ## Summary
 
 The runtime instruction contract is not one prompt file. It is a distributed contract spanning shared system messages, four user-message builders, untrusted-data serialization, model-facing decoding schemas, runtime parsers, copyedit preservation checks, provider-specific request mechanics, and Workflow retry classification. Production and local tooling do reuse the same builders and parsers, but the complete contract differs by provider: LM Studio receives a strict JSON schema while the hosted adapter receives only system and user messages. A useful human review therefore has to present the assembled contract per production step, not only the prose constants.
+
+**Follow-up (verified 2026-08-18):** `9642aa3` corrected the prompt-contract
+conflict, `40dbbdd` later revised the daily editorial prompts, `e78899b`
+selected LM Studio's answer-only response channel, and `c80785b` added hosted
+structured-output schemas. The optional-image mismatch identified below remains:
+the contract permits `main_story.image`, while the writer field contract omits
+it and the client does not render it. The original trace remains historical
+evidence rather than a description of the current provider paths.
 
 ---
 
