@@ -39,7 +39,7 @@ import {
 	formatRunSummary,
 } from "./report";
 import { listRunFiles, loadRunFile } from "./run-file";
-import { runCommand } from "./run-command";
+import { runCommand, runLiveCommand } from "./run-command";
 
 export const EVAL_CLI_USAGE = `Usage:
   pnpm --filter @bc-news/eval eval -- benchmark run --fixture <path> --config <path> [--results-dir <path>]
@@ -168,7 +168,7 @@ export async function runEvalCliApplication(options: EvalCliApplicationOptions):
 		return;
 	}
 	if (command.command === "scratch-run") {
-		const saved = await runCommand({
+		const saved = await runLiveCommand({
 			fixturePath: resolve(cwd, command.fixturePath),
 			configPath: resolve(cwd, command.configPath),
 			resultsDirectory: resolve(cwd, command.resultsDirectory),

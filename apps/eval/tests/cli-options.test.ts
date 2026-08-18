@@ -1,4 +1,4 @@
-import { mkdtemp } from "node:fs/promises";
+import { access, mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { beforeEach, expect, test, vi } from "vitest";
@@ -206,6 +206,25 @@ test("formats failures through the recognized verification namespace", () => {
 
 test("prints usage for help requests", async () => {
 	await expect(invokeCli(["--help"], "/workspace", "/workspace/apps/eval")).resolves.toBe(`${EVAL_CLI_USAGE}\n`);
+});
+
+test("rejects recorded scratch configuration before creating an artifact directory", async () => {
+	const root = await mkdtemp(join(tmpdir(), "bc-news-cli-scratch-live-config-"));
+	const resultsDirectory = join(root, "scratch-results");
+
+	await expect(invokeCli([
+		"scratch",
+		"run",
+		"--fixture",
+		REPRESENTATIVE_FIXTURE_PATH,
+		"--config",
+		RECORDED_REPLAY_CONFIG_PATH,
+		"--results-dir",
+		resultsDirectory,
+	], root, join(root, "apps/eval"))).rejects.toMatchObject({
+		code: "recorded_adapter_rejected_for_live_evaluation",
+	});
+	await expect(access(resultsDirectory)).rejects.toMatchObject({ code: "ENOENT" });
 });
 
 test("defaults current evaluation storage under the ignored local-data root", () => {

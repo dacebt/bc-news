@@ -1,6 +1,6 @@
 import { relative } from "node:path";
 import { assembleEdition, prepareEvidence, type ProductionModelStep } from "@bc-news/generation-core";
-import { loadConfig } from "./config";
+import { loadConfig, loadLiveEvaluationConfig, type EvalConfig } from "./config";
 import { loadFixture } from "./evidence-fixture";
 import { resolveModelProvider, type ModelProviderEnvironment } from "./model-adapters";
 import { executeProductionSteps } from "./production-step-runners";
@@ -16,8 +16,10 @@ export interface RunCommandOptions {
 	readonly correlateProviderRequests?: boolean;
 }
 
-export async function runCommand(options: RunCommandOptions): Promise<{ path: string; run: RunFile }> {
-	const config = await loadConfig(options.configPath);
+async function executeRunCommand(
+	options: RunCommandOptions,
+	config: EvalConfig,
+): Promise<{ path: string; run: RunFile }> {
 	const environment = options.environment ?? process.env;
 	const loadedFixture = await loadFixture(options.fixturePath);
 	const preparedEvidence = prepareEvidence({
@@ -61,4 +63,12 @@ export async function runCommand(options: RunCommandOptions): Promise<{ path: st
 	};
 	const path = await saveRunFile(run, options.resultsDirectory);
 	return { path, run };
+}
+
+export async function runCommand(options: RunCommandOptions): Promise<{ path: string; run: RunFile }> {
+	return executeRunCommand(options, await loadConfig(options.configPath));
+}
+
+export async function runLiveCommand(options: RunCommandOptions): Promise<{ path: string; run: RunFile }> {
+	return executeRunCommand(options, await loadLiveEvaluationConfig(options.configPath));
 }
