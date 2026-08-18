@@ -8,7 +8,7 @@ tags: [product, requirements, bitcraft, cloudflare, llm]
 status: stable
 generated:
   by: ebt-skills/okf-v0.2
-  at: "2026-08-03T12:52:42Z"
+  at: "2026-08-18T14:54:00Z"
 authority: binding
 ---
 
@@ -64,7 +64,7 @@ own track's typed draft, not a story judge or another evidence-reading editor.
 ### Regional isolation
 
 - A failure for one region must not prevent other regions from publishing.
-- A region and publication date identify one intended edition run.
+- A region and publication date identify one intended generation run.
 - Duplicate delivery or retry must not publish duplicate editions.
 
 ### Durable generation
@@ -78,7 +78,10 @@ own track's typed draft, not a story judge or another evidence-reading editor.
 - Models must be replaceable independently across the four production model steps.
 - Both hosted and local LLMs must be usable during development and evaluation.
 - Routine inference cost must remain understandable.
-- Model access protocols, integration layers, and detailed telemetry are design decisions for build planning.
+- Model access protocols and integration layers are settled in the
+  [structural discipline](ARCHITECTURE.md); the first live production model
+  configuration, fallback policy, and any additional telemetry remain open
+  product decisions.
 
 ### Evaluation-led development
 
@@ -92,15 +95,21 @@ own track's typed draft, not a story judge or another evidence-reading editor.
 
 - The v2 client reproduces the prototype's deployed reading experience at full UI/UX parity; deviations are permitted only where the new edition contract forces them.
 - Client contracts may change when the new generator establishes a better edition representation.
-- Edition history, navigation, and unavailable-state behavior are design decisions for build planning.
+- Readers navigate by active region and publication date through URL-addressed
+  controls, browser history restores prior selections, and unavailable editions
+  render an explicit state.
 
 ## Platform and cost constraints
 
 - Cloudflare is the accepted primary platform and vendor lock-in is acceptable for this project.
 - The initial deployment targets the Cloudflare Workers Free plan. Upgrade to Workers Paid only when observed limits or operational needs justify it.
-- Cloudflare-native Queues and one Cloudflare Workflow definition are the preferred delivery and durable-execution foundation. The Workflow is invoked separately for each active region and publication date.
+- Cloudflare Cron Triggers and one Cloudflare Workflow definition are the
+  delivery and durable-execution foundation. The generation Cron invokes a
+  separate Workflow instance for each active region and publication date; no
+  Queue sits between the trigger and Workflow launch.
 - Static client delivery remains on Cloudflare.
-- The predecessor's observed inference cost of roughly $1.00–$1.25 per month is the baseline to beat or justify exceeding.
+- The historical operator estimate of the predecessor's inference cost —
+  roughly $1.00–$1.25 per month — is the baseline to beat or justify exceeding.
 - Recurring paid infrastructure or evaluation services require an explicit product decision rather than entering by default.
 
 ## Rebuild boundaries
@@ -138,22 +147,23 @@ own track's typed draft, not a story judge or another evidence-reading editor.
 - Routine production cost remains close to the predecessor unless measured quality gains justify a deliberate increase.
 - Readers continue receiving a useful regional newspaper throughout regional growth.
 
-## Decisions intentionally left for kickoff
+## Remaining product decisions
 
-For every product-behavior item below, the prototype's observed behavior is
-the default answer; kickoff decides structure and deliberate deviations, not
-product from scratch.
+The build has settled the edition contract, active-region authority and
+scheduling, storage topology, provider integrations, client navigation and
+availability behavior, and repository deployment topology in the
+[domain model](DOMAIN.md) and [structural discipline](ARCHITECTURE.md). The
+following product decisions remain open; the prototype's observed behavior is
+still the default answer where it applies.
 
 - Whether a later evidence-research capability needs bounded agent autonomy. It is not part of the current four-step editorial workflow.
-- The first production model configuration and fallback policy.
-- The canonical edition contract. (Client parity is settled: full UI/UX parity minus contract-forced changes.)
-- The authoritative source for active regions and edition scheduling policy.
-- Missing-data, late-data, regeneration, and manual-control behavior.
-- Persistence, storage, and artifact-retention choices.
-- Model-provider access, integration, fallback, and concurrency behavior.
-- Operational observability and telemetry detail.
-- Client history, navigation, and unavailable-state behavior.
-- The local runner and deployment topology. (Language and package layout are settled: TypeScript throughout, v1's monorepo shape.)
+- The first live production model configuration and fallback policy.
+- Late-data and regeneration policy beyond the settled explicit no-evidence
+  failure and authenticated pair-addressed manual launch.
+- Retention durations for Workflow state, evaluation artifacts, and operational
+  records; their persistence and storage homes are settled.
+- Any additional production observability or telemetry beyond pair-addressed
+  run status and retained model usage, billing, provenance, and diagnostics.
 
 ## Provenance and navigation
 

@@ -8,7 +8,7 @@ tags: [documentation, domain, vocabulary, editions]
 status: stable
 generated:
   by: ebt-skills/okf-v0.2
-  at: "2026-08-06T19:06:47Z"
+  at: "2026-08-18T14:54:00Z"
 authority: binding
 ---
 
@@ -53,11 +53,13 @@ verbatim in code, schema, tests, and APIs — no synonyms.
   `announcements_copyedit`.
 - **writer** — the evidence-reading step for one editorial product.
 - **copyeditor** — the single narrow cleanup step for its own typed draft. It
-  receives no source transcript or other editorial product and may correct
-  grammar, spelling, punctuation, and phrasing without changing facts,
-  quotations, numbers, coverage, order, structure, or meaning. Mechanical
-  preservation checks narrow this authority but do not prove semantic
-  equivalence.
+  receives no source transcript or other editorial product and is instructed
+  to correct grammar, spelling, punctuation, and phrasing without changing
+  facts, quotations, numbers, coverage, order, structure, or meaning.
+  Detected schema-valid departures from that authority are retained as
+  non-terminal diagnostics rather than causing another model call, rejection,
+  or publication stop. Mechanical preservation checks observe some departures
+  but do not prove semantic equivalence.
 - **context benchmark** — an eval-only measurement of the exact four
   production requests against one already-loaded local Qwen model. It reports
   model-template input, evidence or draft marginal, runtime delta, completion,
@@ -91,7 +93,7 @@ verbatim in code, schema, tests, and APIs — no synonyms.
 
 ## Identity rules
 
-1. One active region + one publication date identify **one intended edition
+1. One active region + one publication date identify **one intended generation
    run**. There is never a second intended edition for the same pair.
 2. Duplicate delivery or retry of a generation run must never publish a
    duplicate edition.
@@ -117,7 +119,7 @@ Inherited defaults until deliberately changed:
 - The edition contract starts from v1's published edition shape.
 - The active regions are BitJita's current 13, superseding v1's nine, with the
   list's authoritative home a structural choice, not a product one.
-- A publication date covers the prior day's chat (edition date minus one
+- A publication date covers the prior day's chat (publication date minus one
   day). The covered day is the *evidence date*.
 - Missing-data and availability behavior follow what v1 observably did.
 - The edition contract carries v1's reader-facing shape with these settled
