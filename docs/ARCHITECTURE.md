@@ -179,38 +179,44 @@ response-contract failures retain only the contract identifier, schema path,
 issue code, expected type, received structural type, and unexpected field names
 needed to locate the mismatch. Rejected values remain absent.
 
-`cloudflare_ai_gateway` uses the official account REST Chat Completions endpoint
-in both the Worker and Node evaluation runtime. The Worker binding is not used:
-its current per-request contract lacks payload suppression, attempt count, and
-timeout controls, while its log id names the most recent binding request rather
-than the specific response. The REST adapter fixes the Cloudflare host, derives
+`cloudflare_ai_gateway` uses the official account REST API in both the Worker
+and Node evaluation runtime. The Worker binding is not used: its current
+per-request contract lacks payload suppression, attempt count, and timeout
+controls, while its log id names the most recent binding request rather than
+the specific response. The REST adapter fixes the Cloudflare host, derives
 provider identity from `author/model` (or `workers_ai` from `@cf/author/model`),
-sets cache bypass, metadata-only logging, one Gateway attempt, and a ten-minute
-timeout, and requires run/invocation correlation before transport. Unified
-Billing owns third-party keys. Gateway-estimated cost is absent from the
-inference response, so the completion records billing as unavailable and
-retains `cf-aig-log-id` for separately authorized reconciliation when Cloudflare
-reports it and otherwise records the response header as unavailable evidence.
-For a deterministic non-2xx rejection, the adapter retains the bounded provider
-error code, message, parameter path, and HTTP status without retaining a raw
-response body.
+selects the exact profiled `POST /ai/v1/chat/completions` or `POST
+/ai/v1/responses` endpoint, sets cache bypass, metadata-only logging, one
+Gateway attempt, and a ten-minute timeout, and requires run/invocation
+correlation before transport. Unified Billing owns third-party keys.
+Gateway-estimated cost is absent from the inference response, so the completion
+records billing as unavailable and retains `cf-aig-log-id` for separately
+authorized reconciliation when Cloudflare reports it and otherwise records the
+response header as unavailable evidence. For a deterministic non-2xx
+rejection, the adapter retains the bounded provider error code, message,
+parameter path, and HTTP status without retaining a raw response body.
 Gateway model selection is closed over researched exact-model request profiles.
 Each profile owns its Cloudflare request format, provider-side structured-output
 encoding, buffered-or-streaming response delivery, and provider identity.
 Streaming profiles accumulate the complete SSE response before the unchanged
-strict completion contract and canonical production parser run. OpenAI profiles
-adapt canonical optional fields
-to required nullable wire fields and normalize returned null placeholders back
-to omitted application fields before canonical parsing. The admitted profiles are
-`openai/gpt-5-nano`, `openai/gpt-5-mini`, `openai/gpt-4o`, `openai/gpt-4o-mini`,
-`alibaba/qwen3.5-397b-a17b`, `google/gemini-2.5-flash-lite`,
-`google/gemini-3.1-flash-lite`, `minimax/m3`, `@cf/openai/gpt-oss-120b`, and
-`@cf/google/gemma-4-26b-a4b-it`; an unprofiled
-model rejects as invalid configuration.
-Every profiled request sends the production step's strict inline JSON Schema and
-leaves the provider's output-token ceiling unset. Successful Gateway provenance
-retains the request format, response-delivery mode, and structured-output
-contract name in addition to the existing transport policy.
+strict completion contract and canonical production parser run. OpenAI Chat
+profiles adapt canonical optional fields to required nullable wire fields and
+normalize returned null placeholders back to omitted application fields before
+canonical parsing. The Luna Responses profile uses `input` role preservation
+plus `text.format.type=json_schema`; it accepts only a `completed` response
+with one completed assistant message containing one nonblank `output_text`
+item, and it retains the returned unqualified response model without requiring
+equality with the routed `author/model` request id. The admitted profiles are
+`openai/gpt-5-nano`, `openai/gpt-5-mini`, `openai/gpt-5.6-luna`,
+`openai/gpt-4o`, `openai/gpt-4o-mini`, `alibaba/qwen3.5-397b-a17b`,
+`google/gemini-2.5-flash-lite`, `google/gemini-3.1-flash-lite`,
+`google/gemini-3.7-flash`, `minimax/m3`, `@cf/openai/gpt-oss-120b`, and
+`@cf/google/gemma-4-26b-a4b-it`; an unprofiled model rejects as invalid
+configuration. Every profiled request sends the production step's strict inline
+JSON Schema and leaves the provider's output-token ceiling unset. Successful
+Gateway provenance retains the exact request format, response-delivery mode,
+and structured-output contract name in addition to the existing transport
+policy.
 Gateway Benchmark Run version 8 alone retains explicit null completion content;
 current non-Gateway version 7 requires textual completion content.
 

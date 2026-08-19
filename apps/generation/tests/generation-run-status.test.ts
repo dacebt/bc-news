@@ -250,6 +250,67 @@ it("surfaces a non-contract stored diagnostic as unreadable status", async () =>
 	);
 });
 
+it("reopens a legacy Gateway usage record without exact policy fields", async () => {
+	const params = pair("2026-02-19");
+	await env.DB.prepare(
+		`INSERT INTO generation_run_status (
+		 active_region_id, publication_date, state, current_step, completed_steps_json,
+		 model_usage_json, diagnostics_json, failure_json, created_at_utc, updated_at_utc
+		) VALUES ('7', '2026-02-19', 'running', 'main_story_copyedit', ?1, ?2, '[]', NULL, ?3, ?3)`,
+	).bind(
+		JSON.stringify(GENERATION_STEPS.slice(0, 2)),
+		JSON.stringify([{
+			production_step: "main_story_write",
+			provider: "google",
+			model: "gemini-3.7-flash",
+			execution: "hosted_inference",
+			token_usage: { measurement: "reported", input_tokens: 100, output_tokens: 25, total_tokens: 125 },
+			external_billing: { classification: "unavailable", reason: "provider_did_not_report_cost" },
+			request_provenance: {
+				transport: "cloudflare_ai_gateway_rest",
+				account_id: "account-id",
+				gateway: { selection: "account_default" },
+				gateway_log_id: "gateway-log-one",
+				requested_model: "google/gemini-3.7-flash",
+				correlation: { run_id: "benchmark-one", invocation_id: "invocation-one" },
+				policy: {
+					cache: "bypass",
+					log_metadata: true,
+					log_payload: false,
+					max_attempts: 1,
+					request_timeout_ms: 600000,
+				},
+			},
+		}]),
+		NOW,
+	).run();
+	const status = await readGenerationRunStatus(env.DB, params);
+	expect(status).toMatchObject({
+		state: "running",
+		current_step: "main_story_copyedit",
+		completed_steps: ["prepare-evidence", "main_story_write"],
+		model_usage: [{
+			production_step: "main_story_write",
+			request_provenance: {
+				requested_model: "google/gemini-3.7-flash",
+				policy: {
+					cache: "bypass",
+					log_metadata: true,
+					log_payload: false,
+					max_attempts: 1,
+					request_timeout_ms: 600000,
+				},
+			},
+		}],
+	});
+	if (status === undefined) throw new Error("Expected reopened generation run status");
+	const policy = status.model_usage[0]?.request_provenance?.policy;
+	if (policy === undefined) throw new Error("Expected retained Gateway provenance policy");
+	expect(Object.hasOwn(policy, "request_format")).toBe(false);
+	expect(Object.hasOwn(policy, "response_delivery")).toBe(false);
+	expect(Object.hasOwn(policy, "structured_output")).toBe(false);
+});
+
 it("D1 rejects invalid state and malformed progress JSON", async () => {
 	await expect(env.DB.prepare(
 		`INSERT INTO generation_run_status (

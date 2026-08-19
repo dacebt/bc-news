@@ -72,10 +72,40 @@ export const ModelRequestProvenanceSchema = z.discriminatedUnion("transport", [
 			log_payload: z.literal(false),
 			max_attempts: z.literal(1),
 			request_timeout_ms: z.number().int().positive(),
-			request_format: z.literal("chat_completions").optional(),
+			request_format: z.enum(["chat_completions", "responses"]),
+			response_delivery: z.enum(["buffered", "streaming"]),
+			structured_output: z.strictObject({
+				format: z.enum(["openai_chat_json_schema", "openai_responses_json_schema"]),
+				contract_name: z.string().trim().min(1),
+			}),
+		}),
+	}),
+]);
+
+export const PersistedModelRequestProvenanceSchema = z.discriminatedUnion("transport", [
+	z.strictObject({
+		transport: z.literal("cloudflare_ai_gateway_rest"),
+		account_id: z.string().trim().min(1),
+		gateway: z.union([
+			z.strictObject({ selection: z.literal("named"), id: z.string().trim().min(1) }),
+			z.strictObject({ selection: z.literal("account_default") }),
+		]),
+		gateway_log_id: z.union([
+			z.string().trim().min(1),
+			z.strictObject({ state: z.literal("unavailable"), reason: z.literal("provider_did_not_report") }),
+		]),
+		requested_model: z.string().trim().min(1),
+		correlation: ModelRequestCorrelationSchema,
+		policy: z.strictObject({
+			cache: z.literal("bypass"),
+			log_metadata: z.literal(true),
+			log_payload: z.literal(false),
+			max_attempts: z.literal(1),
+			request_timeout_ms: z.number().int().positive(),
+			request_format: z.enum(["chat_completions", "responses"]).optional(),
 			response_delivery: z.enum(["buffered", "streaming"]).optional(),
 			structured_output: z.strictObject({
-				format: z.literal("openai_chat_json_schema"),
+				format: z.enum(["openai_chat_json_schema", "openai_responses_json_schema"]),
 				contract_name: z.string().trim().min(1),
 			}).optional(),
 		}),
@@ -90,6 +120,16 @@ export const ModelUsageRecordSchema = z.strictObject({
 	token_usage: TokenUsageSchema,
 	external_billing: ExternalBillingSchema,
 	request_provenance: ModelRequestProvenanceSchema.optional(),
+});
+
+export const PersistedModelUsageRecordSchema = z.strictObject({
+	production_step: ProductionModelStepSchema,
+	provider: z.string().trim().min(1),
+	model: z.string().trim().min(1),
+	execution: z.enum(["recorded_replay", "local_inference", "hosted_inference"]),
+	token_usage: TokenUsageSchema,
+	external_billing: ExternalBillingSchema,
+	request_provenance: PersistedModelRequestProvenanceSchema.optional(),
 });
 
 export const ProductionModelUsageRosterSchema = z

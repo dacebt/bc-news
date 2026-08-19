@@ -43,11 +43,13 @@ Pricing was checked against Cloudflare's public primary documentation on
 |---|---|---:|---|
 | `openai/gpt-5-nano` | Unified Billing | Yes | [Cloudflare model record](https://developers.cloudflare.com/ai/models/openai/gpt-5-nano/) routes current pricing to the Cloudflare dashboard |
 | `openai/gpt-5-mini` | Unified Billing | No | [Cloudflare model record](https://developers.cloudflare.com/ai/models/openai/gpt-5-mini/) routes current pricing to the Cloudflare dashboard |
+| `openai/gpt-5.6-luna` | Unified Billing | No | [Cloudflare model record](https://developers.cloudflare.com/ai/models/openai/gpt-5.6-luna/) routes current Gateway pricing to the Cloudflare dashboard; [OpenAI direct reference](https://developers.openai.com/api/docs/models/gpt-5.6-luna) lists current direct rates separately from Cloudflare-routed billing |
 | `openai/gpt-4o` | Unified Billing | No | [Cloudflare model record](https://developers.cloudflare.com/ai/models/openai/gpt-4o/) routes current pricing to the Cloudflare dashboard |
 | `openai/gpt-4o-mini` | Unified Billing | No | [Cloudflare model record](https://developers.cloudflare.com/ai/models/openai/gpt-4o-mini/) routes current pricing to the Cloudflare dashboard |
 | `alibaba/qwen3.5-397b-a17b` | Unified Billing | No | [Cloudflare model record](https://developers.cloudflare.com/ai/models/alibaba/qwen3.5-397b-a17b/) routes current pricing to the Cloudflare dashboard |
 | `google/gemini-2.5-flash-lite` | Unified Billing | Yes | [Cloudflare model record](https://developers.cloudflare.com/ai/models/google/gemini-2.5-flash-lite/) routes current pricing to the Cloudflare dashboard |
 | `google/gemini-3.1-flash-lite` | Unified Billing | No | [Cloudflare model record](https://developers.cloudflare.com/ai/models/google/gemini-3.1-flash-lite/) routes current pricing to the Cloudflare dashboard |
+| `google/gemini-3.7-flash` | Unified Billing | No | [Cloudflare model record](https://developers.cloudflare.com/ai/models/google/gemini-3.7-flash/) routes current pricing to the Cloudflare dashboard |
 | `minimax/m3` | Unified Billing | No | [Cloudflare model record](https://developers.cloudflare.com/ai/models/minimax/m3/) routes current pricing to the Cloudflare dashboard |
 | `@cf/openai/gpt-oss-120b` | Workers AI | No | [$0.35/M input, $0.75/M output](https://developers.cloudflare.com/workers-ai/platform/pricing/) |
 | `@cf/google/gemma-4-26b-a4b-it` | Workers AI | No | [$0.10/M input, $0.30/M output](https://developers.cloudflare.com/workers-ai/platform/pricing/) |
@@ -55,8 +57,10 @@ Pricing was checked against Cloudflare's public primary documentation on
 [Unified Billing](https://developers.cloudflare.com/ai-gateway/features/unified-billing/)
 passes third-party provider inference rates through without markup and applies a
 5% fee when credits are purchased. Workers AI models use Workers AI billing
-instead. The public third-party model records do not expose numeric rates, so
-this repository does not duplicate dashboard-only values.
+instead. The public third-party Cloudflare model records do not expose numeric
+rates, so this repository does not duplicate dashboard-only values. OpenAI's
+direct public rates for Luna are upstream reference only and must not be
+treated as Cloudflare-routed spend.
 
 ## Local model evidence status
 

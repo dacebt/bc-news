@@ -1,5 +1,6 @@
 # Direction
 
+- [Shape: hosted model evaluation expansion](2026-08-18-hosted-model-evaluation-expansion.shape.md) — Session boundaries, loose cadence, and success signal for admitting Gemini 3.7 Flash and GPT-5.6 Luna and retaining a four-model hosted benchmark.
 - [Shape: local-only production evaluation evidence](2026-08-17-local-evaluation-evidence.shape.md) — Session boundaries, loose cadence, and success signal for replacing committed evaluation data with a private local evidence workflow and safe aggregate exports.
 - [Capability map: local-only production evaluation evidence](2026-08-17-local-evaluation-evidence.map.md) — Risk-ordered vertical capabilities and feature conventions for private local evaluation evidence and commit-safe aggregate results.
 - [Shape: BCN-008 production security boundaries](2026-08-14-production-security-boundaries.shape.md) — Session boundaries, loose cadence, and local success signal for hardening the production HTTP, data, and deployment seams.

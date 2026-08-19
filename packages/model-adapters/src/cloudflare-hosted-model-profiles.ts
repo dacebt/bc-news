@@ -4,11 +4,13 @@ import type { ProductionStepOutputContract } from "./production-step-output-cont
 export const CLOUDFLARE_HOSTED_MODEL_IDS = [
 	"openai/gpt-5-nano",
 	"openai/gpt-5-mini",
+	"openai/gpt-5.6-luna",
 	"openai/gpt-4o",
 	"openai/gpt-4o-mini",
 	"alibaba/qwen3.5-397b-a17b",
 	"google/gemini-2.5-flash-lite",
 	"google/gemini-3.1-flash-lite",
+	"google/gemini-3.7-flash",
 	"minimax/m3",
 	"@cf/openai/gpt-oss-120b",
 	"@cf/google/gemma-4-26b-a4b-it",
@@ -20,9 +22,9 @@ export const CloudflareHostedModelIdSchema = z.enum(CLOUDFLARE_HOSTED_MODEL_IDS)
 
 interface CloudflareHostedModelRequestProfile {
 	readonly provider: "openai" | "alibaba" | "google" | "minimax" | "workers_ai";
-	readonly requestFormat: "chat_completions";
+	readonly requestFormat: "chat_completions" | "responses";
 	readonly responseDelivery: "buffered" | "streaming";
-	readonly structuredOutputFormat: "openai_chat_json_schema";
+	readonly structuredOutputFormat: "openai_chat_json_schema" | "openai_responses_json_schema";
 	readonly structuredOutputSchema: "canonical" | "openai_required_nullable";
 }
 
@@ -41,6 +43,13 @@ export const CLOUDFLARE_HOSTED_MODEL_REQUEST_PROFILES: Readonly<
 		requestFormat: "chat_completions",
 		responseDelivery: "streaming",
 		structuredOutputFormat: "openai_chat_json_schema",
+		structuredOutputSchema: "openai_required_nullable",
+	},
+	"openai/gpt-5.6-luna": {
+		provider: "openai",
+		requestFormat: "responses",
+		responseDelivery: "buffered",
+		structuredOutputFormat: "openai_responses_json_schema",
 		structuredOutputSchema: "openai_required_nullable",
 	},
 	"openai/gpt-4o": {
@@ -72,6 +81,13 @@ export const CLOUDFLARE_HOSTED_MODEL_REQUEST_PROFILES: Readonly<
 		structuredOutputSchema: "canonical",
 	},
 	"google/gemini-3.1-flash-lite": {
+		provider: "google",
+		requestFormat: "chat_completions",
+		responseDelivery: "buffered",
+		structuredOutputFormat: "openai_chat_json_schema",
+		structuredOutputSchema: "canonical",
+	},
+	"google/gemini-3.7-flash": {
 		provider: "google",
 		requestFormat: "chat_completions",
 		responseDelivery: "buffered",
@@ -170,6 +186,16 @@ function schemaForProfile(
 		: outputContract.schema;
 }
 
+export function cloudflareHostedModelOutputSchema(input: {
+	readonly model: CloudflareHostedModelId;
+	readonly outputContract: ProductionStepOutputContract;
+}): unknown {
+	return schemaForProfile(
+		CLOUDFLARE_HOSTED_MODEL_REQUEST_PROFILES[input.model],
+		input.outputContract,
+	);
+}
+
 export function cloudflareHostedModelRequestBody(input: {
 	readonly model: CloudflareHostedModelId;
 	readonly system: string;
@@ -193,7 +219,7 @@ export function cloudflareHostedModelRequestBody(input: {
 			json_schema: {
 				name: input.outputContract.name,
 				strict: true,
-				schema: schemaForProfile(profile, input.outputContract),
+				schema: cloudflareHostedModelOutputSchema(input),
 			},
 		},
 	};

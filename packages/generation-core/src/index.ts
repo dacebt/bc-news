@@ -102,6 +102,8 @@ export {
 	ModelRequestCorrelationSchema,
 	ModelRequestProvenanceSchema,
 	ModelUsageRecordSchema,
+	PersistedModelRequestProvenanceSchema,
+	PersistedModelUsageRecordSchema,
 	PRODUCTION_MODEL_STEPS,
 	ProductionModelUsageRosterSchema,
 	ProductionModelStepSchema,

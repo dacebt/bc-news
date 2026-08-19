@@ -87,7 +87,19 @@ test("keeps runtime evidence out of model usage while preserving request provena
 			gateway_log_id: "gateway-log-id",
 			requested_model: "openai/model",
 			correlation: { run_id: "run-id", invocation_id: "invocation-id" },
-			policy: { cache: "bypass", log_metadata: true, log_payload: false, max_attempts: 1, request_timeout_ms: 600_000 },
+			policy: {
+				cache: "bypass",
+				log_metadata: true,
+				log_payload: false,
+				max_attempts: 1,
+				request_timeout_ms: 600_000,
+				request_format: "chat_completions",
+				response_delivery: "buffered",
+				structured_output: {
+					format: "openai_chat_json_schema",
+					contract_name: "main_story_write_output",
+				},
+			},
 		},
 		runtime_evidence: ModelRuntimeEvidenceSchema.parse(runtimeEvidenceCandidate(9)),
 	});

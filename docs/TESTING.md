@@ -99,7 +99,11 @@ Benchmark Run version 7 retains existing live configurations. A
 one lifecycle-matched Gateway-request record for every invocation, including
 the response-scoped log id and declared cache/logging/retry/timeout policy on
 success. New Gateway records additionally retain the exact model-profile
-request format and structured-output contract name. Both current paths retain bounded structured provider-error
+request format, response-delivery mode, and structured-output contract name.
+Gemini Chat Completions and Luna Responses are both strict version 8 paths:
+Luna retains the routed `openai/gpt-5.6-luna` request id, the returned
+`gpt-5.6-luna` response model, and only a `completed` one-message one-text
+Responses envelope. Both current paths retain bounded structured provider-error
 details for deterministic Gateway HTTP rejections so an infrastructure failure
 identifies the rejected parameter and provider reason rather than only the
 status code. OpenAI request profiles prove that every wire property is required,

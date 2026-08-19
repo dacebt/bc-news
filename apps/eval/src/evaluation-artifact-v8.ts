@@ -2,6 +2,8 @@ import { z } from "zod";
 import { ModelRequestProvenanceSchema } from "@bc-news/generation-core";
 import {
 	CloudflareAiGatewayAdapterConfigSchema,
+	CLOUDFLARE_HOSTED_MODEL_REQUEST_PROFILES,
+	PRODUCTION_STEP_OUTPUT_CONTRACTS,
 	cloudflareAiGatewayProviderForModel,
 } from "@bc-news/model-adapters";
 import {
@@ -139,13 +141,39 @@ export const V8BenchmarkRunSchema = V8BenchmarkRunBaseSchema.superRefine((run, c
 				context.addIssue({ code: "custom", path: ["gateway_requests", index, "state"], message: "successful Cloudflare AI Gateway invocation must retain captured Gateway provenance" });
 				continue;
 			}
+			const requestProfile = Object.prototype.hasOwnProperty.call(
+				CLOUDFLARE_HOSTED_MODEL_REQUEST_PROFILES,
+				adapter.model,
+			)
+				? CLOUDFLARE_HOSTED_MODEL_REQUEST_PROFILES[
+					adapter.model as keyof typeof CLOUDFLARE_HOSTED_MODEL_REQUEST_PROFILES
+				]
+				: undefined;
+			if (requestProfile === undefined) {
+				context.addIssue({
+					code: "custom",
+					path: ["gateway_requests", index, "provenance", "requested_model"],
+					message: "captured Gateway provenance must use an admitted profiled model",
+				});
+				continue;
+			}
 			const expectedGateway = adapter.gateway ?? { selection: "account_default" as const };
 			if (record.provenance.gateway.selection !== expectedGateway.selection
 				|| (record.provenance.gateway.selection === "named" && expectedGateway.selection === "named" && record.provenance.gateway.id !== expectedGateway.id)
 				|| record.provenance.requested_model !== adapter.model
 				|| record.provenance.correlation.run_id !== run.id
-				|| record.provenance.correlation.invocation_id !== record.invocation_id) {
+					|| record.provenance.correlation.invocation_id !== record.invocation_id) {
 				context.addIssue({ code: "custom", path: ["gateway_requests", index, "provenance"], message: "captured Gateway provenance must bind the declared adapter and invocation correlation" });
+			}
+			if (record.provenance.policy.request_format !== requestProfile.requestFormat
+				|| record.provenance.policy.response_delivery !== requestProfile.responseDelivery
+				|| record.provenance.policy.structured_output.format !== requestProfile.structuredOutputFormat
+				|| record.provenance.policy.structured_output.contract_name !== PRODUCTION_STEP_OUTPUT_CONTRACTS[record.production_step].name) {
+				context.addIssue({
+					code: "custom",
+					path: ["gateway_requests", index, "provenance", "policy"],
+					message: "captured Gateway provenance must retain the exact profiled request policy and output contract",
+				});
 			}
 			if (retainedInvocation?.transport === "succeeded"
 				&& retainedInvocation.completion.provider !== cloudflareAiGatewayProviderForModel(adapter.model)) {

@@ -5,10 +5,10 @@ title: >-
 description: >-
   Session boundaries, loose cadence, and success signal for replacing committed evaluation data with a private local evidence workflow and safe aggregate exports.
 tags: [wsd, direction, shape, evaluation, privacy]
-status: stable
+status: deprecated
 generated:
   by: ebt-wsd/okf-v0.2
-  at: "2026-08-17T13:05:21Z"
+  at: "2026-08-19T02:25:57Z"
 ---
 # Shape: local-only production evaluation evidence
 

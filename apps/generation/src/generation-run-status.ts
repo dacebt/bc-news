@@ -2,7 +2,7 @@ import { z } from "zod";
 import { GenerationRunParamsSchema, type GenerationRunParams } from "@bc-news/contracts";
 import {
 	EditorialDiagnosticSchema,
-	ModelUsageRecordSchema,
+	PersistedModelUsageRecordSchema,
 	PRODUCTION_MODEL_STEPS,
 	type EditorialDiagnostic,
 	type ModelUsageRecord,
@@ -36,7 +36,7 @@ export const GenerationRunProjectionSchema = z
 		state: z.enum(["queued", "running", "complete", "errored"]),
 		current_step: GenerationStepSchema.nullable(),
 		completed_steps: z.array(GenerationStepSchema),
-		model_usage: z.array(ModelUsageRecordSchema),
+		model_usage: z.array(PersistedModelUsageRecordSchema),
 		diagnostics: z.array(EditorialDiagnosticSchema),
 		failure: FailureSchema.nullable(),
 		created_at_utc: UtcTimestampSchema,

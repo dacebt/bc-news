@@ -35,20 +35,24 @@ function configuration(
 	};
 }
 
-test("runs two hosted provider families through the Gateway contract and retains v8 provenance", async () => {
+test("runs Gemini Chat and Luna Responses through the Gateway contract and retains exact v8 provenance", async () => {
 	const root = await mkdtemp(join(tmpdir(), "bc-news-cloudflare-ai-gateway-evaluation-"));
 	try {
 		const configPath = join(root, "benchmark.config.json");
 		const resultsDirectory = join(root, "results");
 		await writeFile(configPath, `${JSON.stringify({
-			configurations: [configuration("openai/gpt-4o-mini"), configuration("alibaba/qwen3.5-397b-a17b")],
+			configurations: [configuration("google/gemini-3.7-flash"), configuration("openai/gpt-5.6-luna")],
 			repetition_count: 1,
 			transport_retry_limit: 0,
 		}, null, 2)}\n`, "utf8");
 		const retainedOutputs = await outputs();
 		let ordinal = 0;
 		const fetchCall = vi.spyOn(globalThis, "fetch").mockImplementation((_url, init) => {
-			const body = typeof init?.body === "string" ? JSON.parse(init.body) as { model: string } : undefined;
+			const body = typeof init?.body === "string" ? JSON.parse(init.body) as {
+				model: string;
+				input?: unknown;
+				text?: { format?: { name?: string } };
+			} : undefined;
 			if (body === undefined) throw new Error("Expected Gateway request body");
 			const metadata = typeof init?.headers === "object" && init.headers !== null && !Array.isArray(init.headers)
 				? JSON.parse((init.headers as Record<string, string>)["cf-aig-metadata"]!) as { production_step: ProductionModelStep }
@@ -56,10 +60,31 @@ test("runs two hosted provider families through the Gateway contract and retains
 			if (metadata === undefined) throw new Error("Expected Gateway request metadata");
 			const step = metadata.production_step;
 			ordinal += 1;
+			if (body.model === "openai/gpt-5.6-luna") {
+				return Promise.resolve(new Response(JSON.stringify({
+					id: `provider-response-${String(ordinal)}`,
+					object: "response",
+					status: "completed",
+					model: "gpt-5.6-luna",
+					output: [{
+						id: `message-${String(ordinal)}`,
+						type: "message",
+						status: "completed",
+						role: "assistant",
+						content: [{
+							type: "output_text",
+							text: retainedOutputs[step],
+							annotations: [],
+							logprobs: [],
+						}],
+					}],
+					usage: { input_tokens: 100, output_tokens: 25, total_tokens: 125 },
+				}), { headers: { "content-type": "application/json", "cf-aig-log-id": `gateway-log-${String(ordinal)}` } }));
+			}
 			return Promise.resolve(new Response(JSON.stringify({
 				id: `provider-response-${String(ordinal)}`,
 				object: "chat.completion",
-				model: body.model,
+				model: "gemini-3.7-flash",
 				choices: [{ index: 0, message: { role: "assistant", content: retainedOutputs[step], refusal: null, annotations: [] }, finish_reason: "stop", logprobs: null }],
 				usage: { prompt_tokens: 100, completion_tokens: 25, total_tokens: 125 },
 				gatewayMetadata: { keySource: "Unified" },
@@ -81,16 +106,41 @@ test("runs two hosted provider families through the Gateway contract and retains
 		expect(result.benchmark.trials.every(({ subject_outcome }) => subject_outcome === "completed")).toBe(true);
 		expect(result.benchmark.trials.map((trial) => [...new Set(trial.invocations
 			.filter((invocation) => invocation.transport === "succeeded")
-			.map((invocation) => invocation.completion.provider))])).toEqual([["openai"], ["alibaba"]]);
+			.map((invocation) => invocation.completion.provider))])).toEqual([["google"], ["openai"]]);
 		const captured = result.benchmark.gateway_requests.filter((record) => record.state === "captured");
 		expect(captured).toHaveLength(8);
 		expect(new Set(captured.map(({ provenance }) => provenance.gateway_log_id)).size).toBe(8);
 		expect(captured.every(({ provenance }) => provenance.policy.max_attempts === 1
 			&& provenance.policy.log_payload === false
-			&& provenance.policy.request_format === "chat_completions"
-			&& provenance.policy.structured_output?.format === "openai_chat_json_schema"
-			&& provenance.policy.structured_output.contract_name.endsWith("_output")
 			&& provenance.correlation.run_id === result.benchmark.id)).toBe(true);
+		expect(captured.filter(({ provenance }) => provenance.requested_model === "google/gemini-3.7-flash").every(({ provenance }) =>
+			provenance.policy.request_format === "chat_completions"
+			&& provenance.policy.response_delivery === "buffered"
+			&& provenance.policy.structured_output.format === "openai_chat_json_schema"
+			&& provenance.policy.structured_output.contract_name.endsWith("_output"))).toBe(true);
+		expect(captured.filter(({ provenance }) => provenance.requested_model === "openai/gpt-5.6-luna").every(({ provenance }) =>
+			provenance.policy.request_format === "responses"
+			&& provenance.policy.response_delivery === "buffered"
+			&& provenance.policy.structured_output.format === "openai_responses_json_schema"
+			&& provenance.policy.structured_output.contract_name.endsWith("_output"))).toBe(true);
+		expect(result.benchmark.trials[1]?.invocations.every((invocation) =>
+			invocation.transport !== "succeeded"
+				|| (invocation.completion.model === "gpt-5.6-luna"
+					&& invocation.completion.token_usage.measurement === "reported"
+					&& invocation.completion.token_usage.input_tokens === 100
+					&& invocation.completion.token_usage.output_tokens === 25
+					&& invocation.completion.token_usage.total_tokens === 125))).toBe(true);
+		const missingRequestFormat = structuredClone(result.benchmark);
+		const missingCaptured = missingRequestFormat.gateway_requests.find((record) => record.state === "captured");
+		if (missingCaptured?.state !== "captured") throw new Error("Expected captured Gateway provenance");
+		delete (missingCaptured.provenance.policy as { request_format?: string }).request_format;
+		expect(V8BenchmarkRunSchema.safeParse(missingRequestFormat).success).toBe(false);
+		const contradictoryPolicy = structuredClone(result.benchmark);
+		const contradictoryCaptured = contradictoryPolicy.gateway_requests.find((record) =>
+			record.state === "captured" && record.provenance.requested_model === "openai/gpt-5.6-luna");
+		if (contradictoryCaptured?.state !== "captured") throw new Error("Expected captured Luna provenance");
+		contradictoryCaptured.provenance.policy.structured_output.format = "openai_chat_json_schema";
+		expect(V8BenchmarkRunSchema.safeParse(contradictoryPolicy).success).toBe(false);
 		expect(fetchCall).toHaveBeenCalledTimes(8);
 		for (const [, init] of fetchCall.mock.calls) {
 			expect(init?.headers).toEqual(expect.objectContaining({

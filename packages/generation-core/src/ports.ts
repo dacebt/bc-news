@@ -57,12 +57,12 @@ export interface CloudflareAiGatewayRequestProvenance {
 		log_payload: false;
 		max_attempts: 1;
 		request_timeout_ms: number;
-		request_format?: "chat_completions" | undefined;
-		response_delivery?: "buffered" | "streaming" | undefined;
-		structured_output?: {
-			format: "openai_chat_json_schema";
+		request_format: "chat_completions" | "responses";
+		response_delivery: "buffered" | "streaming";
+		structured_output: {
+			format: "openai_chat_json_schema" | "openai_responses_json_schema";
 			contract_name: string;
-		} | undefined;
+		};
 	};
 }
 
