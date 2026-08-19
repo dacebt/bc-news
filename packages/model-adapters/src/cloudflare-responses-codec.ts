@@ -30,7 +30,158 @@ const ResponseMessageSchema = z.looseObject({
 	status: NonBlankExactStringSchema,
 	role: NonBlankExactStringSchema,
 	content: z.array(ResponseContentSchema),
+}).superRefine((message, context) => {
+	if (Object.prototype.hasOwnProperty.call(message, "tool_calls")) {
+		context.addIssue({
+			code: "custom",
+			path: ["tool_calls"],
+			message: "response output message must not include tool calls",
+		});
+	}
+	if (Object.prototype.hasOwnProperty.call(message, "function_call")) {
+		context.addIssue({
+			code: "custom",
+			path: ["function_call"],
+			message: "response output message must not include function call metadata",
+		});
+	}
 });
+
+type ResponseOutputItem = {
+	readonly type: string;
+	readonly [key: string]: unknown;
+};
+
+type ResponseMessage = z.infer<typeof ResponseMessageSchema>;
+
+function addResponseContractIssue(
+	context: z.RefinementCtx | undefined,
+	path: ReadonlyArray<string | number>,
+	message: string,
+): false {
+	if (context === undefined) {
+		throw new Error(message);
+	}
+	context.addIssue({
+		code: "custom",
+		path: [...path],
+		message,
+	});
+	return false;
+}
+
+function validateResponseMessage(
+	message: ResponseMessage,
+	messageIndex: number,
+	context?: z.RefinementCtx,
+): boolean {
+	let valid = true;
+	if (message.status !== "completed") {
+		valid = false;
+		addResponseContractIssue(
+			context,
+			["output", messageIndex, "status"],
+			"response output message must be completed",
+		);
+	}
+	if (message.role !== "assistant") {
+		valid = false;
+		addResponseContractIssue(
+			context,
+			["output", messageIndex, "role"],
+			"response output message must use the assistant role",
+		);
+	}
+	if (message.content.length === 0) {
+		return addResponseContractIssue(
+			context,
+			["output", messageIndex, "content"],
+			"response output message must contain one or more content items",
+		);
+	}
+	for (const [contentIndex, content] of message.content.entries()) {
+		if (content.type !== "output_text") {
+			valid = false;
+			addResponseContractIssue(
+				context,
+				["output", messageIndex, "content", contentIndex, "type"],
+				"response output content must be a completed output_text item",
+			);
+		}
+		if (typeof content.text !== "string" || content.text.trim().length === 0) {
+			valid = false;
+			addResponseContractIssue(
+				context,
+				["output", messageIndex, "content", contentIndex, "text"],
+				"response output text must be nonblank",
+			);
+		}
+	}
+	return valid;
+}
+
+function responseMessageFromOutput(
+	output: ReadonlyArray<ResponseOutputItem>,
+	context?: z.RefinementCtx,
+): ResponseMessage | null {
+	let messageCount = 0;
+	let selectedMessage: ResponseMessage | null = null;
+	for (const [outputIndex, item] of output.entries()) {
+		if (item.type === "reasoning") {
+			continue;
+		}
+		if (item.type !== "message") {
+			addResponseContractIssue(
+				context,
+				["output", outputIndex, "type"],
+				"response output items must be reasoning or message",
+			);
+			continue;
+		}
+		messageCount += 1;
+		const messageResult = ResponseMessageSchema.safeParse(item);
+		if (!messageResult.success) {
+			if (context === undefined) {
+				throw messageResult.error;
+			}
+			for (const issue of messageResult.error.issues) {
+				context.addIssue({
+					code: "custom",
+					path: ["output", outputIndex, ...issue.path],
+					message: issue.message,
+				});
+			}
+			continue;
+		}
+		const message = messageResult.data;
+		if (validateResponseMessage(message, outputIndex, context) && selectedMessage === null) {
+			selectedMessage = message;
+		}
+	}
+	if (messageCount !== 1) {
+		addResponseContractIssue(
+			context,
+			["output"],
+			"response output must contain exactly one message item",
+		);
+		return null;
+	}
+	return selectedMessage;
+}
+
+function responseMessageText(message: ResponseMessage): string {
+	let text = "";
+	for (const content of message.content) {
+		if (content.type !== "output_text") {
+			throw new Error("response output content must be a completed output_text item");
+		}
+		if (typeof content.text !== "string" || content.text.trim().length === 0) {
+			throw new Error("response output text must be nonblank");
+		}
+		text += content.text;
+	}
+	return text;
+}
 
 export const CloudflareResponsesSchema = z.looseObject({
 	id: NonBlankExactStringSchema,
@@ -47,63 +198,7 @@ export const CloudflareResponsesSchema = z.looseObject({
 			message: "response status must be completed",
 		});
 	}
-	if (response.output.length !== 1) {
-		context.addIssue({
-			code: "custom",
-			path: ["output"],
-			message: "response output must contain exactly one item",
-		});
-		return;
-	}
-	const messageResult = ResponseMessageSchema.safeParse(response.output[0]);
-	if (!messageResult.success) {
-		for (const issue of messageResult.error.issues) {
-			context.addIssue({
-				code: "custom",
-				path: ["output", 0, ...issue.path],
-				message: issue.message,
-			});
-		}
-		return;
-	}
-	const message = messageResult.data;
-	if (message.status !== "completed") {
-		context.addIssue({
-			code: "custom",
-			path: ["output", 0, "status"],
-			message: "response output message must be completed",
-		});
-	}
-	if (message.role !== "assistant") {
-		context.addIssue({
-			code: "custom",
-			path: ["output", 0, "role"],
-			message: "response output message must use the assistant role",
-		});
-	}
-	if (message.content.length !== 1) {
-		context.addIssue({
-			code: "custom",
-			path: ["output", 0, "content"],
-			message: "response output message must contain exactly one content item",
-		});
-		return;
-	}
-	const content = message.content[0]!;
-	if (content.type !== "output_text") {
-		context.addIssue({
-			code: "custom",
-			path: ["output", 0, "content", 0, "type"],
-			message: "response output content must be a completed output_text item",
-		});
-	}
-	if (typeof content.text !== "string" || content.text.trim().length === 0) {
-		context.addIssue({
-			code: "custom",
-			path: ["output", 0, "content", 0, "text"],
-			message: "response output text must be nonblank",
-		});
-	}
+	responseMessageFromOutput(response.output, context);
 });
 
 export type CloudflareResponses = z.infer<typeof CloudflareResponsesSchema>;
@@ -169,10 +264,10 @@ export function cloudflareHostedResponsesText(input: {
 	readonly response: CloudflareResponses;
 	readonly outputContract: ProductionStepOutputContract;
 }): string | null {
-	const message = ResponseMessageSchema.parse(input.response.output[0]);
+	const message = responseMessageFromOutput(input.response.output);
 	return cloudflareHostedModelResponseText({
 		model: input.model,
-		text: message.content[0]?.text ?? null,
+		text: message === null ? null : responseMessageText(message),
 		outputContract: input.outputContract,
 	});
 }

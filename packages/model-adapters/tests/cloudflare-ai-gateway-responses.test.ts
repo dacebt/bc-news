@@ -26,51 +26,74 @@ function request() {
 	};
 }
 
-function responsesEnvelope(content: string) {
+const completedStory = JSON.stringify({
+	title: "The Daily",
+	subtitle: "Market report",
+	main_story: {
+		headline: "Trade moved",
+		lede: "Merchants gathered.",
+		body: "The market was active.",
+		image: { url: "https://example.com/image.png", caption: "Market", credit: null },
+	},
+});
+
+const expectedStory = {
+	title: "The Daily",
+	subtitle: "Market report",
+	main_story: {
+		headline: "Trade moved",
+		lede: "Merchants gathered.",
+		body: "The market was active.",
+		image: { url: "https://example.com/image.png", caption: "Market" },
+	},
+};
+
+function outputTextContent(text: string) {
+	return {
+		type: "output_text",
+		text,
+		annotations: [],
+		logprobs: [],
+	};
+}
+
+function assistantMessage(parts: readonly string[]) {
+	return {
+		id: "msg-one",
+		type: "message",
+		status: "completed",
+		role: "assistant",
+		content: parts.map((text) => outputTextContent(text)),
+	};
+}
+
+function reasoningItem() {
+	return {
+		id: "reasoning-one",
+		type: "reasoning",
+		summary: [{ type: "summary_text", text: "provider-controlled reasoning" }],
+	};
+}
+
+function responsesEnvelope(output: readonly Record<string, unknown>[] = [assistantMessage(["completion"])]) {
 	return {
 		id: "resp-one",
 		object: "response",
 		status: "completed",
 		model: "gpt-5.6-luna",
-		output: [{
-			id: "msg-one",
-			type: "message",
-			status: "completed",
-			role: "assistant",
-			content: [{
-				type: "output_text",
-				text: content,
-				annotations: [],
-				logprobs: [],
-			}],
-		}],
+		output,
 		usage: { input_tokens: 100, output_tokens: 25, total_tokens: 125 },
 	};
 }
 
 it("uses the Responses endpoint and retains Luna response semantics exactly", async () => {
-	const fetchCall = vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json(responsesEnvelope(JSON.stringify({
-		title: "The Daily",
-		subtitle: "Market report",
-		main_story: {
-			headline: "Trade moved",
-			lede: "Merchants gathered.",
-			body: "The market was active.",
-			image: { url: "https://example.com/image.png", caption: "Market", credit: null },
-		},
-	})), { headers: { "cf-aig-log-id": "gateway-log-one" } }));
+	const fetchCall = vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json(
+		responsesEnvelope([assistantMessage([completedStory])]),
+		{ headers: { "cf-aig-log-id": "gateway-log-one" } },
+	));
 
 	await expect(provider().complete(request())).resolves.toMatchObject({
-		text: JSON.stringify({
-			title: "The Daily",
-			subtitle: "Market report",
-			main_story: {
-				headline: "Trade moved",
-				lede: "Merchants gathered.",
-				body: "The market was active.",
-				image: { url: "https://example.com/image.png", caption: "Market" },
-			},
-		}),
+		text: JSON.stringify(expectedStory),
 		provider: "openai",
 		model: "gpt-5.6-luna",
 		token_usage: { measurement: "reported", input_tokens: 100, output_tokens: 25, total_tokens: 125 },
@@ -138,29 +161,72 @@ it("uses the Responses endpoint and retains Luna response semantics exactly", as
 
 it.each([
 	[
+		"reasoning before the final message",
+		responsesEnvelope([reasoningItem(), assistantMessage([completedStory])]),
+	],
+	[
+		"message before trailing reasoning",
+		responsesEnvelope([assistantMessage([completedStory]), reasoningItem()]),
+	],
+] as const)("accepts %s", async (_label, candidate) => {
+	vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json(candidate, { headers: { "cf-aig-log-id": "gateway-log-one" } }));
+
+	await expect(provider().complete(request())).resolves.toMatchObject({
+		text: JSON.stringify(expectedStory),
+	});
+});
+
+it("concatenates multipart output_text content in order", async () => {
+	vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json(
+		responsesEnvelope([assistantMessage([
+			"{\"title\":\"The Daily\",\"subtitle\":\"Market report\",",
+			"\"main_story\":{\"headline\":\"Trade moved\",\"lede\":\"Merchants gathered.\",",
+			"\"body\":\"The market was active.\",\"image\":{\"url\":\"https://example.com/image.png\",\"caption\":\"Market\",\"credit\":null}}}",
+		])]),
+		{ headers: { "cf-aig-log-id": "gateway-log-one" } },
+	));
+
+	await expect(provider().complete(request())).resolves.toMatchObject({
+		text: JSON.stringify(expectedStory),
+	});
+});
+
+it("accepts unrelated provider extensions on the completed assistant message", async () => {
+	vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json(
+		responsesEnvelope([{
+			...assistantMessage([completedStory]),
+			provider_extension: { trace_id: "trace-one" },
+		}]),
+		{ headers: { "cf-aig-log-id": "gateway-log-one" } },
+	));
+
+	await expect(provider().complete(request())).resolves.toMatchObject({
+		text: JSON.stringify(expectedStory),
+	});
+});
+
+it.each([
+	[
 		"incomplete status",
-		{ ...responsesEnvelope("completion"), status: "incomplete" },
+		{ ...responsesEnvelope(), status: "incomplete" },
 		{ path: ["status"], code: "custom" },
 	],
 	[
 		"failed status",
-		{ ...responsesEnvelope("completion"), status: "failed" },
+		{ ...responsesEnvelope(), status: "failed" },
 		{ path: ["status"], code: "custom" },
 	],
 	[
 		"in progress status",
-		{ ...responsesEnvelope("completion"), status: "in_progress" },
+		{ ...responsesEnvelope(), status: "in_progress" },
 		{ path: ["status"], code: "custom" },
 	],
 	[
 		"refusal content",
 		{
-			...responsesEnvelope("completion"),
+			...responsesEnvelope(),
 			output: [{
-				id: "msg-one",
-				type: "message",
-				status: "completed",
-				role: "assistant",
+				...assistantMessage(["completion"]),
 				content: [{ type: "refusal", refusal: "sensitive-provider-value" }],
 			}],
 		},
@@ -169,49 +235,81 @@ it.each([
 	[
 		"zero text items",
 		{
-			...responsesEnvelope("completion"),
-			output: [{
-				id: "msg-one",
-				type: "message",
-				status: "completed",
-				role: "assistant",
-				content: [],
-			}],
+			...responsesEnvelope(),
+			output: [{ ...assistantMessage(["completion"]), content: [] }],
 		},
 		{ path: ["output", 0, "content"], code: "custom" },
 	],
 	[
-		"multiple text items",
+		"blank text item",
 		{
-			...responsesEnvelope("completion"),
-			output: [{
-				id: "msg-one",
-				type: "message",
-				status: "completed",
-				role: "assistant",
-				content: [
-					{ type: "output_text", text: "one" },
-					{ type: "output_text", text: "two" },
-				],
-			}],
+			...responsesEnvelope(),
+			output: [{ ...assistantMessage(["completion"]), content: [outputTextContent("   ")] }],
 		},
-		{ path: ["output", 0, "content"], code: "custom" },
+		{ path: ["output", 0, "content", 0, "text"], code: "custom" },
+	],
+	[
+		"unknown output item",
+		{
+			...responsesEnvelope(),
+			output: [{ id: "item-one", type: "output_image", url: "https://example.com/output.png" }],
+		},
+		{ path: ["output", 0, "type"], code: "custom" },
+	],
+	[
+		"tool output item",
+		{
+			...responsesEnvelope(),
+			output: [{ id: "item-one", type: "function_call", name: "write_story" }],
+		},
+		{ path: ["output", 0, "type"], code: "custom" },
 	],
 	[
 		"multiple messages",
 		{
-			...responsesEnvelope("completion"),
+			...responsesEnvelope(),
 			output: [
-				responsesEnvelope("completion").output[0],
-				responsesEnvelope("completion").output[0],
+				assistantMessage(["completion"]),
+				reasoningItem(),
+				{ ...assistantMessage(["completion two"]), id: "msg-two" },
 			],
+		},
+		{ path: ["output"], code: "custom" },
+	],
+	[
+		"message-level tool calls",
+		{
+			...responsesEnvelope(),
+			output: [{
+				...assistantMessage(["completion"]),
+				tool_calls: [{ id: "sensitive-provider-value", type: "function" }],
+			}],
+		},
+		{ path: ["output", 0, "tool_calls"], code: "custom" },
+	],
+	[
+		"message-level legacy function call metadata",
+		{
+			...responsesEnvelope(),
+			output: [{
+				...assistantMessage(["completion"]),
+				function_call: { name: "write_story", arguments: "sensitive-provider-value" },
+			}],
+		},
+		{ path: ["output", 0, "function_call"], code: "custom" },
+	],
+	[
+		"missing message",
+		{
+			...responsesEnvelope(),
+			output: [reasoningItem()],
 		},
 		{ path: ["output"], code: "custom" },
 	],
 	[
 		"malformed usage",
 		{
-			...responsesEnvelope("completion"),
+			...responsesEnvelope(),
 			usage: { input_tokens: "sensitive-provider-value", output_tokens: 25, total_tokens: 125 },
 		},
 		{ path: ["usage", "input_tokens"], code: "invalid_type", expected: "number" },

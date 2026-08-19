@@ -204,9 +204,11 @@ profiles adapt canonical optional fields to required nullable wire fields and
 normalize returned null placeholders back to omitted application fields before
 canonical parsing. The Luna Responses profile uses `input` role preservation
 plus `text.format.type=json_schema`; it accepts only a `completed` response
-with one completed assistant message containing one nonblank `output_text`
-item, and it retains the returned unqualified response model without requiring
-equality with the routed `author/model` request id. The admitted profiles are
+whose `output` contains zero or more `reasoning` items plus exactly one
+completed assistant message with one or more nonblank `output_text` items,
+concatenated in order without separators, and it retains the returned
+unqualified response model without requiring equality with the routed
+`author/model` request id. The admitted profiles are
 `openai/gpt-5-nano`, `openai/gpt-5-mini`, `openai/gpt-5.6-luna`,
 `openai/gpt-4o`, `openai/gpt-4o-mini`, `alibaba/qwen3.5-397b-a17b`,
 `google/gemini-2.5-flash-lite`, `google/gemini-3.1-flash-lite`,
