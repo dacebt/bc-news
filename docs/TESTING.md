@@ -533,9 +533,9 @@ proves, tests of glue and framework wiring, tests to satisfy coverage.
 - Each benchmark row retains the exact production request hash, structured-output
   schema hash, loaded model context length, fixed templated input, evidence or
   draft marginal, any nonnegative provider/runtime delta, provider-reported
-  input and completion usage, total, and remaining headroom. Component sums and
-  model identity are rejecting contracts; unsupported attribution is never
-  estimated.
+  input usage, all non-input output usage including hidden reasoning, total,
+  and remaining headroom. Component sums and model identity are rejecting
+  contracts; unsupported attribution is never estimated.
 - The live recorder requires an explicit four-step eval configuration using
   only `lmstudio` or `openai_compatible_hosted` adapters and performs four
   dependent calls. It stages and validates the exact four-file

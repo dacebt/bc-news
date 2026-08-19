@@ -284,7 +284,7 @@ export function createCloudflareAiGatewayModelProvider(
 				token_usage: {
 					measurement: "reported",
 					input_tokens: usage.prompt_tokens,
-					output_tokens: usage.completion_tokens,
+					output_tokens: usage.total_tokens - usage.prompt_tokens,
 					total_tokens: usage.total_tokens,
 				},
 				external_billing: {

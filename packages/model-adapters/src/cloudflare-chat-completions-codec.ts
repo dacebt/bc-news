@@ -11,7 +11,15 @@ const UsageSchema = z.looseObject({
 	prompt_tokens: z.int().nonnegative(),
 	completion_tokens: z.int().nonnegative(),
 	total_tokens: z.int().nonnegative(),
-}).refine((usage) => usage.total_tokens === usage.prompt_tokens + usage.completion_tokens);
+}).superRefine((usage, context) => {
+	if (usage.total_tokens < usage.prompt_tokens + usage.completion_tokens) {
+		context.addIssue({
+			code: "custom",
+			path: ["total_tokens"],
+			message: "total_tokens must cover prompt_tokens plus completion_tokens",
+		});
+	}
+});
 
 const ChoiceSchema = z.looseObject({
 	message: z.looseObject({

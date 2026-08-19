@@ -1,5 +1,6 @@
 import { afterEach, expect, it, vi } from "vitest";
 import {
+	CloudflareAiGatewayDeterministicError,
 	CLOUDFLARE_AI_GATEWAY_REQUEST_TIMEOUT_MS,
 } from "../src/index";
 import {
@@ -218,6 +219,57 @@ it.each([
 		text: "completion",
 		token_usage: { measurement: "reported", input_tokens: 1, output_tokens: 1, total_tokens: 2 },
 	});
+});
+
+it("counts Gemini hidden reasoning tokens in normalized output usage", async () => {
+	vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({
+		model: "gemini-3.7-flash",
+		choices: [{ message: { content: "completion", extra_content: { provider: "metadata" } } }],
+		usage: {
+			prompt_tokens: 10,
+			completion_tokens: 5,
+			total_tokens: 18,
+			extra_properties: { provider: "metadata" },
+		},
+	}, { headers: { "cf-aig-log-id": "gateway-log-gemini" } }));
+	await expect(provider("google/gemini-3.7-flash").complete(request())).resolves.toMatchObject({
+		text: "completion",
+		provider: "google",
+		model: "gemini-3.7-flash",
+		token_usage: { measurement: "reported", input_tokens: 10, output_tokens: 8, total_tokens: 18 },
+		request_provenance: { gateway_log_id: "gateway-log-gemini" },
+	});
+});
+
+it("keeps exact-sum provider usage unchanged after normalization", async () => {
+	vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({
+		model: "gpt-4o-mini",
+		choices: [{ message: { content: "completion" } }],
+		usage: { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 },
+	}));
+	await expect(provider().complete(request())).resolves.toMatchObject({
+		text: "completion",
+		token_usage: { measurement: "reported", input_tokens: 10, output_tokens: 5, total_tokens: 15 },
+	});
+});
+
+it("rejects impossible provider totals without retaining rejected values", async () => {
+	vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({
+		model: "gemini-3.7-flash",
+		choices: [{ message: { content: "completion" } }],
+		usage: { prompt_tokens: 10, completion_tokens: 5, total_tokens: 14, sensitive: "provider-secret" },
+	}));
+	const failure = await provider("google/gemini-3.7-flash").complete(request()).catch((error: unknown) => error);
+	expect(failure).toBeInstanceOf(CloudflareAiGatewayDeterministicError);
+	if (!(failure instanceof CloudflareAiGatewayDeterministicError)) throw new Error("Expected deterministic Gateway failure");
+	expect(failure.code).toBe("cloudflare_ai_gateway_response_contract_rejected");
+	expect(failure.details?.contract).toBe("cloudflare_ai_gateway_chat_completion_response");
+	expect(failure.details?.issues).toContainEqual({
+		path: ["usage", "total_tokens"],
+		code: "custom",
+		received_type: "number",
+	});
+	expect(JSON.stringify(failure)).not.toContain("provider-secret");
 });
 
 it("accepts the Workers AI GPT-OSS Chat Completions envelope", async () => {
