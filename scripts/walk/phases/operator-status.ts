@@ -23,7 +23,9 @@ async function run(ctx: WalkContext): Promise<void> {
 		}
 		assertCompletedRecordedGenerationStatus(status, recordedResponses);
 		ctx.state.firstGenerationRunEvidence = recordedGenerationEvidence(status);
-		console.log("walk: operator status proved seven steps, four zero-external-billing recorded replays, and four ordered editorial diagnostics");
+		console.log(
+			"walk: operator status proved five steps, two zero-external-billing recorded writer replays, and writer-only editorial diagnostics",
+		);
 		return;
 	}
 	throw new Error(`generation run operator status did not reach complete within ${STATUS_TIMEOUT_MS} ms`);

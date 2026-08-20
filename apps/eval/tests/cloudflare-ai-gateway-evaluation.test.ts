@@ -6,7 +6,8 @@ import { PRODUCTION_MODEL_STEPS, type ProductionModelStep } from "@bc-news/gener
 import { RecordedModelResponseSchema } from "@bc-news/fixtures";
 import type { CloudflareHostedModelId } from "@bc-news/model-adapters";
 import { evaluateBenchmarkCommand } from "../src/evaluation-benchmark-command";
-import { V8BenchmarkRunSchema, evaluationConfigIdentity } from "../src/evaluation-artifact";
+import { V9BenchmarkRunSchema, evaluationConfigIdentity } from "../src/evaluation-artifact";
+import { TransportFailureDetailsSchema } from "../src/evaluation-artifact-schemas";
 import { formatBenchmarkRunReport } from "../src/benchmark-run-report";
 import { REPRESENTATIVE_FIXTURE_PATH } from "../src/representative-fixture";
 
@@ -35,7 +36,7 @@ function configuration(
 	};
 }
 
-test("runs Gemini Chat and Luna Responses through the Gateway contract and retains exact v8 provenance", async () => {
+test("runs Gemini Chat and Luna Responses through the Gateway contract and retains exact v9 provenance", async () => {
 	const root = await mkdtemp(join(tmpdir(), "bc-news-cloudflare-ai-gateway-evaluation-"));
 	try {
 		const configPath = join(root, "benchmark.config.json");
@@ -99,17 +100,17 @@ test("runs Gemini Chat and Luna Responses through the Gateway contract and retai
 			sourceProvenance: TEST_PROVENANCE,
 		});
 
-		expect(result.benchmark.version).toBe(8);
-		if (result.benchmark.version !== 8) throw new Error("Expected V8 Gateway benchmark");
-		expect(V8BenchmarkRunSchema.safeParse(result.benchmark).success).toBe(true);
+		expect(result.benchmark.version).toBe(9);
+		if (result.benchmark.version !== 9) throw new Error("Expected V9 Gateway benchmark");
+		expect(V9BenchmarkRunSchema.safeParse(result.benchmark).success).toBe(true);
 		expect(result.benchmark.trials).toHaveLength(2);
 		expect(result.benchmark.trials.every(({ subject_outcome }) => subject_outcome === "completed")).toBe(true);
 		expect(result.benchmark.trials.map((trial) => [...new Set(trial.invocations
 			.filter((invocation) => invocation.transport === "succeeded")
 			.map((invocation) => invocation.completion.provider))])).toEqual([["google"], ["openai"]]);
 		const captured = result.benchmark.gateway_requests.filter((record) => record.state === "captured");
-		expect(captured).toHaveLength(8);
-		expect(new Set(captured.map(({ provenance }) => provenance.gateway_log_id)).size).toBe(8);
+		expect(captured).toHaveLength(4);
+		expect(new Set(captured.map(({ provenance }) => provenance.gateway_log_id)).size).toBe(4);
 		expect(captured.every(({ provenance }) => provenance.policy.max_attempts === 1
 			&& provenance.policy.log_payload === false
 			&& provenance.correlation.run_id === result.benchmark.id)).toBe(true);
@@ -134,14 +135,14 @@ test("runs Gemini Chat and Luna Responses through the Gateway contract and retai
 		const missingCaptured = missingRequestFormat.gateway_requests.find((record) => record.state === "captured");
 		if (missingCaptured?.state !== "captured") throw new Error("Expected captured Gateway provenance");
 		delete (missingCaptured.provenance.policy as { request_format?: string }).request_format;
-		expect(V8BenchmarkRunSchema.safeParse(missingRequestFormat).success).toBe(false);
+		expect(V9BenchmarkRunSchema.safeParse(missingRequestFormat).success).toBe(false);
 		const contradictoryPolicy = structuredClone(result.benchmark);
 		const contradictoryCaptured = contradictoryPolicy.gateway_requests.find((record) =>
 			record.state === "captured" && record.provenance.requested_model === "openai/gpt-5.6-luna");
 		if (contradictoryCaptured?.state !== "captured") throw new Error("Expected captured Luna provenance");
 		contradictoryCaptured.provenance.policy.structured_output.format = "openai_chat_json_schema";
-		expect(V8BenchmarkRunSchema.safeParse(contradictoryPolicy).success).toBe(false);
-		expect(fetchCall).toHaveBeenCalledTimes(8);
+		expect(V9BenchmarkRunSchema.safeParse(contradictoryPolicy).success).toBe(false);
+		expect(fetchCall).toHaveBeenCalledTimes(4);
 		for (const [, init] of fetchCall.mock.calls) {
 			expect(init?.headers).toEqual(expect.objectContaining({
 				"cf-aig-skip-cache": "true",
@@ -156,7 +157,7 @@ test("runs Gemini Chat and Luna Responses through the Gateway contract and retai
 			identity: evaluationConfigIdentity(config),
 			config,
 		}));
-		expect(V8BenchmarkRunSchema.safeParse({
+		expect(V9BenchmarkRunSchema.safeParse({
 			...result.benchmark,
 			lifecycle: "running",
 			completed_at: null,
@@ -200,17 +201,20 @@ test("retains and reports sanitized Gateway response-contract failure locations"
 			environment: { CLOUDFLARE_ACCOUNT_ID: "account-id", CLOUDFLARE_API_TOKEN: "sentinel" },
 			sourceProvenance: TEST_PROVENANCE,
 		});
-		const retained = V8BenchmarkRunSchema.parse(JSON.parse(await readFile(result.path, "utf8")) as unknown);
+		const retained = V9BenchmarkRunSchema.parse(JSON.parse(await readFile(result.path, "utf8")) as unknown);
 		const failures = retained.trials.flatMap(({ invocations }) => invocations.filter((invocation) => invocation.transport === "failed"));
 		expect(failures).toHaveLength(2);
 		for (const invocation of failures) {
 			if (invocation.transport !== "failed") throw new Error("Expected failed invocation");
-			expect(invocation.failure.details?.issues).toContainEqual({
-				path: ["usage", "prompt_tokens"],
-				code: "invalid_type",
-				expected: "number",
-				received_type: "string",
-			});
+			const details = TransportFailureDetailsSchema.parse(invocation.failure.details);
+			expect(details.issues.some((issue) =>
+				issue.code === "invalid_type"
+				&& issue.expected === "number"
+				&& issue.received_type === "string"
+				&& issue.path.length === 2
+				&& issue.path[0] === "usage"
+				&& issue.path[1] === "prompt_tokens",
+			)).toBe(true);
 		}
 		const retainedJson = JSON.stringify(retained);
 		expect(retainedJson).not.toContain("sensitive-provider-value");
@@ -248,7 +252,7 @@ test("retains and reports the structured provider reason for a Gateway HTTP reje
 			environment: { CLOUDFLARE_ACCOUNT_ID: "account-id", CLOUDFLARE_API_TOKEN: "sentinel" },
 			sourceProvenance: TEST_PROVENANCE,
 		});
-		const retained = V8BenchmarkRunSchema.parse(JSON.parse(await readFile(result.path, "utf8")) as unknown);
+		const retained = V9BenchmarkRunSchema.parse(JSON.parse(await readFile(result.path, "utf8")) as unknown);
 		const failures = retained.trials.flatMap(({ invocations }) => invocations.filter((invocation) => invocation.transport === "failed"));
 		expect(failures).toHaveLength(2);
 		for (const invocation of failures) {
@@ -271,7 +275,7 @@ test("retains and reports the structured provider reason for a Gateway HTTP reje
 	}
 }, 15_000);
 
-test("retains null hosted content as a contract-rejected model output", async () => {
+test("rejects null hosted content before retaining a current V9 artifact", async () => {
 	const root = await mkdtemp(join(tmpdir(), "bc-news-cloudflare-null-content-"));
 	try {
 		const configPath = join(root, "benchmark.config.json");
@@ -303,48 +307,13 @@ test("retains null hosted content as a contract-rejected model output", async ()
 			}), { headers: { "cf-aig-log-id": `gateway-log-${String(ordinal)}` } }));
 		});
 
-		const result = await evaluateBenchmarkCommand({
+		await expect(evaluateBenchmarkCommand({
 			fixturePath: REPRESENTATIVE_FIXTURE_PATH,
 			configPath,
 			resultsDirectory,
 			environment: { CLOUDFLARE_ACCOUNT_ID: "account-id", CLOUDFLARE_API_TOKEN: "sentinel" },
 			sourceProvenance: TEST_PROVENANCE,
-		});
-		const retained = V8BenchmarkRunSchema.parse(JSON.parse(await readFile(result.path, "utf8")) as unknown);
-		const trial = retained.trials[0]!;
-		expect(trial.subject_outcome).toBe("contract_rejected");
-		expect(trial.tracks.main_story).toMatchObject({
-			lifecycle: "rejected",
-			subject_outcome: "contract_rejected",
-			terminal_production_step: "main_story_write",
-		});
-		expect(trial.tracks.announcements.subject_outcome).toBe("completed");
-		expect(retained.outcome_counts).toEqual({
-			completed: 0,
-			parse_rejected: 0,
-			contract_rejected: 1,
-			infrastructure_incomplete: 0,
-		});
-		const mainInvocation = trial.invocations.find(({ production_step }) => production_step === "main_story_write");
-		expect(mainInvocation).toMatchObject({
-			transport: "succeeded",
-			completion: {
-				text: null,
-				token_usage: { measurement: "reported", input_tokens: 100, output_tokens: 25, total_tokens: 125 },
-			},
-			parse: {
-				state: "rejected",
-				findings: [{ kind: "contract_mismatch", production_step: "main_story_write", code: "contract_mismatch" }],
-			},
-		});
-		expect(retained.runtime_evidence.find(({ production_step }) => production_step === "main_story_write")).toMatchObject({
-			state: "captured",
-			evidence: { prediction_observation: { stop_reason: { state: "observed", value: "length" } } },
-		});
-		expect(retained.gateway_requests.find(({ production_step }) => production_step === "main_story_write")).toMatchObject({
-			state: "captured",
-			provenance: { gateway_log_id: "gateway-log-1" },
-		});
+		})).rejects.toThrow("Both evaluation tracks failed");
 	} finally {
 		await rm(root, { recursive: true, force: true });
 	}

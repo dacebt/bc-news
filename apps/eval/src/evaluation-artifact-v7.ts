@@ -1,23 +1,27 @@
 import { z } from "zod";
-import { ModelRuntimeEvidenceSchema, PRODUCTION_MODEL_STEPS, PreparedEvidenceSchema, ProductionModelStepSchema } from "@bc-news/generation-core";
+import { ModelRuntimeEvidenceSchema, PreparedEvidenceSchema } from "@bc-news/generation-core";
 import { HostedModelAdapterConfigSchema, LmStudioAdapterConfigSchema } from "@bc-news/model-adapters";
 import {
 	EvaluationCodeProvenanceSchema,
 	EvaluationIdSchema,
 	EvaluationTimestampSchema,
-	OutputContractProvenanceSchema,
 	Sha256HashSchema,
-	StepInvocationSchema,
 	canonicallyEqual,
 	evaluationConfigIdentity,
 	sha256Json,
 } from "./evaluation-artifact-schemas";
+import {
+	LEGACY_PRODUCTION_MODEL_STEPS,
+	LegacyOutputContractProvenanceSchema,
+	LegacyProductionModelStepSchema,
+	LegacyStepInvocationSchema,
+} from "./evaluation-artifact-legacy-schemas";
 
 const RuntimeEvidenceIdentitySchema = z.strictObject({
 	trial_id: EvaluationIdSchema,
 	invocation_id: EvaluationIdSchema,
 	config_identity: EvaluationIdSchema,
-	production_step: ProductionModelStepSchema,
+	production_step: LegacyProductionModelStepSchema,
 	ordinal: z.number().int().positive(),
 });
 
@@ -78,7 +82,7 @@ const CurrentSubjectOutcomeSchema = z.enum(["completed", "parse_rejected", "cont
 const CurrentTrackStateSchema = z.strictObject({
 	lifecycle: z.enum(["pending", "running", "completed", "rejected"]),
 	subject_outcome: CurrentSubjectOutcomeSchema.nullable(),
-	terminal_production_step: ProductionModelStepSchema.nullable(),
+	terminal_production_step: LegacyProductionModelStepSchema.nullable(),
 	product: z.record(z.string(), z.unknown()).nullable(),
 	findings: z.array(CurrentDiagnosticSchema),
 });
@@ -97,7 +101,7 @@ const CurrentEvaluationTrialSchema = z.strictObject({
 		announcements_write: EvaluationIdSchema.nullable(),
 		announcements_copyedit: EvaluationIdSchema.nullable(),
 	}),
-	invocations: z.array(StepInvocationSchema),
+	invocations: z.array(LegacyStepInvocationSchema),
 });
 const CurrentOutcomeCountsSchema = z.strictObject({
 	completed: z.number().int().nonnegative(),
@@ -134,7 +138,7 @@ export const V7BenchmarkRunBaseSchema = z.strictObject({
 	}),
 	provenance: z.strictObject({
 		code: EvaluationCodeProvenanceSchema,
-		output_contracts: z.tuple([OutputContractProvenanceSchema, OutputContractProvenanceSchema, OutputContractProvenanceSchema, OutputContractProvenanceSchema]),
+		output_contracts: z.tuple([LegacyOutputContractProvenanceSchema, LegacyOutputContractProvenanceSchema, LegacyOutputContractProvenanceSchema, LegacyOutputContractProvenanceSchema]),
 	}),
 	trial_roster: z.array(TrialRosterMemberSchema).min(1),
 	trials: z.array(CurrentEvaluationTrialSchema),
@@ -206,7 +210,7 @@ function refineCurrentTrial(trial: CurrentTrial, benchmarkStartedAt: string, con
 		else context.addIssue({ ...candidate, path: [...path, ...(candidate.path ?? [])] });
 	} };
 	refineCurrentInvocationRoster(trial, benchmarkStartedAt, trialContext);
-	for (const step of PRODUCTION_MODEL_STEPS) {
+	for (const step of LEGACY_PRODUCTION_MODEL_STEPS) {
 		const selectedId = trial.selected_invocation_ids[step];
 		if (selectedId === null) continue;
 		const selected = trial.invocations.find(({ id }) => id === selectedId);
@@ -269,7 +273,7 @@ export function refineCurrentBenchmarkRun(run: CurrentBenchmarkRunCandidate, con
 		const previousTrial = run.trials[trialIndex - 1];
 		if (previousTrial?.completed_at !== null && previousTrial?.completed_at !== undefined && Date.parse(trial.started_at) < Date.parse(previousTrial.completed_at)) context.addIssue({ code: "custom", path: ["trials", trialIndex, "started_at"], message: "serial trial cannot start before its predecessor completed" });
 		refineCurrentTrial(trial, run.started_at, context, trialIndex, allowNullCompletion);
-		for (const productionStep of PRODUCTION_MODEL_STEPS) if (trial.invocations.filter(({ production_step }) => production_step === productionStep).length > run.declaration.transport_retry_limit + 1) context.addIssue({ code: "custom", path: ["trials", trialIndex, "invocations"], message: "production-step invocation count cannot exceed the declared transport retry limit" });
+		for (const productionStep of LEGACY_PRODUCTION_MODEL_STEPS) if (trial.invocations.filter(({ production_step }) => production_step === productionStep).length > run.declaration.transport_retry_limit + 1) context.addIssue({ code: "custom", path: ["trials", trialIndex, "invocations"], message: "production-step invocation count cannot exceed the declared transport retry limit" });
 		const declaration = run.declaration.configurations.find(({ identity }) => identity === trial.config_identity);
 		if (declaration === undefined) continue;
 		for (const [invocationIndex, invocation] of trial.invocations.entries()) {

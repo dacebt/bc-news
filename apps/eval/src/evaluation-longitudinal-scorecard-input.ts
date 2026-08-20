@@ -2,7 +2,10 @@ import { createHash } from "node:crypto";
 import { readFile, realpath } from "node:fs/promises";
 import { relative, resolve, sep } from "node:path";
 import { isDeepStrictEqual } from "node:util";
-import { PRODUCTION_MODEL_STEPS, type ProductionModelStep } from "@bc-news/generation-core";
+import {
+	CURRENT_PRODUCTION_MODEL_STEPS as PRODUCTION_MODEL_STEPS,
+	type CurrentProductionModelStep as ProductionModelStep,
+} from "./current-production-steps";
 import { projectLongitudinalRoleContext } from "./evaluation-longitudinal-scorecard-builder";
 import {
 	EvaluationLongitudinalDeclarationSchema,
@@ -16,7 +19,7 @@ import { EvaluationScorecardArtifactSchema, type EvaluationScorecardArtifact } f
 import { validateEvaluationScorecardArtifact } from "./evaluation-scorecard-store";
 
 const ROLE_ORDER = [...PRODUCTION_MODEL_STEPS];
-const RATE_ORDER = ["schema_reliability", "copyedit_preservation", "claim_grounding", "required_attribution", "event_coverage", "announcement_relevance"];
+const RATE_ORDER = ["schema_reliability", "claim_grounding", "required_attribution", "event_coverage", "announcement_relevance"];
 const DISTRIBUTION_ORDER = ["input_tokens", "output_tokens", "total_tokens", "application_latency_ms", "provider_time_to_first_token_ms", "provider_total_time_ms"];
 const CRITERION_ORDER = ["coherence", "usefulness", "newsworthiness", "voice"];
 const readerAttestations = new WeakMap<LoadedLongitudinalScorecard, string>();
@@ -89,7 +92,7 @@ export async function localSourceReferenceAtPath(localDataRoot: string, sourcePa
 }
 
 function validateRoleContracts(artifact: EvaluationScorecardArtifact, path: string): void {
-	if (artifact.version !== 3) fail("scorecard_source_invalid", path, "Longitudinal V3 accepts only scorecard V3 sources");
+	if (artifact.version !== 4) fail("scorecard_source_invalid", path, "Longitudinal V4 accepts only scorecard V4 sources");
 	if (!exactOrder(artifact.scorecards.map(({ production_step }) => production_step), ROLE_ORDER)) fail("longitudinal_evidence_set_mismatch", path, "Scorecard role roster changed");
 	for (const role of artifact.scorecards) {
 		if (!exactOrder(role.rates.map(({ metric }) => metric), RATE_ORDER)

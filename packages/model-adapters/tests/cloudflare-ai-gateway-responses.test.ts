@@ -28,23 +28,19 @@ function request() {
 
 const completedStory = JSON.stringify({
 	title: "The Daily",
-	subtitle: "Market report",
 	main_story: {
 		headline: "Trade moved",
 		lede: "Merchants gathered.",
 		body: "The market was active.",
-		image: { url: "https://example.com/image.png", caption: "Market", credit: null },
 	},
 });
 
 const expectedStory = {
 	title: "The Daily",
-	subtitle: "Market report",
 	main_story: {
 		headline: "Trade moved",
 		lede: "Merchants gathered.",
 		body: "The market was active.",
-		image: { url: "https://example.com/image.png", caption: "Market" },
 	},
 };
 
@@ -179,9 +175,9 @@ it.each([
 it("concatenates multipart output_text content in order", async () => {
 	vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json(
 		responsesEnvelope([assistantMessage([
-			"{\"title\":\"The Daily\",\"subtitle\":\"Market report\",",
+			"{\"title\":\"The Daily\",",
 			"\"main_story\":{\"headline\":\"Trade moved\",\"lede\":\"Merchants gathered.\",",
-			"\"body\":\"The market was active.\",\"image\":{\"url\":\"https://example.com/image.png\",\"caption\":\"Market\",\"credit\":null}}}",
+			"\"body\":\"The market was active.\"}}",
 		])]),
 		{ headers: { "cf-aig-log-id": "gateway-log-one" } },
 	));

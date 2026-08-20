@@ -31,8 +31,8 @@ test("retains retries and continues independent tracks and later trials", async 
 	await verifyEvaluationBenchmarkContinuation(root);
 	const [artifactName] = await readdir(join(root, "results"));
 	const benchmark = BenchmarkRunSchema.parse(JSON.parse(await readFile(join(root, "results", artifactName!), "utf8")) as unknown);
-	expect(benchmark.version).toBe(7);
-	if (benchmark.version !== 7) throw new Error("expected version 7 benchmark");
+	expect(benchmark.version).toBe(9);
+	if (benchmark.version !== 9) throw new Error("expected version 9 benchmark");
 
 	const prematureExhaustion = clone(benchmark);
 	const exhaustedTrial = prematureExhaustion.trials.find(({ subject_outcome }) => subject_outcome === "infrastructure_incomplete");
@@ -83,14 +83,13 @@ test("retains independent temperature choices for every LM Studio production ste
 		...independent.production_steps.main_story_write,
 		temperature: 0.7,
 	};
-	independent.production_steps.main_story_copyedit = {
-		...independent.production_steps.main_story_copyedit,
+	independent.production_steps.announcements_write = {
+		...independent.production_steps.announcements_write,
 		temperature: 0.2,
 	};
 	const parsed = EvalConfigSchema.parse(independent);
 	expect(parsed.production_steps.main_story_write).toHaveProperty("temperature", 0.7);
-	expect(parsed.production_steps.main_story_copyedit).toHaveProperty("temperature", 0.2);
-	expect(parsed.production_steps.announcements_write).not.toHaveProperty("temperature");
+	expect(parsed.production_steps.announcements_write).toHaveProperty("temperature", 0.2);
 
 	for (const invalidStep of [
 		{ ...independent.production_steps.main_story_write, temperature: 2.1 },

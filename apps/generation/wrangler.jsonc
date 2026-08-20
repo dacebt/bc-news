@@ -40,6 +40,6 @@
 	},
 	"vars": {
 		"EVIDENCE_INPUT": "d1_chat",
-		"MODEL_CONFIG": "{\"main_story_write\":{\"adapter\":\"recorded\"},\"main_story_copyedit\":{\"adapter\":\"recorded\"},\"announcements_write\":{\"adapter\":\"recorded\"},\"announcements_copyedit\":{\"adapter\":\"recorded\"}}"
+		"MODEL_CONFIG": "{\"main_story_write\":{\"adapter\":\"recorded\"},\"announcements_write\":{\"adapter\":\"recorded\"}}"
 	}
 }

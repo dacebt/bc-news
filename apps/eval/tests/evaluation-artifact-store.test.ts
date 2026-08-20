@@ -1,18 +1,29 @@
 import { readFile, readdir, unlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { expect, test } from "vitest";
-import { BenchmarkRunSchema, type BenchmarkRun } from "../src/evaluation-artifact";
+import {
+	BenchmarkRunSchema,
+	V7BenchmarkRunSchema,
+	type BenchmarkRun,
+} from "../src/evaluation-artifact";
 import { EvaluationArtifactStore, EvaluationArtifactStoreError } from "../src/evaluation-artifact-store";
-import { clone, controlledEvaluation, preservationRejectedCopyeditOutput, rejectsWithoutChangingBytes, temporaryRoot } from "./evaluation-artifact-test-support";
+import {
+	clone,
+	controlledEvaluation,
+	finalProductRejectedWriterOutput,
+	historicalV7BenchmarkRun,
+	rejectsWithoutChangingBytes,
+	temporaryRoot,
+} from "./evaluation-artifact-test-support";
 
 test("keeps pre-Gateway artifact completion content string-only", async () => {
-	const { result } = await controlledEvaluation(() => undefined);
-	expect(result.benchmark.version).toBe(7);
-	const candidate = clone(result.benchmark);
+	const historical = await historicalV7BenchmarkRun();
+	expect(historical.version).toBe(7);
+	const candidate = clone(historical);
 	const invocation = candidate.trials[0]!.invocations.find(({ transport }) => transport === "succeeded");
 	if (invocation?.transport !== "succeeded") throw new Error("Expected a successful controlled invocation");
 	invocation.completion.text = null;
-	expect(BenchmarkRunSchema.safeParse(candidate).success).toBe(false);
+	expect(V7BenchmarkRunSchema.safeParse(candidate).success).toBe(false);
 });
 
 test("retains every provider invocation on disk before observer notification", async () => {
@@ -168,9 +179,9 @@ test("rejects semantic corruption and preserves authoritative bytes after invali
 	const countContradiction = clone(result.benchmark); countContradiction.outcome_counts.completed = 0; countContradiction.outcome_counts.parse_rejected = 1; mutations.push(countContradiction);
 	const lifecycleContradiction = clone(result.benchmark); lifecycleContradiction.completed_at = null; mutations.push(lifecycleContradiction);
 	const trackContradiction = clone(result.benchmark); trackContradiction.trials[0]!.tracks.main_story.product = null; mutations.push(trackContradiction);
-	const terminalContradiction = clone(result.benchmark); terminalContradiction.trials[0]!.tracks.main_story.terminal_production_step = "announcements_copyedit"; mutations.push(terminalContradiction);
-	const findingContradiction = clone(result.benchmark); findingContradiction.trials[0]!.tracks.main_story.findings = [{ kind: "final_product", production_step: "announcements_copyedit", code: "forbidden_marker", message: "wrong track" }]; mutations.push(findingContradiction);
-	const invalidSelection = clone(result.benchmark); invalidSelection.trials[0]!.selected_invocation_ids.main_story_copyedit = "missing-invocation"; mutations.push(invalidSelection);
+	const terminalContradiction = clone(result.benchmark); terminalContradiction.trials[0]!.tracks.main_story.terminal_production_step = "announcements_write"; mutations.push(terminalContradiction);
+	const findingContradiction = clone(result.benchmark); findingContradiction.trials[0]!.tracks.main_story.findings = [{ kind: "final_product", production_step: "announcements_write", code: "forbidden_marker", message: "wrong track" }]; mutations.push(findingContradiction);
+	const invalidSelection = clone(result.benchmark); invalidSelection.trials[0]!.selected_invocation_ids.main_story_write = "missing-invocation"; mutations.push(invalidSelection);
 	const wrongDuration = clone(result.benchmark);
 	const durationInvocation = wrongDuration.trials[0]!.invocations[0]!;
 	if (durationInvocation.transport === "in_flight") throw new Error("expected ended invocation");
@@ -199,15 +210,15 @@ test("rejects semantic corruption and preserves authoritative bytes after invali
 }, 15_000);
 
 test("rejects non-schema diagnostics disguised as parse rejection", async () => {
-	const diagnosticOutput = await preservationRejectedCopyeditOutput("main_story_copyedit");
-	const { result, resultsDirectory } = await controlledEvaluation(undefined, 1, { main_story_copyedit: diagnosticOutput });
+	const diagnosticOutput = await finalProductRejectedWriterOutput("main_story_write");
+	const { result, resultsDirectory } = await controlledEvaluation(undefined, 1, { main_story_write: diagnosticOutput });
 	const path = join(resultsDirectory, "diagnostic-copy.json");
 	const store = await EvaluationArtifactStore.create(path, result.benchmark);
 	const inconsistentFinding = clone(result.benchmark);
-	const copyedit = inconsistentFinding.trials[0]!.invocations.find(({ production_step }) => production_step === "main_story_copyedit")!;
-	if (copyedit.transport !== "succeeded") throw new Error("expected succeeded copyedit");
-	copyedit.parse = { state: "rejected", findings: [{ kind: "preservation", production_step: "main_story_copyedit", code: "numeric_literal", message: "diagnostic is not a parse rejection" }] };
-	inconsistentFinding.trials[0]!.selected_invocation_ids.main_story_copyedit = null;
+	const writer = inconsistentFinding.trials[0]!.invocations.find(({ production_step }) => production_step === "main_story_write")!;
+	if (writer.transport !== "succeeded") throw new Error("expected succeeded writer");
+	writer.parse = { state: "rejected", findings: [{ kind: "final_product", production_step: "main_story_write", code: "forbidden_marker", message: "diagnostic is not a parse rejection" }] };
+	inconsistentFinding.trials[0]!.selected_invocation_ids.main_story_write = null;
 	expect(BenchmarkRunSchema.safeParse(inconsistentFinding).success).toBe(false);
 	await rejectsWithoutChangingBytes(store, path, inconsistentFinding);
 

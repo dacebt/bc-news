@@ -1,6 +1,7 @@
 import { relative } from "node:path";
-import { assembleEdition, prepareEvidence, type ProductionModelStep } from "@bc-news/generation-core";
+import { assembleEdition, prepareEvidence } from "@bc-news/generation-core";
 import { loadConfig, loadLiveEvaluationConfig, type EvalConfig } from "./config";
+import { type CurrentProductionModelStep } from "./current-production-steps";
 import { loadFixture } from "./evidence-fixture";
 import { resolveModelProvider, type ModelProviderEnvironment } from "./model-adapters";
 import { executeProductionSteps } from "./production-step-runners";
@@ -30,9 +31,9 @@ async function executeRunCommand(
 	const providers = Object.fromEntries(
 		Object.entries(config.production_steps).map(([step, adapter]) => [
 			step,
-			resolveModelProvider(step as ProductionModelStep, adapter, environment),
+			resolveModelProvider(step as CurrentProductionModelStep, adapter, environment),
 		]),
-	) as Record<ProductionModelStep, ReturnType<typeof resolveModelProvider>>;
+	) as Record<CurrentProductionModelStep, ReturnType<typeof resolveModelProvider>>;
 	const runId = generateRunId();
 	const startedAt = new Date().toISOString();
 	const execution = await executeProductionSteps(

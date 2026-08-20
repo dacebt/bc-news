@@ -2,11 +2,14 @@ import { isDeepStrictEqual } from "node:util";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { PRODUCTION_MODEL_STEPS, type ProductionModelStep } from "@bc-news/generation-core";
 import { RecordedModelResponseSchema } from "@bc-news/fixtures";
 import { REPRESENTATIVE_FIXTURE_PATH } from "./representative-fixture";
 import { evaluateBenchmarkCommand } from "./evaluation-benchmark-command";
-import { BenchmarkRunSchema, type BenchmarkRun, type V7BenchmarkRun } from "./evaluation-artifact";
+import { BenchmarkRunSchema, type BenchmarkRun, type V9BenchmarkRun } from "./evaluation-artifact";
+import {
+	CURRENT_PRODUCTION_MODEL_STEPS,
+	type CurrentProductionModelStep,
+} from "./current-production-steps";
 import { startRecordLoopbackServer } from "./record-loopback-server";
 
 const RESPONSE_DIRECTORY = new URL("../../../packages/fixtures/model-responses/", import.meta.url).pathname;
@@ -24,38 +27,38 @@ function assertProof(condition: boolean, code: string, message: string): asserts
 	if (!condition) throw new EvaluationBenchmarkVerificationError(code, message);
 }
 
-function modelFor(scenario: Scenario, step: ProductionModelStep): string { return `benchmark/${scenario}/${step}`; }
+function modelFor(scenario: Scenario, step: CurrentProductionModelStep): string { return `benchmark/${scenario}/${step}`; }
 
 function benchmarkConfig() {
 	return {
 		configurations: CONFIGURATIONS.map((scenario) => ({
-			production_steps: Object.fromEntries(PRODUCTION_MODEL_STEPS.map((step) => [step, {
+			production_steps: Object.fromEntries(CURRENT_PRODUCTION_MODEL_STEPS.map((step) => [step, {
 				adapter: "openai_compatible_hosted",
 				provider: "repository_loopback",
 				model: modelFor(scenario, step),
 				billing: { method: "calculated", input_usd_per_million_tokens: 0, output_usd_per_million_tokens: 0, pricing_reference: "repository benchmark proof" },
-			}])) as Record<ProductionModelStep, unknown>,
+			}])) as Record<CurrentProductionModelStep, unknown>,
 		})),
 		repetition_count: 1,
 		transport_retry_limit: 1,
 	};
 }
 
-async function retainedOutputs(): Promise<Record<ProductionModelStep, string>> {
-	return Object.fromEntries(await Promise.all(PRODUCTION_MODEL_STEPS.map(async (step) => {
+async function retainedOutputs(): Promise<Record<CurrentProductionModelStep, string>> {
+	return Object.fromEntries(await Promise.all(CURRENT_PRODUCTION_MODEL_STEPS.map(async (step) => {
 		const parsed = RecordedModelResponseSchema.parse(JSON.parse(await readFile(join(RESPONSE_DIRECTORY, `${step}.json`), "utf8")) as unknown);
 		return [step, parsed.text];
-	}))) as Record<ProductionModelStep, string>;
+	}))) as Record<CurrentProductionModelStep, string>;
 }
 
 function assertSnapshots(snapshots: readonly BenchmarkRun[]): void {
 	assertProof(snapshots.length > 0, "snapshots_missing", "Benchmark observer retained no incremental snapshots");
 	for (const snapshot of snapshots) assertProof(BenchmarkRunSchema.safeParse(snapshot).success, "snapshot_invalid", "An incremental benchmark snapshot failed strict parsing");
-	assertProof(snapshots.some((snapshot) => snapshot.version === 7 && snapshot.trials.some((trial) => trial.invocations.some(({ transport }) => transport === "in_flight"))), "in_flight_not_observed", "No pre-transport invocation snapshot was retained");
-	assertProof(snapshots.some((snapshot) => snapshot.version === 7 && snapshot.trials.some((trial) => trial.invocations.some((invocation) => invocation.transport === "failed" && invocation.retry_classification.state === "classified"))), "classified_failure_not_observed", "No classified failed invocation snapshot was retained");
+	assertProof(snapshots.some((snapshot) => snapshot.version === 9 && snapshot.trials.some((trial) => trial.invocations.some(({ transport }) => transport === "in_flight"))), "in_flight_not_observed", "No pre-transport invocation snapshot was retained");
+	assertProof(snapshots.some((snapshot) => snapshot.version === 9 && snapshot.trials.some((trial) => trial.invocations.some((invocation) => invocation.transport === "failed" && invocation.retry_classification.state === "classified"))), "classified_failure_not_observed", "No classified failed invocation snapshot was retained");
 }
 
-function assertFinalBenchmark(benchmark: V7BenchmarkRun): void {
+function assertFinalBenchmark(benchmark: V9BenchmarkRun): void {
 	assertProof(benchmark.lifecycle === "complete" && benchmark.harness_outcome === "retained", "benchmark_not_retained", "Serial benchmark did not close as retained");
 	assertProof(benchmark.trials.length === CONFIGURATIONS.length, "later_trials_missing", "Serial benchmark did not retain every declared trial");
 	assertProof(isDeepStrictEqual(benchmark.trial_roster.map(({ trial_id, config_identity, repetition }) => ({ trial_id, config_identity, repetition })), benchmark.trials.map(({ id, config_identity, repetition }) => ({ trial_id: id, config_identity, repetition }))), "roster_order_mismatch", "Retained trials did not follow the exact roster order");
@@ -78,6 +81,7 @@ function assertFinalBenchmark(benchmark: V7BenchmarkRun): void {
 	assertProof(rejectedTrial.subject_outcome === "parse_rejected", "model_rejection_missing", "Model-level invalid JSON was not retained as a rejected trial");
 	assertProof(laterTrial.subject_outcome === "completed", "later_trial_not_completed", "A later declared trial did not run to completion after prior failures");
 	assertProof(benchmark.outcome_counts.completed === 2 && benchmark.outcome_counts.infrastructure_incomplete === 1 && benchmark.outcome_counts.parse_rejected === 1, "outcome_counts_mismatch", "Benchmark outcome counts did not match retained trials");
+	assertProof(benchmark.gateway_requests.length === benchmark.runtime_evidence.length, "gateway_roster_mismatch", "Current benchmark did not retain one Gateway request observation per invocation");
 }
 
 export async function verifyEvaluationBenchmarkContinuation(temporaryRoot?: string): Promise<void> {
@@ -87,7 +91,7 @@ export async function verifyEvaluationBenchmarkContinuation(temporaryRoot?: stri
 	const resultsDirectory = join(root, "results");
 	await writeFile(configPath, `${JSON.stringify(benchmarkConfig(), null, 2)}\n`, "utf8");
 	const outputs = await retainedOutputs();
-	const outputByModel = Object.fromEntries(CONFIGURATIONS.flatMap((scenario) => PRODUCTION_MODEL_STEPS.map((step) => [modelFor(scenario, step), scenario === "model_rejected" && step === "main_story_write" ? "not json" : outputs[step]])));
+	const outputByModel = Object.fromEntries(CONFIGURATIONS.flatMap((scenario) => CURRENT_PRODUCTION_MODEL_STEPS.map((step) => [modelFor(scenario, step), scenario === "model_rejected" && step === "main_story_write" ? "not json" : outputs[step]])));
 	const transientModel = modelFor("retry_success", "main_story_write");
 	const exhaustedModel = modelFor("provider_exhausted", "main_story_write");
 	const server = await startRecordLoopbackServer(outputByModel, {
@@ -104,11 +108,11 @@ export async function verifyEvaluationBenchmarkContinuation(temporaryRoot?: stri
 			sourceProvenance: TEST_PROVENANCE,
 			artifactObserver: (artifact) => { snapshots.push(structuredClone(artifact)); },
 		});
-		assertProof(result.benchmark.version === 7, "unexpected_artifact_version", "Non-Gateway benchmark proof must remain V7");
+		assertProof(result.benchmark.version === 9, "unexpected_artifact_version", "Current benchmark proof did not retain V9 artifacts");
 		assertSnapshots(snapshots);
 		assertFinalBenchmark(result.benchmark);
 		const retained = BenchmarkRunSchema.parse(JSON.parse(await readFile(result.path, "utf8")) as unknown);
-		assertProof(retained.version === 7 && isDeepStrictEqual(retained, result.benchmark), "retained_artifact_mismatch", "Returned benchmark did not equal its retained artifact");
+		assertProof(retained.version === 9 && isDeepStrictEqual(retained, result.benchmark), "retained_artifact_mismatch", "Returned benchmark did not equal its retained artifact");
 	} finally {
 		await server.close();
 		if (temporaryRoot === undefined) await rm(root, { recursive: true, force: true });

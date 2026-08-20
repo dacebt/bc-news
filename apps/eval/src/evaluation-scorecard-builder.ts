@@ -1,12 +1,12 @@
 import { isDeepStrictEqual } from "node:util";
-import { PRODUCTION_MODEL_STEPS, type ModelExecutionContext, type ProductionModelStep } from "@bc-news/generation-core";
+import { type ModelExecutionContext } from "@bc-news/generation-core";
 import { canonical, sha256Json } from "./evaluation-artifact-schemas";
+import { CURRENT_PRODUCTION_MODEL_STEPS, type CurrentProductionModelStep } from "./current-production-steps";
 import { EvaluationScorecardArtifactSchema, EvaluationScorecardError, type EvaluationRoleScorecard, type EvaluationScorecardArtifact, type ScorecardContext } from "./evaluation-scorecard";
 import { validateLoadedEvaluationScorecardInput, type LoadedEvaluationScorecardInput, type ScorecardBenchmarkRun } from "./evaluation-scorecard-input";
 
 const RATE_DEFINITIONS = [
 	["schema_reliability", "terminal_provider_success_invocation"],
-	["copyedit_preservation", "parse_success_copyedit_output"],
 	["claim_grounding", "codex_annotated_factual_claim"],
 	["required_attribution", "codex_annotated_required_attribution_claim"],
 	["event_coverage", "source_event_output_pair"],
@@ -17,15 +17,14 @@ const CRITERIA = ["coherence", "usefulness", "newsworthiness", "voice"] as const
 const Z95 = 1.959963984540054;
 
 function fail(code: EvaluationScorecardError["code"], path: string, message: string): never { throw new EvaluationScorecardError(code, path, message); }
-function track(step: ProductionModelStep): "main_story" | "announcements" { return step.startsWith("main_story") ? "main_story" : "announcements"; }
 
-function roleEvidence(input: LoadedEvaluationScorecardInput, step: ProductionModelStep) {
+function roleEvidence(input: LoadedEvaluationScorecardInput, step: CurrentProductionModelStep) {
 	return input.runs.flatMap((loaded) => loaded.run.trials
 		.filter(({ config_identity }) => config_identity === input.declaration.configuration_identity)
 		.map((trial) => ({ loaded, trial, invocations: trial.invocations.filter(({ production_step }) => production_step === step) })));
 }
 
-function contextFor(input: LoadedEvaluationScorecardInput, step: ProductionModelStep): ScorecardContext {
+function contextFor(input: LoadedEvaluationScorecardInput, step: CurrentProductionModelStep): ScorecardContext {
 	const evidence = roleEvidence(input, step); const captured: ModelExecutionContext[] = [];
 	for (const { loaded, invocations } of evidence) for (const invocation of invocations) {
 		if (invocation.transport !== "succeeded") continue;
@@ -46,20 +45,17 @@ function contextFor(input: LoadedEvaluationScorecardInput, step: ProductionModel
 		adapter: config.production_steps[step],
 		declared_transport_retry_limit: firstRun.declaration.transport_retry_limit,
 		request_hashes: evidence.flatMap(({ loaded, trial, invocations }) => invocations.map(({ request_sha256 }) => ({ run_id: loaded.run.id, trial_id: trial.id, request_sha256 }))),
-		...(firstRun.version === 8 ? {
-			gateway_request_hashes: evidence.flatMap(({ loaded, trial, invocations }) => invocations.map((invocation) => {
-				if (loaded.run.version !== 8) fail("unsupported_benchmark_version", loaded.run.id, "Scorecard context cannot mix Benchmark Run versions");
-				const gatewayRequest = loaded.run.gateway_requests.find(({ invocation_id }) => invocation_id === invocation.id);
-				if (gatewayRequest === undefined) fail("output_identity_mismatch", loaded.run.id, `Missing Gateway-request evidence for ${invocation.id}`);
-				return { run_id: loaded.run.id, trial_id: trial.id, invocation_id: invocation.id, gateway_request_sha256: sha256Json(canonical(gatewayRequest)) };
-			})),
-		} : {}),
+		gateway_request_hashes: evidence.flatMap(({ loaded, trial, invocations }) => invocations.map((invocation) => {
+			const gatewayRequest = loaded.run.gateway_requests.find(({ invocation_id }) => invocation_id === invocation.id);
+			if (gatewayRequest === undefined) fail("output_identity_mismatch", loaded.run.id, `Missing Gateway-request evidence for ${invocation.id}`);
+			return { run_id: loaded.run.id, trial_id: trial.id, invocation_id: invocation.id, gateway_request_sha256: sha256Json(canonical(gatewayRequest)) };
+		})),
 		execution_context: captured[0]!,
 	};
 	return { state: "identified", identity: `context-${sha256Json(canonical(projection))}`, projection };
 }
 
-function counts(input: LoadedEvaluationScorecardInput, step: ProductionModelStep) {
+function counts(input: LoadedEvaluationScorecardInput, step: CurrentProductionModelStep) {
 	const evidence = roleEvidence(input, step); let reached = 0; let attempts = 0; let initial = 0; let retries = 0; let failed = 0; let succeeded = 0; let parsed = 0; let rejected = 0;
 	for (const { loaded, invocations } of evidence) {
 		if (invocations.length > 0) reached += 1;
@@ -91,21 +87,19 @@ function rate(metric: typeof RATE_DEFINITIONS[number][0], denominator_unit: type
 	return { state: "measured" as const, metric, unit: "ratio" as const, denominator_unit, scorecard_context: context, numerator, denominator, sample_count: denominator, value: numerator / denominator, interval: wilson(numerator, denominator) };
 }
 
-function rates(input: LoadedEvaluationScorecardInput, step: ProductionModelStep, context: ScorecardContext) {
+function rates(input: LoadedEvaluationScorecardInput, step: CurrentProductionModelStep, context: ScorecardContext) {
 	const evidence = roleEvidence(input, step); const annotations = input.annotations.outputs.filter(({ output }) => output.production_step === step);
 	const successes = evidence.flatMap(({ invocations }) => invocations).filter(({ transport }) => transport === "succeeded");
-	const copyedit = step.endsWith("copyedit"); const announcement = step.startsWith("announcements");
-	const preservationNumerator = copyedit ? input.selectedOutputs.filter(({ identity }) => identity.production_step === step).filter(({ trial }) => !trial.tracks[track(step)].findings.some(({ kind, production_step }) => kind === "preservation" && production_step === step)).length : 0;
+	const announcement = step === "announcements_write";
 	const claims = annotations.flatMap(({ factual_claims }) => factual_claims); const required = claims.filter(({ attribution_requirement }) => attribution_requirement === "required");
 	const events = annotations.flatMap(({ event_coverage }) => event_coverage);
 	const announcements = annotations.flatMap((annotation) => annotation.announcement_relevance.state === "assessed" ? annotation.announcement_relevance.announcements : []);
 	return [
 		rate(...RATE_DEFINITIONS[0], context, successes.filter(({ parse }) => parse.state === "succeeded").length, successes.length),
-		rate(...RATE_DEFINITIONS[1], context, preservationNumerator, copyedit ? input.selectedOutputs.filter(({ identity }) => identity.production_step === step).length : 0, copyedit ? undefined : "role_not_applicable"),
-		rate(...RATE_DEFINITIONS[2], context, claims.filter(({ grounding }) => grounding === "grounded").length, claims.length),
-		rate(...RATE_DEFINITIONS[3], context, required.filter(({ attribution }) => attribution === "present").length, required.length),
-		rate(...RATE_DEFINITIONS[4], context, events.filter(({ assessment }) => assessment === "covered").length, events.length),
-		rate(...RATE_DEFINITIONS[5], context, announcements.filter(({ assessment }) => assessment === "relevant").length, announcement ? announcements.length : 0, announcement ? undefined : "role_not_applicable"),
+		rate(...RATE_DEFINITIONS[1], context, claims.filter(({ grounding }) => grounding === "grounded").length, claims.length),
+		rate(...RATE_DEFINITIONS[2], context, required.filter(({ attribution }) => attribution === "present").length, required.length),
+		rate(...RATE_DEFINITIONS[3], context, events.filter(({ assessment }) => assessment === "covered").length, events.length),
+		rate(...RATE_DEFINITIONS[4], context, announcements.filter(({ assessment }) => assessment === "relevant").length, announcement ? announcements.length : 0, announcement ? undefined : "role_not_applicable"),
 	];
 }
 
@@ -117,7 +111,7 @@ function distribution(metric: typeof DISTRIBUTIONS[number], context: ScorecardCo
 	return { metric, unit: metric.includes("tokens") ? "tokens" as const : "milliseconds" as const, scorecard_context: context, sample_count: candidates.length, observed_sample_count: samples.length, unavailable_sample_count: candidates.length - samples.length, samples, summary };
 }
 
-function distributions(input: LoadedEvaluationScorecardInput, step: ProductionModelStep, context: ScorecardContext) {
+function distributions(input: LoadedEvaluationScorecardInput, step: CurrentProductionModelStep, context: ScorecardContext) {
 	const attempts = roleEvidence(input, step).flatMap(({ loaded, trial, invocations }) => invocations.map((invocation) => ({ loaded, trial, invocation })));
 	const completions = attempts.filter(({ invocation }) => invocation.transport === "succeeded");
 	const captured = completions.map((item) => ({ ...item, runtime: item.loaded.run.runtime_evidence.find(({ invocation_id }) => invocation_id === item.invocation.id) })).filter((item): item is typeof item & { runtime: Extract<ScorecardBenchmarkRun["runtime_evidence"][number], { state: "captured" }> } => item.runtime?.state === "captured");
@@ -127,7 +121,7 @@ function distributions(input: LoadedEvaluationScorecardInput, step: ProductionMo
 	return [distribution(DISTRIBUTIONS[0], context, token("input_tokens")), distribution(DISTRIBUTIONS[1], context, token("output_tokens")), distribution(DISTRIBUTIONS[2], context, token("total_tokens")), distribution(DISTRIBUTIONS[3], context, attempts.map((item) => ({ identity: identity(item), value: item.invocation.transport === "in_flight" ? undefined : item.invocation.duration_ms }))), distribution(DISTRIBUTIONS[4], context, timing("time_to_first_token_ms")), distribution(DISTRIBUTIONS[5], context, timing("total_time_ms"))];
 }
 
-function qualitative(input: LoadedEvaluationScorecardInput, step: ProductionModelStep, context: ScorecardContext) {
+function qualitative(input: LoadedEvaluationScorecardInput, step: CurrentProductionModelStep, context: ScorecardContext) {
 	const reviews = input.reviews.reviews.filter(({ output }) => output.production_step === step);
 	return CRITERIA.map((criterion, criterionIndex) => {
 		const evidence = reviews.map((review) => {
@@ -138,7 +132,7 @@ function qualitative(input: LoadedEvaluationScorecardInput, step: ProductionMode
 	});
 }
 
-function roleScorecard(input: LoadedEvaluationScorecardInput, step: ProductionModelStep): EvaluationRoleScorecard {
+function roleScorecard(input: LoadedEvaluationScorecardInput, step: CurrentProductionModelStep): EvaluationRoleScorecard {
 	const config = input.runs[0]?.run.declaration.configurations.find(({ identity }) => identity === input.declaration.configuration_identity)?.config;
 	if (config === undefined) fail("configuration_mismatch", input.declarationPath, "Selected configuration is missing");
 	const context = contextFor(input, step);
@@ -152,7 +146,7 @@ export function buildEvaluationScorecard(input: LoadedEvaluationScorecardInput, 
 	const firstRun = input.runs[0]?.run; const config = firstRun?.declaration.configurations.find(({ identity }) => identity === input.declaration.configuration_identity)?.config;
 	if (firstRun === undefined || config === undefined) fail("configuration_mismatch", input.declarationPath, "Selected configuration is missing");
 	const candidate = {
-		version: 3 as const,
+		version: 4 as const,
 		id: options.id,
 		created_at: options.createdAt,
 		source_reference: input.sourceReference,
@@ -164,17 +158,18 @@ export function buildEvaluationScorecard(input: LoadedEvaluationScorecardInput, 
 				ordinal: declaration.ordinal,
 				corpus_fixture_id: declaration.corpus_fixture_id,
 				benchmark_run_id: run.id,
-				...(run.version === 8 ? { benchmark_run_version: 8 as const, gateway_request_sha256s: run.gateway_requests.map((record) => sha256Json(canonical(record))) } : {}),
+				benchmark_run_version: 9 as const,
 				source_reference: sourceReference,
 				code_commit_sha: run.provenance.code.commit_sha,
 				prepared_evidence_identity_sha256: run.prepared_evidence.identity_sha256,
 				output_contract_sha256s: run.provenance.output_contracts.map(({ schema_sha256 }) => schema_sha256),
 				transport_retry_limit: run.declaration.transport_retry_limit,
+				gateway_request_sha256s: run.gateway_requests.map((record) => sha256Json(canonical(record))),
 			})),
-			annotations: { source_reference: input.declaration.annotations.source_reference, bundle_id: input.annotations.id, protocol_id: input.annotations.protocol.id, annotator_id: input.annotations.annotator.id, annotator_kind: input.annotations.annotator.kind, annotated_at: input.annotations.annotated_at },
-			qualitative_reviews: { source_reference: input.declaration.qualitative_reviews.source_reference, bundle_id: input.reviews.id, rubric_id: input.reviews.rubric.id, reviewer_id: input.reviews.reviewer.id, reviewer_kind: input.reviews.reviewer.kind, reviewed_at: input.reviews.reviewed_at },
+			annotations: { source_reference: input.declaration.annotations.source_reference, bundle_id: input.annotations.id, protocol_id: input.annotations.protocol.id, protocol_version: input.annotations.protocol.version, annotator_id: input.annotations.annotator.id, annotator_kind: input.annotations.annotator.kind, annotated_at: input.annotations.annotated_at },
+			qualitative_reviews: { source_reference: input.declaration.qualitative_reviews.source_reference, bundle_id: input.reviews.id, rubric_id: input.reviews.rubric.id, rubric_version: input.reviews.rubric.version, reviewer_id: input.reviews.reviewer.id, reviewer_kind: input.reviews.reviewer.kind, reviewed_at: input.reviews.reviewed_at },
 		},
-		scorecards: PRODUCTION_MODEL_STEPS.map((step) => roleScorecard(input, step)),
+		scorecards: CURRENT_PRODUCTION_MODEL_STEPS.map((step) => roleScorecard(input, step)),
 	};
 	const result = EvaluationScorecardArtifactSchema.safeParse(candidate);
 	if (!result.success) fail("artifact_tampered", input.declarationPath, `Built scorecard violated its contract: ${result.error.message}`);

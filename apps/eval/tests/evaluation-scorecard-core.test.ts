@@ -2,12 +2,16 @@ import { expect, test } from "vitest";
 import {
 	AnnotationBundleSchema,
 	AnnotationBundleV1Schema,
+	AnnotationBundleV2Schema,
 	EvaluationScorecardArtifactSchema,
 	EvaluationScorecardArtifactV1Schema,
 	EvaluationScorecardArtifactV2Schema,
 	EvaluationScorecardDeclarationSchema,
 	EvaluationScorecardDeclarationV2Schema,
+	EvaluationScorecardDeclarationV3Schema,
 	OutputIdentitySchema,
+	OutputIdentityV2Schema,
+	OutputIdentityV3Schema,
 	QualitativeReviewBundleSchema,
 } from "../src/evaluation-scorecard";
 import { EvaluationReferenceManifestSchema, EvaluationReferenceManifestV3Schema } from "../src/evaluation-reference-corpus";
@@ -29,9 +33,10 @@ test("keeps historical human evidence frozen while current evidence is Codex-aut
 	const historical = { version: 1, protocol: { id: "bc-news-output-annotation", version: 1 }, annotator: { id: "editor", kind: "human" }, annotated_at: "2026-08-10T12:00:00.000Z", outputs: [] };
 	expect(AnnotationBundleV1Schema.safeParse(historical).success).toBe(true);
 	expect(AnnotationBundleSchema.safeParse(historical).success).toBe(false);
-	const current = { version: 2, id: "annotations-one", protocol: { id: "bc-news-output-annotation", version: 2 }, annotator: { id: "codex", kind: "codex" }, annotated_at: "2026-08-10T12:00:00.000Z", outputs: [] };
+	expect(AnnotationBundleV2Schema.safeParse({ version: 2, id: "annotations-two", protocol: { id: "bc-news-output-annotation", version: 2 }, annotator: { id: "codex", kind: "codex" }, annotated_at: "2026-08-10T12:00:00.000Z", outputs: [] }).success).toBe(true);
+	const current = { version: 3, id: "annotations-one", protocol: { id: "bc-news-output-annotation", version: 3 }, annotator: { id: "codex", kind: "codex" }, annotated_at: "2026-08-10T12:00:00.000Z", outputs: [] };
 	expect(AnnotationBundleSchema.safeParse(current).success).toBe(true);
-	expect(QualitativeReviewBundleSchema.safeParse({ version: 2, id: "reviews-one", rubric: { id: "bc-news-editorial-qualitative", version: 2 }, reviewer: { id: "codex", kind: "codex" }, reviewed_at: "2026-08-10T12:00:00.000Z", reviews: [] }).success).toBe(true);
+	expect(QualitativeReviewBundleSchema.safeParse({ version: 3, id: "reviews-one", rubric: { id: "bc-news-editorial-qualitative", version: 3 }, reviewer: { id: "codex", kind: "codex" }, reviewed_at: "2026-08-10T12:00:00.000Z", reviews: [] }).success).toBe(true);
 });
 
 test("keeps repository references strict for historical V2 scorecards", () => {
@@ -41,33 +46,37 @@ test("keeps repository references strict for historical V2 scorecards", () => {
 });
 
 test("current output identities retain semantic hashes but no recursive source hashes", () => {
-	const parsed = OutputIdentitySchema.parse(outputIdentity());
+	const parsed = OutputIdentitySchema.parse({ ...outputIdentity(), benchmark_run_version: 9, gateway_request_sha256: HASH });
 	expect(parsed.request_sha256).toBe(HASH);
 	expect(parsed).not.toHaveProperty("benchmark_run_sha256");
 	expect(parsed).not.toHaveProperty("fixture_sha256");
 	expect(parsed).not.toHaveProperty("reference_sha256");
 });
 
-test("version 8 output identities require exact Gateway-request evidence", () => {
-	const gatewayIdentity = { ...outputIdentity(), benchmark_run_version: 8, gateway_request_sha256: HASH };
-	expect(OutputIdentitySchema.safeParse(gatewayIdentity).success).toBe(true);
-	expect(OutputIdentitySchema.safeParse({ ...outputIdentity(), benchmark_run_version: 8 }).success).toBe(false);
-	expect(OutputIdentitySchema.safeParse({ ...outputIdentity(), gateway_request_sha256: HASH }).success).toBe(false);
+test("historical output identities stay frozen while current output identities require V9 Gateway evidence", () => {
+	expect(OutputIdentityV2Schema.safeParse({ ...outputIdentity(), benchmark_run_version: 8, gateway_request_sha256: HASH }).success).toBe(true);
+	expect(OutputIdentityV3Schema.safeParse({ ...outputIdentity(), benchmark_run_version: 8, gateway_request_sha256: HASH }).success).toBe(true);
+	expect(OutputIdentitySchema.safeParse({ ...outputIdentity(), benchmark_run_version: 9, gateway_request_sha256: HASH }).success).toBe(true);
+	expect(OutputIdentitySchema.safeParse({ ...outputIdentity(), benchmark_run_version: 9 }).success).toBe(false);
+	expect(OutputIdentitySchema.safeParse({ ...outputIdentity(), benchmark_run_version: 8, gateway_request_sha256: HASH }).success).toBe(false);
 });
 
-test("keeps V2 and V3 scorecard declarations separate", () => {
+test("keeps V2 and V3 historical declarations separate from the current V4 declaration", () => {
 	const v2 = { version: 2, id: "scorecard-input", corpus: { manifest_path: "packages/fixtures/evaluation-corpus/manifest.json" }, configuration_identity: "config-one", runs: [{ ordinal: 1, corpus_fixture_id: "fixture-one", benchmark_run_id: "benchmark-one", path: "evidence/benchmark-one.json" }], annotations: { path: "evidence/annotations.json", bundle_id: "annotations-one" }, qualitative_reviews: { path: "evidence/reviews.json", bundle_id: "reviews-one" } };
 	const v3 = { version: 3, id: "scorecard-input", corpus: { source_reference: { path: "apps/eval/local-data/manifest.json", sha256: HASH } }, configuration_identity: "config-one", runs: [{ ordinal: 1, corpus_fixture_id: "fixture-one", benchmark_run_id: "benchmark-one", source_reference: { path: "apps/eval/local-data/benchmark-one.json", sha256: HASH } }], annotations: { source_reference: { path: "apps/eval/local-data/annotations.json", sha256: HASH }, bundle_id: "annotations-one" }, qualitative_reviews: { source_reference: { path: "apps/eval/local-data/reviews.json", sha256: HASH }, bundle_id: "reviews-one" } };
+	const v4 = { version: 4, id: "scorecard-input", corpus: { source_reference: { path: "apps/eval/local-data/manifest.json", sha256: HASH } }, configuration_identity: "config-one", runs: [{ ordinal: 1, corpus_fixture_id: "fixture-one", benchmark_run_id: "benchmark-one", source_reference: { path: "apps/eval/local-data/benchmark-one.json", sha256: HASH } }], annotations: { source_reference: { path: "apps/eval/local-data/annotations.json", sha256: HASH }, bundle_id: "annotations-one" }, qualitative_reviews: { source_reference: { path: "apps/eval/local-data/reviews.json", sha256: HASH }, bundle_id: "reviews-one" } };
 	expect(EvaluationScorecardDeclarationV2Schema.safeParse(v2).success).toBe(true);
+	expect(EvaluationScorecardDeclarationV3Schema.safeParse(v3).success).toBe(true);
+	expect(EvaluationScorecardDeclarationSchema.safeParse(v3).success).toBe(false);
+	expect(EvaluationScorecardDeclarationSchema.safeParse(v4).success).toBe(true);
 	expect(EvaluationScorecardDeclarationSchema.safeParse(v2).success).toBe(false);
-	expect(EvaluationScorecardDeclarationSchema.safeParse(v3).success).toBe(true);
 });
 
 test("current declaration and artifact reject recursive byte ownership fields", () => {
-	const declaration = { version: 3, id: "scorecard-input", corpus: { source_reference: { path: "apps/eval/local-data/manifest.json", sha256: HASH } }, configuration_identity: "config-one", runs: [{ ordinal: 1, corpus_fixture_id: "fixture-one", benchmark_run_id: "benchmark-one", source_reference: { path: "apps/eval/local-data/benchmark-one.json", sha256: HASH } }], annotations: { source_reference: { path: "apps/eval/local-data/annotations.json", sha256: HASH }, bundle_id: "annotations-one" }, qualitative_reviews: { source_reference: { path: "apps/eval/local-data/reviews.json", sha256: HASH }, bundle_id: "reviews-one" } };
+	const declaration = { version: 4, id: "scorecard-input", corpus: { source_reference: { path: "apps/eval/local-data/manifest.json", sha256: HASH } }, configuration_identity: "config-one", runs: [{ ordinal: 1, corpus_fixture_id: "fixture-one", benchmark_run_id: "benchmark-one", source_reference: { path: "apps/eval/local-data/benchmark-one.json", sha256: HASH } }], annotations: { source_reference: { path: "apps/eval/local-data/annotations.json", sha256: HASH }, bundle_id: "annotations-one" }, qualitative_reviews: { source_reference: { path: "apps/eval/local-data/reviews.json", sha256: HASH }, bundle_id: "reviews-one" } };
 	expect(EvaluationScorecardDeclarationSchema.safeParse(declaration).success).toBe(true);
 	expect(EvaluationScorecardDeclarationSchema.safeParse({ ...declaration, declaration_sha256: HASH }).success).toBe(false);
-	expect(EvaluationScorecardArtifactSchema.safeParse({ version: 3, id: "scorecard-one", source_payloads: {} }).success).toBe(false);
+	expect(EvaluationScorecardArtifactSchema.safeParse({ version: 4, id: "scorecard-one", source_payloads: {} }).success).toBe(false);
 	expect(EvaluationScorecardArtifactV2Schema.safeParse({ version: 3, id: "scorecard-one", source_reference: LOCAL_SOURCE, corpus: { id: "corpus-one", fixture_count: 1, source_reference: LOCAL_SOURCE }, configuration: { identity: "config-one", exact_config: {} }, repetition_count: 1, sources: {}, scorecards: [] }).success).toBe(false);
 	expect(EvaluationScorecardArtifactV1Schema.safeParse({ version: 2, id: "scorecard-one", source_payloads: {} }).success).toBe(false);
 });

@@ -3,11 +3,13 @@ import { z } from "zod";
 import {
 	ExternalBillingSchema,
 	PreparedEvidenceSchema,
-	ProductionModelStepSchema,
 	TokenUsageSchema,
-	type ProductionModelStep,
 } from "@bc-news/generation-core";
 import { EvalConfigSchema } from "./config";
+import {
+	CurrentProductionModelStepSchema,
+	type CurrentProductionModelStep,
+} from "./current-production-steps";
 
 export const EvaluationTimestampSchema = z.iso.datetime({ offset: true });
 export const EvaluationIdSchema = z.string().regex(/^[A-Za-z0-9][A-Za-z0-9_-]{0,199}$/u);
@@ -32,20 +34,20 @@ export function canonicallyEqual(left: unknown, right: unknown): boolean {
 }
 
 export function evaluationConfigIdentity(config: {
-	readonly production_steps: Record<ProductionModelStep, object>;
+	readonly production_steps: Record<CurrentProductionModelStep, object>;
 }): string {
 	return `config-${sha256Json(config)}`;
 }
 
 export const EvaluationFindingSchema = z.strictObject({
 	kind: z.enum(["invalid_json", "contract_mismatch", "preservation", "final_product"]),
-	production_step: ProductionModelStepSchema,
+	production_step: CurrentProductionModelStepSchema,
 	code: z.string().min(1),
 	message: z.string().min(1),
 });
 
 const RetainedRequestSchema = z.strictObject({
-	production_step: ProductionModelStepSchema,
+	production_step: CurrentProductionModelStepSchema,
 	system: z.string(),
 	user: z.string(),
 });
@@ -82,7 +84,7 @@ export type TransportFailureDetails = z.infer<typeof TransportFailureDetailsSche
 
 const InvocationBase = {
 	id: EvaluationIdSchema,
-	production_step: ProductionModelStepSchema,
+	production_step: CurrentProductionModelStepSchema,
 	config_identity: EvaluationIdSchema,
 	ordinal: z.number().int().positive(),
 	predecessor_invocation_id: EvaluationIdSchema.nullable(),
@@ -126,14 +128,14 @@ export const SubjectOutcomeSchema = z.enum(["completed", "parse_rejected", "cont
 const TrackStateSchema = z.strictObject({
 	lifecycle: z.enum(["pending", "running", "completed", "rejected"]),
 	subject_outcome: SubjectOutcomeSchema.nullable(),
-	terminal_production_step: ProductionModelStepSchema.nullable(),
+	terminal_production_step: CurrentProductionModelStepSchema.nullable(),
 	product: z.record(z.string(), z.unknown()).nullable(),
 	findings: z.array(EvaluationFindingSchema),
 });
 
 const SelectedInvocationIdsSchema = z.strictObject({
-	main_story_write: EvaluationIdSchema.nullable(), main_story_copyedit: EvaluationIdSchema.nullable(),
-	announcements_write: EvaluationIdSchema.nullable(), announcements_copyedit: EvaluationIdSchema.nullable(),
+	main_story_write: EvaluationIdSchema.nullable(),
+	announcements_write: EvaluationIdSchema.nullable(),
 });
 
 export const EvaluationTrialSchema = z.strictObject({
@@ -157,7 +159,7 @@ export const EvaluationCodeProvenanceSchema = z.strictObject({
 });
 
 export const OutputContractProvenanceSchema = z.strictObject({
-	production_step: ProductionModelStepSchema, canonical_schema: z.json(), schema_sha256: Sha256HashSchema,
+	production_step: CurrentProductionModelStepSchema, canonical_schema: z.json(), schema_sha256: Sha256HashSchema,
 });
 
 export const BenchmarkRunBaseSchema = z.strictObject({
@@ -173,7 +175,7 @@ export const BenchmarkRunBaseSchema = z.strictObject({
 		final_count: z.number().int().nonnegative(),
 		snapshot: PreparedEvidenceSchema,
 	}),
-	provenance: z.strictObject({ code: EvaluationCodeProvenanceSchema, output_contracts: z.tuple([OutputContractProvenanceSchema, OutputContractProvenanceSchema, OutputContractProvenanceSchema, OutputContractProvenanceSchema]) }),
+	provenance: z.strictObject({ code: EvaluationCodeProvenanceSchema, output_contracts: z.tuple([OutputContractProvenanceSchema, OutputContractProvenanceSchema]) }),
 	trial_roster: z.tuple([z.strictObject({ trial_id: EvaluationIdSchema, config_identity: EvaluationIdSchema, repetition: z.literal(1) })]),
 	trials: z.array(EvaluationTrialSchema).length(1), outcome_counts: SubjectOutcomeCountsSchema,
 	harness_outcome: z.enum(["pending", "retained"]),

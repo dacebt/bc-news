@@ -1,10 +1,9 @@
 import { z } from "zod";
 import { AnnouncementSchema } from "@bc-news/contracts";
-import { copyeditPreservationDiagnosticsForTextFields } from "./copyedit-preservation";
-import type { EditorialDiagnostic } from "./editorial-diagnostics";
 import { EditorialOutputContractError } from "./main-story";
+import { normalizeDecodedOutputStrings } from "./output-normalization";
 import type { PreparedEvidence } from "./prepared-evidence";
-import { fenceUntrustedJson, fenceUntrustedTranscript } from "./untrusted-data-fence";
+import { fenceUntrustedTranscript } from "./untrusted-data-fence";
 
 export const AnnouncementsProductSchema = z.strictObject({
 	announcements: z.array(AnnouncementSchema),
@@ -15,38 +14,19 @@ export const AnnouncementsWriterOutputSchema = AnnouncementsProductSchema;
 
 export type AnnouncementsDraft = z.infer<typeof AnnouncementsDraftSchema>;
 export type AnnouncementsProduct = z.infer<typeof AnnouncementsProductSchema>;
-export interface AnnouncementsCopyeditResult {
-	readonly product: AnnouncementsProduct;
-	readonly diagnostics: readonly EditorialDiagnostic[];
-}
-
-const AnnouncementInternalIdSchema = z.string().regex(/^announcement-[1-9]\d*$/u);
-
-export const IdentifiedAnnouncementSchema = AnnouncementSchema.extend({
-	id: AnnouncementInternalIdSchema,
-});
-
-export const IdentifiedAnnouncementsDraftSchema = z.strictObject({
-	announcements: z.array(IdentifiedAnnouncementSchema),
-});
-
-export const AnnouncementsCopyeditOutputSchema = IdentifiedAnnouncementsDraftSchema;
-
-export type IdentifiedAnnouncementsDraft = z.infer<typeof IdentifiedAnnouncementsDraftSchema>;
 
 export function buildAnnouncementsWriterPrompt(preparedEvidence: PreparedEvidence): string {
 	return `[YOUR ASSIGNMENT]
-Region: ${preparedEvidence.active_region_id}
-Date: ${preparedEvidence.publication_date}
-Messages analyzed: ${preparedEvidence.final_count}
+From the chat messages, file only evidence-grounded milestones and achievements.
 
-Extract every noteworthy achievement and milestone from the chat messages, including skill progressions, personal completions, discoveries, territorial claims, technical achievements, and unlocks. Treat skill grinding as ordinary economic activity and report it without irony. If there are no noteworthy achievements, return an empty announcements array.
+[ROLE]
+You are filing milestone briefs, not a social column. Treat skill progressions, personal completions, discoveries, territorial claims, technical achievements, and unlocks as possible announcements only when the chat actually supports them. If the chat does not support a milestone worth filing, return an empty announcements array.
 
 [REPORTING]
-- Include names and the accomplishment actually evidenced;
-- Use a straightforward factual style;
-- Do not rank announcements or select only the most prominent;
-- Never invent facts, numbers, names, or quotations.
+- Keep each item to an accomplishment or milestone actually evidenced by the chat;
+- Do not promote ordinary banter into announcements;
+- Quote only exact chat text, character-for-character, inside quotation marks;
+- Never invent facts, numbers, names, quotations, outcomes, or significance.
 
 [CHAT MESSAGES]
 ${fenceUntrustedTranscript(preparedEvidence)}
@@ -81,98 +61,7 @@ export function parseAnnouncementsWriterOutput(text: string | null): Announcemen
 			`announcements_write model output does not match its strict contract: ${result.error.message}`,
 		);
 	}
-	return result.data;
-}
-
-export function attachAnnouncementIds(draft: AnnouncementsDraft): IdentifiedAnnouncementsDraft {
-	return {
-		announcements: draft.announcements.map((announcement, index) => ({
-			id: `announcement-${index + 1}`,
-			...announcement,
-		})),
-	};
-}
-
-export function buildAnnouncementsCopyeditPrompt(draft: IdentifiedAnnouncementsDraft): string {
-	return `[YOUR ASSIGNMENT]
-Copyedit the filed announcements. Make only grammar, spelling, punctuation, and clarity corrections permitted by your system instructions. Preserve every announcement and its exact id at the same array index. Return the complete product, including each id.
-
-${fenceUntrustedJson("ANNOUNCEMENTS DRAFT", draft)}
-
-[OUTPUT]
-Return the same JSON shape with an announcements array whose items contain id, title, and summary.`;
-}
-
-function parseIdentifiedAnnouncementsCopyeditOutput(text: string | null): IdentifiedAnnouncementsDraft {
-	let candidate: unknown = text;
-	if (text !== null) {
-		try {
-			candidate = JSON.parse(text);
-		} catch (cause) {
-			throw new EditorialOutputContractError(
-				"announcements_copyedit",
-				"invalid_json",
-				"announcements_copyedit model output is not valid JSON",
-				{ cause },
-			);
-		}
-	}
-	const result = AnnouncementsCopyeditOutputSchema.safeParse(candidate);
-	if (!result.success) {
-		throw new EditorialOutputContractError(
-			"announcements_copyedit",
-			"contract_mismatch",
-			`announcements_copyedit model output does not match its strict contract: ${result.error.message}`,
-		);
-	}
-	return result.data;
-}
-
-export function parseAnnouncementsCopyeditOutput(
-	text: string | null,
-): AnnouncementsProduct {
-	const edited = parseIdentifiedAnnouncementsCopyeditOutput(text);
-	return AnnouncementsProductSchema.parse({
-		announcements: edited.announcements.map(({ title, summary }) => ({ title, summary })),
-	});
-}
-
-export function parseAnnouncementsCopyeditOutputWithDiagnostics(
-	text: string | null,
-	draft: IdentifiedAnnouncementsDraft,
-): AnnouncementsCopyeditResult {
-	const edited = parseIdentifiedAnnouncementsCopyeditOutput(text);
-	const diagnostics: EditorialDiagnostic[] = [];
-	if (edited.announcements.length !== draft.announcements.length) {
-		diagnostics.push({
-			kind: "preservation",
-			production_step: "announcements_copyedit",
-			code: "announcement_count",
-			message: "Copyedit changed the announcement count",
-		});
-	}
-	const comparableCount = Math.min(draft.announcements.length, edited.announcements.length);
-	for (let index = 0; index < comparableCount; index += 1) {
-		const before = draft.announcements[index]!;
-		const after = edited.announcements[index]!;
-		if (after.id !== before.id) {
-			diagnostics.push({
-				kind: "preservation",
-				production_step: "announcements_copyedit",
-				code: "announcement_identity",
-				message: `Copyedit changed or reordered announcement id ${before.id} at index ${index}`,
-			});
-		}
-		diagnostics.push(...copyeditPreservationDiagnosticsForTextFields(
-			"announcements_copyedit",
-			[
-				[`announcements.${index}.title`, before.title, after.title],
-				[`announcements.${index}.summary`, before.summary, after.summary],
-			],
-		));
-	}
-	const product = AnnouncementsProductSchema.parse({
-		announcements: edited.announcements.map(({ title, summary }) => ({ title, summary })),
-	});
-	return { product, diagnostics };
+	return AnnouncementsProductSchema.parse(
+		normalizeDecodedOutputStrings(result.data),
+	);
 }

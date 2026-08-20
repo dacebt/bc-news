@@ -6,6 +6,7 @@ import {
 	type EvaluationScorecardArtifact,
 	type EvaluationScorecardArtifactV1,
 	type EvaluationScorecardArtifactV2,
+	type EvaluationScorecardArtifactV3,
 } from "./evaluation-scorecard";
 
 const QUALITATIVE_CRITERION_LABELS = [
@@ -24,8 +25,12 @@ export function formatEvaluationScorecardReport(artifact: AnyEvaluationScorecard
 		if (freshness === undefined) throw new Error("Scorecard V2 report requires evaluated-code freshness");
 		return formatEvaluationScorecardReportV2(artifact, freshness);
 	}
-	if (freshness === undefined) throw new Error("Scorecard V3 report requires evaluated-code freshness");
-	return formatEvaluationScorecardReportV3(artifact, freshness);
+	if (artifact.version === 3) {
+		if (freshness === undefined) throw new Error("Scorecard V3 report requires evaluated-code freshness");
+		return formatEvaluationScorecardReportV3(artifact, freshness);
+	}
+	if (freshness === undefined) throw new Error("Scorecard V4 report requires evaluated-code freshness");
+	return formatEvaluationScorecardReportV4(artifact, freshness);
 }
 
 function formatEvaluationScorecardReportV2(artifact: EvaluationScorecardArtifactV2, freshness: EvaluationFreshness): string {
@@ -49,7 +54,7 @@ function formatEvaluationScorecardReportV2(artifact: EvaluationScorecardArtifact
 	].join("\n");
 }
 
-function formatEvaluationScorecardReportV3(artifact: EvaluationScorecardArtifact, freshness: EvaluationFreshness): string {
+function formatEvaluationScorecardReportV3(artifact: EvaluationScorecardArtifactV3, freshness: EvaluationFreshness): string {
 	return [
 		`Evaluation scorecard v3: ${artifact.id}`,
 		`Created at: ${artifact.created_at}`,
@@ -63,6 +68,27 @@ function formatEvaluationScorecardReportV3(artifact: EvaluationScorecardArtifact
 		`Annotated at: ${artifact.sources.annotations.annotated_at}`,
 		`Codex qualitative reviewer: ${artifact.sources.qualitative_reviews.reviewer_id} (${artifact.sources.qualitative_reviews.reviewer_kind})`,
 		`Qualitative rubric: ${artifact.sources.qualitative_reviews.rubric_id}`,
+		...QUALITATIVE_CRITERION_LABELS.map((label) => `Qualitative criterion — ${label}`),
+		"Benchmark Run evidence:",
+		exactEvidence(artifact.sources.benchmark_runs),
+		...artifact.scorecards.flatMap((scorecard) => ["", `Scorecard role: ${scorecard.production_step}`, "Exact role evidence:", exactEvidence(scorecard)]),
+	].join("\n");
+}
+
+function formatEvaluationScorecardReportV4(artifact: EvaluationScorecardArtifact, freshness: EvaluationFreshness): string {
+	return [
+		`Evaluation scorecard v4: ${artifact.id}`,
+		`Created at: ${artifact.created_at}`,
+		`Source: ${localSource(artifact.source_reference)}`,
+		`Evaluated code: ${freshness.evaluated_commit_sha} | checkout=${freshness.checkout_commit_sha} | freshness=${freshness.state}`,
+		`Corpus: ${artifact.corpus.id} | source=${localSource(artifact.corpus.source_reference)} | fixtures=${String(artifact.corpus.fixture_count)}`,
+		`Configuration: ${artifact.configuration.identity}`,
+		`Repetition count: ${String(artifact.repetition_count)}`,
+		`Annotation protocol: ${artifact.sources.annotations.protocol_id} v${String(artifact.sources.annotations.protocol_version)}`,
+		`Codex annotator: ${artifact.sources.annotations.annotator_id} (${artifact.sources.annotations.annotator_kind})`,
+		`Annotated at: ${artifact.sources.annotations.annotated_at}`,
+		`Codex qualitative reviewer: ${artifact.sources.qualitative_reviews.reviewer_id} (${artifact.sources.qualitative_reviews.reviewer_kind})`,
+		`Qualitative rubric: ${artifact.sources.qualitative_reviews.rubric_id} v${String(artifact.sources.qualitative_reviews.rubric_version)}`,
 		...QUALITATIVE_CRITERION_LABELS.map((label) => `Qualitative criterion — ${label}`),
 		"Benchmark Run evidence:",
 		exactEvidence(artifact.sources.benchmark_runs),

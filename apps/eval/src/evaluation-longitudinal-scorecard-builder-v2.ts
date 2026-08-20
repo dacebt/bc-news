@@ -1,7 +1,10 @@
 import { createHash } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
-import { PRODUCTION_MODEL_STEPS, type ProductionModelStep } from "@bc-news/generation-core";
 import { canonical } from "./evaluation-artifact-schemas";
+import {
+	LEGACY_PRODUCTION_MODEL_STEPS as PRODUCTION_MODEL_STEPS,
+	type LegacyProductionModelStep as ProductionModelStep,
+} from "./evaluation-artifact-legacy-schemas";
 import { validateLoadedEvaluationLongitudinalInputV2, type LoadedEvaluationLongitudinalInputV2 } from "./evaluation-longitudinal-scorecard-input-v2";
 import { EvaluationLongitudinalError } from "./evaluation-longitudinal-scorecard";
 import {

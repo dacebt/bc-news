@@ -5,8 +5,10 @@ import { isDeepStrictEqual } from "node:util";
 import { EvaluationIdSchema } from "./evaluation-artifact-schemas";
 import { buildEvaluationLongitudinalScorecard } from "./evaluation-longitudinal-scorecard-builder";
 import { buildEvaluationLongitudinalScorecardV2 } from "./evaluation-longitudinal-scorecard-builder-v2";
+import { buildEvaluationLongitudinalScorecard as buildEvaluationLongitudinalScorecardV3 } from "./evaluation-longitudinal-scorecard-builder-v3";
 import { loadEvaluationLongitudinalInputAtReference } from "./evaluation-longitudinal-scorecard-input";
 import { loadEvaluationLongitudinalInputAtReferenceV2 } from "./evaluation-longitudinal-scorecard-input-v2";
+import { loadEvaluationLongitudinalInputAtReference as loadEvaluationLongitudinalInputAtReferenceV3 } from "./evaluation-longitudinal-scorecard-input-v3";
 import {
 	EvaluationLongitudinalDeclarationV1Schema,
 	EvaluationLongitudinalError,
@@ -14,6 +16,10 @@ import {
 	type AnyEvaluationLongitudinalScorecardArtifact,
 	type EvaluationLongitudinalScorecardArtifact,
 } from "./evaluation-longitudinal-scorecard";
+import {
+	EvaluationLongitudinalScorecardArtifactSchema as EvaluationLongitudinalScorecardArtifactV3Schema,
+	type EvaluationLongitudinalScorecardArtifact as EvaluationLongitudinalScorecardArtifactV3,
+} from "./evaluation-longitudinal-scorecard-v3";
 import {
 	EvaluationLongitudinalScorecardArtifactV2Schema,
 	type EvaluationLongitudinalScorecardArtifactV2,
@@ -97,6 +103,13 @@ async function recomputeV3(candidate: EvaluationLongitudinalScorecardArtifact, l
 	return buildEvaluationLongitudinalScorecard(input, { id: candidate.id, createdAt: candidate.created_at });
 }
 
+async function recomputeHistoricalV3(candidate: EvaluationLongitudinalScorecardArtifactV3, localDataRoot: string, sourcePath: string): Promise<EvaluationLongitudinalScorecardArtifactV3> {
+	let input;
+	try { input = await loadEvaluationLongitudinalInputAtReferenceV3(localDataRoot, candidate.source_reference); }
+	catch (cause) { return fail("series_artifact_tampered", sourcePath, "Recorded historical local longitudinal evidence cannot be resolved", cause); }
+	return buildEvaluationLongitudinalScorecardV3(input, { id: candidate.id, createdAt: candidate.created_at });
+}
+
 async function validatedV2(candidate: unknown, path: string, repositoryRoot: string, code: "series_invalid" | "series_create_rejected"): Promise<EvaluationLongitudinalScorecardArtifactV2> {
 	const result = EvaluationLongitudinalScorecardArtifactV2Schema.safeParse(candidate);
 	if (!result.success) fail(code, path, `Repository-addressed longitudinal artifact contract rejected: ${result.error.message}`, result.error);
@@ -113,7 +126,16 @@ async function validatedV3(candidate: unknown, path: string, localDataRoot: stri
 	return result.data;
 }
 
+async function validatedHistoricalV3(candidate: unknown, path: string, localDataRoot: string, code: "series_invalid" | "series_create_rejected"): Promise<EvaluationLongitudinalScorecardArtifactV3> {
+	const result = EvaluationLongitudinalScorecardArtifactV3Schema.safeParse(candidate);
+	if (!result.success) fail(code, path, `Historical local-data longitudinal artifact contract rejected: ${result.error.message}`, result.error);
+	const rebuilt = await recomputeHistoricalV3(result.data, localDataRoot, path);
+	if (!isDeepStrictEqual(rebuilt, result.data)) fail(code === "series_create_rejected" ? code : "series_artifact_tampered", path, "Historical local-data longitudinal derived evidence does not reconstruct exactly");
+	return result.data;
+}
+
 export async function createEvaluationLongitudinalScorecardArtifact(path: string, artifact: EvaluationLongitudinalScorecardArtifact, roots: EvaluationLongitudinalArtifactRoots): Promise<EvaluationLongitudinalScorecardArtifact>;
+export async function createEvaluationLongitudinalScorecardArtifact(path: string, artifact: EvaluationLongitudinalScorecardArtifactV3, roots: EvaluationLongitudinalArtifactRoots): Promise<EvaluationLongitudinalScorecardArtifactV3>;
 export async function createEvaluationLongitudinalScorecardArtifact(path: string, artifact: EvaluationLongitudinalScorecardArtifactV2, roots: EvaluationLongitudinalArtifactRoots | string): Promise<EvaluationLongitudinalScorecardArtifactV2>;
 export async function createEvaluationLongitudinalScorecardArtifact(path: string, artifact: EvaluationLongitudinalScorecardArtifactV1, roots?: EvaluationLongitudinalArtifactRoots | string): Promise<EvaluationLongitudinalScorecardArtifactV1>;
 export async function createEvaluationLongitudinalScorecardArtifact(path: string, artifact: AnyEvaluationLongitudinalScorecardArtifact, rootsInput?: RootsInput): Promise<AnyEvaluationLongitudinalScorecardArtifact> {
@@ -123,7 +145,9 @@ export async function createEvaluationLongitudinalScorecardArtifact(path: string
 		? reconstructEvaluationLongitudinalScorecardArtifactV1(artifact, path)
 		: artifact.version === 2
 			? await validatedV2(artifact, path, requireRepositoryRoot(roots, path, "series_create_rejected"), "series_create_rejected")
-			: await validatedV3(artifact, path, requireLocalDataRoot(roots, path, "series_create_rejected"), "series_create_rejected");
+			: artifact.version === 3
+				? await validatedHistoricalV3(artifact, path, requireLocalDataRoot(roots, path, "series_create_rejected"), "series_create_rejected")
+				: await validatedV3(artifact, path, requireLocalDataRoot(roots, path, "series_create_rejected"), "series_create_rejected");
 	try { await writeFile(path, `${JSON.stringify(candidate, null, 2)}\n`, { encoding: "utf8", flag: "wx" }); }
 	catch (cause) { return fail("series_create_rejected", path, "Could not exclusively create longitudinal artifact", cause); }
 	try { return await loadEvaluationLongitudinalScorecardArtifact(candidate.id, dirname(path), roots); }
@@ -147,7 +171,9 @@ export async function loadEvaluationLongitudinalScorecardArtifact(id: string, di
 		? reconstructEvaluationLongitudinalScorecardArtifactV1(candidate, path)
 		: typeof candidate === "object" && candidate !== null && "version" in candidate && candidate.version === 2
 			? await validatedV2(candidate, path, requireRepositoryRoot(roots, path, "series_invalid"), "series_invalid")
-			: await validatedV3(candidate, path, requireLocalDataRoot(roots, path, "series_invalid"), "series_invalid");
+			: typeof candidate === "object" && candidate !== null && "version" in candidate && candidate.version === 3
+				? await validatedHistoricalV3(candidate, path, requireLocalDataRoot(roots, path, "series_invalid"), "series_invalid")
+				: await validatedV3(candidate, path, requireLocalDataRoot(roots, path, "series_invalid"), "series_invalid");
 	if (artifact.id !== idResult.data) fail("series_filename_mismatch", path, "Longitudinal artifact filename identity mismatch");
 	return artifact;
 }

@@ -18,7 +18,6 @@ const PREPARED_EVIDENCE: PreparedEvidence = {
 
 const VALID_MAIN_STORY: MainStoryProduct = {
 	title: "Regional News",
-	subtitle: "Work continued",
 	main_story: { headline: "Bridge work completed", lede: "Alice completed the bridge.", body: "**Alice** completed the bridge." },
 };
 

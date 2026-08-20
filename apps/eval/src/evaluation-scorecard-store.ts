@@ -7,19 +7,23 @@ import { EvaluationIdSchema } from "./evaluation-artifact-schemas";
 import { EvidenceFixtureSchema } from "@bc-news/contracts";
 import { EvaluationReferenceManifestV1Schema, EvaluationReferenceV1Schema } from "./evaluation-reference-corpus";
 import { buildEvaluationScorecard } from "./evaluation-scorecard-builder";
+import { buildEvaluationScorecard as buildEvaluationScorecardV3 } from "./evaluation-scorecard-builder-v3";
 import { buildEvaluationScorecardV2 } from "./evaluation-scorecard-builder-v2";
 import { loadEvaluationScorecardInputAtReference } from "./evaluation-scorecard-input";
+import { loadEvaluationScorecardInputAtReference as loadEvaluationScorecardInputAtReferenceV3 } from "./evaluation-scorecard-input-v3";
 import { loadEvaluationScorecardInputAtReference as loadEvaluationScorecardInputAtReferenceV2 } from "./evaluation-scorecard-input-v2";
 import {
 	AnnotationBundleV1Schema,
 	EvaluationScorecardArtifactSchema,
 	EvaluationScorecardArtifactV1Schema,
+	EvaluationScorecardArtifactV3Schema,
 	EvaluationScorecardArtifactV2Schema,
 	EvaluationScorecardDeclarationV1Schema,
 	QualitativeReviewBundleV1Schema,
 	EvaluationScorecardError,
 	type AnyEvaluationScorecardArtifact,
 	type EvaluationScorecardArtifact,
+	type EvaluationScorecardArtifactV3,
 	type EvaluationScorecardArtifactV1,
 	type EvaluationScorecardArtifactV2,
 } from "./evaluation-scorecard";
@@ -96,6 +100,13 @@ async function recomputeV3(candidate: EvaluationScorecardArtifact, localDataRoot
 	return buildEvaluationScorecard(input, { id: candidate.id, createdAt: candidate.created_at });
 }
 
+async function recomputeHistoricalV3(candidate: EvaluationScorecardArtifactV3, localDataRoot: string, sourcePath: string): Promise<EvaluationScorecardArtifactV3> {
+	let input;
+	try { input = await loadEvaluationScorecardInputAtReferenceV3(localDataRoot, candidate.source_reference); }
+	catch (cause) { return fail("artifact_tampered", sourcePath, "Historical scorecard V3 evidence cannot be resolved", cause); }
+	return buildEvaluationScorecardV3(input, { id: candidate.id, createdAt: candidate.created_at });
+}
+
 async function validatedArtifactV2(candidate: unknown, path: string, repositoryRoot: string, malformedCode: "scorecard_malformed" | "scorecard_create_rejected", invalidCode: "scorecard_invalid" | "scorecard_create_rejected"): Promise<EvaluationScorecardArtifactV2> {
 	if (candidate === undefined) fail(malformedCode, path, "Scorecard artifact is malformed");
 	const result = EvaluationScorecardArtifactV2Schema.safeParse(candidate);
@@ -114,12 +125,22 @@ async function validatedArtifactV3(candidate: unknown, path: string, localDataRo
 	return result.data;
 }
 
+async function validatedHistoricalArtifactV3(candidate: unknown, path: string, localDataRoot: string, malformedCode: "scorecard_malformed" | "scorecard_create_rejected", invalidCode: "scorecard_invalid" | "scorecard_create_rejected"): Promise<EvaluationScorecardArtifactV3> {
+	if (candidate === undefined) fail(malformedCode, path, "Scorecard artifact is malformed");
+	const result = EvaluationScorecardArtifactV3Schema.safeParse(candidate);
+	if (!result.success) fail(invalidCode, path, `Scorecard V3 contract rejected: ${result.error.message}`, result.error);
+	const rebuilt = await recomputeHistoricalV3(result.data, localDataRoot, path);
+	if (!isDeepStrictEqual(rebuilt, result.data)) fail("artifact_tampered", path, "Scorecard V3 derived evidence does not reconstruct exactly");
+	return result.data;
+}
+
 export async function validateEvaluationScorecardArtifact(candidate: unknown, path: string, roots?: string | EvaluationScorecardRoots): Promise<AnyEvaluationScorecardArtifact> {
 	const normalized = rootsValue(roots);
 	const version = typeof candidate === "object" && candidate !== null && "version" in candidate ? candidate.version : undefined;
 	if (version === 1) return reconstructEvaluationScorecardArtifactV1(candidate, path);
 	if (version === 2) return validatedArtifactV2(candidate, path, requireRepositoryRoot(normalized, path, "scorecard_invalid"), "scorecard_malformed", "scorecard_invalid");
-	if (version === 3) return validatedArtifactV3(candidate, path, requireLocalDataRoot(normalized, path, "scorecard_invalid"), "scorecard_malformed", "scorecard_invalid");
+	if (version === 3) return validatedHistoricalArtifactV3(candidate, path, requireLocalDataRoot(normalized, path, "scorecard_invalid"), "scorecard_malformed", "scorecard_invalid");
+	if (version === 4) return validatedArtifactV3(candidate, path, requireLocalDataRoot(normalized, path, "scorecard_invalid"), "scorecard_malformed", "scorecard_invalid");
 	fail("scorecard_invalid", path, "Unsupported evaluation scorecard version");
 }
 
@@ -141,7 +162,9 @@ export async function createEvaluationScorecardArtifact(path: string, artifact: 
 		? reconstructEvaluationScorecardArtifactV1(artifact, path)
 		: artifact.version === 2
 			? await validatedArtifactV2(artifact, path, requireRepositoryRoot(normalized, path, "scorecard_create_rejected"), "scorecard_create_rejected", "scorecard_create_rejected")
-			: await validatedArtifactV3(artifact, path, requireLocalDataRoot(normalized, path, "scorecard_create_rejected"), "scorecard_create_rejected", "scorecard_create_rejected");
+			: artifact.version === 3
+				? await validatedHistoricalArtifactV3(artifact, path, requireLocalDataRoot(normalized, path, "scorecard_create_rejected"), "scorecard_create_rejected", "scorecard_create_rejected")
+				: await validatedArtifactV3(artifact, path, requireLocalDataRoot(normalized, path, "scorecard_create_rejected"), "scorecard_create_rejected", "scorecard_create_rejected");
 	try { await writeFile(path, `${JSON.stringify(candidate, null, 2)}\n`, { encoding: "utf8", flag: "wx" }); }
 	catch (cause) { return fail("scorecard_create_rejected", path, "Could not exclusively create scorecard artifact", cause); }
 	try { return await loadEvaluationScorecardArtifact(candidate.id, dirname(path), normalized); }
@@ -165,7 +188,7 @@ export async function loadEvaluationScorecardArtifact(id: string, directory: str
 	return artifact;
 }
 
-type FreshnessScorecard = EvaluationScorecardArtifact | EvaluationScorecardArtifactV2;
+type FreshnessScorecard = EvaluationScorecardArtifact | EvaluationScorecardArtifactV2 | EvaluationScorecardArtifactV3;
 export async function evaluationScorecardFreshness(artifact: FreshnessScorecard, repositoryRoot: string): Promise<EvaluationFreshness> {
 	const commits = [...new Set(artifact.sources.benchmark_runs.map(({ code_commit_sha }) => code_commit_sha))];
 	if (commits.length !== 1) fail("provenance_mismatch", artifact.id, "Scorecard contains more than one evaluated code commit");

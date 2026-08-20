@@ -1,19 +1,16 @@
 import { z } from "zod";
 import { EditionSchema } from "@bc-news/contracts";
-import {
-	copyeditPreservationDiagnosticsForTextFields,
-} from "./copyedit-preservation";
-import type { EditorialDiagnostic } from "./editorial-diagnostics";
+import { normalizeDecodedOutputStrings } from "./output-normalization";
 import type { PreparedEvidence } from "./prepared-evidence";
 import type { ProductionModelStep } from "./ports";
-import { fenceUntrustedJson, fenceUntrustedTranscript } from "./untrusted-data-fence";
+import { fenceUntrustedTranscript } from "./untrusted-data-fence";
 
 export const WRITER_SYSTEM_CONSTRAINTS = `
 [POINT OF VIEW]
 BitCraft is your world. You are a regional correspondent writing for people who live there. Its inhabitants gather, cultivate, craft, build, trade, explore, practice skills, and organize settlements and infrastructure. Treat this as ordinary life. Never describe it as a game or explain familiar parts of life to the reader.
 
 [EVIDENCE]
-The chat is the record of what happened today. World knowledge helps you understand it; it does not add facts. Do not add causes, roles, stakes, connections, or significance that the chat does not establish.
+The chat grounds what happened today. World knowledge helps you understand it; it does not supply missing specifics as fact. Use ordinary connective tissue, atmosphere, social inference, and playful or dry, clearly signaled uncertainty when the chat supports them. When a specific detail is not in the chat, leave it unknown or mark it as possibility rather than asserting it as concrete fact.
 
 [OUTPUT]
 - Valid JSON envelope only;
@@ -27,7 +24,7 @@ The chat is the record of what happened today. World knowledge helps you underst
 
 [EDITORIAL VOICE]
 - In-world perspective, treating regional events as genuine news;
-- Straightforward factual reporting with dry wit;
+- Straightforward factual reporting with room for dry wit;
 - Professional journalistic distance;
 - No emoji, em dashes, or AI flourishes;
 
@@ -38,39 +35,15 @@ The chat is the record of what happened today. World knowledge helps you underst
 - All other string fields are plain text with no markdown;
 - No markdown headers, code blocks, or inline code.`;
 
-export const COPYEDIT_SYSTEM_CONSTRAINTS = `
-[ROLE]
-You are a narrow copyeditor, not an assigning editor, fact checker, or critic.
-
-[ALLOWED CHANGES]
-- Correct grammar, spelling, punctuation, and awkward phrasing;
-- Preserve facts, meaning, coverage, paragraph structure, quotes, numeric literals, and protected markdown spans;
-- Do not add, remove, reorder, summarize, expand, score, or comment on content;
-
-[HOUSE STYLE]
-- Preserve the filed in-world, straightforward journalistic voice;
-- Do not introduce emoji, em dashes, AI flourishes, markdown headers, code blocks, or inline code;
-- Keep title, subtitle, and headline fields plain text;
-
-[OUTPUT]
-- Return valid JSON only, matching the supplied shape exactly;
-- No code fences, preamble, verdict, score, or commentary.`;
-
 export const MainStoryProductSchema = EditionSchema.pick({
 	title: true,
-	subtitle: true,
 	main_story: true,
 });
 
 export const MainStoryDraftSchema = MainStoryProductSchema;
-export const MainStoryCopyeditOutputSchema = MainStoryProductSchema;
 
 export type MainStoryDraft = z.infer<typeof MainStoryDraftSchema>;
 export type MainStoryProduct = z.infer<typeof MainStoryProductSchema>;
-export interface MainStoryCopyeditResult {
-	readonly product: MainStoryProduct;
-	readonly diagnostics: readonly EditorialDiagnostic[];
-}
 
 type EditorialOutputContractErrorCode = "invalid_json" | "contract_mismatch";
 
@@ -93,20 +66,19 @@ export class EditorialOutputContractError extends Error {
 
 export function buildMainStoryWriterPrompt(preparedEvidence: PreparedEvidence): string {
 	return `[YOUR ASSIGNMENT]
-Region: ${preparedEvidence.active_region_id}
-Date: ${preparedEvidence.publication_date}
-Messages analyzed: ${preparedEvidence.final_count}
+Write the edition's creative title and main dispatch from the chat messages.
 
 [ROLE]
-You are the regional correspondent responsible for the edition masthead and main dispatch.
-
-[STORY OF THE DAY]
-Find the strongest throughline across the day and write one story around it. Use multiple updates, events, and achievements when they develop that throughline. Shape the dispatch so the day progresses rather than reading like a list of announcements. Omit details that do not strengthen the story, and never invent factual connections between events.
+You are the regional correspondent. In any nonempty prepared chat, the story is already there for you to find. Never answer with abstention, no-news, or a claim that nothing happened. Scale the dispatch to the evidence: a two-person invitation and acceptance can support a few lively lines about setting out together, while what happened next remains openly unknown and may be treated with dry wit. When the evidence is ordinary, file an ordinary story rather than forcing grandeur.
 
 [REPORTING]
-- Lead with the strongest concrete fact and develop the throughline with supported details;
-- Ground every fact, proper noun, number, and quotation in the chat messages;
-- Quote sparingly, and put only exact chat text inside quotation marks;
+- Every schema-valid response must tell one proportionate in-world story latent in the chat;
+- Lead with the strongest supported fact and scale the report to what the exchange can actually bear;
+- Keep separate what the exchange directly shows, what you are reasonably inferring, and what you frame as possibility, rumor, or open question;
+- Quote only exact chat text, character-for-character, inside quotation marks;
+- You may use ordinary connective tissue, scene-setting, atmosphere, tone, and social dynamics when the chat supports that reading;
+- Do not connect unrelated messages or assert invented concrete quantities, locations, outcomes, relationships, consequences, or causal links as facts;
+- When specifics remain unknown, leave them unknown or mark them as possibility instead of promoting them to concrete fact;
 - Write the dispatch itself, with no angle labels or meta-commentary.
 
 [CHAT MESSAGES]
@@ -114,27 +86,23 @@ ${fenceUntrustedTranscript(preparedEvidence)}
 
 [OUTPUT]
 Return one valid JSON object matching this field contract:
-- title (string): a plain-text regional edition masthead;
-- subtitle (string): a brief plain-text edition subtitle;
+- title (string): a creative plain-text regional edition title;
 - main_story (object):
-  - headline (string): a plain-text headline naming the day's throughline;
+  - headline (string): a plain-text headline naming the story;
   - lede (string): a plain-text lead stating the strongest supported fact and framing the story;
-  - body (string): a dispatch that develops the throughline across supported updates, with markdown permitted only as defined by the system formatting rules.`;
+  - body (string): a dispatch that develops the reporting with markdown permitted only as defined by the system formatting rules.`;
 }
 
-function parseMainStoryStepOutput(
-	text: string | null,
-	productionStep: "main_story_write" | "main_story_copyedit",
-): MainStoryProduct {
+export function parseMainStoryWriterOutput(text: string | null): MainStoryDraft {
 	let candidate: unknown = text;
 	if (text !== null) {
 		try {
 			candidate = JSON.parse(text);
 		} catch (cause) {
 			throw new EditorialOutputContractError(
-				productionStep,
+				"main_story_write",
 				"invalid_json",
-				`${productionStep} model output is not valid JSON`,
+				"main_story_write model output is not valid JSON",
 				{ cause },
 			);
 		}
@@ -142,93 +110,12 @@ function parseMainStoryStepOutput(
 	const result = MainStoryProductSchema.safeParse(candidate);
 	if (!result.success) {
 		throw new EditorialOutputContractError(
-			productionStep,
+			"main_story_write",
 			"contract_mismatch",
-			`${productionStep} model output does not match its strict contract: ${result.error.message}`,
+			`main_story_write model output does not match its strict contract: ${result.error.message}`,
 		);
 	}
-	return result.data;
-}
-
-export function parseMainStoryWriterOutput(text: string | null): MainStoryDraft {
-	return parseMainStoryStepOutput(text, "main_story_write");
-}
-
-export function buildMainStoryCopyeditPrompt(draft: MainStoryDraft): string {
-	return `[YOUR ASSIGNMENT]
-Copyedit the filed main-story product. Make only grammar, spelling, punctuation, and clarity corrections permitted by your system instructions. Keep the title, subtitle, headline, lede, body coverage, and paragraph structure present. Return the complete product.
-
-${fenceUntrustedJson("MAIN STORY DRAFT", draft)}
-
-[OUTPUT]
-Return the same JSON shape with title, subtitle, and main_story fields.`;
-}
-
-export function parseMainStoryCopyeditOutput(
-	text: string | null,
-): MainStoryProduct {
-	return parseMainStoryStepOutput(text, "main_story_copyedit");
-}
-
-export function parseMainStoryCopyeditOutputWithDiagnostics(
-	text: string | null,
-	draft: MainStoryDraft,
-): MainStoryCopyeditResult {
-	const product = parseMainStoryCopyeditOutput(text);
-	const diagnostics: EditorialDiagnostic[] = [];
-	if ((draft.main_story.image === undefined) !== (product.main_story.image === undefined)) {
-		diagnostics.push({
-			kind: "preservation",
-			production_step: "main_story_copyedit",
-			code: "field_shape",
-			message: "Copyedit changed the optional main-story image shape",
-		});
-	}
-	if (
-		draft.main_story.image !== undefined &&
-		product.main_story.image !== undefined &&
-		draft.main_story.image.url !== product.main_story.image.url
-	) {
-		diagnostics.push({
-			kind: "preservation",
-			production_step: "main_story_copyedit",
-			code: "protected_value",
-			message: "Copyedit changed the main-story image URL",
-		});
-	}
-	if (
-		draft.main_story.image !== undefined &&
-		product.main_story.image !== undefined &&
-		(draft.main_story.image.credit === undefined) !== (product.main_story.image.credit === undefined)
-	) {
-		diagnostics.push({
-			kind: "preservation",
-			production_step: "main_story_copyedit",
-			code: "field_shape",
-			message: "Copyedit changed the optional main-story image credit shape",
-		});
-	}
-	const textFields: Array<readonly [path: string, before: string, after: string]> = [
-		["title", draft.title, product.title],
-		["subtitle", draft.subtitle, product.subtitle],
-		["main_story.headline", draft.main_story.headline, product.main_story.headline],
-		["main_story.lede", draft.main_story.lede, product.main_story.lede],
-		["main_story.body", draft.main_story.body, product.main_story.body],
-	];
-	if (draft.main_story.image !== undefined && product.main_story.image !== undefined) {
-		textFields.push([
-			"main_story.image.caption",
-			draft.main_story.image.caption,
-			product.main_story.image.caption,
-		]);
-		if (draft.main_story.image.credit !== undefined && product.main_story.image.credit !== undefined) {
-			textFields.push([
-				"main_story.image.credit",
-				draft.main_story.image.credit,
-				product.main_story.image.credit,
-			]);
-		}
-	}
-	diagnostics.push(...copyeditPreservationDiagnosticsForTextFields("main_story_copyedit", textFields));
-	return { product, diagnostics };
+	return MainStoryProductSchema.parse(
+		normalizeDecodedOutputStrings(result.data),
+	);
 }

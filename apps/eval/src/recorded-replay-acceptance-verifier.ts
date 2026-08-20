@@ -74,7 +74,7 @@ async function verifyRecordedReplayAcceptanceAt(
 
 if (import.meta.url === `file://${process.argv[1]}`) {
 	verifyRecordedReplayAcceptance().then((result) => {
-		console.log(`acceptance: four recorded production steps replayed by step and deterministic; diagnostics retained: ${String(result.diagnostics.length)}`);
+		console.log(`acceptance: two recorded writer steps replayed and deterministic; diagnostics retained: ${String(result.diagnostics.length)}`);
 	}).catch((error: unknown) => {
 		process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
 		process.exitCode = 1;

@@ -93,7 +93,7 @@ async function writeLongitudinalDeclaration(
 			source_reference: await localSourceReferenceAtPath(localDataRoot, scorecardPaths[index]!),
 		});
 	}
-	await writeFile(declarationPath, json({ version: 3, id: name, scorecards }), "utf8");
+	await writeFile(declarationPath, json({ version: 4, id: name, scorecards }), "utf8");
 	return declarationPath;
 }
 
@@ -153,14 +153,14 @@ export async function verifyEvaluationLongitudinalScorecards(temporaryRoot?: str
 				`Current longitudinal artifact retained forbidden byte ownership field ${forbidden}`,
 			);
 		}
-		assertProof(artifact.version === 3 && artifact.roles.length === 4, "Longitudinal V3 did not retain four role histories");
+		assertProof(artifact.version === 4 && artifact.roles.length === 2, "Longitudinal V4 did not retain two role histories");
 		assertProof(
 			artifact.roles.every((role) => role.classification.state === "context_changed"),
-			"Controlled longitudinal V3 did not detect distinct evaluated-code contexts",
+			"Controlled longitudinal V4 did not detect distinct evaluated-code contexts",
 		);
 		assertProof(
 			artifact.roles.every((role) => role.context_differences.some(({ path }) => path.includes("code_provenance"))),
-			"Controlled longitudinal V3 omitted evaluated-code provenance differences",
+			"Controlled longitudinal V4 omitted evaluated-code provenance differences",
 		);
 		assertProof(
 			artifact.roles.every(({ stable_contexts }) => stable_contexts.every((context) => (
@@ -181,7 +181,7 @@ export async function verifyEvaluationLongitudinalScorecards(temporaryRoot?: str
 			repositoryRoot,
 			localDataRoot,
 		});
-		assertProof(saved.version === 3 && saved.id === artifact.id, "Stored longitudinal artifact did not reopen");
+		assertProof(saved.version === 4 && saved.id === artifact.id, "Stored longitudinal artifact did not reopen");
 
 		const freshness = await evaluationLongitudinalFreshness(artifact, repositoryRoot);
 		assertProof(
@@ -257,7 +257,7 @@ export async function verifyEvaluationLongitudinalScorecards(temporaryRoot?: str
 
 		const tamperedPath = join(resultsDirectory, `${artifact.id}.json`);
 		const storedArtifact = parseLongitudinalArtifact(await readFile(tamperedPath, "utf8"), tamperedPath);
-		const [firstRole, secondRole, thirdRole, fourthRole] = storedArtifact.roles;
+		const [firstRole, secondRole] = storedArtifact.roles;
 		const tampered: EvaluationLongitudinalScorecardArtifact = {
 			...storedArtifact,
 			roles: [
@@ -267,12 +267,10 @@ export async function verifyEvaluationLongitudinalScorecards(temporaryRoot?: str
 						...firstRole.phase_count_summaries,
 						baseline: { ...firstRole.phase_count_summaries.baseline, declared_trial_count: 999 },
 					},
-				},
-				secondRole,
-				thirdRole,
-				fourthRole,
-			],
-		};
+					},
+					secondRole,
+				],
+			};
 		await writeFile(tamperedPath, json(tampered), "utf8");
 		await expectReject("Derived longitudinal tampering was accepted", async () => {
 			await loadEvaluationLongitudinalScorecardArtifact(artifact.id, resultsDirectory, { repositoryRoot, localDataRoot });

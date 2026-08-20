@@ -4,14 +4,12 @@ import { prepareEvidence } from "@bc-news/generation-core";
 import { EvalConfigSchema, loadLiveBenchmarkConfig } from "./config";
 import {
 	EvaluationCodeProvenanceSchema,
-	V7BenchmarkRunSchema,
-	V8BenchmarkRunSchema,
 	evaluationConfigIdentity,
 	evaluationOutputContractProvenance,
 	type BenchmarkRun,
-	type V7BenchmarkRun,
-	type V8BenchmarkRun,
+	type V9BenchmarkRun,
 } from "./evaluation-artifact";
+import { V9BenchmarkRunSchema } from "./evaluation-artifact-v9";
 import { EvaluationArtifactStore, type EvaluationArtifactObserver } from "./evaluation-artifact-store";
 import { loadFixture } from "./evidence-fixture";
 import { codeProvenance } from "./evaluation-provenance";
@@ -30,13 +28,10 @@ export interface EvaluateBenchmarkCommandOptions {
 	readonly sourceProvenance?: BenchmarkRun["provenance"]["code"];
 }
 
-export interface EvaluateBenchmarkCommandResult { readonly path: string; readonly benchmark: V7BenchmarkRun | V8BenchmarkRun; }
+export interface EvaluateBenchmarkCommandResult { readonly path: string; readonly benchmark: V9BenchmarkRun; }
 
 export async function evaluateBenchmarkCommand(options: EvaluateBenchmarkCommandOptions): Promise<EvaluateBenchmarkCommandResult> {
 	const declared = await loadLiveBenchmarkConfig(options.configPath);
-	const usesGateway = declared.configurations.some((configuration) =>
-		Object.values(configuration.production_steps).some(({ adapter }) => adapter === "cloudflare_ai_gateway"),
-	);
 	const configurations = declared.configurations.map((config) => ({ identity: evaluationConfigIdentity(config), config }));
 	const provenance = {
 		code: options.sourceProvenance === undefined
@@ -61,7 +56,7 @@ export async function evaluateBenchmarkCommand(options: EvaluateBenchmarkCommand
 	);
 	const startedAt = new Date().toISOString();
 	const initial = {
-		version: usesGateway ? 8 as const : 7 as const,
+		version: 9 as const,
 		id: benchmarkId,
 		lifecycle: "running",
 		started_at: startedAt,
@@ -84,13 +79,11 @@ export async function evaluateBenchmarkCommand(options: EvaluateBenchmarkCommand
 		trial_roster: trialRoster,
 		trials: [],
 		runtime_evidence: [],
-		...(usesGateway ? { gateway_requests: [] } : {}),
+		gateway_requests: [],
 		outcome_counts: emptyOutcomeCounts(),
 		harness_outcome: "pending",
 	};
-	let benchmark: V7BenchmarkRun | V8BenchmarkRun = usesGateway
-		? V8BenchmarkRunSchema.parse(initial)
-		: V7BenchmarkRunSchema.parse(initial);
+	let benchmark = V9BenchmarkRunSchema.parse(initial);
 	const path = join(options.resultsDirectory, `${basename(benchmark.id)}.json`);
 	const store = await EvaluationArtifactStore.create(path, benchmark, options.artifactObserver);
 
@@ -109,13 +102,11 @@ export async function evaluateBenchmarkCommand(options: EvaluateBenchmarkCommand
 				completed_at: null,
 				subject_outcome: null,
 				tracks: { main_story: emptyTrack(), announcements: emptyTrack() },
-				selected_invocation_ids: { main_story_write: null, main_story_copyedit: null, announcements_write: null, announcements_copyedit: null },
+				selected_invocation_ids: { main_story_write: null, announcements_write: null },
 				invocations: [],
 			}],
 		};
-		benchmark = benchmark.version === 8
-			? V8BenchmarkRunSchema.parse(next)
-			: V7BenchmarkRunSchema.parse(next);
+		benchmark = V9BenchmarkRunSchema.parse(next);
 		await store.replace(benchmark);
 		benchmark = await executeEvaluationTrial({
 			benchmark,
@@ -129,14 +120,12 @@ export async function evaluateBenchmarkCommand(options: EvaluateBenchmarkCommand
 			trialId: roster.trial_id,
 			transportRetryLimit: declared.transport_retry_limit,
 		});
-		if (benchmark.version !== (usesGateway ? 8 : 7)) throw new Error("Serial benchmark execution changed artifact version");
+		if (benchmark.version !== 9) throw new Error("Serial benchmark execution changed artifact version");
 	}
 
 	const completedAt = new Date().toISOString();
 	const completed = { ...benchmark, lifecycle: "complete" as const, completed_at: completedAt, harness_outcome: "retained" as const };
-	benchmark = benchmark.version === 8
-		? V8BenchmarkRunSchema.parse(completed)
-		: V7BenchmarkRunSchema.parse(completed);
+	benchmark = V9BenchmarkRunSchema.parse(completed);
 	await store.replace(benchmark);
 	return { path, benchmark };
 }

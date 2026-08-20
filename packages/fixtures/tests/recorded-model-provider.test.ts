@@ -1,7 +1,6 @@
 import { expect, test } from "vitest";
 import {
 	mainStoryFinalProductDiagnostics,
-	parseMainStoryCopyeditOutputWithDiagnostics,
 	parseMainStoryWriterOutput,
 	prepareEvidence,
 } from "@bc-news/generation-core";
@@ -13,24 +12,19 @@ import {
 	fixtureEvidenceInput,
 	type RecordedModelResponseRoster,
 } from "../src";
-import announcementsCopyeditResponseJson from "../model-responses/announcements_copyedit.json";
 import announcementsWriteResponseJson from "../model-responses/announcements_write.json";
-import mainStoryCopyeditResponseJson from "../model-responses/main_story_copyedit.json";
 import mainStoryWriteResponseJson from "../model-responses/main_story_write.json";
 
 const committedRoster: RecordedModelResponseRoster = {
 	main_story_write: RecordedModelResponseSchema.parse(mainStoryWriteResponseJson),
-	main_story_copyedit: RecordedModelResponseSchema.parse(mainStoryCopyeditResponseJson),
 	announcements_write: RecordedModelResponseSchema.parse(announcementsWriteResponseJson),
-	announcements_copyedit: RecordedModelResponseSchema.parse(announcementsCopyeditResponseJson),
 };
 
-test("keeps the committed absent-version response contract strict and unchanged", () => {
+test("keeps the committed absent-version response contract strict and limited to the two writers", () => {
+	expect(Object.keys(committedRoster)).toEqual(["main_story_write", "announcements_write"]);
 	for (const candidate of [
 		mainStoryWriteResponseJson,
-		mainStoryCopyeditResponseJson,
 		announcementsWriteResponseJson,
-		announcementsCopyeditResponseJson,
 	]) {
 		const response = RecordedModelResponseSchema.parse(candidate);
 		expect("version" in response).toBe(false);
@@ -59,43 +53,7 @@ test.each([
 	expect(RecordedModelResponseSchema.parse(response)).toEqual(response);
 });
 
-test("rejects partial, contradictory, and extra v2 sampling evidence", () => {
-	const response = {
-		...mainStoryWriteResponseJson,
-		version: 2,
-	};
-	expect(RecordedModelResponseV2Schema.safeParse({
-		...response,
-		sampling: {
-			adapter: "lmstudio",
-			posture: "explicit",
-			config: { temperature: 0, top_p: 1 },
-		},
-	}).success).toBe(false);
-	expect(RecordedModelResponseV2Schema.safeParse({
-		...response,
-		sampling: {
-			adapter: "lmstudio",
-			posture: "provider_default",
-			config: { temperature: 0, top_p: 1, top_k: 40 },
-		},
-	}).success).toBe(false);
-	expect(RecordedModelResponseV2Schema.safeParse({
-		...response,
-		sampling: {
-			adapter: "openai_compatible_hosted",
-			posture: "not_applicable",
-			config: { temperature: 0, top_p: 1, top_k: 40 },
-		},
-	}).success).toBe(false);
-	expect(RecordedModelResponseSchema.safeParse({
-		...response,
-		version: 3,
-		sampling: { adapter: "lmstudio", posture: "provider_default" },
-	}).success).toBe(false);
-});
-
-test("accepts strict v3 independent agent configuration and rejects obsolete decoding controls", () => {
+test("accepts strict v3 configuration and rejects obsolete decoding controls", () => {
 	const response = RecordedModelResponseV3Schema.parse({
 		...mainStoryWriteResponseJson,
 		version: 3,
@@ -130,40 +88,11 @@ async function canonicalPreparedEvidence() {
 	});
 }
 
-test("retains representative preservation and final-product diagnostics in the synthetic copyedit", async () => {
+test("the committed main-story writer fixture remains schema-valid and evidence-grounded enough to publish", async () => {
 	const preparedEvidence = await canonicalPreparedEvidence();
 	const draft = parseMainStoryWriterOutput(mainStoryWriteResponseJson.text);
-	const copyedit = parseMainStoryCopyeditOutputWithDiagnostics(mainStoryCopyeditResponseJson.text, draft);
 
-	expect([
-		...copyedit.diagnostics,
-		...mainStoryFinalProductDiagnostics(copyedit.product, preparedEvidence),
-	]).toEqual([
-		{
-			kind: "preservation",
-			production_step: "main_story_copyedit",
-			code: "quoted_span",
-			message: "Copyedit changed quoted spans or their order in main_story.body",
-		},
-		{
-			kind: "preservation",
-			production_step: "main_story_copyedit",
-			code: "numeric_literal",
-			message: "Copyedit changed numeric literals or their order in main_story.body",
-		},
-		{
-			kind: "final_product",
-			production_step: "main_story_copyedit",
-			code: "forbidden_marker",
-			message: "Forbidden output marker: —",
-		},
-		{
-			kind: "final_product",
-			production_step: "main_story_copyedit",
-			code: "ungrounded_quote",
-			message: "Ungrounded quote: damn R8 is doing T7 dungeons atm",
-		},
-	]);
+	expect(mainStoryFinalProductDiagnostics(draft, preparedEvidence)).toEqual([]);
 });
 
 test("a replay factory rejects a response assigned to a different production step", async () => {

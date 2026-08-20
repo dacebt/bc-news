@@ -14,7 +14,7 @@ function invocationOrdinalById(run: BenchmarkRun, trialIndex: number): ReadonlyM
 	return new Map(run.trials[trialIndex]?.invocations.map(({ id }, index) => [id, index + 1]));
 }
 
-type RuntimeEvidenceRun = Extract<BenchmarkRun, { version: 7 }> | Extract<BenchmarkRun, { version: 8 }>;
+type RuntimeEvidenceRun = Extract<BenchmarkRun, { version: 7 }> | Extract<BenchmarkRun, { version: 8 }> | Extract<BenchmarkRun, { version: 9 }>;
 
 function runtimeEvidenceOrdinal(run: RuntimeEvidenceRun, record: RuntimeEvidenceRun["runtime_evidence"][number]) {
 	return {
@@ -33,13 +33,13 @@ export function projectBenchmarkContext(run: BenchmarkRun): BenchmarkContextProj
 		prepared_evidence: run.prepared_evidence,
 		declaration: run.declaration,
 		provenance: run.provenance,
-		runtime_execution_contexts: run.version === 7 || run.version === 8
+		runtime_execution_contexts: "runtime_evidence" in run
 			? run.runtime_evidence.map((record) => ({
 				...runtimeEvidenceOrdinal(run, record),
 				execution_context: record.state === "captured" ? record.evidence.execution_context : null,
 			}))
 			: [],
-		gateway_request_contexts: run.version === 8
+		gateway_request_contexts: "gateway_requests" in run
 			? run.gateway_requests.map((record) => ({
 				trial_roster_ordinal: run.trial_roster.findIndex(({ trial_id }) => trial_id === record.trial_id) + 1,
 				configuration_ordinal: run.declaration.configurations.findIndex(({ identity }) => identity === record.config_identity) + 1,
@@ -61,7 +61,7 @@ export function projectBenchmarkBehavior(run: BenchmarkRun) {
 		lifecycle: run.lifecycle,
 		harness_outcome: run.harness_outcome,
 		outcome_counts: run.outcome_counts,
-		runtime_prediction_observations: run.version === 7 || run.version === 8
+		runtime_prediction_observations: "runtime_evidence" in run
 			? run.runtime_evidence.map((record) => ({
 				...runtimeEvidenceOrdinal(run, record),
 				state: record.state,
@@ -69,7 +69,7 @@ export function projectBenchmarkBehavior(run: BenchmarkRun) {
 				...(record.state === "captured" ? { prediction_observation: record.evidence.prediction_observation } : {}),
 			}))
 			: [],
-		gateway_request_observations: run.version === 8
+		gateway_request_observations: "gateway_requests" in run
 			? run.gateway_requests.map((record) => ({
 				invocation_id: record.invocation_id,
 				state: record.state,

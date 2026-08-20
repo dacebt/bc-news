@@ -1,6 +1,16 @@
 import type { GenerationRunParams } from "@bc-news/contracts";
 
+const CURRENT_GENERATION_RUN_CONTRACT_VERSION = "current_v1";
+
 export const GENERATION_STEPS = [
+	"prepare-evidence",
+	"main_story_write",
+	"announcements_write",
+	"validate-edition",
+	"publish-edition",
+] as const;
+
+const LEGACY_GENERATION_STEPS = [
 	"prepare-evidence",
 	"main_story_write",
 	"main_story_copyedit",
@@ -11,12 +21,15 @@ export const GENERATION_STEPS = [
 ] as const;
 
 type WalkGenerationStep = (typeof GENERATION_STEPS)[number];
-type WalkProductionStep =
+type LegacyWalkGenerationStep = (typeof LEGACY_GENERATION_STEPS)[number];
+type WalkProductionStep = "main_story_write" | "announcements_write";
+type LegacyWalkProductionStep =
 	| "main_story_write"
 	| "main_story_copyedit"
 	| "announcements_write"
 	| "announcements_copyedit";
-type WalkCopyeditStep = "main_story_copyedit" | "announcements_copyedit";
+type WalkWriterStep = WalkProductionStep;
+type LegacyWalkCopyeditStep = "main_story_copyedit" | "announcements_copyedit";
 type WalkPreservationDiagnosticCode =
 	| "announcement_count"
 	| "announcement_identity"
@@ -54,6 +67,10 @@ type WalkWorkflowStatus =
 	| "waiting"
 	| "waitingForPause"
 	| "unknown";
+type WalkGenerationState = "queued" | "running" | "complete" | "errored";
+type WalkWorkflow =
+	| { observation: "available"; status: WalkWorkflowStatus; error: { name: string; message: string } | null }
+	| { observation: "unavailable"; error: { name: string; message: string } };
 
 export interface WalkModelUsageRecord {
 	production_step: WalkProductionStep;
@@ -64,38 +81,79 @@ export interface WalkModelUsageRecord {
 	external_billing: WalkExternalBilling;
 }
 
-export type WalkEditorialDiagnostic =
+interface LegacyWalkModelUsageRecord {
+	production_step: LegacyWalkProductionStep;
+	provider: string;
+	model: string;
+	execution: WalkExecution;
+	token_usage: WalkTokenUsage;
+	external_billing: WalkExternalBilling;
+}
+
+type WalkCurrentEditorialDiagnostic = {
+	kind: "final_product";
+	production_step: WalkWriterStep;
+	code: WalkFinalProductDiagnosticCode;
+	message: string;
+};
+
+type WalkLegacyEditorialDiagnostic =
 	| {
 			kind: "preservation";
-			production_step: WalkCopyeditStep;
+			production_step: LegacyWalkCopyeditStep;
 			code: WalkPreservationDiagnosticCode;
 			message: string;
 	  }
 	| {
 			kind: "final_product";
-			production_step: WalkCopyeditStep;
+			production_step: LegacyWalkCopyeditStep;
 			code: WalkFinalProductDiagnosticCode;
 			message: string;
 	  };
 
-export interface WalkGenerationRunStatus {
+export type WalkEditorialDiagnostic = WalkCurrentEditorialDiagnostic | WalkLegacyEditorialDiagnostic;
+
+type WalkFailure<Step extends string> = {
+	step: Step | "configure-generation-run" | "launch-generation-run";
+	code: string;
+	message: string;
+};
+
+interface WalkGenerationRunStatusBase<
+	Step extends string,
+	ModelUsage extends { production_step: string },
+	Diagnostic extends { production_step: string },
+> {
 	active_region_id: string;
 	publication_date: string;
 	generation_run_id: string;
-	state: "queued" | "running" | "complete" | "errored";
-	current_step: WalkGenerationStep | null;
-	completed_steps: WalkGenerationStep[];
-	model_usage: WalkModelUsageRecord[];
-	diagnostics: WalkEditorialDiagnostic[];
-	failure: {
-		step: WalkGenerationStep | "configure-generation-run" | "launch-generation-run";
-		code: string;
-		message: string;
-	} | null;
-	workflow:
-		| { observation: "available"; status: WalkWorkflowStatus; error: { name: string; message: string } | null }
-		| { observation: "unavailable"; error: { name: string; message: string } };
+	state: WalkGenerationState;
+	current_step: Step | null;
+	completed_steps: Step[];
+	model_usage: ModelUsage[];
+	diagnostics: Diagnostic[];
+	failure: WalkFailure<Step> | null;
+	workflow: WalkWorkflow;
 }
+
+export interface CurrentWalkGenerationRunStatus
+	extends WalkGenerationRunStatusBase<
+		WalkGenerationStep,
+		WalkModelUsageRecord,
+		WalkCurrentEditorialDiagnostic
+	> {
+	contract_version: typeof CURRENT_GENERATION_RUN_CONTRACT_VERSION;
+}
+
+export type LegacyWalkGenerationRunStatus = WalkGenerationRunStatusBase<
+	LegacyWalkGenerationStep,
+	LegacyWalkModelUsageRecord,
+	WalkLegacyEditorialDiagnostic
+>;
+
+export type WalkGenerationRunStatus =
+	| CurrentWalkGenerationRunStatus
+	| LegacyWalkGenerationRunStatus;
 
 export interface GenerationRunStatusHttpResponse {
 	status: number;
@@ -114,11 +172,23 @@ function hasExactKeys(value: Record<string, unknown>, keys: readonly string[]): 
 	);
 }
 
+function hasOwn(value: Record<string, unknown>, key: string): boolean {
+	return Object.prototype.hasOwnProperty.call(value, key);
+}
+
 function isGenerationStep(value: unknown): value is WalkGenerationStep {
 	return GENERATION_STEPS.some((step) => step === value);
 }
 
+function isLegacyGenerationStep(value: unknown): value is LegacyWalkGenerationStep {
+	return LEGACY_GENERATION_STEPS.some((step) => step === value);
+}
+
 function isProductionStep(value: unknown): value is WalkProductionStep {
+	return value === "main_story_write" || value === "announcements_write";
+}
+
+function isLegacyProductionStep(value: unknown): value is LegacyWalkProductionStep {
 	return (
 		value === "main_story_write" ||
 		value === "main_story_copyedit" ||
@@ -127,7 +197,7 @@ function isProductionStep(value: unknown): value is WalkProductionStep {
 	);
 }
 
-function isCopyeditStep(value: unknown): value is WalkCopyeditStep {
+function isLegacyCopyeditStep(value: unknown): value is LegacyWalkCopyeditStep {
 	return value === "main_story_copyedit" || value === "announcements_copyedit";
 }
 
@@ -152,11 +222,37 @@ function isFinalProductDiagnosticCode(value: unknown): value is WalkFinalProduct
 	);
 }
 
-function parseEditorialDiagnostic(value: unknown, body: string): WalkEditorialDiagnostic {
+function parseCurrentEditorialDiagnostic(
+	value: unknown,
+	body: string,
+): WalkCurrentEditorialDiagnostic {
 	if (
 		!isRecord(value) ||
 		!hasExactKeys(value, ["kind", "production_step", "code", "message"]) ||
-		!isCopyeditStep(value["production_step"]) ||
+		value["kind"] !== "final_product" ||
+		!isProductionStep(value["production_step"]) ||
+		!isFinalProductDiagnosticCode(value["code"]) ||
+		typeof value["message"] !== "string" ||
+		value["message"].length === 0
+	) {
+		throw new Error(`generation run operator status has an invalid diagnostic: ${body}`);
+	}
+	return {
+		kind: "final_product",
+		production_step: value["production_step"],
+		code: value["code"],
+		message: value["message"],
+	};
+}
+
+function parseLegacyEditorialDiagnostic(
+	value: unknown,
+	body: string,
+): WalkLegacyEditorialDiagnostic {
+	if (
+		!isRecord(value) ||
+		!hasExactKeys(value, ["kind", "production_step", "code", "message"]) ||
+		!isLegacyCopyeditStep(value["production_step"]) ||
 		typeof value["message"] !== "string" ||
 		value["message"].length === 0
 	) {
@@ -181,11 +277,15 @@ function parseEditorialDiagnostic(value: unknown, body: string): WalkEditorialDi
 	throw new Error(`generation run operator status has an invalid diagnostic: ${body}`);
 }
 
-function parseDiagnostics(value: unknown, body: string): WalkEditorialDiagnostic[] {
+function parseDiagnostics<Diagnostic>(
+	value: unknown,
+	body: string,
+	parseDiagnostic: (diagnostic: unknown, source: string) => Diagnostic,
+): Diagnostic[] {
 	if (!Array.isArray(value)) {
 		throw new Error(`generation run operator status has invalid diagnostics: ${body}`);
 	}
-	return value.map((diagnostic) => parseEditorialDiagnostic(diagnostic, body));
+	return value.map((diagnostic) => parseDiagnostic(diagnostic, body));
 }
 
 function isExecution(value: unknown): value is WalkExecution {
@@ -269,7 +369,18 @@ function parseExternalBilling(value: unknown, body: string): WalkExternalBilling
 	throw new Error(`generation run operator status has invalid external billing: ${body}`);
 }
 
-function parseModelUsage(value: unknown, body: string): WalkModelUsageRecord {
+function parseModelUsageFields<Step extends string>(
+	value: unknown,
+	body: string,
+	isStep: (step: unknown) => step is Step,
+): {
+	production_step: Step;
+	provider: string;
+	model: string;
+	execution: WalkExecution;
+	token_usage: WalkTokenUsage;
+	external_billing: WalkExternalBilling;
+} {
 	if (!isRecord(value) || !hasExactKeys(value, [
 		"production_step",
 		"provider",
@@ -285,7 +396,7 @@ function parseModelUsage(value: unknown, body: string): WalkModelUsageRecord {
 	const model = value["model"];
 	const execution = value["execution"];
 	if (
-		!isProductionStep(productionStep) ||
+		!isStep(productionStep) ||
 		typeof provider !== "string" ||
 		provider.trim().length === 0 ||
 		typeof model !== "string" ||
@@ -330,7 +441,7 @@ function isWorkflowStatus(value: unknown): value is WalkWorkflowStatus {
 	);
 }
 
-function parseWorkflow(value: unknown, body: string): WalkGenerationRunStatus["workflow"] {
+function parseWorkflow(value: unknown, body: string): WalkWorkflow {
 	if (!isRecord(value)) {
 		throw new Error(`generation run operator status has invalid workflow: ${body}`);
 	}
@@ -354,17 +465,21 @@ function parseWorkflow(value: unknown, body: string): WalkGenerationRunStatus["w
 	throw new Error(`generation run operator status has invalid workflow: ${body}`);
 }
 
-function isGenerationState(value: unknown): value is WalkGenerationRunStatus["state"] {
+function isGenerationState(value: unknown): value is WalkGenerationState {
 	return value === "queued" || value === "running" || value === "complete" || value === "errored";
 }
 
-function parseCompletedSteps(value: unknown, body: string): WalkGenerationStep[] {
+function parseCompletedSteps<Step extends string>(
+	value: unknown,
+	body: string,
+	isStep: (step: unknown) => step is Step,
+): Step[] {
 	if (!Array.isArray(value)) {
 		throw new Error(`generation run operator status has invalid completed steps: ${body}`);
 	}
-	const completedSteps: WalkGenerationStep[] = [];
+	const completedSteps: Step[] = [];
 	for (const step of value) {
-		if (!isGenerationStep(step)) {
+		if (!isStep(step)) {
 			throw new Error(`generation run operator status has invalid completed steps: ${body}`);
 		}
 		completedSteps.push(step);
@@ -372,7 +487,11 @@ function parseCompletedSteps(value: unknown, body: string): WalkGenerationStep[]
 	return completedSteps;
 }
 
-function parseFailure(value: unknown, body: string): WalkGenerationRunStatus["failure"] {
+function parseFailure<Step extends string>(
+	value: unknown,
+	body: string,
+	isStep: (step: unknown) => step is Step,
+): WalkFailure<Step> | null {
 	if (value === null) return null;
 	if (!isRecord(value) || !hasExactKeys(value, ["step", "code", "message"])) {
 		throw new Error(`generation run operator status has invalid failure: ${body}`);
@@ -381,7 +500,7 @@ function parseFailure(value: unknown, body: string): WalkGenerationRunStatus["fa
 	const code = value["code"];
 	const message = value["message"];
 	if (
-		!(isGenerationStep(step) || step === "configure-generation-run" || step === "launch-generation-run") ||
+		!(isStep(step) || step === "configure-generation-run" || step === "launch-generation-run") ||
 		typeof code !== "string" ||
 		code.length === 0 ||
 		typeof message !== "string" ||
@@ -392,26 +511,40 @@ function parseFailure(value: unknown, body: string): WalkGenerationRunStatus["fa
 	return { step, code, message };
 }
 
-function assertProjectionCoherence(status: WalkGenerationRunStatus, body: string): void {
+function assertProjectionCoherence<
+	Step extends string,
+	ModelUsage extends { production_step: string },
+	Diagnostic extends { production_step: string },
+>(
+	status: WalkGenerationRunStatusBase<Step, ModelUsage, Diagnostic>,
+	body: string,
+	allSteps: readonly Step[],
+	productionSteps: readonly string[],
+): void {
 	if ((status.state === "running") !== (status.current_step !== null)) {
 		throw new Error(`generation run operator status has incoherent current step: ${body}`);
 	}
 	if ((status.state === "errored") !== (status.failure !== null)) {
 		throw new Error(`generation run operator status has incoherent failure: ${body}`);
 	}
-	if (status.completed_steps.some((step, index) => step !== GENERATION_STEPS[index])) {
+	if (status.completed_steps.some((step, index) => step !== allSteps[index])) {
 		throw new Error(`generation run operator status has unordered completed steps: ${body}`);
 	}
 	if (
 		status.state === "running" &&
-		status.current_step !== GENERATION_STEPS[status.completed_steps.length]
+		status.current_step !== allSteps[status.completed_steps.length]
 	) {
 		throw new Error(`generation run operator status has incoherent running step: ${body}`);
 	}
-	if (status.state === "complete" && status.completed_steps.length !== GENERATION_STEPS.length) {
+	if (status.state === "complete" && status.completed_steps.length !== allSteps.length) {
 		throw new Error(`generation run operator status has incomplete completed steps: ${body}`);
 	}
-	const expectedProductionSteps = status.completed_steps.filter(isProductionStep);
+	const expectedProductionSteps = status.completed_steps.reduce<string[]>((steps, step) => {
+		if (productionSteps.includes(step)) {
+			steps.push(step);
+		}
+		return steps;
+	}, []);
 	if (
 		status.model_usage.length !== expectedProductionSteps.length ||
 		status.model_usage.some(
@@ -428,6 +561,124 @@ function assertProjectionCoherence(status: WalkGenerationRunStatus, body: string
 		}
 		previousDiagnosticStep = stepIndex;
 	}
+}
+
+interface ParsedStatusEnvelope {
+	active_region_id: string;
+	publication_date: string;
+	generation_run_id: string;
+	state: WalkGenerationState;
+	current_step: unknown;
+	completed_steps: unknown;
+	model_usage: unknown[];
+	diagnostics: unknown[];
+	failure: unknown;
+	workflow: unknown;
+	contract_version?: unknown;
+}
+
+function parseStatusEnvelope(
+	parsed: Record<string, unknown>,
+	expectedPair: GenerationRunParams,
+	body: string,
+): ParsedStatusEnvelope {
+	const state = parsed["state"];
+	const modelUsage = parsed["model_usage"];
+	const diagnostics = parsed["diagnostics"];
+	if (
+		parsed["active_region_id"] !== expectedPair.active_region_id ||
+		parsed["publication_date"] !== expectedPair.publication_date ||
+		parsed["generation_run_id"] !==
+			`generation-run-${expectedPair.active_region_id}-${expectedPair.publication_date}` ||
+		!isGenerationState(state) ||
+		!Array.isArray(modelUsage) ||
+		!Array.isArray(diagnostics)
+	) {
+		throw new Error(`generation run operator status has an invalid envelope: ${body}`);
+	}
+	return {
+		active_region_id: expectedPair.active_region_id,
+		publication_date: expectedPair.publication_date,
+		generation_run_id: `generation-run-${expectedPair.active_region_id}-${expectedPair.publication_date}`,
+		state,
+		current_step: parsed["current_step"],
+		completed_steps: parsed["completed_steps"],
+		model_usage: modelUsage,
+		diagnostics,
+		failure: parsed["failure"],
+		workflow: parsed["workflow"],
+		...(hasOwn(parsed, "contract_version") ? { contract_version: parsed["contract_version"] } : {}),
+	};
+}
+
+function parseCurrentGenerationRunStatusResponse(
+	parsed: Record<string, unknown>,
+	body: string,
+	expectedPair: GenerationRunParams,
+): CurrentWalkGenerationRunStatus {
+	const envelope = parseStatusEnvelope(parsed, expectedPair, body);
+	if (
+		envelope.contract_version !== CURRENT_GENERATION_RUN_CONTRACT_VERSION ||
+		!(envelope.current_step === null || isGenerationStep(envelope.current_step))
+	) {
+		throw new Error(`generation run operator status has an invalid envelope: ${body}`);
+	}
+	const status: CurrentWalkGenerationRunStatus = {
+		contract_version: CURRENT_GENERATION_RUN_CONTRACT_VERSION,
+		active_region_id: envelope.active_region_id,
+		publication_date: envelope.publication_date,
+		generation_run_id: envelope.generation_run_id,
+		state: envelope.state,
+		current_step: envelope.current_step,
+		completed_steps: parseCompletedSteps(envelope.completed_steps, body, isGenerationStep),
+		model_usage: envelope.model_usage.map((record) =>
+			parseModelUsageFields(record, body, isProductionStep),
+		),
+		diagnostics: parseDiagnostics(envelope.diagnostics, body, parseCurrentEditorialDiagnostic),
+		failure: parseFailure(envelope.failure, body, isGenerationStep),
+		workflow: parseWorkflow(envelope.workflow, body),
+	};
+	assertProjectionCoherence(status, body, GENERATION_STEPS, ["main_story_write", "announcements_write"]);
+	return status;
+}
+
+function parseLegacyGenerationRunStatusResponse(
+	parsed: Record<string, unknown>,
+	body: string,
+	expectedPair: GenerationRunParams,
+): LegacyWalkGenerationRunStatus {
+	const envelope = parseStatusEnvelope(parsed, expectedPair, body);
+	if (
+		envelope.contract_version !== undefined ||
+		!(envelope.current_step === null || isLegacyGenerationStep(envelope.current_step))
+	) {
+		throw new Error(`generation run operator status has an invalid envelope: ${body}`);
+	}
+	const status: LegacyWalkGenerationRunStatus = {
+		active_region_id: envelope.active_region_id,
+		publication_date: envelope.publication_date,
+		generation_run_id: envelope.generation_run_id,
+		state: envelope.state,
+		current_step: envelope.current_step,
+		completed_steps: parseCompletedSteps(envelope.completed_steps, body, isLegacyGenerationStep),
+		model_usage: envelope.model_usage.map((record) =>
+			parseModelUsageFields<LegacyWalkProductionStep>(
+				record,
+				body,
+				isLegacyProductionStep,
+			),
+		),
+		diagnostics: parseDiagnostics(envelope.diagnostics, body, parseLegacyEditorialDiagnostic),
+		failure: parseFailure(envelope.failure, body, isLegacyGenerationStep),
+		workflow: parseWorkflow(envelope.workflow, body),
+	};
+	assertProjectionCoherence(
+		status,
+		body,
+		LEGACY_GENERATION_STEPS,
+		["main_story_write", "main_story_copyedit", "announcements_write", "announcements_copyedit"],
+	);
+	return status;
 }
 
 export function generationRunStatusUrl(baseUrl: string, pair: GenerationRunParams): string {
@@ -460,32 +711,13 @@ export function parseGenerationRunStatusResponse(
 	} catch (error) {
 		throw new Error("generation run operator status is not valid JSON", { cause: error });
 	}
-	if (
-		!isRecord(parsed) ||
-		parsed["active_region_id"] !== expectedPair.active_region_id ||
-		parsed["publication_date"] !== expectedPair.publication_date ||
-		parsed["generation_run_id"] !== `generation-run-${expectedPair.active_region_id}-${expectedPair.publication_date}` ||
-		!isGenerationState(parsed["state"]) ||
-		!(parsed["current_step"] === null || isGenerationStep(parsed["current_step"])) ||
-		!Array.isArray(parsed["model_usage"]) ||
-		!Array.isArray(parsed["diagnostics"])
-	) {
+	if (!isRecord(parsed)) {
 		throw new Error(`generation run operator status has an invalid envelope: ${body}`);
 	}
-	const status: WalkGenerationRunStatus = {
-		active_region_id: expectedPair.active_region_id,
-		publication_date: expectedPair.publication_date,
-		generation_run_id: `generation-run-${expectedPair.active_region_id}-${expectedPair.publication_date}`,
-		state: parsed["state"],
-		current_step: parsed["current_step"],
-		completed_steps: parseCompletedSteps(parsed["completed_steps"], body),
-		model_usage: parsed["model_usage"].map((record) => parseModelUsage(record, body)),
-		diagnostics: parseDiagnostics(parsed["diagnostics"], body),
-		failure: parseFailure(parsed["failure"], body),
-		workflow: parseWorkflow(parsed["workflow"], body),
-	};
-	assertProjectionCoherence(status, body);
-	return status;
+	if (hasOwn(parsed, "contract_version")) {
+		return parseCurrentGenerationRunStatusResponse(parsed, body, expectedPair);
+	}
+	return parseLegacyGenerationRunStatusResponse(parsed, body, expectedPair);
 }
 
 export async function fetchGenerationRunStatus(

@@ -140,7 +140,7 @@ function qualitativeSchema(criterion: string) {
 	});
 }
 
-function roleSchema(productionStep: "main_story_write" | "main_story_copyedit" | "announcements_write" | "announcements_copyedit") {
+function historicalRoleSchema(productionStep: "main_story_write" | "main_story_copyedit" | "announcements_write" | "announcements_copyedit") {
 	return z.strictObject({
 		production_step: z.literal(productionStep),
 		subject: SubjectDescriptorSchema,
@@ -170,22 +170,62 @@ function roleSchema(productionStep: "main_story_write" | "main_story_copyedit" |
 	});
 }
 
-const RolesSchema = z.tuple([
-	roleSchema("main_story_write"),
-	roleSchema("main_story_copyedit"),
-	roleSchema("announcements_write"),
-	roleSchema("announcements_copyedit"),
+function currentRoleSchema(productionStep: "main_story_write" | "announcements_write") {
+	return z.strictObject({
+		production_step: z.literal(productionStep),
+		subject: SubjectDescriptorSchema,
+		sample_counts: SampleCountsSchema,
+		rates: z.tuple([
+			rateSchema("schema_reliability", "terminal_provider_success_invocation"),
+			rateSchema("claim_grounding", "codex_annotated_factual_claim"),
+			rateSchema("required_attribution", "codex_annotated_required_attribution_claim"),
+			rateSchema("event_coverage", "source_event_output_pair"),
+			rateSchema("announcement_relevance", "parsed_announcement"),
+		]),
+		distributions: z.tuple([
+			distributionSchema("input_tokens", "tokens"),
+			distributionSchema("output_tokens", "tokens"),
+			distributionSchema("total_tokens", "tokens"),
+			distributionSchema("application_latency_ms", "milliseconds"),
+			distributionSchema("provider_time_to_first_token_ms", "milliseconds"),
+			distributionSchema("provider_total_time_ms", "milliseconds"),
+		]),
+		qualitative: z.tuple([
+			qualitativeSchema("coherence"),
+			qualitativeSchema("usefulness"),
+			qualitativeSchema("newsworthiness"),
+			qualitativeSchema("voice"),
+		]),
+	});
+}
+
+const HistoricalRolesSchema = z.tuple([
+	historicalRoleSchema("main_story_write"),
+	historicalRoleSchema("main_story_copyedit"),
+	historicalRoleSchema("announcements_write"),
+	historicalRoleSchema("announcements_copyedit"),
+]);
+const CurrentRolesSchema = z.tuple([
+	currentRoleSchema("main_story_write"),
+	currentRoleSchema("announcements_write"),
 ]);
 
 const AggregateBaseSchema = z.strictObject({
 	id: EvaluationIdSchema,
 	created_at: EvaluationTimestampSchema,
 	evidence_retention: z.literal("local_only"),
-	configuration_identity: EvaluationIdSchema,
-	roles: RolesSchema,
 });
 
-export const EvaluationAggregateResultV1Schema = AggregateBaseSchema.extend({
+const HistoricalAggregateBaseSchema = AggregateBaseSchema.extend({
+	configuration_identity: EvaluationIdSchema,
+	roles: HistoricalRolesSchema,
+});
+const CurrentAggregateBaseSchema = AggregateBaseSchema.extend({
+	configuration_identity: EvaluationIdSchema,
+	roles: CurrentRolesSchema,
+});
+
+export const EvaluationAggregateResultV1Schema = HistoricalAggregateBaseSchema.extend({
 	version: z.literal(1),
 	source_scorecard: z.strictObject({
 		version: z.literal(2),
@@ -202,7 +242,7 @@ export const EvaluationAggregateResultV1Schema = AggregateBaseSchema.extend({
 });
 export type EvaluationAggregateResultV1 = z.infer<typeof EvaluationAggregateResultV1Schema>;
 
-export const EvaluationAggregateResultSchema = AggregateBaseSchema.extend({
+export const EvaluationAggregateResultV2Schema = HistoricalAggregateBaseSchema.extend({
 	version: z.literal(2),
 	source_scorecard: z.strictObject({
 		version: z.literal(3),
@@ -218,10 +258,38 @@ export const EvaluationAggregateResultSchema = AggregateBaseSchema.extend({
 		prepared_message_count: NonnegativeSchema.optional(),
 	}),
 });
+export type EvaluationAggregateResultV2 = z.infer<typeof EvaluationAggregateResultV2Schema>;
+
+export const EvaluationAggregateResultSchema = CurrentAggregateBaseSchema.extend({
+	version: z.literal(3),
+	source_scorecard: z.strictObject({
+		version: z.literal(4),
+		id: EvaluationIdSchema,
+		created_at: EvaluationTimestampSchema,
+		benchmark_run_version: z.literal(9),
+		annotation_protocol: z.strictObject({
+			id: NonBlankStringSchema,
+			version: z.literal(3),
+		}),
+		qualitative_rubric: z.strictObject({
+			id: NonBlankStringSchema,
+			version: z.literal(3),
+		}),
+	}),
+	cohort: z.strictObject({
+		id: EvaluationIdSchema,
+		evidence_identity_sha256: Sha256HashSchema,
+		fixture_count: z.number().int().positive(),
+		repetition_count: z.number().int().positive(),
+		raw_message_count: NonnegativeSchema.optional(),
+		prepared_message_count: NonnegativeSchema.optional(),
+	}),
+});
 export type EvaluationAggregateResult = z.infer<typeof EvaluationAggregateResultSchema>;
 
 export const AnyEvaluationAggregateResultSchema = z.discriminatedUnion("version", [
 	EvaluationAggregateResultV1Schema,
+	EvaluationAggregateResultV2Schema,
 	EvaluationAggregateResultSchema,
 ]);
 export type AnyEvaluationAggregateResult = z.infer<typeof AnyEvaluationAggregateResultSchema>;

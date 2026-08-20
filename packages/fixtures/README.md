@@ -42,19 +42,14 @@ downstream of this corpus.
 
 ## Recorded model response provenance
 
-The directory is one strict four-file unit, keyed by production step:
-`main_story_write.json`, `main_story_copyedit.json`,
-`announcements_write.json`, and `announcements_copyedit.json`. There is no
-packaging response and no judge directory.
+The directory is one strict two-file unit, keyed by production step:
+`main_story_write.json` and `announcements_write.json`. There is no copyedit
+response, packaging response, or judge directory.
 
-The writer records migrate retained v1 editorial content. The main-story
-record combines the old story with the old deterministic-packaging title and
-subtitle. The copyedit records are explicitly synthetic schema-valid products,
-not newly generated Qwen output. The main-story copyedit deliberately changes a
-number inside one quote and contains an em dash so the composed
-recorded-provider path retains exact preservation and final-product diagnostics
-while still publishing the copyedited product. Their provider and model labels
-make that provenance visible rather than implying a live re-record occurred.
+The current writer records are curated schema-valid replay artifacts for the
+two-writer topology. They preserve the retained editorial content that still
+fits the current contract and make their non-live provenance explicit through
+their provider and model labels rather than implying a fresh model recording.
 
 Committed absent-version records remain the strict legacy response contract
 and replay unchanged. Version 2 remains a frozen historical contract with its
@@ -78,8 +73,8 @@ keyed by `production_step`; no verifier rebuilds prompt text or compares current
 prompt bytes with a retained hash. The hash is not a development gate or proof
 that a named model authored text.
 
-The eval recorder requires an explicit live four-step configuration. It makes
-the four dependent production calls and writes each production step's response,
+The eval recorder requires an explicit live two-step configuration. It makes
+the two dependent production calls and writes each production step's response,
 observed request hash, and v3 production-step configuration into a
 same-filesystem staging directory, validates and replays the complete staged
 roster, and compares only the final main-story and announcements products

@@ -3,18 +3,7 @@ import type { AnnouncementsProduct } from "./announcements";
 import type { MainStoryProduct } from "./main-story";
 import type { PreparedEvidence } from "./prepared-evidence";
 
-const CopyeditStepSchema = z.enum(["main_story_copyedit", "announcements_copyedit"]);
-
-export const PreservationDiagnosticCodeSchema = z.enum([
-	"announcement_count",
-	"announcement_identity",
-	"field_shape",
-	"paragraph_count",
-	"quoted_span",
-	"numeric_literal",
-	"protected_markdown",
-	"protected_value",
-]);
+const WriterStepSchema = z.enum(["main_story_write", "announcements_write"]);
 
 export const FinalProductDiagnosticCodeSchema = z.enum([
 	"forbidden_marker",
@@ -22,27 +11,15 @@ export const FinalProductDiagnosticCodeSchema = z.enum([
 	"ungrounded_quote",
 ]);
 
-export const PreservationDiagnosticSchema = z.strictObject({
-	kind: z.literal("preservation"),
-	production_step: CopyeditStepSchema,
-	code: PreservationDiagnosticCodeSchema,
-	message: z.string().min(1),
-});
-
 export const FinalProductDiagnosticSchema = z.strictObject({
 	kind: z.literal("final_product"),
-	production_step: CopyeditStepSchema,
+	production_step: WriterStepSchema,
 	code: FinalProductDiagnosticCodeSchema,
 	message: z.string().min(1),
 });
 
-export const EditorialDiagnosticSchema = z.discriminatedUnion("kind", [
-	PreservationDiagnosticSchema,
-	FinalProductDiagnosticSchema,
-]);
+export const EditorialDiagnosticSchema = FinalProductDiagnosticSchema;
 
-export type PreservationDiagnosticCode = z.infer<typeof PreservationDiagnosticCodeSchema>;
-export type PreservationDiagnostic = z.infer<typeof PreservationDiagnosticSchema>;
 export type FinalProductDiagnostic = z.infer<typeof FinalProductDiagnosticSchema>;
 export type EditorialDiagnostic = z.infer<typeof EditorialDiagnosticSchema>;
 
@@ -67,7 +44,7 @@ function preparedEvidenceSource(preparedEvidence: PreparedEvidence): string {
 }
 
 function finalProductDiagnostics(input: {
-	productionStep: "main_story_copyedit" | "announcements_copyedit";
+	productionStep: "main_story_write" | "announcements_write";
 	editorialText: readonly string[];
 	groundedText: string;
 	preparedEvidence: PreparedEvidence;
@@ -117,10 +94,9 @@ export function mainStoryFinalProductDiagnostics(
 	preparedEvidence: PreparedEvidence,
 ): FinalProductDiagnostic[] {
 	return finalProductDiagnostics({
-		productionStep: "main_story_copyedit",
+		productionStep: "main_story_write",
 		editorialText: [
 			mainStory.title,
-			mainStory.subtitle,
 			mainStory.main_story.headline,
 			mainStory.main_story.lede,
 			mainStory.main_story.body,
@@ -139,7 +115,7 @@ export function announcementsFinalProductDiagnostics(
 	preparedEvidence: PreparedEvidence,
 ): FinalProductDiagnostic[] {
 	return finalProductDiagnostics({
-		productionStep: "announcements_copyedit",
+		productionStep: "announcements_write",
 		editorialText: announcements.announcements.flatMap(
 			(announcement) => [announcement.title, announcement.summary],
 		),

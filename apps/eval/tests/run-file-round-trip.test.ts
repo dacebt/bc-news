@@ -8,7 +8,7 @@ import { runCommand } from "../src/run-command";
 import { RunFileSchema, listRunFiles, loadRunFile, saveRunFile } from "../src/run-file";
 import { formatRunDetail, formatRunListing, formatRunSummary } from "../src/report";
 
-test("round-trips a current strict four-step run", async () => {
+test("round-trips a current strict two-step run", async () => {
 	const directory = await mkdtemp(join(tmpdir(), "bc-news-eval-roundtrip-"));
 	const { run } = await runCommand({
 		fixturePath: REPRESENTATIVE_FIXTURE_PATH,
@@ -21,7 +21,7 @@ test("round-trips a current strict four-step run", async () => {
 	const loaded = await loadRunFile(copy.id, directory);
 
 	expect(loaded.id).toBe(copy.id);
-	expect(loaded.steps).toHaveLength(4);
+	expect(loaded.steps).toHaveLength(2);
 	expect(loaded.diagnostics).toEqual(copy.diagnostics);
 	expect(formatRunSummary(copy, path)).toContain("Diagnostics:");
 	expect(formatRunSummary(copy, path)).not.toContain("Diagnostics: unknown");
@@ -42,13 +42,13 @@ test("round-trips a current strict four-step run", async () => {
 		diagnostics: [
 			{
 				kind: "final_product",
-				production_step: "announcements_copyedit",
+				production_step: "announcements_write",
 				code: "forbidden_marker",
 				message: "announcement diagnostic",
 			},
 			{
 				kind: "final_product",
-				production_step: "main_story_copyedit",
+				production_step: "main_story_write",
 				code: "forbidden_marker",
 				message: "main-story diagnostic",
 			},

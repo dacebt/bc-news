@@ -58,9 +58,7 @@ it("rejects an unprofiled hosted model before transport", () => {
 
 it.each([
 	["main_story_write", "main_story_write_output"],
-	["main_story_copyedit", "main_story_copyedit_output"],
 	["announcements_write", "announcements_write_output"],
-	["announcements_copyedit", "announcements_copyedit_output"],
 ] as const)("sends the profiled %s output contract", async (productionStep, contractName) => {
 	const fetchCall = vi.spyOn(globalThis, "fetch").mockResolvedValue(completionResponse());
 	await provider().complete(request(productionStep));
@@ -70,24 +68,7 @@ it.each([
 		response_format: { json_schema: { name: string; schema: unknown } };
 	};
 	expect(body.response_format.json_schema.name).toBe(contractName);
-	if (productionStep.startsWith("main_story")) {
-		expect(body.response_format.json_schema.schema).toMatchObject({
-			properties: {
-				main_story: {
-					required: ["headline", "lede", "body", "image"],
-					properties: {
-						image: {
-							type: ["object", "null"],
-							required: ["url", "caption", "credit"],
-							properties: { credit: { type: ["string", "null"] } },
-						},
-					},
-				},
-			},
-		});
-	} else {
-		expect(body.response_format.json_schema.schema).toEqual(PRODUCTION_STEP_OUTPUT_CONTRACTS[productionStep].schema);
-	}
+	expect(body.response_format.json_schema.schema).toEqual(PRODUCTION_STEP_OUTPUT_CONTRACTS[productionStep].schema);
 });
 
 it.each([

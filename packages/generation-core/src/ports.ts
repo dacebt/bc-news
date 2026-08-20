@@ -5,9 +5,7 @@ export type EditorialProduct = "main_story" | "announcements";
 
 export type ProductionModelStep =
 	| "main_story_write"
-	| "main_story_copyedit"
-	| "announcements_write"
-	| "announcements_copyedit";
+	| "announcements_write";
 
 export type TokenUsage =
 	| {

@@ -4,13 +4,15 @@ import { join } from "node:path";
 import { afterEach, expect, test, vi } from "vitest";
 import { fixtureEvidenceInput, recordedModelProvider } from "@bc-news/fixtures";
 import {
-	PRODUCTION_MODEL_STEPS,
 	prepareEvidence,
 	type ModelCompletion,
 	type ModelProviderPort,
 	type ModelProviderRequest,
-	type ProductionModelStep,
 } from "@bc-news/generation-core";
+import {
+	CURRENT_PRODUCTION_MODEL_STEPS,
+	type CurrentProductionModelStep,
+} from "../src/current-production-steps";
 import { RECORDED_REPLAY_CONFIG_PATH } from "../src/recorded-replay-acceptance-verifier";
 import { REPRESENTATIVE_FIXTURE_PATH } from "../src/representative-fixture";
 import { executeProductionSteps } from "../src/production-step-runners";
@@ -21,33 +23,19 @@ afterEach(() => vi.restoreAllMocks());
 const DIAGNOSTIC_OUTPUTS = {
 	main_story_write: JSON.stringify({
 		title: "Regional News",
-		subtitle: "Bridge report",
 		main_story: {
 			headline: "Alice completes one bridge",
-			lede: "Alice completed 1 bridge.",
-			body: "**Alice** completed 1 bridge.",
-		},
-	}),
-	main_story_copyedit: JSON.stringify({
-		title: "Regional News",
-		subtitle: "Bridge report",
-		main_story: {
-			headline: "Alice completes two bridges",
-			lede: "Alice completed 2 bridges — quickly.",
-			body: "**Alice** completed 2 bridges — quickly.",
+			lede: "Mallory completed 1 bridge.",
+			body: "**Mallory** completed 1 bridge.",
 		},
 	}),
 	announcements_write: JSON.stringify({
-		announcements: [{ title: "Bridge complete", summary: "Alice completed the bridge." }],
-	}),
-	announcements_copyedit: JSON.stringify({
 		announcements: [{
-			id: "announcement-2",
 			title: "system prompt",
 			summary: "**Mallory** completed the bridge.",
 		}],
 	}),
-} as const satisfies Readonly<Record<string, string>>;
+} as const satisfies Readonly<Record<CurrentProductionModelStep, string>>;
 
 function completion(text: string): ModelCompletion {
 	return {
@@ -76,7 +64,7 @@ async function representativePreparedEvidence() {
 	});
 }
 
-test("executes the exact dependent four-step production roster serially", async () => {
+test("executes the exact two-step production roster serially", async () => {
 	const calls: string[] = [];
 	const complete = recordedModelProvider.complete.bind(recordedModelProvider);
 	vi.spyOn(recordedModelProvider, "complete").mockImplementation(async (request) => {
@@ -91,7 +79,7 @@ test("executes the exact dependent four-step production roster serially", async 
 		environment: {},
 	});
 
-	expect(calls).toEqual(PRODUCTION_MODEL_STEPS);
+	expect(calls).toEqual(CURRENT_PRODUCTION_MODEL_STEPS);
 });
 
 test("correlates every scratch provider request to its run and invocation", async () => {
@@ -109,10 +97,12 @@ test("correlates every scratch provider request to its run and invocation", asyn
 		correlateProviderRequests: true,
 	});
 
-	expect(requests.map(({ correlation }) => correlation)).toEqual(PRODUCTION_MODEL_STEPS.map((_, index) => ({
-		run_id: run.id,
-		invocation_id: `${run.id}-invocation-${String(index + 1)}`,
-	})));
+	expect(requests.map(({ correlation }) => correlation)).toEqual(
+		CURRENT_PRODUCTION_MODEL_STEPS.map((_, index) => ({
+			run_id: run.id,
+			invocation_id: `${run.id}-invocation-${String(index + 1)}`,
+		})),
+	);
 });
 
 test("retains exact requests and completions in production order", async () => {
@@ -122,33 +112,33 @@ test("retains exact requests and completions in production order", async () => {
 	const provider: ModelProviderPort = {
 		async complete(request) {
 			requests.push(request);
-			const completion = await recordedModelProvider.complete(request);
-			completions.push(completion);
-			return completion;
+			const nextCompletion = await recordedModelProvider.complete(request);
+			completions.push(nextCompletion);
+			return nextCompletion;
 		},
 	};
 
 	const execution = await executeProductionSteps(preparedEvidence, {
 		main_story_write: provider,
-		main_story_copyedit: provider,
 		announcements_write: provider,
-		announcements_copyedit: provider,
 	});
 
 	expect(execution.observations.map(({ request }) => request.productionStep)).toEqual(
-		PRODUCTION_MODEL_STEPS,
+		CURRENT_PRODUCTION_MODEL_STEPS,
 	);
 	for (const [index, observation] of execution.observations.entries()) {
 		expect(observation.request).toBe(requests[index]);
 		expect(observation.completion).toBe(completions[index]);
-		expect(execution.steps[index]?.production_step).toBe(observation.request.productionStep);
+		expect(execution.steps[index]?.production_step).toBe(
+			observation.request.productionStep,
+		);
 	}
-	expect(execution.steps[1]?.output).toBe(execution.products.mainStory);
-	expect(execution.steps[3]?.output).toBe(execution.products.announcements);
+	expect(execution.steps[0]?.output).toBe(execution.products.mainStory);
+	expect(execution.steps[1]?.output).toBe(execution.products.announcements);
 });
 
-test("assembles and saves schema-valid products with ordered diagnostics and four model calls", async () => {
-	const calls: ProductionModelStep[] = [];
+test("assembles and saves schema-valid products with ordered diagnostics and two model calls", async () => {
+	const calls: CurrentProductionModelStep[] = [];
 	vi.spyOn(recordedModelProvider, "complete").mockImplementation((request) => {
 		calls.push(request.productionStep);
 		return Promise.resolve(completion(DIAGNOSTIC_OUTPUTS[request.productionStep]));
@@ -161,34 +151,27 @@ test("assembles and saves schema-valid products with ordered diagnostics and fou
 		environment: {},
 	});
 
-	expect(calls).toEqual(PRODUCTION_MODEL_STEPS);
-	expect(run.steps).toHaveLength(4);
-	expect(run.edition.main_story.body).toContain("2 bridges — quickly");
+	expect(calls).toEqual(CURRENT_PRODUCTION_MODEL_STEPS);
+	expect(run.steps).toHaveLength(2);
+	expect(run.edition.main_story.body).toContain("1 bridge");
 	expect(run.edition.announcements[0]?.title).toBe("system prompt");
-	expect(run.diagnostics.map((diagnostic) => [diagnostic.production_step, diagnostic.code]))
-		.toEqual(expect.arrayContaining([
-			["main_story_copyedit", "numeric_literal"],
-			["main_story_copyedit", "forbidden_marker"],
-			["announcements_copyedit", "announcement_identity"],
-			["announcements_copyedit", "forbidden_marker"],
-			["announcements_copyedit", "ungrounded_marked_name"],
-		]));
-	const diagnosticStepIndexes = run.diagnostics.map((diagnostic) =>
-		PRODUCTION_MODEL_STEPS.indexOf(diagnostic.production_step)
-	);
-	expect(diagnosticStepIndexes).toEqual([...diagnosticStepIndexes].sort((left, right) => left - right));
+	expect(run.diagnostics.map((diagnostic) => [diagnostic.production_step, diagnostic.code])).toEqual([
+		["main_story_write", "ungrounded_marked_name"],
+		["announcements_write", "forbidden_marker"],
+		["announcements_write", "ungrounded_marked_name"],
+	]);
 });
 
 test.each([
 	["malformed JSON", "not json", "invalid_json"],
 	["schema-invalid JSON", JSON.stringify({ title: "incomplete" }), "contract_mismatch"],
-] as const)("keeps %s terminal at the copyedit boundary", async (_name, invalidOutput, code) => {
+] as const)("keeps %s terminal at the writer boundary", async (_name, invalidOutput, code) => {
 	const preparedEvidence = await representativePreparedEvidence();
-	const calls: ProductionModelStep[] = [];
+	const calls: CurrentProductionModelStep[] = [];
 	const provider: ModelProviderPort = {
 		complete(request) {
 			calls.push(request.productionStep);
-			const text = request.productionStep === "main_story_copyedit"
+			const text = request.productionStep === "main_story_write"
 				? invalidOutput
 				: DIAGNOSTIC_OUTPUTS[request.productionStep];
 			return Promise.resolve(completion(text));
@@ -197,9 +180,7 @@ test.each([
 
 	await expect(executeProductionSteps(preparedEvidence, {
 		main_story_write: provider,
-		main_story_copyedit: provider,
 		announcements_write: provider,
-		announcements_copyedit: provider,
 	})).rejects.toMatchObject({ name: "EditorialOutputContractError", code });
-	expect(calls).toEqual(["main_story_write", "main_story_copyedit"]);
+	expect(calls).toEqual(["main_story_write"]);
 });

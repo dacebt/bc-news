@@ -1,13 +1,12 @@
 import { readFile } from "node:fs/promises";
 import { z } from "zod";
 import { ModelAdapterConfigSchema } from "./model-adapters";
+import { CURRENT_PRODUCTION_MODEL_STEPS } from "./current-production-steps";
 
-/** One independent adapter configuration for every production model step. */
+/** One independent adapter configuration for every current production model step. */
 export const ProductionStepsConfigSchema = z.strictObject({
 	main_story_write: ModelAdapterConfigSchema,
-	main_story_copyedit: ModelAdapterConfigSchema,
 	announcements_write: ModelAdapterConfigSchema,
-	announcements_copyedit: ModelAdapterConfigSchema,
 });
 
 export const EvalConfigSchema = z.strictObject({
@@ -62,7 +61,7 @@ export async function loadConfig(path: string): Promise<EvalConfig> {
 		throw new EvalConfigError(
 			"config_rejected",
 			path,
-			`Config at ${path} must configure exactly the four production steps: ${result.error.message}`,
+			`Config at ${path} must configure exactly ${CURRENT_PRODUCTION_MODEL_STEPS.join(", ")}: ${result.error.message}`,
 		);
 	}
 	return result.data;

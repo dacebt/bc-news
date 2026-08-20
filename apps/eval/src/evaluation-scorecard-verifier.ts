@@ -17,7 +17,7 @@ import {
 } from "./evaluation-scorecard-store";
 import {
 	buildControlledEvaluationScorecardInputV2,
-	buildControlledEvaluationScorecardInputV3,
+	buildControlledEvaluationScorecardInputV4,
 	gatewayRequestHashesForStep,
 	gatewayRequestSha256,
 	gatewayRequestSha256s,
@@ -56,7 +56,7 @@ export async function verifyEvaluationScorecards(temporaryRoot?: string): Promis
 		const { manifestPath, codeCommit } = await initializeControlledEvaluationRepository(repositoryRoot);
 		const localDataRoot = join(repositoryRoot, "apps/eval/local-data");
 		const beforeCount = await git(repositoryRoot, "rev-list", "--count", "HEAD");
-		const controlled = await buildControlledEvaluationScorecardInputV3(
+		const controlled = await buildControlledEvaluationScorecardInputV4(
 			repositoryRoot,
 			manifestPath,
 			localDataRoot,
@@ -78,38 +78,37 @@ export async function verifyEvaluationScorecards(temporaryRoot?: string): Promis
 			);
 		}
 		assertProof(
-			artifact.version === 3
+			artifact.version === 4
 				&& artifact.sources.annotations.annotator_kind === "codex"
-				&& artifact.scorecards.length === 4,
-			"Current V3 scorecard contract or Codex provenance is missing",
+				&& artifact.scorecards.length === 2,
+			"Current V4 scorecard contract or Codex provenance is missing",
 		);
-		const v8Runs = input.runs.map(({ run }) => {
-			assertProof(run.version === 8, `Controlled scorecard source ${run.id} is not a V8 Benchmark Run`);
+		const v9Runs = input.runs.map(({ run }) => {
+			assertProof(run.version === 9, `Controlled scorecard source ${run.id} is not a V9 Benchmark Run`);
 			return run;
 		});
 		assertProof(
 			input.selectedOutputs.every(({ invocation, identity }) => {
-				const run = v8Runs.find((candidate) => candidate.id === identity.benchmark_run_id);
-				if (run === undefined || !("gateway_request_sha256" in identity)) {
+				const run = v9Runs.find((candidate) => candidate.id === identity.benchmark_run_id);
+				if (run === undefined) {
 					return false;
 				}
 				const gatewayRequest = run.gateway_requests.find(({ invocation_id }) => invocation_id === invocation.id);
 				return gatewayRequest !== undefined
 					&& identity.gateway_request_sha256 === gatewayRequestSha256(gatewayRequest);
 			}),
-			"Gateway scorecard outputs omitted exact V8 request provenance",
+			"Gateway scorecard outputs omitted exact V9 request provenance",
 		);
 		assertProof(
-			artifact.sources.benchmark_runs.length === v8Runs.length
+			artifact.sources.benchmark_runs.length === v9Runs.length
 				&& artifact.sources.benchmark_runs.every((source, index) => {
-					const run = v8Runs[index];
+					const run = v9Runs[index];
 					return run !== undefined
 						&& source.benchmark_run_id === run.id
-						&& "benchmark_run_version" in source
-						&& source.benchmark_run_version === 8
+						&& source.benchmark_run_version === 9
 						&& isDeepStrictEqual(source.gateway_request_sha256s, gatewayRequestSha256s(run));
 				}),
-			"Gateway scorecard sources omitted exact V8 request provenance",
+			"Gateway scorecard sources omitted exact V9 request provenance",
 		);
 		assertProof(
 			artifact.scorecards.every(({ production_step, scorecard_context }) => {
@@ -118,7 +117,7 @@ export async function verifyEvaluationScorecards(temporaryRoot?: string): Promis
 				}
 				return isDeepStrictEqual(
 					scorecard_context.projection.gateway_request_hashes,
-					v8Runs.flatMap((run) => gatewayRequestHashesForStep(run, production_step)),
+						v9Runs.flatMap((run) => gatewayRequestHashesForStep(run, production_step)),
 				);
 			}),
 			"Gateway scorecard contexts omitted ordered V8 request hashes",
@@ -135,7 +134,7 @@ export async function verifyEvaluationScorecards(temporaryRoot?: string): Promis
 		await mkdir(results);
 		await createEvaluationScorecardArtifact(join(results, `${artifact.id}.json`), artifact, { localDataRoot });
 		const loaded = await loadEvaluationScorecardArtifact(artifact.id, results, { localDataRoot });
-		assertProof(JSON.stringify(loaded) === JSON.stringify(artifact), "Stored V3 scorecard changed after local reconstruction");
+		assertProof(JSON.stringify(loaded) === JSON.stringify(artifact), "Stored V4 scorecard changed after local reconstruction");
 		const runPath = ((JSON.parse(await readFile(controlled.declarationPath, "utf8")) as { runs: Array<{ source_reference: { path: string } }> }).runs[0]!.source_reference.path);
 		await writeFile(join(localDataRoot, runPath), "{\n", "utf8");
 		let tamperRejected = false;
@@ -145,7 +144,7 @@ export async function verifyEvaluationScorecards(temporaryRoot?: string): Promis
 			tamperRejected = true;
 		}
 		assertProof(tamperRejected, "Tampered local benchmark evidence was accepted");
-		const restored = await buildControlledEvaluationScorecardInputV3(repositoryRoot, manifestPath, localDataRoot, { codeCommit });
+		const restored = await buildControlledEvaluationScorecardInputV4(repositoryRoot, manifestPath, localDataRoot, { codeCommit });
 		const restoredDeclarationSourcePath = repositoryPath(localDataRoot, restored.declarationPath);
 		const restoredArtifact = buildEvaluationScorecard(
 			await loadEvaluationScorecardInput(restoredDeclarationSourcePath, localDataRoot),
@@ -161,7 +160,7 @@ export async function verifyEvaluationScorecards(temporaryRoot?: string): Promis
 		} catch {
 			derivedRejected = true;
 		}
-		assertProof(derivedRejected, "Derived V3 scorecard tampering was accepted");
+		assertProof(derivedRejected, "Derived V4 scorecard tampering was accepted");
 		await writeFile(join(results, `${artifact.id}.json`), json(restoredArtifact), "utf8");
 		const movedRoot = join(root, "relocated-local-data");
 		await cp(localDataRoot, movedRoot, { recursive: true });
@@ -229,9 +228,9 @@ export async function verifyEvaluationScorecards(temporaryRoot?: string): Promis
 		await git(repositoryRoot, "add", "unrelated.txt");
 		await git(repositoryRoot, "commit", "-m", "Advance checkout independently");
 		const freshness = await evaluationScorecardFreshness(restoredArtifact, repositoryRoot);
-		assertProof(freshness.state === "outdated", "Advanced checkout did not report V3 scorecard freshness as outdated");
+		assertProof(freshness.state === "outdated", "Advanced checkout did not report V4 scorecard freshness as outdated");
 		const report = formatEvaluationScorecardReport(restoredArtifact, freshness);
-		assertProof(report.includes("sha256=") && report.includes("freshness=outdated"), "V3 scorecard report did not distinguish local source SHA from evaluated-code freshness");
+		assertProof(report.includes("sha256=") && report.includes("freshness=outdated"), "V4 scorecard report did not distinguish local source SHA from evaluated-code freshness");
 		const legacy = await buildControlledEvaluationScorecardInputV2(repositoryRoot, manifestPath, {
 			directory: "apps/eval/legacy-scorecard-evidence",
 			codeCommit: await evaluationRepositoryHead(repositoryRoot),

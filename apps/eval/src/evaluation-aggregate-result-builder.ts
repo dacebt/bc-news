@@ -1,5 +1,4 @@
 import { z } from "zod";
-import type { ProductionModelStep } from "@bc-news/generation-core";
 import {
 	EvaluationAggregateResultSchema,
 	EvaluationAggregateResultError,
@@ -8,16 +7,14 @@ import {
 } from "./evaluation-aggregate-result";
 import { EvaluationIdSchema, EvaluationTimestampSchema } from "./evaluation-artifact-schemas";
 import type { EvaluationRoleScorecard, EvaluationScorecardArtifact } from "./evaluation-scorecard";
+import { type CurrentProductionModelStep } from "./current-production-steps";
 
 const ROLE_STEPS = [
 	"main_story_write",
-	"main_story_copyedit",
 	"announcements_write",
-	"announcements_copyedit",
-] as const satisfies readonly ProductionModelStep[];
+] as const satisfies readonly CurrentProductionModelStep[];
 const RATE_DEFINITIONS = [
 	["schema_reliability", "terminal_provider_success_invocation"],
-	["copyedit_preservation", "parse_success_copyedit_output"],
 	["claim_grounding", "codex_annotated_factual_claim"],
 	["required_attribution", "codex_annotated_required_attribution_claim"],
 	["event_coverage", "source_event_output_pair"],
@@ -42,7 +39,7 @@ const BuildEvaluationAggregateResultOptionsSchema = z.strictObject({
 });
 
 const AggregateSourceScorecardSchema = z.object({
-	version: z.literal(3),
+	version: z.literal(4),
 	id: EvaluationIdSchema,
 	created_at: EvaluationTimestampSchema,
 	corpus: z.object({
@@ -54,11 +51,24 @@ const AggregateSourceScorecardSchema = z.object({
 	}),
 	configuration: z.object({ identity: EvaluationIdSchema }),
 	repetition_count: z.number().int().positive(),
-	scorecards: z.array(z.unknown()).length(4),
+	sources: z.object({
+		benchmark_runs: z.array(z.object({
+			benchmark_run_version: z.literal(9),
+		})).min(1),
+		annotations: z.object({
+			protocol_id: z.string().min(1),
+			protocol_version: z.literal(3),
+		}),
+		qualitative_reviews: z.object({
+			rubric_id: z.string().min(1),
+			rubric_version: z.literal(3),
+		}),
+	}),
+	scorecards: z.array(z.unknown()).length(2),
 });
 
 type AggregateSourceScorecard = Omit<EvaluationScorecardArtifact, "version" | "corpus"> & {
-	readonly version: 3;
+	readonly version: 4;
 	readonly corpus: EvaluationScorecardArtifact["corpus"] & {
 		readonly source_reference: {
 			readonly sha256: string;
@@ -76,20 +86,20 @@ function only<T>(items: readonly T[], code: EvaluationAggregateResultError["code
 }
 
 function assertCurrentSourceScorecard(scorecard: unknown): AggregateSourceScorecard {
-	if (typeof scorecard !== "object" || scorecard === null || !("version" in scorecard) || scorecard.version !== 3) {
+	if (typeof scorecard !== "object" || scorecard === null || !("version" in scorecard) || scorecard.version !== 4) {
 		const candidate = typeof scorecard === "object" && scorecard !== null && "version" in scorecard
 			? `v${String(scorecard.version)}`
 			: "unknown";
-		fail("unsupported_source_scorecard_version", "unknown-scorecard", `Aggregate result supports Evaluation Scorecard version 3 only, received ${candidate}`);
+		fail("unsupported_source_scorecard_version", "unknown-scorecard", `Aggregate result supports Evaluation Scorecard version 4 only, received ${candidate}`);
 	}
 	const parsed = AggregateSourceScorecardSchema.safeParse(scorecard);
 	if (!parsed.success) {
-		fail("aggregate_creation_rejected", parsed.error.issues[0]?.path.join(".") ?? "scorecard", `Aggregate result requires the current scorecard v3 cohort witness: ${parsed.error.message}`);
+		fail("aggregate_creation_rejected", parsed.error.issues[0]?.path.join(".") ?? "scorecard", `Aggregate result requires the current scorecard v4 cohort witness: ${parsed.error.message}`);
 	}
 	return scorecard as AggregateSourceScorecard;
 }
 
-function roleScorecard(scorecard: AggregateSourceScorecard, step: ProductionModelStep): EvaluationRoleScorecard {
+function roleScorecard(scorecard: AggregateSourceScorecard, step: CurrentProductionModelStep): EvaluationRoleScorecard {
 	return only(
 		scorecard.scorecards.filter((candidate) => candidate.production_step === step),
 		"aggregate_role_roster_mismatch",
@@ -144,7 +154,7 @@ function sampleCounts(source: EvaluationRoleScorecard["sample_counts"]) {
 
 function projectedRate(
 	scorecard: AggregateSourceScorecard,
-	step: ProductionModelStep,
+	step: CurrentProductionModelStep,
 	source: EvaluationRoleScorecard["rates"][number],
 	expectedMetric: (typeof RATE_DEFINITIONS)[number][0],
 	expectedDenominatorUnit: (typeof RATE_DEFINITIONS)[number][1],
@@ -185,7 +195,7 @@ function projectedRate(
 
 function projectedDistribution(
 	scorecard: AggregateSourceScorecard,
-	step: ProductionModelStep,
+	step: CurrentProductionModelStep,
 	source: EvaluationRoleScorecard["distributions"][number],
 	expectedMetric: (typeof DISTRIBUTIONS)[number][0],
 	expectedUnit: (typeof DISTRIBUTIONS)[number][1],
@@ -213,7 +223,7 @@ function projectedDistribution(
 
 function projectedQualitative(
 	scorecard: AggregateSourceScorecard,
-	step: ProductionModelStep,
+	step: CurrentProductionModelStep,
 	source: EvaluationRoleScorecard["qualitative"][number],
 	expectedCriterion: (typeof CRITERIA)[number],
 ) {
@@ -234,7 +244,7 @@ function projectedQualitative(
 	};
 }
 
-function roleAggregate(scorecard: AggregateSourceScorecard, step: ProductionModelStep) {
+function roleAggregate(scorecard: AggregateSourceScorecard, step: CurrentProductionModelStep) {
 	const source = roleScorecard(scorecard, step);
 	return {
 		production_step: step,
@@ -304,14 +314,23 @@ export function buildEvaluationAggregateResult(
 		fail("aggregate_chronology_mismatch", currentScorecard.id, "Aggregate creation cannot predate its source scorecard");
 	}
 	const candidate = {
-		version: 2 as const,
+		version: 3 as const,
 		id: parsedOptions.data.id,
 		created_at: parsedOptions.data.createdAt,
 		evidence_retention: "local_only" as const,
 		source_scorecard: {
-			version: 3 as const,
+			version: 4 as const,
 			id: currentScorecard.id,
 			created_at: currentScorecard.created_at,
+			benchmark_run_version: 9 as const,
+			annotation_protocol: {
+				id: currentScorecard.sources.annotations.protocol_id,
+				version: currentScorecard.sources.annotations.protocol_version,
+			},
+			qualitative_rubric: {
+				id: currentScorecard.sources.qualitative_reviews.rubric_id,
+				version: currentScorecard.sources.qualitative_reviews.rubric_version,
+			},
 		},
 		cohort: {
 			id: parsedOptions.data.cohortId,

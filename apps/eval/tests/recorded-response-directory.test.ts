@@ -26,9 +26,7 @@ function roster(marker: string): RecordedModelResponseRoster {
 	});
 	return {
 		main_story_write: response("main_story_write"),
-		main_story_copyedit: response("main_story_copyedit"),
 		announcements_write: response("announcements_write"),
-		announcements_copyedit: response("announcements_copyedit"),
 	};
 }
 
@@ -49,9 +47,7 @@ function currentRoster(marker: string): RecordedModelResponseV3Roster {
 	});
 	return {
 		main_story_write: response("main_story_write"),
-		main_story_copyedit: response("main_story_copyedit"),
 		announcements_write: response("announcements_write"),
-		announcements_copyedit: response("announcements_copyedit"),
 	};
 }
 
@@ -71,9 +67,7 @@ function historicalV2Roster(marker: string): RecordedModelResponseV2Roster {
 	});
 	return {
 		main_story_write: response("main_story_write"),
-		main_story_copyedit: response("main_story_copyedit"),
 		announcements_write: response("announcements_write"),
-		announcements_copyedit: response("announcements_copyedit"),
 	};
 }
 
@@ -106,7 +100,7 @@ test("rejects missing, extra, directory, and filename-step response entries", as
 	await writeRoster(mismatchDirectory, "b");
 	await writeFile(
 		join(mismatchDirectory, "main_story_write.json"),
-		`${JSON.stringify(roster("b").main_story_copyedit)}\n`,
+		`${JSON.stringify(roster("b").announcements_write)}\n`,
 	);
 	await expect(validateRecordedResponseDirectory(mismatchDirectory)).rejects.toMatchObject({
 		code: "recorded_response_directory_rejected",
@@ -114,7 +108,7 @@ test("rejects missing, extra, directory, and filename-step response entries", as
 
 	const directoryEntry = join(root, "directory-entry");
 	await writeRoster(directoryEntry, "c");
-	await writeFile(join(directoryEntry, "announcements_copyedit.json"), "");
+	await writeFile(join(directoryEntry, "announcements_write.json"), "");
 	await mkdir(join(directoryEntry, "unexpected"));
 	await expect(validateRecordedResponseDirectory(directoryEntry)).rejects.toMatchObject({
 		code: "recorded_response_directory_rejected",
@@ -219,12 +213,12 @@ test("promotes a validated staging set and removes the superseded backup", async
 		await writeCurrentRoster(staging, "f", false);
 		await promoteRecordedResponseDirectory({ stagingDirectory: staging, targetDirectory: target });
 
-		const promoted = (await validateRecordedResponseDirectory(target)).announcements_copyedit;
+		const promoted = (await validateRecordedResponseDirectory(target)).announcements_write;
 		expect(promoted.provider).toBe("provider-f");
 		expect("version" in promoted && promoted.version).toBe(3);
 		expect("configuration" in promoted && promoted.configuration).toEqual({
 			adapter: "lmstudio",
-			model: "model-f-announcements_copyedit",
+			model: "model-f-announcements_write",
 			temperature: 0.2,
 			reasoning_effort: "provider_default",
 		});

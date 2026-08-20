@@ -2,24 +2,17 @@ import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from "cloud
 import { NonRetryableError } from "cloudflare:workflows";
 import { GenerationRunParamsSchema, type GenerationRunParams } from "@bc-news/contracts";
 import {
-	COPYEDIT_SYSTEM_CONSTRAINTS,
 	WRITER_SYSTEM_CONSTRAINTS,
 	announcementsFinalProductDiagnostics,
 	assembleEdition,
-	attachAnnouncementIds,
-	buildAnnouncementsCopyeditPrompt,
 	buildAnnouncementsWriterPrompt,
-	buildMainStoryCopyeditPrompt,
 	buildMainStoryWriterPrompt,
 	evidenceDateForPublicationDate,
 	mainStoryFinalProductDiagnostics,
 	modelUsageRecord,
-	parseAnnouncementsCopyeditOutputWithDiagnostics,
 	parseAnnouncementsWriterOutput,
-	parseMainStoryCopyeditOutputWithDiagnostics,
 	parseMainStoryWriterOutput,
 	prepareEvidence,
-	type EditorialDiagnostic,
 	type ModelUsageRecord,
 	type PreparedEvidence,
 	type ProductionModelStep,
@@ -30,6 +23,7 @@ import {
 	recordGenerationRunComplete,
 	recordGenerationRunFailure,
 	recordGenerationRunProgress,
+	type CurrentEditorialDiagnostic,
 	type GenerationRunFailure,
 	type GenerationStep,
 } from "./generation-run-status";
@@ -78,6 +72,23 @@ function failureCode(error: unknown): string {
 	return "generation_run_failed";
 }
 
+type WriterStep = Extract<GenerationStep, "main_story_write" | "announcements_write">;
+
+function diagnosticsForWriterStep(
+	diagnostics: readonly {
+		readonly kind: string;
+		readonly production_step: string;
+		readonly code: string;
+		readonly message: string;
+	}[],
+	productionStep: WriterStep,
+): CurrentEditorialDiagnostic[] {
+	return diagnostics.map((diagnostic) => ({
+		...diagnostic,
+		production_step: productionStep,
+	})) as CurrentEditorialDiagnostic[];
+}
+
 export class GenerationRun extends WorkflowEntrypoint<Env, GenerationRunParams> {
 	override async run(
 		event: WorkflowEvent<GenerationRunParams>,
@@ -99,7 +110,7 @@ export class GenerationRun extends WorkflowEntrypoint<Env, GenerationRunParams> 
 		let failureStep: GenerationRunFailure["step"] = "configure-generation-run";
 		let completedSteps: GenerationStep[] = [];
 		let modelUsage: ModelUsageRecord[] = [];
-		let diagnostics: EditorialDiagnostic[] = [];
+		let diagnostics: CurrentEditorialDiagnostic[] = [];
 
 		try {
 			const ports = await failNonRetryablyOnDeterministicErrors(() =>
@@ -137,6 +148,12 @@ export class GenerationRun extends WorkflowEntrypoint<Env, GenerationRunParams> 
 					return prepared;
 				}),
 			);
+			if (preparedEvidence.final_count === 0) {
+				throw new NonRetryableError(
+					`No evidence for active region ${params.active_region_id} on publication date ${params.publication_date} after preparation`,
+					"no_evidence_for_publication_date",
+				);
+			}
 			completedSteps = ["prepare-evidence"];
 			failureStep = "main_story_write";
 			await step.do("record-prepare-evidence-status", BOUNDED_RETRIES, () =>
@@ -148,55 +165,29 @@ export class GenerationRun extends WorkflowEntrypoint<Env, GenerationRunParams> 
 				}, new Date().toISOString()),
 			);
 
-			const mainStoryDraft = await step.do("main_story_write", MODEL_STEP_CONFIG, () =>
-				failNonRetryablyOnDeterministicErrors(async () => {
-					const completion = await ports.modelProviders.main_story_write.complete({
-						productionStep: "main_story_write",
-						system: WRITER_SYSTEM_CONSTRAINTS,
-						user: buildMainStoryWriterPrompt(preparedEvidence),
-						correlation: correlation("main_story_write"),
-					});
-					return { product: parseMainStoryWriterOutput(completion.text), completion };
+			const mainStoryCompletion = await step.do("main_story_write", MODEL_STEP_CONFIG, () =>
+				ports.modelProviders.main_story_write.complete({
+					productionStep: "main_story_write",
+					system: WRITER_SYSTEM_CONSTRAINTS,
+					user: buildMainStoryWriterPrompt(preparedEvidence),
+					correlation: correlation("main_story_write"),
 				}),
 			);
+			const mainStoryDraft = {
+				product: parseMainStoryWriterOutput(mainStoryCompletion.text),
+				completion: mainStoryCompletion,
+			};
 			completedSteps = [...completedSteps, "main_story_write"];
 			modelUsage = [...modelUsage, modelUsageRecord("main_story_write", mainStoryDraft.completion)];
-			failureStep = "main_story_copyedit";
-			await step.do("record-main-story-write-status", BOUNDED_RETRIES, () =>
-				recordGenerationRunProgress(this.env.DB, params, {
-					currentStep: "main_story_copyedit",
-					completedSteps,
-					modelUsage,
-					diagnostics,
-				}, new Date().toISOString()),
-			);
-
-			const mainStory = await step.do("main_story_copyedit", MODEL_STEP_CONFIG, () =>
-				failNonRetryablyOnDeterministicErrors(async () => {
-					const completion = await ports.modelProviders.main_story_copyedit.complete({
-						productionStep: "main_story_copyedit",
-						system: COPYEDIT_SYSTEM_CONSTRAINTS,
-						user: buildMainStoryCopyeditPrompt(mainStoryDraft.product),
-						correlation: correlation("main_story_copyedit"),
-					});
-					return {
-						...parseMainStoryCopyeditOutputWithDiagnostics(
-							completion.text,
-							mainStoryDraft.product,
-						),
-						completion,
-					};
-				}),
-			);
-			completedSteps = [...completedSteps, "main_story_copyedit"];
-			modelUsage = [...modelUsage, modelUsageRecord("main_story_copyedit", mainStory.completion)];
 			diagnostics = [
 				...diagnostics,
-				...mainStory.diagnostics,
-				...mainStoryFinalProductDiagnostics(mainStory.product, preparedEvidence),
+				...diagnosticsForWriterStep(
+					mainStoryFinalProductDiagnostics(mainStoryDraft.product, preparedEvidence),
+					"main_story_write",
+				),
 			];
 			failureStep = "announcements_write";
-			await step.do("record-main-story-copyedit-status", BOUNDED_RETRIES, () =>
+			await step.do("record-main-story-write-status", BOUNDED_RETRIES, () =>
 				recordGenerationRunProgress(this.env.DB, params, {
 					currentStep: "announcements_write",
 					completedSteps,
@@ -205,56 +196,29 @@ export class GenerationRun extends WorkflowEntrypoint<Env, GenerationRunParams> 
 				}, new Date().toISOString()),
 			);
 
-			const announcementsDraft = await step.do("announcements_write", MODEL_STEP_CONFIG, () =>
-				failNonRetryablyOnDeterministicErrors(async () => {
-					const completion = await ports.modelProviders.announcements_write.complete({
-						productionStep: "announcements_write",
-						system: WRITER_SYSTEM_CONSTRAINTS,
-						user: buildAnnouncementsWriterPrompt(preparedEvidence),
-						correlation: correlation("announcements_write"),
-					});
-					return { product: parseAnnouncementsWriterOutput(completion.text), completion };
+			const announcementsCompletion = await step.do("announcements_write", MODEL_STEP_CONFIG, () =>
+				ports.modelProviders.announcements_write.complete({
+					productionStep: "announcements_write",
+					system: WRITER_SYSTEM_CONSTRAINTS,
+					user: buildAnnouncementsWriterPrompt(preparedEvidence),
+					correlation: correlation("announcements_write"),
 				}),
 			);
+			const announcementsDraft = {
+				product: parseAnnouncementsWriterOutput(announcementsCompletion.text),
+				completion: announcementsCompletion,
+			};
 			completedSteps = [...completedSteps, "announcements_write"];
 			modelUsage = [...modelUsage, modelUsageRecord("announcements_write", announcementsDraft.completion)];
-			failureStep = "announcements_copyedit";
-			await step.do("record-announcements-write-status", BOUNDED_RETRIES, () =>
-				recordGenerationRunProgress(this.env.DB, params, {
-					currentStep: "announcements_copyedit",
-					completedSteps,
-					modelUsage,
-					diagnostics,
-				}, new Date().toISOString()),
-			);
-
-			const identifiedAnnouncements = attachAnnouncementIds(announcementsDraft.product);
-			const announcements = await step.do("announcements_copyedit", MODEL_STEP_CONFIG, () =>
-				failNonRetryablyOnDeterministicErrors(async () => {
-					const completion = await ports.modelProviders.announcements_copyedit.complete({
-						productionStep: "announcements_copyedit",
-						system: COPYEDIT_SYSTEM_CONSTRAINTS,
-						user: buildAnnouncementsCopyeditPrompt(identifiedAnnouncements),
-						correlation: correlation("announcements_copyedit"),
-					});
-					return {
-						...parseAnnouncementsCopyeditOutputWithDiagnostics(
-							completion.text,
-							identifiedAnnouncements,
-						),
-						completion,
-					};
-				}),
-			);
-			completedSteps = [...completedSteps, "announcements_copyedit"];
-			modelUsage = [...modelUsage, modelUsageRecord("announcements_copyedit", announcements.completion)];
 			diagnostics = [
 				...diagnostics,
-				...announcements.diagnostics,
-				...announcementsFinalProductDiagnostics(announcements.product, preparedEvidence),
+				...diagnosticsForWriterStep(
+					announcementsFinalProductDiagnostics(announcementsDraft.product, preparedEvidence),
+					"announcements_write",
+				),
 			];
 			failureStep = "validate-edition";
-			await step.do("record-announcements-copyedit-status", BOUNDED_RETRIES, () =>
+			await step.do("record-announcements-write-status", BOUNDED_RETRIES, () =>
 				recordGenerationRunProgress(this.env.DB, params, {
 					currentStep: "validate-edition",
 					completedSteps,
@@ -265,8 +229,8 @@ export class GenerationRun extends WorkflowEntrypoint<Env, GenerationRunParams> 
 
 			const edition = await step.do("validate-edition", () =>
 				failNonRetryablyOnDeterministicErrors(() => assembleEdition({
-					mainStory: mainStory.product,
-					announcements: announcements.product,
+					mainStory: mainStoryDraft.product,
+					announcements: announcementsDraft.product,
 					preparedEvidence,
 					generatedAtUtc: new Date().toISOString(),
 					modelUsages: modelUsage,

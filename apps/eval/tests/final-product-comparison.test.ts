@@ -18,7 +18,6 @@ test("compares only editorial products retained by asymmetric historical runs", 
 			} },
 			{ capability: "packaging", output: {
 				title: "Morning Dispatch",
-				subtitle: "What happened overnight",
 				main_story: mainStory,
 				announcements: [{ title: "First milestone", summary: "Built the first hall." }],
 				publication_date: "2026-08-05",
@@ -33,7 +32,7 @@ test("compares only editorial products retained by asymmetric historical runs", 
 	expect(compareRuns(left, right)).toEqual({
 		leftId: "historical-full",
 		rightId: "historical-main-story-only",
-		differences: ["run.announcements", "run.mainStory.subtitle", "run.mainStory.title"],
+		differences: ["run.announcements", "run.mainStory.title"],
 	});
 });
 
@@ -51,13 +50,13 @@ test("compares diagnostics only when both runs retained observed diagnostics", (
 	const product = { main_story: mainStory };
 	const leftDiagnostic = {
 		kind: "final_product" as const,
-		production_step: "main_story_copyedit" as const,
+		production_step: "main_story_write" as const,
 		code: "forbidden_marker" as const,
 		message: "Forbidden output marker: —",
 	};
 	const rightDiagnostic = {
 		kind: "final_product" as const,
-		production_step: "main_story_copyedit" as const,
+		production_step: "main_story_write" as const,
 		code: "ungrounded_quote" as const,
 		message: "Ungrounded quote: invented",
 	};
@@ -74,10 +73,10 @@ test("compares diagnostics only when both runs retained observed diagnostics", (
 		rightDiagnostics: [rightDiagnostic],
 	});
 	expect(formatRunComparison(compared)).toContain(
-		"Left diagnostics: 1 observed\n- main_story_copyedit final_product/forbidden_marker",
+		"Left diagnostics: 1 observed\n- main_story_write final_product/forbidden_marker",
 	);
 	expect(formatRunComparison(compared)).toContain(
-		"Right diagnostics: 1 observed\n- main_story_copyedit final_product/ungrounded_quote",
+		"Right diagnostics: 1 observed\n- main_story_write final_product/ungrounded_quote",
 	);
 
 	const historicalUnknown = compareRuns(

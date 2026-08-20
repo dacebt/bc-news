@@ -1,4 +1,13 @@
-import type { BenchmarkRun, EvaluationTrial, GatewayRequestRecord, RuntimeEvidenceRecord, StepInvocation, V7BenchmarkRun, V8BenchmarkRun } from "./evaluation-artifact";
+import type {
+	BenchmarkRun,
+	GatewayRequestRecord,
+	RuntimeEvidenceRecord,
+	V7BenchmarkRun,
+	V8BenchmarkRun,
+} from "./evaluation-artifact";
+
+type TransitionTrial = BenchmarkRun["trials"][number];
+type TransitionInvocation = TransitionTrial["invocations"][number];
 
 function equal(left: unknown, right: unknown): boolean {
 	return JSON.stringify(left) === JSON.stringify(right);
@@ -8,7 +17,7 @@ function requireEqual(left: unknown, right: unknown, label: string): void {
 	if (!equal(left, right)) throw new Error(`${label} is immutable`);
 }
 
-function invocationBase(invocation: StepInvocation): Record<string, unknown> {
+function invocationBase(invocation: TransitionInvocation): Record<string, unknown> {
 	return {
 		id: invocation.id,
 		production_step: invocation.production_step,
@@ -21,7 +30,7 @@ function invocationBase(invocation: StepInvocation): Record<string, unknown> {
 	};
 }
 
-function withoutParse(invocation: StepInvocation): unknown {
+function withoutParse(invocation: TransitionInvocation): unknown {
 	if (invocation.transport !== "succeeded") return invocation;
 	return {
 		...invocationBase(invocation),
@@ -32,7 +41,7 @@ function withoutParse(invocation: StepInvocation): unknown {
 	};
 }
 
-function withoutRetryClassification(invocation: StepInvocation): unknown {
+function withoutRetryClassification(invocation: TransitionInvocation): unknown {
 	if (invocation.transport !== "failed") return invocation;
 	return {
 		...invocationBase(invocation),
@@ -44,7 +53,10 @@ function withoutRetryClassification(invocation: StepInvocation): unknown {
 	};
 }
 
-function validateInvocationTransition(current: StepInvocation, next: StepInvocation): void {
+function validateInvocationTransition(
+	current: TransitionInvocation,
+	next: TransitionInvocation,
+): void {
 	requireEqual(invocationBase(current), invocationBase(next), `invocation ${current.id} identity and request evidence`);
 	if (current.transport === "in_flight" && next.transport === "succeeded" && next.parse.state === "pending") return;
 	if (current.transport === "in_flight" && next.transport === "failed" && next.retry_classification.state === "pending") return;
@@ -59,14 +71,21 @@ function validateInvocationTransition(current: StepInvocation, next: StepInvocat
 	requireEqual(current, next, `invocation ${current.id}`);
 }
 
-function validateTrackTransition(current: EvaluationTrial["tracks"]["main_story"], next: EvaluationTrial["tracks"]["main_story"], name: string): void {
+function validateTrackTransition(
+	current: TransitionTrial["tracks"]["main_story"],
+	next: TransitionTrial["tracks"]["main_story"],
+	name: string,
+): void {
 	if (equal(current, next)) return;
 	if (current.lifecycle === "pending" && next.lifecycle === "running") return;
 	if (current.lifecycle === "running" && (next.lifecycle === "completed" || next.lifecycle === "rejected")) return;
 	throw new Error(`${name} track transition ${current.lifecycle} -> ${next.lifecycle} is not monotonic`);
 }
 
-function validateTrialTransition(current: EvaluationTrial, next: EvaluationTrial): void {
+function validateTrialTransition(
+	current: TransitionTrial,
+	next: TransitionTrial,
+): void {
 	requireEqual(
 		{ id: current.id, config_identity: current.config_identity, repetition: current.repetition, started_at: current.started_at },
 		{ id: next.id, config_identity: next.config_identity, repetition: next.repetition, started_at: next.started_at },
@@ -86,7 +105,7 @@ function validateTrialTransition(current: EvaluationTrial, next: EvaluationTrial
 		if (appended.transport !== "in_flight" || appended.ordinal !== current.invocations.length + 1) throw new Error("appended invocation must be the next contiguous in-flight invocation");
 	}
 
-	for (const step of ["main_story_write", "main_story_copyedit", "announcements_write", "announcements_copyedit"] as const) {
+	for (const step of Object.keys(current.selected_invocation_ids) as Array<keyof typeof current.selected_invocation_ids>) {
 		const selected = current.selected_invocation_ids[step];
 		const nextSelected = next.selected_invocation_ids[step];
 		if (selected !== null) requireEqual(selected, nextSelected, `${step} selected invocation`);
@@ -95,7 +114,7 @@ function validateTrialTransition(current: EvaluationTrial, next: EvaluationTrial
 	validateTrackTransition(current.tracks.announcements, next.tracks.announcements, "announcements");
 }
 
-function validateRuntimeEvidenceTransition(current: V7BenchmarkRun | V8BenchmarkRun, next: V7BenchmarkRun | V8BenchmarkRun): void {
+function validateRuntimeEvidenceTransition(current: V7BenchmarkRun | V8BenchmarkRun | Extract<BenchmarkRun, { version: 9 }>, next: V7BenchmarkRun | V8BenchmarkRun | Extract<BenchmarkRun, { version: 9 }>): void {
 	if (next.runtime_evidence.length < current.runtime_evidence.length
 		|| next.runtime_evidence.length > current.runtime_evidence.length + 1) {
 		throw new Error("runtime evidence may append exactly one pending entry and may never be removed");
@@ -119,7 +138,7 @@ function validateRuntimeEvidenceTransition(current: V7BenchmarkRun | V8Benchmark
 	}
 }
 
-function validateGatewayRequestTransition(current: V8BenchmarkRun, next: V8BenchmarkRun): void {
+function validateGatewayRequestTransition(current: V8BenchmarkRun | Extract<BenchmarkRun, { version: 9 }>, next: V8BenchmarkRun | Extract<BenchmarkRun, { version: 9 }>): void {
 	if (next.gateway_requests.length < current.gateway_requests.length
 		|| next.gateway_requests.length > current.gateway_requests.length + 1) {
 		throw new Error("Gateway request evidence may append exactly one pending entry and may never be removed");
@@ -178,7 +197,7 @@ export function validateBenchmarkRunTransition(current: BenchmarkRun, next: Benc
 		if (appended.lifecycle !== "running" || appended.invocations.length !== 0) throw new Error("an appended trial must begin running without invocations");
 	}
 	if (current.version === 7 && next.version === 7) validateRuntimeEvidenceTransition(current, next);
-	if (current.version === 8 && next.version === 8) {
+	if ((current.version === 8 || current.version === 9) && current.version === next.version) {
 		validateRuntimeEvidenceTransition(current, next);
 		validateGatewayRequestTransition(current, next);
 	}

@@ -1,8 +1,9 @@
 import { z } from "zod";
-import { ModelExecutionContextSchema, ProductionModelStepSchema as V1ProductionModelStepSchema } from "@bc-news/generation-core";
+import { ModelExecutionContextSchema } from "@bc-news/generation-core";
 import { EvaluationIdSchema, EvaluationTimestampSchema } from "./evaluation-artifact-schemas";
 import { V7EvalConfigSchema as V6EvalConfigSchema, V7ModelAdapterConfigSchema as V6ModelAdapterConfigSchema } from "./evaluation-artifact-v7";
 import { V8EvalConfigSchema, V8ModelAdapterConfigSchema } from "./evaluation-artifact-v8";
+import { LegacyProductionModelStepSchema as V1ProductionModelStepSchema } from "./evaluation-artifact-legacy-schemas";
 import { RepositoryPathSchema, RepositorySourceReferenceSchema } from "./evaluation-repository-reference";
 
 const V1Sha256HashSchema = z.string().regex(/^[0-9a-f]{64}$/u);

@@ -1,8 +1,9 @@
 import { normalize, posix } from "node:path";
 import { z } from "zod";
-import { ModelExecutionContextSchema, ProductionModelStepSchema as V1ProductionModelStepSchema } from "@bc-news/generation-core";
+import { ModelExecutionContextSchema } from "@bc-news/generation-core";
 import { EvaluationIdSchema, EvaluationTimestampSchema } from "./evaluation-artifact-schemas";
 import { V8ModelAdapterConfigSchema } from "./evaluation-artifact-v8";
+import { CurrentProductionModelStepSchema } from "./current-production-steps";
 
 const V1Sha256HashSchema = z.string().regex(/^[0-9a-f]{64}$/u);
 const Trimmed = z.string().min(1).refine((value) => value === value.trim(), "String must be trimmed");
@@ -27,6 +28,16 @@ export {
 	type EvaluationLongitudinalScorecardArtifactV2,
 	type StableLongitudinalContextV2,
 } from "./evaluation-longitudinal-scorecard-v2";
+export {
+	EvaluationLongitudinalDeclarationSchema as EvaluationLongitudinalDeclarationV3Schema,
+	EvaluationLongitudinalRoleHistorySchema as EvaluationLongitudinalRoleHistoryV3Schema,
+	EvaluationLongitudinalScorecardArtifactSchema as EvaluationLongitudinalScorecardArtifactV3Schema,
+	StableLongitudinalContextSchema as StableLongitudinalContextV3Schema,
+	type EvaluationLongitudinalDeclaration as EvaluationLongitudinalDeclarationV3,
+	type EvaluationLongitudinalRoleHistory as EvaluationLongitudinalRoleHistoryV3,
+	type EvaluationLongitudinalScorecardArtifact as EvaluationLongitudinalScorecardArtifactV3,
+	type StableLongitudinalContext as StableLongitudinalContextV3,
+} from "./evaluation-longitudinal-scorecard-v3";
 
 export const EVALUATION_LONGITUDINAL_ERROR_CODES = [
 	"invalid_longitudinal_declaration_json", "longitudinal_declaration_rejected",
@@ -49,8 +60,8 @@ export class EvaluationLongitudinalError extends Error {
 const Hash = V1Sha256HashSchema;
 const Nonnegative = z.number().int().nonnegative();
 const Phase = z.enum(["baseline", "subject"]);
-const RateMetricName = z.enum(["schema_reliability", "copyedit_preservation", "claim_grounding", "required_attribution", "event_coverage", "announcement_relevance"]);
-const DenominatorUnit = z.enum(["terminal_provider_success_invocation", "parse_success_copyedit_output", "codex_annotated_factual_claim", "codex_annotated_required_attribution_claim", "source_event_output_pair", "parsed_announcement"]);
+const RateMetricName = z.enum(["schema_reliability", "claim_grounding", "required_attribution", "event_coverage", "announcement_relevance"]);
+const DenominatorUnit = z.enum(["terminal_provider_success_invocation", "codex_annotated_factual_claim", "codex_annotated_required_attribution_claim", "source_event_output_pair", "parsed_announcement"]);
 const DistributionMetricName = z.enum(["input_tokens", "output_tokens", "total_tokens", "application_latency_ms", "provider_time_to_first_token_ms", "provider_total_time_ms"]);
 const CriterionName = z.enum(["coherence", "usefulness", "newsworthiness", "voice"]);
 const CountName = z.enum(["declared_trial_count", "step_reached_trial_count", "step_not_reached_trial_count", "invocation_attempt_count", "initial_attempt_count", "retry_attempt_count", "transport_failed_attempt_count", "transport_succeeded_attempt_count", "parse_succeeded_invocation_count", "parse_rejected_invocation_count", "annotated_output_count", "reviewed_output_count"]);
@@ -71,7 +82,7 @@ export const LocalSourceReferenceSchema = z.strictObject({
 export type LocalSourceReference = z.infer<typeof LocalSourceReferenceSchema>;
 
 export const EvaluationLongitudinalDeclarationSchema = z.strictObject({
-	version: z.literal(3), id: EvaluationIdSchema,
+	version: z.literal(4), id: EvaluationIdSchema,
 	scorecards: z.array(z.strictObject({
 		ordinal: z.number().int().positive(), phase: Phase, source_reference: LocalSourceReferenceSchema,
 		scorecard_id: EvaluationIdSchema,
@@ -88,11 +99,11 @@ export const EvaluationLongitudinalDeclarationSchema = z.strictObject({
 
 const UnknownStableContextSchema = z.strictObject({ state: z.literal("unknown"), reason: z.literal("no_captured_invocation") });
 const StableProjectionSchema = z.strictObject({
-	scorecard_version: z.literal(3), corpus_manifest_id: EvaluationIdSchema,
+	scorecard_version: z.literal(4), corpus_manifest_id: EvaluationIdSchema,
 	corpus_source_reference: LocalSourceReferenceSchema,
 	ordered_fixture_prepared_identities: z.array(z.strictObject({ fixture_id: z.string(), prepared_evidence_identity_sha256: Hash })),
 	code_provenance: z.strictObject({ repository: z.literal("bc-news"), commit_sha: z.string().regex(/^[0-9a-f]{40}$/u), dirty: z.literal(false) }),
-	ordered_output_contract_provenance: z.array(z.strictObject({ production_step: V1ProductionModelStepSchema, canonical_schema: z.unknown(), schema_sha256: Hash })),
+	ordered_output_contract_provenance: z.array(z.strictObject({ production_step: CurrentProductionModelStepSchema, canonical_schema: z.unknown(), schema_sha256: Hash })),
 	adapter: V8ModelAdapterConfigSchema, declared_transport_retry_limit: z.number().int().min(0).max(3),
 	ordered_requests: z.array(z.strictObject({ observation_ordinal: z.number().int().positive(), request_sha256: Hash })),
 	ordered_gateway_requests: z.array(z.strictObject({
@@ -152,10 +163,10 @@ const ClassificationSchema = z.discriminatedUnion("state", [
 ]);
 
 const RoleHistoryBaseSchema = z.strictObject({
-	production_step: V1ProductionModelStepSchema, baseline_pack_count: z.number().int().positive(), subject_pack_count: z.number().int().positive(),
+	production_step: CurrentProductionModelStepSchema, baseline_pack_count: z.number().int().positive(), subject_pack_count: z.number().int().positive(),
 	sources: z.array(ContextSourceSchema).min(2), stable_contexts: z.array(StableLongitudinalContextSchema).min(2), context_differences: z.array(ContextDifferenceSchema),
 	phase_count_summaries: z.strictObject({ baseline: CountsSchema, subject: CountsSchema }), count_histories: z.array(CountHistorySchema).length(12),
-	rate_histories: z.array(RateHistorySchema).length(6), distribution_histories: z.array(DistributionHistorySchema).length(6), qualitative_histories: z.array(QualitativeHistorySchema).length(4),
+	rate_histories: z.array(RateHistorySchema).length(5), distribution_histories: z.array(DistributionHistorySchema).length(6), qualitative_histories: z.array(QualitativeHistorySchema).length(4),
 	eligible_signal_witnesses: z.array(SignalWitnessSchema), classification: ClassificationSchema,
 });
 export const EvaluationLongitudinalRoleHistorySchema = RoleHistoryBaseSchema;
@@ -165,13 +176,11 @@ const PolicySchema = z.strictObject({ minimum_baseline_scorecards: z.literal(3),
 const ScorecardReferenceSchema = z.strictObject({ ordinal: z.number().int().positive(), phase: Phase, scorecard_id: EvaluationIdSchema, source_reference: LocalSourceReferenceSchema, evaluated_code_commit_sha: z.string().regex(/^[0-9a-f]{40}$/u), created_at: EvaluationTimestampSchema });
 
 export const EvaluationLongitudinalScorecardArtifactSchema = z.strictObject({
-	version: z.literal(3), id: EvaluationIdSchema, created_at: EvaluationTimestampSchema, policy: PolicySchema,
+	version: z.literal(4), id: EvaluationIdSchema, created_at: EvaluationTimestampSchema, policy: PolicySchema,
 	source_reference: LocalSourceReferenceSchema, scorecard_references: z.array(ScorecardReferenceSchema).min(2),
 	roles: z.tuple([
 		RoleHistoryBaseSchema.extend({ production_step: z.literal("main_story_write") }),
-		RoleHistoryBaseSchema.extend({ production_step: z.literal("main_story_copyedit") }),
 		RoleHistoryBaseSchema.extend({ production_step: z.literal("announcements_write") }),
-		RoleHistoryBaseSchema.extend({ production_step: z.literal("announcements_copyedit") }),
 	]),
 });
 
@@ -180,4 +189,5 @@ export type EvaluationLongitudinalScorecardArtifact = z.infer<typeof EvaluationL
 export type AnyEvaluationLongitudinalScorecardArtifact =
 	| import("./evaluation-longitudinal-scorecard-v1").EvaluationLongitudinalScorecardArtifactV1
 	| import("./evaluation-longitudinal-scorecard-v2").EvaluationLongitudinalScorecardArtifactV2
+	| import("./evaluation-longitudinal-scorecard-v3").EvaluationLongitudinalScorecardArtifact
 	| EvaluationLongitudinalScorecardArtifact;

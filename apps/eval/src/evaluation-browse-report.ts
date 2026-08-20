@@ -3,27 +3,61 @@ import type { BenchmarkComparison } from "./evaluation-comparison";
 
 type Trial = BenchmarkRun["trials"][number];
 type Invocation = Trial["invocations"][number];
-type TrackFindings = Trial["tracks"]["main_story"]["findings"];
+type TrackName = "main_story" | "announcements";
+
+interface BenchmarkTrackFinding {
+	readonly kind: string;
+	readonly code: string;
+	readonly message: string;
+}
+
+interface BenchmarkTrackState {
+	readonly lifecycle: string;
+	readonly subject_outcome: string | null;
+	readonly terminal_production_step: string | null;
+	readonly product: Record<string, unknown> | null;
+	readonly findings: readonly BenchmarkTrackFinding[];
+}
+
+function trackEntries(
+	run: BenchmarkRun,
+	trial: Trial,
+): ReadonlyArray<readonly [TrackName, BenchmarkTrackState]> {
+	if (run.version === 9) {
+		return [
+			["main_story", trial.tracks.main_story],
+			["announcements", trial.tracks.announcements],
+		];
+	}
+	return [
+		["main_story", trial.tracks.main_story],
+		["announcements", trial.tracks.announcements],
+	];
+}
 
 function increment(counts: Record<string, number>, key: string): void {
 	counts[key] = (counts[key] ?? 0) + 1;
 }
 
-function diagnosticProjection(findings: TrackFindings) {
+function diagnosticProjection(findings: readonly BenchmarkTrackFinding[]) {
 	return {
 		diagnostic_count: findings.length,
 		diagnostics: findings,
 	};
 }
 
-function trackProducts(trial: Trial, trialOrdinal: number) {
-	return Object.entries(trial.tracks).flatMap(([track, state]) => state.product === null ? [] : [{
-		trial_ordinal: trialOrdinal,
-		track,
-		track_outcome: state.subject_outcome,
-		product: state.product,
-		...diagnosticProjection(state.findings),
-	}]);
+function trackProducts(run: BenchmarkRun, trial: Trial, trialOrdinal: number) {
+	return trackEntries(run, trial).flatMap(([track, state]) =>
+		state.product === null
+			? []
+			: [{
+				trial_ordinal: trialOrdinal,
+				track,
+				track_outcome: state.subject_outcome,
+				product: state.product,
+				...diagnosticProjection(state.findings),
+			}],
+	);
 }
 
 function invocationEvidence(invocation: Invocation, trialOrdinal: number) {
@@ -47,7 +81,7 @@ export function summarizeBenchmarkRun(run: BenchmarkRun) {
 	const findingKinds: Record<string, number> = {};
 	const diagnosticKinds: Record<string, number> = {};
 	for (const trial of run.trials) {
-		for (const track of Object.values(trial.tracks)) {
+		for (const [, track] of trackEntries(run, trial)) {
 			increment(trackOutcomes, track.subject_outcome ?? "pending");
 			for (const finding of track.findings) {
 				increment(findingKinds, finding.kind);
@@ -108,7 +142,9 @@ export function summarizeBenchmarkRun(run: BenchmarkRun) {
 		track_outcome_counts: trackOutcomes,
 		finding_kind_counts: findingKinds,
 		diagnostic_kind_counts: diagnosticKinds,
-		products: run.trials.flatMap((trial, index) => trackProducts(trial, index + 1)),
+		products: run.trials.flatMap((trial, index) =>
+			trackProducts(run, trial, index + 1),
+		),
 		invocation_count: run.trials.reduce((count, trial) => count + trial.invocations.length, 0),
 		retry_count: run.trials.reduce(
 			(count, trial) => count + trial.invocations.filter(({ predecessor_invocation_id }) => predecessor_invocation_id !== null).length,
@@ -118,7 +154,7 @@ export function summarizeBenchmarkRun(run: BenchmarkRun) {
 			(invocation) => invocationEvidence(invocation, index + 1),
 		)),
 		runtime_evidence: run.runtime_evidence,
-		gateway_requests: run.version === 8 ? run.gateway_requests : [],
+		gateway_requests: "gateway_requests" in run ? run.gateway_requests : [],
 	};
 }
 

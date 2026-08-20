@@ -23,7 +23,6 @@ export function finalEditorialProductsFromEdition(edition: unknown): EvalProduct
 	return {
 		mainStory: {
 			title: parsed.title,
-			subtitle: parsed.subtitle,
 			main_story: parsed.main_story,
 		},
 		announcements: { announcements: parsed.announcements },
@@ -40,7 +39,6 @@ function historicalFinalEditorialProducts(run: ComparableRun): Record<string, un
 	for (const step of run.steps) {
 		if (!isRecord(step.output)) continue;
 		if (Object.hasOwn(step.output, "title")) mainStory.title = step.output.title;
-		if (Object.hasOwn(step.output, "subtitle")) mainStory.subtitle = step.output.subtitle;
 		if (Object.hasOwn(step.output, "main_story")) mainStory.main_story = step.output.main_story;
 		if (Object.hasOwn(step.output, "announcements")) {
 			announcements.announcements = step.output.announcements;

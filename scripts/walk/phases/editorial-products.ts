@@ -16,7 +16,6 @@ function hasExactKeys(value: Record<string, unknown>, keys: readonly string[]): 
 
 interface RecordedMainStoryProduct {
 	title: string;
-	subtitle: string;
 	main_story: MainStory;
 }
 
@@ -24,21 +23,18 @@ function parseRecordedMainStoryProduct(text: string): RecordedMainStoryProduct {
 	const value = JSON.parse(text) as unknown;
 	if (
 		!isRecord(value) ||
-		!hasExactKeys(value, ["title", "subtitle", "main_story"]) ||
-		typeof value.title !== "string" ||
-		typeof value.subtitle !== "string"
+		!hasExactKeys(value, ["title", "main_story"]) ||
+		typeof value.title !== "string"
 	) {
-		throw new Error("main_story_copyedit recorded response has an invalid final product");
+		throw new Error("main_story_write recorded response has an invalid final product");
 	}
 	return {
 		title: value.title,
-		subtitle: value.subtitle,
 		main_story: MainStorySchema.parse(value.main_story),
 	};
 }
 
 interface RecordedAnnouncement {
-	id: string;
 	title: string;
 	summary: string;
 }
@@ -52,15 +48,67 @@ function parseRecordedAnnouncements(text: string): readonly RecordedAnnouncement
 		value.announcements.some(
 			(announcement) =>
 				!isRecord(announcement) ||
-				!hasExactKeys(announcement, ["id", "title", "summary"]) ||
-				typeof announcement.id !== "string" ||
+				!hasExactKeys(announcement, ["title", "summary"]) ||
 				typeof announcement.title !== "string" ||
 				typeof announcement.summary !== "string",
 		)
 	) {
-		throw new Error("announcements_copyedit recorded response has invalid identified announcements");
+		throw new Error("announcements_write recorded response has invalid final announcements");
 	}
 	return value.announcements as RecordedAnnouncement[];
+}
+
+interface WriterProvenance {
+	provider: string;
+	model: string;
+}
+
+function parseWriterProvenance(value: unknown): WriterProvenance {
+	if (
+		!isRecord(value) ||
+		!hasExactKeys(value, ["provider", "model"]) ||
+		typeof value.provider !== "string" ||
+		value.provider.length === 0 ||
+		typeof value.model !== "string" ||
+		value.model.length === 0
+	) {
+		throw new Error("published edition has invalid writer provenance");
+	}
+	return { provider: value.provider, model: value.model };
+}
+
+function parseLegacyWriterProvenance(value: unknown): WriterProvenance {
+	if (
+		!isRecord(value) ||
+		!hasExactKeys(value, ["write", "copyedit"])
+	) {
+		throw new Error("published edition has invalid writer provenance");
+	}
+	parseWriterProvenance(value.copyedit);
+	return parseWriterProvenance(value.write);
+}
+
+export function extractWriterProvenance(
+	edition: unknown,
+	productKey: "main_story" | "announcements",
+): WriterProvenance {
+	if (
+		!isRecord(edition) ||
+		!isRecord(edition.meta) ||
+		!isRecord(edition.meta.editorial_products) ||
+		!isRecord(edition.meta.editorial_products[productKey])
+	) {
+		throw new Error("published edition is missing editorial product provenance");
+	}
+	const productProvenance = edition.meta.editorial_products[productKey];
+	try {
+		return parseWriterProvenance(productProvenance);
+	} catch (error) {
+		if (!(error instanceof Error)) {
+			throw error;
+		}
+	}
+	return parseLegacyWriterProvenance(productProvenance);
 }
 
 async function run(ctx: WalkContext): Promise<void> {
@@ -83,27 +131,22 @@ async function run(ctx: WalkContext): Promise<void> {
 				"id" in announcement,
 		)
 	) {
-		throw new Error("published announcements must be objects with no internal copyedit ids");
+		throw new Error("published announcements must be objects with no internal announcement ids");
 	}
 	const mainStory = parseRecordedMainStoryProduct(
-		(await readRecordedResponse("main_story_copyedit")).text,
+		(await readRecordedResponse("main_story_write")).text,
 	);
 	const identifiedAnnouncements = parseRecordedAnnouncements(
-		(await readRecordedResponse("announcements_copyedit")).text,
+		(await readRecordedResponse("announcements_write")).text,
 	);
-	const announcements = identifiedAnnouncements.map(({ title, summary }) => ({
-		title,
-		summary,
-	}));
 
 	if (
 		edition.title !== mainStory.title ||
-		edition.subtitle !== mainStory.subtitle ||
 		JSON.stringify(edition.main_story) !== JSON.stringify(mainStory.main_story) ||
-		JSON.stringify(edition.announcements) !== JSON.stringify(announcements)
+		JSON.stringify(edition.announcements) !== JSON.stringify(identifiedAnnouncements)
 	) {
 		throw new Error(
-			"published edition does not match the two recorded copyedited editorial products",
+			"published edition does not match the two recorded writer editorial products",
 		);
 	}
 	if (ctx.state.firstGenerationRunEvidence === undefined) {
@@ -123,38 +166,28 @@ async function run(ctx: WalkContext): Promise<void> {
 	const expectedProvenance = {
 		main_story: {
 			write: provenanceFor("main_story_write"),
-			copyedit: provenanceFor("main_story_copyedit"),
 		},
 		announcements: {
 			write: provenanceFor("announcements_write"),
-			copyedit: provenanceFor("announcements_copyedit"),
 		},
 	};
-	const actualProvenance = edition.meta.editorial_products;
+	const actualProvenance = {
+		main_story: extractWriterProvenance(unparsedEdition, "main_story"),
+		announcements: extractWriterProvenance(unparsedEdition, "announcements"),
+	};
 	if (
-		actualProvenance.main_story.write.provider !==
-			expectedProvenance.main_story.write.provider ||
-		actualProvenance.main_story.write.model !== expectedProvenance.main_story.write.model ||
-		actualProvenance.main_story.copyedit.provider !==
-			expectedProvenance.main_story.copyedit.provider ||
-		actualProvenance.main_story.copyedit.model !==
-			expectedProvenance.main_story.copyedit.model ||
-		actualProvenance.announcements.write.provider !==
-			expectedProvenance.announcements.write.provider ||
-		actualProvenance.announcements.write.model !==
-			expectedProvenance.announcements.write.model ||
-		actualProvenance.announcements.copyedit.provider !==
-			expectedProvenance.announcements.copyedit.provider ||
-		actualProvenance.announcements.copyedit.model !==
-			expectedProvenance.announcements.copyedit.model
+		actualProvenance.main_story.provider !== expectedProvenance.main_story.write.provider ||
+		actualProvenance.main_story.model !== expectedProvenance.main_story.write.model ||
+		actualProvenance.announcements.provider !== expectedProvenance.announcements.write.provider ||
+		actualProvenance.announcements.model !== expectedProvenance.announcements.write.model
 	) {
 		throw new Error(
-			`edition provenance was not derived from the four production usages: ${JSON.stringify(actualProvenance)}`,
+			`edition provenance was not derived from the two writer usages: ${JSON.stringify(actualProvenance)}`,
 		);
 	}
 
 	console.log(
-		"walk: deterministic assembly published both copyedited products with usage-derived provenance and no internal announcement ids",
+		"walk: deterministic assembly published both writer products with writer-derived provenance and no internal announcement ids",
 	);
 }
 

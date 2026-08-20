@@ -4,9 +4,7 @@ import { defineConfig } from "vitest/config";
 
 const RECORDED_MODEL_CONFIG = JSON.stringify({
 	main_story_write: { adapter: "recorded" },
-	main_story_copyedit: { adapter: "recorded" },
 	announcements_write: { adapter: "recorded" },
-	announcements_copyedit: { adapter: "recorded" },
 });
 
 export default defineConfig(async () => {

@@ -32,10 +32,26 @@ function cohortLine(aggregate: AnyEvaluationAggregateResult): string {
 		`fixtures=${String(aggregate.cohort.fixture_count)}`,
 		`repetitions=${String(aggregate.cohort.repetition_count)}`,
 	];
-	if (aggregate.version === 2) fields.push(`evidence_identity_sha256=${aggregate.cohort.evidence_identity_sha256}`);
+	if (aggregate.version !== 1) fields.push(`evidence_identity_sha256=${aggregate.cohort.evidence_identity_sha256}`);
 	if (aggregate.cohort.raw_message_count !== undefined) fields.push(`raw_messages=${String(aggregate.cohort.raw_message_count)}`);
 	if (aggregate.cohort.prepared_message_count !== undefined) fields.push(`prepared_messages=${String(aggregate.cohort.prepared_message_count)}`);
 	return fields.join(" | ");
+}
+
+function sourceScorecardLines(aggregate: AnyEvaluationAggregateResult): string[] {
+	const lines = [
+		`Source scorecard: v${String(aggregate.source_scorecard.version)} ${aggregate.source_scorecard.id} created ${aggregate.source_scorecard.created_at}`,
+	];
+	if (aggregate.version === 3) {
+		lines.push(`Benchmark Run version: v${String(aggregate.source_scorecard.benchmark_run_version)}`);
+		lines.push(
+			`Annotation protocol: ${aggregate.source_scorecard.annotation_protocol.id} v${String(aggregate.source_scorecard.annotation_protocol.version)}`,
+		);
+		lines.push(
+			`Qualitative rubric: ${aggregate.source_scorecard.qualitative_rubric.id} v${String(aggregate.source_scorecard.qualitative_rubric.version)}`,
+		);
+	}
+	return lines;
 }
 
 export function formatEvaluationAggregateResultReport(aggregate: AnyEvaluationAggregateResult): string {
@@ -43,7 +59,7 @@ export function formatEvaluationAggregateResultReport(aggregate: AnyEvaluationAg
 		`Evaluation aggregate result v${String(aggregate.version)}: ${aggregate.id}`,
 		`Created at: ${aggregate.created_at}`,
 		`Evidence retention: ${aggregate.evidence_retention}`,
-		`Source scorecard: v${String(aggregate.source_scorecard.version)} ${aggregate.source_scorecard.id} created ${aggregate.source_scorecard.created_at}`,
+		...sourceScorecardLines(aggregate),
 		`Cohort: ${cohortLine(aggregate)}`,
 		`Configuration identity: ${aggregate.configuration_identity}`,
 		...aggregate.roles.flatMap((role) => [

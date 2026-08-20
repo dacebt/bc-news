@@ -1,14 +1,18 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { PRODUCTION_MODEL_STEPS, ProductionModelStepSchema } from "@bc-news/generation-core";
 import { z } from "zod";
+import {
+	CURRENT_PRODUCTION_MODEL_STEPS,
+	CurrentProductionModelStepSchema,
+	type CurrentProductionModelStep,
+} from "./current-production-steps";
 import { RunIdSchema, Sha256HashSchema, generateRunId } from "./run-file";
 
 export const CONTEXT_BENCHMARK_LOADS = [1, 50, 100, 150, 208] as const;
 
 const ContextBenchmarkRowSchema = z.strictObject({
 	message_load: z.int().positive(),
-	production_step: ProductionModelStepSchema,
+	production_step: CurrentProductionModelStepSchema,
 	prompt_sha256: Sha256HashSchema,
 	request_sha256: Sha256HashSchema,
 	structured_output: z.strictObject({
@@ -54,9 +58,7 @@ const ContextBenchmarkSamplingEvidenceSchema = z.discriminatedUnion("posture", [
 
 const ContextBenchmarkSamplingByStepSchema = z.strictObject({
 	main_story_write: ContextBenchmarkSamplingEvidenceSchema,
-	main_story_copyedit: ContextBenchmarkSamplingEvidenceSchema,
 	announcements_write: ContextBenchmarkSamplingEvidenceSchema,
-	announcements_copyedit: ContextBenchmarkSamplingEvidenceSchema,
 });
 
 const ContextBenchmarkFileShape = {
@@ -82,7 +84,7 @@ const ContextBenchmarkFileShape = {
 		measurement_runtime: z.literal("lmstudio_sdk_1.5"),
 	}),
 	rows: z.array(ContextBenchmarkRowSchema).length(
-		CONTEXT_BENCHMARK_LOADS.length * PRODUCTION_MODEL_STEPS.length,
+		CONTEXT_BENCHMARK_LOADS.length * CURRENT_PRODUCTION_MODEL_STEPS.length,
 	),
 	started_at: z.iso.datetime({ offset: true }),
 	completed_at: z.iso.datetime({ offset: true }),
@@ -93,7 +95,9 @@ function validateContextBenchmarkRows(
 	context: z.core.$RefinementCtx,
 ): void {
 	const expected = CONTEXT_BENCHMARK_LOADS.flatMap((messageLoad) =>
-		PRODUCTION_MODEL_STEPS.map((productionStep) => `${messageLoad}:${productionStep}`)
+		CURRENT_PRODUCTION_MODEL_STEPS.map(
+			(productionStep) => `${messageLoad}:${productionStep}`,
+		)
 	);
 	const observed = report.rows.map((row) => `${row.message_load}:${row.production_step}`);
 	if (observed.some((value, index) => value !== expected[index])) {
@@ -146,9 +150,7 @@ const ContextBenchmarkAgentConfigurationSchema = z.strictObject({
 
 const ContextBenchmarkConfigurationsByStepSchema = z.strictObject({
 	main_story_write: ContextBenchmarkAgentConfigurationSchema,
-	main_story_copyedit: ContextBenchmarkAgentConfigurationSchema,
 	announcements_write: ContextBenchmarkAgentConfigurationSchema,
-	announcements_copyedit: ContextBenchmarkAgentConfigurationSchema,
 });
 
 function validateContextBenchmarkAgentModels(
@@ -163,7 +165,7 @@ function validateContextBenchmarkAgentModels(
 	},
 	context: z.core.$RefinementCtx,
 ): void {
-	const configuredModels = PRODUCTION_MODEL_STEPS.map(
+	const configuredModels = CURRENT_PRODUCTION_MODEL_STEPS.map(
 		(step) => report.agent_configurations[step].model,
 	);
 	if (new Set(configuredModels).size !== 1) {
@@ -180,7 +182,7 @@ function validateContextBenchmarkAgentModels(
 		report.model.path,
 		report.model.display_name,
 	]);
-	for (const step of PRODUCTION_MODEL_STEPS) {
+	for (const step of CURRENT_PRODUCTION_MODEL_STEPS) {
 		if (!loadedModelNames.has(report.agent_configurations[step].model)) {
 			context.addIssue({
 				code: "custom",
@@ -210,6 +212,7 @@ export type ContextBenchmarkFile = z.infer<typeof ContextBenchmarkFileSchema>;
 export type ContextBenchmarkFileV2 = z.infer<typeof ContextBenchmarkFileV2Schema>;
 export type ContextBenchmarkFileV3 = z.infer<typeof ContextBenchmarkFileV3Schema>;
 export type ContextBenchmarkRow = z.infer<typeof ContextBenchmarkRowSchema>;
+export type ContextBenchmarkStep = CurrentProductionModelStep;
 
 export class ContextBenchmarkFileError extends Error {
 	readonly code = "context_benchmark_file_rejected";

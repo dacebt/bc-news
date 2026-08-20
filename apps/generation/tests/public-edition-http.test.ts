@@ -57,23 +57,17 @@ function generationEnv(
 
 function edition(publicationDate: string): Edition {
 	return {
+		version: 2,
 		active_region_id: "7",
 		publication_date: publicationDate,
 		title: "The Widmoria Muster",
-		subtitle: "A secure edition",
 		announcements: [],
 		main_story: { headline: "Boundary held", lede: "A lede.", body: "A body." },
 		meta: {
 			generated_at_utc: `${publicationDate}T00:00:00.000Z`,
 			editorial_products: {
-				main_story: {
-					write: { provider: "recorded", model: "recorded/main-story-write-v1" },
-					copyedit: { provider: "recorded", model: "recorded/main-story-copyedit-v1" },
-				},
-				announcements: {
-					write: { provider: "recorded", model: "recorded/announcements-write-v1" },
-					copyedit: { provider: "recorded", model: "recorded/announcements-copyedit-v1" },
-				},
+				main_story: { provider: "recorded", model: "recorded/main-story-write-v1" },
+				announcements: { provider: "recorded", model: "recorded/announcements-write-v1" },
 			},
 			counts: { raw_count: 1, after_filter_count: 1, after_burst_count: 1, final_count: 1 },
 		},

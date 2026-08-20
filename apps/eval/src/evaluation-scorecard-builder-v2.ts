@@ -1,6 +1,10 @@
 import { isDeepStrictEqual } from "node:util";
-import { PRODUCTION_MODEL_STEPS, type ModelExecutionContext, type ProductionModelStep } from "@bc-news/generation-core";
+import { type ModelExecutionContext } from "@bc-news/generation-core";
 import { canonical, sha256Json } from "./evaluation-artifact-schemas";
+import {
+	LEGACY_PRODUCTION_MODEL_STEPS as PRODUCTION_MODEL_STEPS,
+	type LegacyProductionModelStep as ProductionModelStep,
+} from "./evaluation-artifact-legacy-schemas";
 import { EvaluationScorecardArtifactSchema, EvaluationScorecardError, type EvaluationRoleScorecard, type EvaluationScorecardArtifact, type ScorecardContext } from "./evaluation-scorecard-v2";
 import { validateLoadedEvaluationScorecardInput, type LoadedEvaluationScorecardInput, type ScorecardBenchmarkRun } from "./evaluation-scorecard-input-v2";
 

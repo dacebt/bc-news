@@ -117,15 +117,11 @@ test("keeps a provider success without runtime evidence pending and leaves the b
 	]))) as Record<ProductionModelStep, ModelCompletion>;
 	const completionCalls = {
 		main_story_write: vi.fn(() => Promise.resolve(completions.main_story_write)),
-		main_story_copyedit: vi.fn(() => Promise.resolve(completions.main_story_copyedit)),
 		announcements_write: vi.fn(() => Promise.resolve(completions.announcements_write)),
-		announcements_copyedit: vi.fn(() => Promise.resolve(completions.announcements_copyedit)),
 	};
 	providerOverride.current = {
 		main_story_write: { complete: completionCalls.main_story_write },
-		main_story_copyedit: { complete: completionCalls.main_story_copyedit },
 		announcements_write: { complete: completionCalls.announcements_write },
-		announcements_copyedit: { complete: completionCalls.announcements_copyedit },
 	};
 
 	const root = await temporaryRoot("bc-news-runtime-evidence-failure-");
@@ -158,8 +154,8 @@ test("keeps a provider success without runtime evidence pending and leaves the b
 	if (artifactName === undefined) throw new Error("Expected retained benchmark artifact");
 	const benchmarkId = artifactName.replace(/\.json$/u, "");
 	const retained = await loadBenchmarkRun(benchmarkId, resultsDirectory);
-	expect(retained.version).toBe(7);
-	if (retained.version !== 7) throw new Error("Expected V7 benchmark artifact");
+	expect(retained.version).toBe(9);
+	if (retained.version !== 9) throw new Error("Expected V9 benchmark artifact");
 	const mainInvocation = retained.trials[0]?.invocations.find(({ production_step }) => production_step === "main_story_write");
 	const mainEvidence = retained.runtime_evidence.find(({ production_step }) => production_step === "main_story_write");
 	expect(mainInvocation).toMatchObject({ transport: "in_flight", parse: { state: "pending" } });
@@ -167,7 +163,7 @@ test("keeps a provider success without runtime evidence pending and leaves the b
 	expect(retained).toMatchObject({ lifecycle: "running", completed_at: null, harness_outcome: "pending" });
 	expect(retained.runtime_evidence).not.toContainEqual(expect.objectContaining({ reason: "transport_failed", production_step: "main_story_write" }));
 	expect(completionCalls.main_story_write).toHaveBeenCalledOnce();
-	expect(completionCalls.announcements_copyedit).toHaveBeenCalledOnce();
+	expect(completionCalls.announcements_write).toHaveBeenCalledOnce();
 	expect(summarizeBenchmarkRun(retained)).toMatchObject({ lifecycle: "running", harness_outcome: "pending" });
 	expect(snapshots.at(-1)).toEqual(retained);
 });

@@ -33,7 +33,7 @@ it("retains hosted completion usage and calculated billing in the D1 operator pr
 		env.DB,
 		params,
 		{
-			currentStep: "main_story_copyedit",
+			currentStep: "announcements_write",
 			completedSteps: ["prepare-evidence", "main_story_write"],
 			modelUsage: [usage],
 			diagnostics: [],

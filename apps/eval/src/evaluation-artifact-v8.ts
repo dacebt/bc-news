@@ -3,7 +3,6 @@ import { ModelRequestProvenanceSchema } from "@bc-news/generation-core";
 import {
 	CloudflareAiGatewayAdapterConfigSchema,
 	CLOUDFLARE_HOSTED_MODEL_REQUEST_PROFILES,
-	PRODUCTION_STEP_OUTPUT_CONTRACTS,
 	cloudflareAiGatewayProviderForModel,
 } from "@bc-news/model-adapters";
 import {
@@ -11,7 +10,10 @@ import {
 	evaluationConfigIdentity,
 } from "./evaluation-artifact-schemas";
 import { V7BenchmarkRunBaseSchema, V7ModelAdapterConfigSchema, refineCurrentBenchmarkRun, type CurrentBenchmarkRunCandidate } from "./evaluation-artifact-v7";
-import { ProductionModelStepSchema } from "@bc-news/generation-core";
+import {
+	LEGACY_OUTPUT_CONTRACT_NAMES,
+	LegacyProductionModelStepSchema,
+} from "./evaluation-artifact-legacy-schemas";
 
 export const V8ModelAdapterConfigSchema = z.discriminatedUnion("adapter", [
 	...V7ModelAdapterConfigSchema.options,
@@ -31,7 +33,7 @@ const GatewayRequestIdentitySchema = z.strictObject({
 	trial_id: EvaluationIdSchema,
 	invocation_id: EvaluationIdSchema,
 	config_identity: EvaluationIdSchema,
-	production_step: ProductionModelStepSchema,
+	production_step: LegacyProductionModelStepSchema,
 	ordinal: z.number().int().positive(),
 });
 
@@ -168,7 +170,7 @@ export const V8BenchmarkRunSchema = V8BenchmarkRunBaseSchema.superRefine((run, c
 			if (record.provenance.policy.request_format !== requestProfile.requestFormat
 				|| record.provenance.policy.response_delivery !== requestProfile.responseDelivery
 				|| record.provenance.policy.structured_output.format !== requestProfile.structuredOutputFormat
-				|| record.provenance.policy.structured_output.contract_name !== PRODUCTION_STEP_OUTPUT_CONTRACTS[record.production_step].name) {
+				|| record.provenance.policy.structured_output.contract_name !== LEGACY_OUTPUT_CONTRACT_NAMES[record.production_step]) {
 				context.addIssue({
 					code: "custom",
 					path: ["gateway_requests", index, "provenance", "policy"],

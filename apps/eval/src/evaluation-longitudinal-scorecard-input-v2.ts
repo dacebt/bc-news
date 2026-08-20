@@ -1,6 +1,9 @@
 import { createHash } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
-import { PRODUCTION_MODEL_STEPS, type ProductionModelStep } from "@bc-news/generation-core";
+import {
+	LEGACY_PRODUCTION_MODEL_STEPS as PRODUCTION_MODEL_STEPS,
+	type LegacyProductionModelStep as ProductionModelStep,
+} from "./evaluation-artifact-legacy-schemas";
 import { projectLongitudinalRoleContextV2 } from "./evaluation-longitudinal-scorecard-builder-v2";
 import { EvaluationLongitudinalError } from "./evaluation-longitudinal-scorecard";
 import {

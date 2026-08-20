@@ -3,13 +3,10 @@ import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promis
 import { tmpdir } from "node:os";
 import { resolve, join } from "node:path";
 import {
-	PRODUCTION_MODEL_STEPS,
-	type ProductionModelStep,
-} from "@bc-news/generation-core";
-import {
 	RecordedModelResponseSchema,
 	type RecordedModelResponse,
 } from "@bc-news/fixtures";
+import { CURRENT_PRODUCTION_MODEL_STEPS } from "./current-production-steps";
 import { REPRESENTATIVE_FIXTURE_PATH } from "./representative-fixture";
 import { recordCommand } from "./record-command";
 import {
@@ -18,14 +15,11 @@ import {
 
 const MODEL_BY_STEP = {
 	main_story_write: "loopback/main-story-write",
-	main_story_copyedit: "loopback/main-story-copyedit",
 	announcements_write: "loopback/announcements-write",
-	announcements_copyedit: "loopback/announcements-copyedit",
-} as const satisfies Record<ProductionModelStep, string>;
+} as const satisfies Record<(typeof CURRENT_PRODUCTION_MODEL_STEPS)[number], string>;
 
 const MAIN_STORY_DRAFT = {
 	title: "The Loopback Ledger",
-	subtitle: "A composed recording proof",
 	main_story: {
 		headline: "Region 7 Maps a Dependable Route",
 		lede: "The region compared routes and coordinated the next expedition.",
@@ -42,26 +36,10 @@ const ANNOUNCEMENTS_DRAFT = {
 
 const OUTPUT_BY_STEP = {
 	main_story_write: JSON.stringify(MAIN_STORY_DRAFT),
-	main_story_copyedit: JSON.stringify({
-		...MAIN_STORY_DRAFT,
-		main_story: {
-			...MAIN_STORY_DRAFT.main_story,
-			body: "Region 7 discussed the Widmoria route carefully.\n\nAryn mapped the route for the next expedition.",
-		},
-	}),
 	announcements_write: JSON.stringify(ANNOUNCEMENTS_DRAFT),
-	announcements_copyedit: JSON.stringify({
-		announcements: ANNOUNCEMENTS_DRAFT.announcements.map((announcement, index) => ({
-			id: `announcement-${index + 1}`,
-			title: announcement.title,
-			summary: index === 0
-				? "Aryn completed a clear route plan for the next expedition."
-				: announcement.summary,
-		})),
-	}),
-} as const satisfies Record<ProductionModelStep, string>;
+} as const satisfies Record<(typeof CURRENT_PRODUCTION_MODEL_STEPS)[number], string>;
 
-const RESPONSE_FILENAMES = PRODUCTION_MODEL_STEPS.map((step) => `${step}.json`).sort();
+const RESPONSE_FILENAMES = CURRENT_PRODUCTION_MODEL_STEPS.map((step) => `${step}.json`).sort();
 
 export class RecordedResponseFixtureAuthoringVerificationError extends Error {
 	readonly code: string;
@@ -80,7 +58,7 @@ function assertProof(condition: boolean, code: string, message: string): asserts
 function liveConfig() {
 	return {
 		production_steps: Object.fromEntries(
-			PRODUCTION_MODEL_STEPS.map((step) => [
+			CURRENT_PRODUCTION_MODEL_STEPS.map((step) => [
 				step,
 				{
 					adapter: "openai_compatible_hosted",
@@ -114,8 +92,8 @@ async function parseResponse(path: string): Promise<RecordedModelResponse> {
 
 async function assertRecordedResponses(responseDirectory: string): Promise<void> {
 	const filenames = (await readdir(responseDirectory)).sort();
-	assertProof(isDeepStrictEqual(filenames, RESPONSE_FILENAMES), "response_roster_mismatch", "Promoted response directory did not contain exactly the four production response files");
-	for (const productionStep of PRODUCTION_MODEL_STEPS) {
+	assertProof(isDeepStrictEqual(filenames, RESPONSE_FILENAMES), "response_roster_mismatch", "Promoted response directory did not contain exactly the two production response files");
+	for (const productionStep of CURRENT_PRODUCTION_MODEL_STEPS) {
 		const record = await parseResponse(join(responseDirectory, `${productionStep}.json`));
 		assertProof("version" in record && record.version === 3, "record_version_mismatch", `Recorded response for ${productionStep} did not use current artifact version 3`);
 		assertProof(record.production_step === productionStep, "record_step_mismatch", `Recorded response for ${productionStep} declared a different production step`);
@@ -140,9 +118,9 @@ async function verifyRecordedResponseFixtureAuthoringAt(temporaryRoot: string): 
 	const responseDirectory = join(temporaryRoot, "model-responses");
 	await writeFile(configPath, `${JSON.stringify(liveConfig(), null, 2)}\n`, "utf8");
 	const outputByModel = Object.fromEntries(
-		PRODUCTION_MODEL_STEPS.map((step) => [MODEL_BY_STEP[step], OUTPUT_BY_STEP[step]]),
+		CURRENT_PRODUCTION_MODEL_STEPS.map((step) => [MODEL_BY_STEP[step], OUTPUT_BY_STEP[step]]),
 	);
-	assertProof(new Set(Object.values(outputByModel)).size === 4, "loopback_outputs_not_distinct", "Loopback proof requires four distinct model outputs");
+	assertProof(new Set(Object.values(outputByModel)).size === 2, "loopback_outputs_not_distinct", "Loopback proof requires two distinct model outputs");
 	const server = await startRecordLoopbackServer(outputByModel);
 	try {
 		const result = await recordCommand({
@@ -155,8 +133,8 @@ async function verifyRecordedResponseFixtureAuthoringAt(temporaryRoot: string): 
 			},
 		});
 		assertProof(resolve(result.responseDirectory) === resolve(responseDirectory), "response_directory_mismatch", "Recorder promoted responses outside the walk-owned response directory");
-		assertProof(server.requests.length === PRODUCTION_MODEL_STEPS.length, "request_count_mismatch", "Loopback provider did not observe exactly four requests");
-		for (const [index, productionStep] of PRODUCTION_MODEL_STEPS.entries()) {
+		assertProof(server.requests.length === CURRENT_PRODUCTION_MODEL_STEPS.length, "request_count_mismatch", "Loopback provider did not observe exactly two requests");
+		for (const [index, productionStep] of CURRENT_PRODUCTION_MODEL_STEPS.entries()) {
 			assertProof(server.requests[index]?.model === MODEL_BY_STEP[productionStep], "request_order_mismatch", `Loopback request ${index} was not ${productionStep}`);
 		}
 		await assertRecordedResponses(responseDirectory);
@@ -183,7 +161,7 @@ export async function verifyRecordedResponseFixtureAuthoring(temporaryRoot?: str
 
 if (import.meta.url === `file://${process.argv[1]}`) {
 	verifyRecordedResponseFixtureAuthoring().then(() => {
-		console.log("fixture authoring: four strict v3 hosted responses retained exact production-step configurations, replayed, and compared");
+		console.log("fixture authoring: two strict v3 hosted responses retained exact production-step configurations, replayed, and compared");
 	}).catch((error: unknown) => {
 		process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
 		process.exitCode = 1;

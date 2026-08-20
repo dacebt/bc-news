@@ -1,4 +1,5 @@
 import { expect, test } from "vitest";
+import { CURRENT_EDITION_VERSION } from "@bc-news/contracts";
 import {
 	PRODUCTION_MODEL_STEPS,
 	assembleEdition,
@@ -41,7 +42,6 @@ function assemble(modelUsagesInput: readonly ModelUsageRecord[]) {
 	return assembleEdition({
 		mainStory: {
 			title: "The Region Seven Gazette",
-			subtitle: "A bridge opens",
 			main_story: {
 				headline: "Builders Finish the Crossing",
 				lede: "The region can cross the river again.",
@@ -60,27 +60,22 @@ function assemble(modelUsagesInput: readonly ModelUsageRecord[]) {
 	});
 }
 
-test("derives edition identity and grouped provenance from the four-step usage roster", () => {
+test("assembles the current versioned edition from the two-step usage roster", () => {
 	const edition = assemble(modelUsages());
 
+	expect(edition.version).toBe(CURRENT_EDITION_VERSION);
 	expect(edition.active_region_id).toBe(PREPARED_EVIDENCE.active_region_id);
 	expect(edition.publication_date).toBe(PREPARED_EVIDENCE.publication_date);
 	expect(edition.meta.editorial_products).toEqual({
-		main_story: {
-			write: { provider: "provider-1", model: "model-1" },
-			copyedit: { provider: "provider-2", model: "model-2" },
-		},
-		announcements: {
-			write: { provider: "provider-3", model: "model-3" },
-			copyedit: { provider: "provider-4", model: "model-4" },
-		},
+		main_story: { provider: "provider-1", model: "model-1" },
+		announcements: { provider: "provider-2", model: "model-2" },
 	});
 });
 
-test("rejects an incomplete, duplicated, or reordered production usage roster", () => {
+test("rejects an incomplete, duplicated, or reordered two-step production usage roster", () => {
 	const usages = modelUsages();
 
-	expect(() => assemble(usages.slice(0, 3))).toThrow();
-	expect(() => assemble([usages[0]!, usages[0]!, usages[2]!, usages[3]!])).toThrow();
-	expect(() => assemble([usages[1]!, usages[0]!, usages[2]!, usages[3]!])).toThrow();
+	expect(() => assemble(usages.slice(0, 1))).toThrow();
+	expect(() => assemble([usages[0]!, usages[0]!])).toThrow();
+	expect(() => assemble([usages[1]!, usages[0]!])).toThrow();
 });

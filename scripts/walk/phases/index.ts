@@ -22,9 +22,9 @@ export const walkPhases: readonly WalkPhase[] = [
 	clientHtml,
 	browserParity,
 	{
-		name: "four-step-editorial-workflow",
+		name: "five-step-generation-workflow",
 		run: () => {
-			console.log("walk: four-step editorial workflow complete");
+			console.log("walk: five-step generation workflow complete");
 			return Promise.resolve();
 		},
 	},

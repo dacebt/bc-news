@@ -72,9 +72,7 @@ function validV2Report(posture: "provider_default" | "explicit"): ContextBenchma
 		...legacy,
 		sampling: {
 			main_story_write: sampling,
-			main_story_copyedit: sampling,
 			announcements_write: sampling,
-			announcements_copyedit: sampling,
 		},
 	});
 }
@@ -87,9 +85,7 @@ function validV3Report(): ContextBenchmarkFileV3 {
 		...legacy,
 		agent_configurations: {
 			main_story_write: { adapter: "lmstudio", model: "qwen3-local", temperature: 0.7, reasoning_effort: "provider_default" },
-			main_story_copyedit: { adapter: "lmstudio", model: "qwen3-local", temperature: 0.2, reasoning_effort: "provider_default" },
 			announcements_write: { adapter: "lmstudio", model: "qwen3-local", reasoning_effort: "provider_default" },
-			announcements_copyedit: { adapter: "lmstudio", model: "qwen3-local", temperature: 0.3, reasoning_effort: "provider_default" },
 		},
 	});
 }
@@ -122,7 +118,6 @@ test.each(["provider_default", "explicit"] as const)(
 test("parses strict version 3 independent agent temperatures", () => {
 	const report = validV3Report();
 	expect(report.agent_configurations.main_story_write).toHaveProperty("temperature", 0.7);
-	expect(report.agent_configurations.main_story_copyedit).toHaveProperty("temperature", 0.2);
 	expect(report.agent_configurations.announcements_write).not.toHaveProperty("temperature");
 	expect(ContextBenchmarkFileSchema.parse(report)).toEqual(report);
 
@@ -145,8 +140,8 @@ test("rejects version 3 agent models that do not identify one retained loaded mo
 		...report,
 		agent_configurations: {
 			...report.agent_configurations,
-			announcements_copyedit: {
-				...report.agent_configurations.announcements_copyedit,
+			announcements_write: {
+				...report.agent_configurations.announcements_write,
 				model: report.model.path,
 			},
 		},

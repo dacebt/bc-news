@@ -11,7 +11,7 @@ import {
 import type { EvaluationRoleScorecard, EvaluationScorecardArtifact } from "./evaluation-scorecard";
 
 const COUNT_NAMES = ["declared_trial_count", "step_reached_trial_count", "step_not_reached_trial_count", "invocation_attempt_count", "initial_attempt_count", "retry_attempt_count", "transport_failed_attempt_count", "transport_succeeded_attempt_count", "parse_succeeded_invocation_count", "parse_rejected_invocation_count", "annotated_output_count", "reviewed_output_count"] as const;
-const RATE_NAMES = ["schema_reliability", "copyedit_preservation", "claim_grounding", "required_attribution", "event_coverage", "announcement_relevance"] as const;
+const RATE_NAMES = ["schema_reliability", "claim_grounding", "required_attribution", "event_coverage", "announcement_relevance"] as const;
 const DISTRIBUTION_NAMES = ["input_tokens", "output_tokens", "total_tokens", "application_latency_ms", "provider_time_to_first_token_ms", "provider_total_time_ms"] as const;
 const CRITERIA = ["coherence", "usefulness", "newsworthiness", "voice"] as const;
 const Z95 = 1.959963984540054;
@@ -49,7 +49,7 @@ export function projectLongitudinalRoleContext(scorecard: EvaluationScorecardArt
 	const gatewayRequests = role.scorecard_context.projection.gateway_request_hashes ?? [];
 	const source = role.scorecard_context.projection;
 	const projection = {
-		scorecard_version: 3 as const, corpus_manifest_id: source.corpus_manifest_id,
+		scorecard_version: 4 as const, corpus_manifest_id: source.corpus_manifest_id,
 		corpus_source_reference: source.corpus_source_reference,
 		ordered_fixture_prepared_identities: source.fixture_prepared_identities,
 		code_provenance: source.code_provenance, ordered_output_contract_provenance: source.output_contract_provenance,
@@ -182,7 +182,7 @@ export function buildEvaluationLongitudinalScorecard(input: LoadedEvaluationLong
 	input = validateLoadedEvaluationLongitudinalInput(input);
 	if (Date.parse(options.createdAt) < Math.max(...input.scorecards.map(({ artifact }) => Date.parse(artifact.created_at)))) fail("longitudinal_chronology_mismatch", input.declarationPath, "Series creation cannot predate a source scorecard");
 	const candidate = {
-		version: 3 as const, id: options.id, created_at: options.createdAt,
+		version: 4 as const, id: options.id, created_at: options.createdAt,
 		policy: { minimum_baseline_scorecards: 3 as const, minimum_subject_scorecards: 2 as const, rate_interval: { confidence: 0.95 as const, method: "wilson_score" as const, z: Z95 }, rate_signal_method: "strict_wilson_interval_disjointness" as const, distribution_signal_method: "strict_observed_range_disjointness" as const, classifier_precedence: ["context_changed", "insufficient_evidence", "potential_drift", "within_baseline"] as const },
 		source_reference: input.sourceReference,
 		scorecard_references: input.scorecards.map(({ descriptor, artifact }) => {

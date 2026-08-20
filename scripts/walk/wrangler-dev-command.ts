@@ -1,8 +1,6 @@
 export const WALK_RECORDED_MODEL_CONFIG = JSON.stringify({
 	main_story_write: { adapter: "recorded" },
-	main_story_copyedit: { adapter: "recorded" },
 	announcements_write: { adapter: "recorded" },
-	announcements_copyedit: { adapter: "recorded" },
 });
 
 export const WALK_OPERATOR_API_TOKEN = "bc-news-local-walk-operator-token";

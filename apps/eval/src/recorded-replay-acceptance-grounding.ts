@@ -5,18 +5,14 @@ import {
 	type RecordedModelResponse,
 } from "@bc-news/fixtures";
 import {
-	PRODUCTION_MODEL_STEPS,
 	announcementsFinalProductDiagnostics,
 	assembleEdition,
-	attachAnnouncementIds,
 	mainStoryFinalProductDiagnostics,
-	parseAnnouncementsCopyeditOutputWithDiagnostics,
 	parseAnnouncementsWriterOutput,
-	parseMainStoryCopyeditOutputWithDiagnostics,
 	parseMainStoryWriterOutput,
 	prepareEvidence,
-	type ProductionModelStep,
 } from "@bc-news/generation-core";
+import { CURRENT_PRODUCTION_MODEL_STEPS } from "./current-production-steps";
 import { allDifferences } from "./run-difference";
 import { loadFixture } from "./evidence-fixture";
 import type { RunFile } from "./run-file";
@@ -25,7 +21,7 @@ const WORKSPACE_ROOT = new URL("../../../", import.meta.url).pathname;
 const RESPONSE_DIRECTORY = join(WORKSPACE_ROOT, "packages", "fixtures", "model-responses");
 
 async function assertResponseDirectoryLayout(): Promise<void> {
-	const expected = PRODUCTION_MODEL_STEPS.map((step) => `${step}.json`).sort();
+	const expected = CURRENT_PRODUCTION_MODEL_STEPS.map((step) => `${step}.json`).sort();
 	const observed = (await readdir(RESPONSE_DIRECTORY, { withFileTypes: true }))
 		.map((entry) => entry.name)
 		.sort();
@@ -34,7 +30,9 @@ async function assertResponseDirectoryLayout(): Promise<void> {
 	}
 }
 
-async function readRecordedResponse(step: ProductionModelStep): Promise<RecordedModelResponse> {
+async function readRecordedResponse(
+	step: (typeof CURRENT_PRODUCTION_MODEL_STEPS)[number],
+): Promise<RecordedModelResponse> {
 	const raw = await readFile(join(RESPONSE_DIRECTORY, `${step}.json`), "utf8");
 	const parsed = RecordedModelResponseSchema.parse(JSON.parse(raw) as unknown);
 	if (parsed.production_step !== step) throw new Error(`${step} fixture declares ${parsed.production_step}`);
@@ -53,34 +51,25 @@ export async function assertRecordedReplayAcceptanceGrounding(run: RunFile, fixt
 		messages: loaded.fixture.messages,
 	});
 	const records = Object.fromEntries(await Promise.all(
-		PRODUCTION_MODEL_STEPS.map(async (step) => [step, await readRecordedResponse(step)] as const),
-	)) as Record<ProductionModelStep, RecordedModelResponse>;
+		CURRENT_PRODUCTION_MODEL_STEPS.map(async (step) => [step, await readRecordedResponse(step)] as const),
+	)) as Record<(typeof CURRENT_PRODUCTION_MODEL_STEPS)[number], RecordedModelResponse>;
 
-	const mainStoryDraft = parseMainStoryWriterOutput(records.main_story_write.text);
-	const announcementsDraft = parseAnnouncementsWriterOutput(records.announcements_write.text);
-	const identifiedAnnouncements = attachAnnouncementIds(announcementsDraft);
-	const mainStory = parseMainStoryCopyeditOutputWithDiagnostics(
-		records.main_story_copyedit.text,
-		mainStoryDraft,
-	);
-	const announcements = parseAnnouncementsCopyeditOutputWithDiagnostics(
-		records.announcements_copyedit.text,
-		identifiedAnnouncements,
+	const mainStory = parseMainStoryWriterOutput(records.main_story_write.text);
+	const announcements = parseAnnouncementsWriterOutput(
+		records.announcements_write.text,
 	);
 	const expectedDiagnostics = [
-		...mainStory.diagnostics,
-		...mainStoryFinalProductDiagnostics(mainStory.product, prepared),
-		...announcements.diagnostics,
-		...announcementsFinalProductDiagnostics(announcements.product, prepared),
+		...mainStoryFinalProductDiagnostics(mainStory, prepared),
+		...announcementsFinalProductDiagnostics(announcements, prepared),
 	];
-	const expectedOutputs: Readonly<Record<ProductionModelStep, unknown>> = {
-		main_story_write: mainStoryDraft,
-		main_story_copyedit: mainStory.product,
-		announcements_write: announcementsDraft,
-		announcements_copyedit: announcements.product,
+	const expectedOutputs: Readonly<
+		Record<(typeof CURRENT_PRODUCTION_MODEL_STEPS)[number], unknown>
+	> = {
+		main_story_write: mainStory,
+		announcements_write: announcements,
 	};
 
-	for (const [index, productionStep] of PRODUCTION_MODEL_STEPS.entries()) {
+	for (const [index, productionStep] of CURRENT_PRODUCTION_MODEL_STEPS.entries()) {
 		const step = run.steps[index]!;
 		const differences = allDifferences(step.output, expectedOutputs[productionStep]);
 		if (differences.length > 0) {
@@ -99,8 +88,8 @@ export async function assertRecordedReplayAcceptanceGrounding(run: RunFile, fixt
 	}
 
 	const expectedEdition = assembleEdition({
-		mainStory: mainStory.product,
-		announcements: announcements.product,
+		mainStory,
+		announcements,
 		preparedEvidence: prepared,
 		generatedAtUtc: run.edition.meta.generated_at_utc,
 		modelUsages: run.steps.map((step) => step.model_usage),

@@ -6,10 +6,12 @@ import {
 	type RecordedModelResponse,
 	type RecordedModelResponseV2,
 	type RecordedModelResponseV3,
-	type RecordedModelResponseRoster,
 } from "@bc-news/fixtures";
-import { PRODUCTION_MODEL_STEPS, type ProductionModelStep } from "@bc-news/generation-core";
 import { z } from "zod";
+import {
+	CURRENT_PRODUCTION_MODEL_STEPS,
+	type CurrentProductionModelStep,
+} from "./current-production-steps";
 
 const RecorderLockOwnerSchema = z.strictObject({
 	pid: z.number().int().positive(),
@@ -47,7 +49,7 @@ export interface RecorderLockLease {
 	release(): Promise<void>;
 }
 
-function responseFileName(productionStep: ProductionModelStep): string {
+function responseFileName(productionStep: CurrentProductionModelStep): string {
 	return `${productionStep}.json`;
 }
 
@@ -92,7 +94,7 @@ async function pathExists(path: string): Promise<boolean> {
 	}
 }
 
-async function readRecordedResponse(path: string, productionStep: ProductionModelStep): Promise<RecordedModelResponse> {
+async function readRecordedResponse(path: string, productionStep: CurrentProductionModelStep): Promise<RecordedModelResponse> {
 	let candidate: unknown;
 	try {
 		candidate = JSON.parse(await readFile(path, "utf8"));
@@ -145,7 +147,7 @@ function validateRecordedResponseRosterVersion(
 		throw new RecordedResponseDirectoryError(
 			"recorded_response_directory_rejected",
 			directory,
-			"Recorded response directory must contain four responses from exactly one artifact version",
+			"Recorded response directory must contain one artifact version across the current two-response roster",
 		);
 	}
 	const lmStudioPostures = new Set(version2Responses
@@ -162,7 +164,7 @@ function validateRecordedResponseRosterVersion(
 
 export async function validateRecordedResponseDirectory(
 	directory: string,
-): Promise<RecordedModelResponseRoster> {
+): Promise<Record<CurrentProductionModelStep, RecordedModelResponse>> {
 	let entries;
 	try {
 		entries = await readdir(directory, { withFileTypes: true });
@@ -174,7 +176,7 @@ export async function validateRecordedResponseDirectory(
 			{ cause },
 		);
 	}
-	const expectedNames = new Set(PRODUCTION_MODEL_STEPS.map(responseFileName));
+	const expectedNames = new Set(CURRENT_PRODUCTION_MODEL_STEPS.map(responseFileName));
 	const actualNames = new Set(entries.map((entry) => entry.name));
 	const unexpected = entries.filter((entry) => !expectedNames.has(entry.name) || !entry.isFile());
 	const missing = [...expectedNames].filter((name) => !actualNames.has(name));
@@ -185,26 +187,17 @@ export async function validateRecordedResponseDirectory(
 			`Recorded response directory must contain exactly ${[...expectedNames].join(", ")}; missing=${missing.join(",") || "none"}; unexpected=${unexpected.map((entry) => entry.name).join(",") || "none"}`,
 		);
 	}
-	const [mainStoryWrite, mainStoryCopyedit, announcementsWrite, announcementsCopyedit] = await Promise.all([
+	const [mainStoryWrite, announcementsWrite] = await Promise.all([
 		readRecordedResponse(join(directory, responseFileName("main_story_write")), "main_story_write"),
-		readRecordedResponse(join(directory, responseFileName("main_story_copyedit")), "main_story_copyedit"),
 		readRecordedResponse(join(directory, responseFileName("announcements_write")), "announcements_write"),
-		readRecordedResponse(
-			join(directory, responseFileName("announcements_copyedit")),
-			"announcements_copyedit",
-		),
 	]);
 	validateRecordedResponseRosterVersion(directory, [
 		mainStoryWrite,
-		mainStoryCopyedit,
 		announcementsWrite,
-		announcementsCopyedit,
 	]);
 	return {
 		main_story_write: mainStoryWrite,
-		main_story_copyedit: mainStoryCopyedit,
 		announcements_write: announcementsWrite,
-		announcements_copyedit: announcementsCopyedit,
 	};
 }
 

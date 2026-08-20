@@ -32,31 +32,14 @@ vi.mock("../src/model-adapters", async (importOriginal) => {
 	const responseText: Readonly<Record<ProductionModelStep, string>> = {
 		main_story_write: JSON.stringify({
 			title: "Regional Chronicle",
-			subtitle: "January 25, 2026",
 			main_story: {
 				headline: "Aryn Organizes a Dungeon Muster",
 				lede: "Aryn organized a regional dungeon muster.",
 				body: "**Aryn** invited the region to a dungeon crawl.\n\n**Archaelic** joined the group.",
 			},
 		}),
-		main_story_copyedit: JSON.stringify({
-			title: "Regional Chronicle",
-			subtitle: "January 25, 2026",
-			main_story: {
-				headline: "Aryn Organizes a Dungeon Muster",
-				lede: "Aryn organized a regional dungeon muster.",
-				body: "**Aryn** invited the region to a dungeon crawl — together.\n\n**Archaelic** joined the group.",
-			},
-		}),
 		announcements_write: JSON.stringify({
 			announcements: [{ title: "Sailing Milestone", summary: "**KeyserSoze** reached level 75." }],
-		}),
-		announcements_copyedit: JSON.stringify({
-			announcements: [{
-				id: "announcement-1",
-				title: "Sailing Milestone",
-				summary: "**KeyserSoze** reached level 75.",
-			}],
 		}),
 	};
 	return {
@@ -115,9 +98,7 @@ function hostedAdapterConfig(temperature?: number) {
 function explicitProductionSteps() {
 	return {
 		main_story_write: localAdapterConfig(0.7),
-		main_story_copyedit: localAdapterConfig(0.2),
 		announcements_write: localAdapterConfig(0.6),
-		announcements_copyedit: localAdapterConfig(0.3),
 	};
 }
 
@@ -152,9 +133,7 @@ function priorRoster(): RecordedModelResponseRoster {
 	});
 	return {
 		main_story_write: response("main_story_write"),
-		main_story_copyedit: response("main_story_copyedit"),
 		announcements_write: response("announcements_write"),
-		announcements_copyedit: response("announcements_copyedit"),
 	};
 }
 
@@ -167,17 +146,13 @@ async function writePriorRoster(directory: string): Promise<void> {
 }
 
 async function directoryBytes(directory: string): Promise<Readonly<Record<ProductionModelStep, string>>> {
-	const [mainStoryWrite, mainStoryCopyedit, announcementsWrite, announcementsCopyedit] = await Promise.all([
+	const [mainStoryWrite, announcementsWrite] = await Promise.all([
 		readFile(join(directory, "main_story_write.json"), "utf8"),
-		readFile(join(directory, "main_story_copyedit.json"), "utf8"),
 		readFile(join(directory, "announcements_write.json"), "utf8"),
-		readFile(join(directory, "announcements_copyedit.json"), "utf8"),
 	]);
 	return {
 		main_story_write: mainStoryWrite,
-		main_story_copyedit: mainStoryCopyedit,
 		announcements_write: announcementsWrite,
-		announcements_copyedit: announcementsCopyedit,
 	};
 }
 
@@ -250,13 +225,7 @@ test("retains every response from the live production-step roster", async () => 
 	expect(result.comparison.differences).toEqual([]);
 	expect(result.replayProducts).toEqual(result.liveProducts);
 	expect(result.liveDiagnostics).toEqual(result.replayDiagnostics);
-	expect(result.liveDiagnostics).toEqual(expect.arrayContaining([
-		expect.objectContaining({
-			kind: "final_product",
-			production_step: "main_story_copyedit",
-			code: "forbidden_marker",
-		}),
-	]));
+	expect(result.liveDiagnostics).toEqual([]);
 	const summary = formatRecordSummary(result);
 	expect(summary).toContain("Artifact version: 3");
 	expect(reportedConfiguration(summary, "main_story_write"))
@@ -272,9 +241,7 @@ test("retains independent provider-default and explicit temperature truth per pr
 	const responseDirectory = join(root, "responses");
 	const configPath = await writeConfig(root, {
 		main_story_write: localAdapterConfig(),
-		main_story_copyedit: localAdapterConfig(0.2),
 		announcements_write: hostedAdapterConfig(0.8),
-		announcements_copyedit: localAdapterConfig(0.3),
 	});
 
 	const result = await recordCommand({
@@ -285,14 +252,10 @@ test("retains independent provider-default and explicit temperature truth per pr
 	});
 	const retained = await validateRecordedResponseDirectory(responseDirectory);
 	const mainStoryWrite = RecordedModelResponseV3Schema.parse(retained.main_story_write);
-	const mainStoryCopyedit = RecordedModelResponseV3Schema.parse(retained.main_story_copyedit);
 	const announcementsWrite = RecordedModelResponseV3Schema.parse(retained.announcements_write);
-	const announcementsCopyedit = RecordedModelResponseV3Schema.parse(retained.announcements_copyedit);
 
 	expect(mainStoryWrite.configuration).toEqual(localAdapterConfig());
-	expect(mainStoryCopyedit.configuration).toEqual(localAdapterConfig(0.2));
 	expect(announcementsWrite.configuration).toEqual(hostedAdapterConfig(0.8));
-	expect(announcementsCopyedit.configuration).toEqual(localAdapterConfig(0.3));
 	const summary = formatRecordSummary(result);
 	expect(reportedConfiguration(summary, "main_story_write"))
 		.toEqual(localAdapterConfig());
@@ -305,7 +268,7 @@ test("leaves the prior response set unchanged when live output is rejected", asy
 	const responseDirectory = join(root, "responses");
 	await writePriorRoster(responseDirectory);
 	const before = await directoryBytes(responseDirectory);
-	providerState.rejectedStep = "main_story_copyedit";
+	providerState.rejectedStep = "main_story_write";
 
 	await expect(recordCommand({
 		fixturePath: FIXTURE_PATH,

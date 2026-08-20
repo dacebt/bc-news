@@ -1,19 +1,12 @@
 import { modelRequestSha256 } from "@bc-news/fixtures";
 import {
-	COPYEDIT_SYSTEM_CONSTRAINTS,
-	PRODUCTION_MODEL_STEPS,
 	WRITER_SYSTEM_CONSTRAINTS,
 	announcementsFinalProductDiagnostics,
-	attachAnnouncementIds,
-	buildAnnouncementsCopyeditPrompt,
 	buildAnnouncementsWriterPrompt,
-	buildMainStoryCopyeditPrompt,
 	buildMainStoryWriterPrompt,
 	mainStoryFinalProductDiagnostics,
 	modelUsageRecord,
-	parseAnnouncementsCopyeditOutputWithDiagnostics,
 	parseAnnouncementsWriterOutput,
-	parseMainStoryCopyeditOutputWithDiagnostics,
 	parseMainStoryWriterOutput,
 	type AnnouncementsProduct,
 	type EditorialDiagnostic,
@@ -24,11 +17,14 @@ import {
 	type ModelRequestCorrelation,
 	type ModelUsageRecord,
 	type PreparedEvidence,
-	type ProductionModelStep,
 } from "@bc-news/generation-core";
+import {
+	CURRENT_PRODUCTION_MODEL_STEPS,
+	type CurrentProductionModelStep,
+} from "./current-production-steps";
 
 export interface EvalStep {
-	readonly production_step: ProductionModelStep;
+	readonly production_step: CurrentProductionModelStep;
 	readonly prompt_sha256: string;
 	readonly output: Record<string, unknown>;
 	readonly model_usage: ModelUsageRecord;
@@ -56,7 +52,7 @@ export interface ProductionStepsExecutionOptions {
 }
 
 async function completeStep(input: {
-	readonly productionStep: ProductionModelStep;
+	readonly productionStep: CurrentProductionModelStep;
 	readonly provider: ModelProviderPort;
 	readonly system: string;
 	readonly user: string;
@@ -70,7 +66,9 @@ async function completeStep(input: {
 		productionStep: input.productionStep,
 		system: input.system,
 		user: input.user,
-		...(input.correlation === undefined ? {} : { correlation: input.correlation }),
+		...(input.correlation === undefined
+			? {}
+			: { correlation: input.correlation }),
 	};
 	const completion = await input.provider.complete(request);
 	return {
@@ -87,88 +85,63 @@ async function completeStep(input: {
 
 export async function executeProductionSteps(
 	preparedEvidence: PreparedEvidence,
-	providers: Readonly<Record<ProductionModelStep, ModelProviderPort>>,
+	providers: Readonly<Record<CurrentProductionModelStep, ModelProviderPort>>,
 	options: ProductionStepsExecutionOptions = {},
 ): Promise<ProductionStepsExecution> {
-	const correlation = (ordinal: number): { readonly correlation?: ModelRequestCorrelation } =>
+	const correlation = (
+		ordinal: number,
+	): { readonly correlation?: ModelRequestCorrelation } =>
 		options.correlationRunId === undefined
 			? {}
-			: { correlation: {
-				run_id: options.correlationRunId,
-				invocation_id: `${options.correlationRunId}-invocation-${String(ordinal)}`,
-			} };
-	const mainStoryWriterUser = buildMainStoryWriterPrompt(preparedEvidence);
+			: {
+					correlation: {
+						run_id: options.correlationRunId,
+						invocation_id: `${options.correlationRunId}-invocation-${String(ordinal)}`,
+					},
+			  };
+
 	const mainStoryWriter = await completeStep({
 		productionStep: "main_story_write",
 		provider: providers.main_story_write,
 		system: WRITER_SYSTEM_CONSTRAINTS,
-		user: mainStoryWriterUser,
+		user: buildMainStoryWriterPrompt(preparedEvidence),
 		...correlation(1),
 	});
-	const mainStoryDraft = parseMainStoryWriterOutput(mainStoryWriter.completion.text);
+	const mainStory = parseMainStoryWriterOutput(mainStoryWriter.completion.text);
 
-	const mainStoryCopyeditUser = buildMainStoryCopyeditPrompt(mainStoryDraft);
-	const mainStoryCopyedit = await completeStep({
-		productionStep: "main_story_copyedit",
-		provider: providers.main_story_copyedit,
-		system: COPYEDIT_SYSTEM_CONSTRAINTS,
-		user: mainStoryCopyeditUser,
-		...correlation(2),
-	});
-	const mainStory = parseMainStoryCopyeditOutputWithDiagnostics(
-		mainStoryCopyedit.completion.text,
-		mainStoryDraft,
-	);
-
-	const announcementsWriterUser = buildAnnouncementsWriterPrompt(preparedEvidence);
 	const announcementsWriter = await completeStep({
 		productionStep: "announcements_write",
 		provider: providers.announcements_write,
 		system: WRITER_SYSTEM_CONSTRAINTS,
-		user: announcementsWriterUser,
-		...correlation(3),
+		user: buildAnnouncementsWriterPrompt(preparedEvidence),
+		...correlation(2),
 	});
-	const announcementsDraft = parseAnnouncementsWriterOutput(announcementsWriter.completion.text);
-	const identifiedAnnouncements = attachAnnouncementIds(announcementsDraft);
-
-	const announcementsCopyeditUser = buildAnnouncementsCopyeditPrompt(identifiedAnnouncements);
-	const announcementsCopyedit = await completeStep({
-		productionStep: "announcements_copyedit",
-		provider: providers.announcements_copyedit,
-		system: COPYEDIT_SYSTEM_CONSTRAINTS,
-		user: announcementsCopyeditUser,
-		...correlation(4),
-	});
-	const announcements = parseAnnouncementsCopyeditOutputWithDiagnostics(
-		announcementsCopyedit.completion.text,
-		identifiedAnnouncements,
+	const announcements = parseAnnouncementsWriterOutput(
+		announcementsWriter.completion.text,
 	);
-	const diagnostics = [
-		...mainStory.diagnostics,
-		...mainStoryFinalProductDiagnostics(mainStory.product, preparedEvidence),
-		...announcements.diagnostics,
-		...announcementsFinalProductDiagnostics(announcements.product, preparedEvidence),
-	];
 
-	const outputs: Readonly<Record<ProductionModelStep, Record<string, unknown>>> = {
-		main_story_write: mainStoryDraft,
-		main_story_copyedit: mainStory.product,
-		announcements_write: announcementsDraft,
-		announcements_copyedit: announcements.product,
-	};
-	const completedSteps = [
-		mainStoryWriter,
-		mainStoryCopyedit,
-		announcementsWriter,
-		announcementsCopyedit,
+	const diagnostics = [
+		...mainStoryFinalProductDiagnostics(mainStory, preparedEvidence),
+		...announcementsFinalProductDiagnostics(announcements, preparedEvidence),
 	];
+	const outputs: Readonly<
+		Record<CurrentProductionModelStep, Record<string, unknown>>
+	> = {
+		main_story_write: mainStory,
+		announcements_write: announcements,
+	};
+	const completedSteps = [mainStoryWriter, announcementsWriter];
+
 	return {
-		steps: PRODUCTION_MODEL_STEPS.map((productionStep, index) => ({
+		steps: CURRENT_PRODUCTION_MODEL_STEPS.map((productionStep, index) => ({
 			...completedSteps[index]!.step,
 			output: outputs[productionStep],
 		})),
-		products: { mainStory: mainStory.product, announcements: announcements.product },
+		products: { mainStory, announcements },
 		diagnostics,
-		observations: completedSteps.map(({ request, completion }) => ({ request, completion })),
+		observations: completedSteps.map(({ request, completion }) => ({
+			request,
+			completion,
+		})),
 	};
 }

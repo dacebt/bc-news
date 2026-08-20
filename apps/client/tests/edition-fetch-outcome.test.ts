@@ -6,23 +6,17 @@ const ABORTED_OUTCOME = { outcome: "aborted" } satisfies EditionFetchOutcome;
 
 function validEdition(): Edition {
 	return {
+		version: 2,
 		active_region_id: "7",
 		publication_date: "2026-01-25",
 		title: "Region 7 Chronicle",
-		subtitle: "January 25, 2026",
 		announcements: [],
 		main_story: { headline: "A headline", lede: "A lede.", body: "A body." },
 		meta: {
 			generated_at_utc: "2026-01-25T00:00:00.000Z",
 			editorial_products: {
-				main_story: {
-					write: { provider: "recorded", model: "recorded/main-story-write-v2" },
-					copyedit: { provider: "recorded", model: "recorded/main-story-copyedit-v2" },
-				},
-				announcements: {
-					write: { provider: "recorded", model: "recorded/announcements-write-v2" },
-					copyedit: { provider: "recorded", model: "recorded/announcements-copyedit-v2" },
-				},
+				main_story: { provider: "recorded", model: "recorded/main-story-write-v2" },
+				announcements: { provider: "recorded", model: "recorded/announcements-write-v2" },
 			},
 			counts: { raw_count: 1, after_filter_count: 1, after_burst_count: 1, final_count: 1 },
 		},

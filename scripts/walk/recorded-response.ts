@@ -1,14 +1,11 @@
 import {
 	GENERATION_STEPS,
-	type WalkEditorialDiagnostic,
 	type WalkGenerationRunStatus,
 } from "./generation-run-status";
 
 export const RECORDED_PRODUCTION_STEPS = [
 	"main_story_write",
-	"main_story_copyedit",
 	"announcements_write",
-	"announcements_copyedit",
 ] as const;
 
 export type RecordedProductionStep = (typeof RECORDED_PRODUCTION_STEPS)[number];
@@ -25,6 +22,8 @@ export interface RecordedGenerationEvidence {
 	readonly model_usage: WalkGenerationRunStatus["model_usage"];
 	readonly diagnostics: WalkGenerationRunStatus["diagnostics"];
 }
+
+export const RECORDED_GENERATION_DIAGNOSTICS: WalkGenerationRunStatus["diagnostics"] = [];
 
 export function recordedGenerationEvidence(
 	status: WalkGenerationRunStatus,
@@ -47,33 +46,6 @@ export function assertRecordedGenerationEvidenceUnchanged(
 		throw new Error("editorial diagnostics changed after repeated scheduled generation");
 	}
 }
-
-export const RECORDED_GENERATION_DIAGNOSTICS = [
-	{
-		kind: "preservation",
-		production_step: "main_story_copyedit",
-		code: "quoted_span",
-		message: "Copyedit changed quoted spans or their order in main_story.body",
-	},
-	{
-		kind: "preservation",
-		production_step: "main_story_copyedit",
-		code: "numeric_literal",
-		message: "Copyedit changed numeric literals or their order in main_story.body",
-	},
-	{
-		kind: "final_product",
-		production_step: "main_story_copyedit",
-		code: "forbidden_marker",
-		message: "Forbidden output marker: —",
-	},
-	{
-		kind: "final_product",
-		production_step: "main_story_copyedit",
-		code: "ungrounded_quote",
-		message: "Ungrounded quote: damn R8 is doing T7 dungeons atm",
-	},
-] as const satisfies readonly WalkEditorialDiagnostic[];
 
 export function assertCompletedRecordedGenerationStatus(
 	status: WalkGenerationRunStatus,
@@ -101,7 +73,9 @@ export function assertCompletedRecordedGenerationStatus(
 				record.external_billing.reason !== "recorded_replay",
 		)
 	) {
-		throw new Error(`model usage does not prove four ordered recorded replays at zero external billing: ${JSON.stringify(status)}`);
+		throw new Error(
+			`model usage does not prove two ordered recorded writer replays at zero external billing: ${JSON.stringify(status)}`,
+		);
 	}
 	if (JSON.stringify(status.diagnostics) !== JSON.stringify(RECORDED_GENERATION_DIAGNOSTICS)) {
 		throw new Error(`editorial diagnostics do not match the exact recorded evidence: ${JSON.stringify(status)}`);

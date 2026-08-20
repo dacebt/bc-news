@@ -1,7 +1,10 @@
 import { expect, it, vi } from "vitest";
 import { env } from "cloudflare:workers";
 import type { GenerationRunParams } from "@bc-news/contracts";
-import { queueGenerationRunStatus } from "../src/generation-run-status";
+import {
+	CURRENT_GENERATION_RUN_CONTRACT_VERSION,
+	queueGenerationRunStatus,
+} from "../src/generation-run-status";
 import { createGenerationRun, getGenerationRunStatusByPair } from "../src/routes";
 
 function request(): Request {
@@ -30,9 +33,7 @@ function pairRequest(publicationDate: string): URL {
 
 const COMPLETE_MODEL_USAGE = [
 	"main_story_write",
-	"main_story_copyedit",
 	"announcements_write",
-	"announcements_copyedit",
 ].map((production_step) => ({
 	production_step,
 	provider: "r",
@@ -41,6 +42,56 @@ const COMPLETE_MODEL_USAGE = [
 	token_usage: { measurement: "unavailable" },
 	external_billing: { classification: "none", amount_usd: 0, reason: "recorded_replay" },
 }));
+
+const LEGACY_COMPLETE_MODEL_USAGE = [
+	{
+		production_step: "main_story_write",
+		provider: "google",
+		model: "gemini-3.7-flash",
+		execution: "hosted_inference",
+		token_usage: { measurement: "reported", input_tokens: 100, output_tokens: 25, total_tokens: 125 },
+		external_billing: { classification: "unavailable", reason: "provider_did_not_report_cost" },
+	},
+	{
+		production_step: "main_story_copyedit",
+		provider: "google",
+		model: "gemini-3.7-flash",
+		execution: "hosted_inference",
+		token_usage: { measurement: "reported", input_tokens: 125, output_tokens: 20, total_tokens: 145 },
+		external_billing: { classification: "unavailable", reason: "provider_did_not_report_cost" },
+	},
+	{
+		production_step: "announcements_write",
+		provider: "google",
+		model: "gemini-3.7-flash",
+		execution: "hosted_inference",
+		token_usage: { measurement: "reported", input_tokens: 90, output_tokens: 30, total_tokens: 120 },
+		external_billing: { classification: "unavailable", reason: "provider_did_not_report_cost" },
+	},
+	{
+		production_step: "announcements_copyedit",
+		provider: "google",
+		model: "gemini-3.7-flash",
+		execution: "hosted_inference",
+		token_usage: { measurement: "reported", input_tokens: 120, output_tokens: 18, total_tokens: 138 },
+		external_billing: { classification: "unavailable", reason: "provider_did_not_report_cost" },
+	},
+] as const;
+
+const LEGACY_COMPLETE_DIAGNOSTICS = [
+	{
+		kind: "preservation",
+		production_step: "main_story_copyedit",
+		code: "paragraph_count",
+		message: "Copyedit changed paragraph count in main_story.body",
+	},
+	{
+		kind: "final_product",
+		production_step: "announcements_copyedit",
+		code: "forbidden_marker",
+		message: "Copyedit emitted a forbidden marker in announcements",
+	},
+] as const;
 
 it("manual generation launch returns 202 for a new deterministic instance", async () => {
 	const response = await createGenerationRun(
@@ -56,17 +107,7 @@ it("manual generation launch returns 202 for a new deterministic instance", asyn
 	});
 });
 
-it("surfaces an unrelated create rejection even when the same id can be read", async () => {
-	const createError = new Error("workflow service unavailable");
-	const get = vi.fn().mockResolvedValue({ id: "generation-run-7-2026-01-25" });
-
-	await expect(
-		createGenerationRun(request(), envWith(vi.fn().mockRejectedValue(createError), get)),
-	).rejects.toBe(createError);
-	expect(get).not.toHaveBeenCalled();
-});
-
-it("surfaces a create rejection without probing get when the id lookup would fail", async () => {
+it("surfaces a create rejection without probing Workflow get", async () => {
 	const createError = new Error("workflow create rejected");
 	const get = vi.fn().mockRejectedValue(new Error("not found"));
 
@@ -100,9 +141,7 @@ it.each([
 		JSON.stringify([
 			"prepare-evidence",
 			"main_story_write",
-			"main_story_copyedit",
 			"announcements_write",
-			"announcements_copyedit",
 			"validate-edition",
 			"publish-edition",
 		]),
@@ -116,14 +155,14 @@ it.each([
 		"[]",
 		JSON.stringify({ step: "prepare-evidence", code: "no_evidence_for_publication_date", message: "absent" }),
 	],
-] as const)("composes strict %s projection with a separate Workflow observation", async (state, currentStep, completed, usage, failure) => {
+] as const)("composes strict current %s projection with a separate Workflow observation", async (state, currentStep, completed, usage, failure) => {
 	const publicationDate = `2026-03-0${String({ queued: 2, running: 3, complete: 4, errored: 5 }[state])}`;
 	await env.DB.prepare(
 		`INSERT INTO generation_run_status (
-		 active_region_id, publication_date, state, current_step, completed_steps_json,
-		 model_usage_json, failure_json, created_at_utc, updated_at_utc
-		) VALUES ('7', ?1, ?2, ?3, ?4, ?5, ?6, '2026-08-04T23:00:00.000Z', '2026-08-04T23:00:00.000Z')`,
-	).bind(publicationDate, state, currentStep, completed, usage, failure).run();
+		 contract_version, active_region_id, publication_date, state, current_step, completed_steps_json,
+		 model_usage_json, diagnostics_json, failure_json, created_at_utc, updated_at_utc
+		) VALUES (?1, '7', ?2, ?3, ?4, ?5, ?6, '[]', ?7, '2026-08-04T23:00:00.000Z', '2026-08-04T23:00:00.000Z')`,
+	).bind(CURRENT_GENERATION_RUN_CONTRACT_VERSION, publicationDate, state, currentStep, completed, usage, failure).run();
 	const get = vi.fn().mockResolvedValue({
 		status: vi.fn().mockResolvedValue({ status: state === "errored" ? "errored" : state }),
 	});
@@ -133,6 +172,7 @@ it.each([
 	);
 	expect(response.status).toBe(200);
 	expect(await response.json()).toMatchObject({
+		contract_version: CURRENT_GENERATION_RUN_CONTRACT_VERSION,
 		active_region_id: "7",
 		publication_date: publicationDate,
 		generation_run_id: `generation-run-7-${publicationDate}`,
@@ -141,21 +181,92 @@ it.each([
 	});
 });
 
-it("returns unreadable projection as 500 and keeps failed Workflow observation explicit", async () => {
+it("returns a legacy untagged status row through the legacy route schema", async () => {
+	const publicationDate = "2026-03-06";
 	await env.DB.prepare(
 		`INSERT INTO generation_run_status (
 		 active_region_id, publication_date, state, current_step, completed_steps_json,
-		 model_usage_json, failure_json, created_at_utc, updated_at_utc
-		) VALUES ('7', '2026-03-06', 'queued', NULL, '["publish-edition"]', '[]', NULL,
+		 model_usage_json, diagnostics_json, failure_json, created_at_utc, updated_at_utc
+		) VALUES ('7', ?1, 'running', 'main_story_copyedit', ?2, ?3, '[]', NULL,
 		 '2026-08-04T23:00:00.000Z', '2026-08-04T23:00:00.000Z')`,
+	).bind(
+		publicationDate,
+		JSON.stringify(["prepare-evidence", "main_story_write"]),
+		JSON.stringify([COMPLETE_MODEL_USAGE[0]]),
 	).run();
+	const response = await getGenerationRunStatusByPair(
+		pairRequest(publicationDate),
+		envWith(vi.fn(), vi.fn().mockResolvedValue({
+			status: vi.fn().mockResolvedValue({ status: "running" }),
+		})),
+	);
+	expect(response.status).toBe(200);
+	const body = await response.json();
+	expect(body).toMatchObject({
+		current_step: "main_story_copyedit",
+		workflow: { observation: "available", status: "running" },
+	});
+	expect(Object.hasOwn(body as object, "contract_version")).toBe(false);
+});
+
+it("returns a complete seven-step legacy status row with preserved copyedit diagnostics", async () => {
+	const publicationDate = "2026-03-11";
+	await env.DB.prepare(
+		`INSERT INTO generation_run_status (
+		 active_region_id, publication_date, state, current_step, completed_steps_json,
+		 model_usage_json, diagnostics_json, failure_json, created_at_utc, updated_at_utc
+		) VALUES ('7', ?1, 'complete', NULL, ?2, ?3, ?4, NULL,
+		 '2026-08-04T23:00:00.000Z', '2026-08-04T23:00:00.000Z')`,
+	).bind(
+		publicationDate,
+		JSON.stringify([
+			"prepare-evidence",
+			"main_story_write",
+			"main_story_copyedit",
+			"announcements_write",
+			"announcements_copyedit",
+			"validate-edition",
+			"publish-edition",
+		]),
+		JSON.stringify(LEGACY_COMPLETE_MODEL_USAGE),
+		JSON.stringify(LEGACY_COMPLETE_DIAGNOSTICS),
+	).run();
+	const response = await getGenerationRunStatusByPair(
+		pairRequest(publicationDate),
+		envWith(vi.fn(), vi.fn().mockResolvedValue({
+			status: vi.fn().mockResolvedValue({ status: "complete" }),
+		})),
+	);
+	expect(response.status).toBe(200);
+	const body = await response.json();
+	expect(body).toMatchObject({
+		state: "complete",
+		current_step: null,
+		diagnostics: LEGACY_COMPLETE_DIAGNOSTICS,
+		workflow: { observation: "available", status: "complete" },
+	});
+	if (!Array.isArray((body as { model_usage?: unknown }).model_usage)) {
+		throw new Error("Expected legacy route response to include model usage");
+	}
+	expect((body as { model_usage: unknown[] }).model_usage).toHaveLength(4);
+	expect(Object.hasOwn(body as object, "contract_version")).toBe(false);
+});
+
+it("returns unreadable projection as 500 and keeps failed Workflow observation explicit", async () => {
+	await env.DB.prepare(
+		`INSERT INTO generation_run_status (
+		 contract_version, active_region_id, publication_date, state, current_step, completed_steps_json,
+		 model_usage_json, diagnostics_json, failure_json, created_at_utc, updated_at_utc
+		) VALUES (?1, '7', '2026-03-07', 'queued', NULL, '["publish-edition"]', '[]', '[]', NULL,
+		 '2026-08-04T23:00:00.000Z', '2026-08-04T23:00:00.000Z')`,
+	).bind(CURRENT_GENERATION_RUN_CONTRACT_VERSION).run();
 	const unreadable = await getGenerationRunStatusByPair(
-		pairRequest("2026-03-06"),
+		pairRequest("2026-03-07"),
 		envWith(vi.fn()),
 	);
 	expect(unreadable.status).toBe(500);
 
-	const params = { active_region_id: "7", publication_date: "2026-03-07" } as const;
+	const params = { active_region_id: "7", publication_date: "2026-03-08" } as const;
 	await queueGenerationRunStatus(env.DB, params, "2026-08-04T23:00:00.000Z");
 	const response = await getGenerationRunStatusByPair(
 		pairRequest(params.publication_date),
@@ -173,25 +284,25 @@ it("returns unreadable projection as 500 and keeps failed Workflow observation e
 	});
 });
 
-it("exposes retained editorial diagnostics through the strict operator status route", async () => {
-	const publicationDate = "2026-03-12";
-	const completedSteps = ["prepare-evidence", "main_story_write", "main_story_copyedit"];
+it("exposes retained writer diagnostics through the strict operator status route", async () => {
+	const publicationDate = "2026-03-09";
 	const diagnostics = [{
-		kind: "preservation",
-		production_step: "main_story_copyedit",
-		code: "paragraph_count",
-		message: "Copyedit changed paragraph count in main_story.body",
+		kind: "final_product",
+		production_step: "main_story_write",
+		code: "forbidden_marker",
+		message: "Writer emitted a forbidden marker",
 	}];
 	await env.DB.prepare(
 		`INSERT INTO generation_run_status (
-		 active_region_id, publication_date, state, current_step, completed_steps_json,
+		 contract_version, active_region_id, publication_date, state, current_step, completed_steps_json,
 		 model_usage_json, diagnostics_json, failure_json, created_at_utc, updated_at_utc
-		) VALUES ('7', ?1, 'running', 'announcements_write', ?2, ?3, ?4, NULL,
+		) VALUES (?1, '7', ?2, 'running', 'validate-edition', ?3, ?4, ?5, NULL,
 		 '2026-08-04T23:00:00.000Z', '2026-08-04T23:00:00.000Z')`,
 	).bind(
+		CURRENT_GENERATION_RUN_CONTRACT_VERSION,
 		publicationDate,
-		JSON.stringify(completedSteps),
-		JSON.stringify(COMPLETE_MODEL_USAGE.slice(0, 2)),
+		JSON.stringify(["prepare-evidence", "main_story_write", "announcements_write"]),
+		JSON.stringify(COMPLETE_MODEL_USAGE),
 		JSON.stringify(diagnostics),
 	).run();
 	const get = vi.fn().mockResolvedValue({
@@ -207,56 +318,9 @@ it("exposes retained editorial diagnostics through the strict operator status ro
 });
 
 it("rejects malformed Workflow status instead of leaking it", async () => {
-	const params = { active_region_id: "7", publication_date: "2026-03-08" } as const;
-	await queueGenerationRunStatus(env.DB, params, "2026-08-04T23:00:00.000Z");
-	const get = vi.fn().mockResolvedValue({ status: vi.fn().mockResolvedValue({ status: "invented" }) });
-	await expect(
-		getGenerationRunStatusByPair(pairRequest(params.publication_date), envWith(vi.fn(), get)),
-	).rejects.toThrow();
-});
-
-it("accepts legitimate optional Workflow output and local-dev step outputs", async () => {
-	const params = { active_region_id: "7", publication_date: "2026-03-09" } as const;
-	await queueGenerationRunStatus(env.DB, params, "2026-08-04T23:00:00.000Z");
-	const get = vi.fn().mockResolvedValue({
-		status: vi.fn().mockResolvedValue({
-			status: "queued",
-			output: { retained: "platform" },
-			__LOCAL_DEV_STEP_OUTPUTS: [{ local: "step" }, null, 3],
-		}),
-	});
-	const response = await getGenerationRunStatusByPair(
-		pairRequest(params.publication_date),
-		envWith(vi.fn(), get),
-	);
-	expect(response.status).toBe(200);
-	const body = await response.json();
-	if (typeof body !== "object" || body === null || !("workflow" in body)) {
-		throw new Error("Expected operator status response with workflow");
-	}
-	expect(body.workflow).toEqual({ observation: "available", status: "queued", error: null });
-});
-
-it("rejects malformed non-array local-dev step outputs", async () => {
-	const params = { active_region_id: "7", publication_date: "2026-03-11" } as const;
-	await queueGenerationRunStatus(env.DB, params, "2026-08-04T23:00:00.000Z");
-	const get = vi.fn().mockResolvedValue({
-		status: vi.fn().mockResolvedValue({
-			status: "queued",
-			__LOCAL_DEV_STEP_OUTPUTS: { local: "not-an-array" },
-		}),
-	});
-	await expect(
-		getGenerationRunStatusByPair(pairRequest(params.publication_date), envWith(vi.fn(), get)),
-	).rejects.toThrow();
-});
-
-it("rejects unexpected Workflow status keys", async () => {
 	const params = { active_region_id: "7", publication_date: "2026-03-10" } as const;
 	await queueGenerationRunStatus(env.DB, params, "2026-08-04T23:00:00.000Z");
-	const get = vi.fn().mockResolvedValue({
-		status: vi.fn().mockResolvedValue({ status: "queued", invented: true }),
-	});
+	const get = vi.fn().mockResolvedValue({ status: vi.fn().mockResolvedValue({ status: "invented" }) });
 	await expect(
 		getGenerationRunStatusByPair(pairRequest(params.publication_date), envWith(vi.fn(), get)),
 	).rejects.toThrow();

@@ -1,4 +1,5 @@
 import {
+	CURRENT_EDITION_VERSION,
 	EditionSchema,
 	type Edition,
 } from "@bc-news/contracts";
@@ -27,23 +28,17 @@ export function assembleEdition(input: {
 	) as Record<(typeof PRODUCTION_MODEL_STEPS)[number], { provider: string; model: string }>;
 
 	return EditionSchema.parse({
+		version: CURRENT_EDITION_VERSION,
 		active_region_id: input.preparedEvidence.active_region_id,
 		publication_date: input.preparedEvidence.publication_date,
 		title: input.mainStory.title,
-		subtitle: input.mainStory.subtitle,
 		announcements: input.announcements.announcements,
 		main_story: input.mainStory.main_story,
 		meta: {
 			generated_at_utc: input.generatedAtUtc,
 			editorial_products: {
-				main_story: {
-					write: provenance.main_story_write,
-					copyedit: provenance.main_story_copyedit,
-				},
-				announcements: {
-					write: provenance.announcements_write,
-					copyedit: provenance.announcements_copyedit,
-				},
+				main_story: provenance.main_story_write,
+				announcements: provenance.announcements_write,
 			},
 			counts: {
 				raw_count: input.preparedEvidence.raw_count,

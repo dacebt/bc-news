@@ -165,6 +165,12 @@ function scorecardReportFreshness(
 	if (artifact.version === 1) {
 		return Promise.resolve(undefined);
 	}
+	if (artifact.version === 2) {
+		return evaluationScorecardFreshness(artifact, repositoryRoot);
+	}
+	if (artifact.version === 3) {
+		return evaluationScorecardFreshness(artifact, repositoryRoot);
+	}
 	return evaluationScorecardFreshness(artifact, repositoryRoot);
 }
 
@@ -176,6 +182,9 @@ function longitudinalReportFreshness(
 		return Promise.resolve(undefined);
 	}
 	if (artifact.version === 2) {
+		return Promise.resolve([]);
+	}
+	if (artifact.version === 3) {
 		return Promise.resolve([]);
 	}
 	return evaluationLongitudinalFreshness(artifact, repositoryRoot);
@@ -331,11 +340,11 @@ export async function exportEvaluationAggregateResultForCli(
 		dirname(resolvedInputPath),
 		artifactRoots(context),
 	);
-	if (sourceArtifact.version !== 3) {
+	if (sourceArtifact.version !== 4) {
 		throw new EvaluationAggregateResultError(
 			"unsupported_source_scorecard_version",
 			resolvedInputPath,
-			`Aggregate export requires a current local V3 scorecard artifact under ${context.localDataRoot}`,
+			`Aggregate export requires a current local V4 scorecard artifact under ${context.localDataRoot}`,
 		);
 	}
 	const outputDirectory = aggregateResultsDirectoryFor(context, resultsDirectory);

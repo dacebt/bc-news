@@ -9,10 +9,10 @@ import {
 	type EvaluationLocalSourceReference,
 } from "./evaluation-local-source-reference";
 import {
-	parseEvaluationScorecardBenchmark,
 	type ScorecardBenchmarkRun,
-} from "./evaluation-scorecard-input-v2";
+} from "./evaluation-scorecard-input-validation";
 import {
+	parseEvaluationScorecardBenchmark,
 	validateLoadedEvaluationScorecardInput,
 	type LoadedEvaluationScorecardInput,
 	type LoadedScorecardRun,

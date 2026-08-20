@@ -23,38 +23,30 @@ const PREPARED_EVIDENCE: PreparedEvidence = {
 	}],
 };
 
-test("strict editorial diagnostic contract accepts only stable preservation and final-product shapes", () => {
+test("strict editorial diagnostic contract accepts only current final-product writer shapes", () => {
 	expect(EditorialDiagnosticSchema.parse({
+		kind: "final_product",
+		production_step: "main_story_write",
+		code: "forbidden_marker",
+		message: "Forbidden output marker: system prompt",
+	})).toBeDefined();
+	expect(EditorialDiagnosticSchema.safeParse({
 		kind: "preservation",
 		production_step: "main_story_copyedit",
 		code: "paragraph_count",
-		message: "Copyedit changed paragraph count in main_story.body",
-	})).toBeDefined();
-	expect(EditorialDiagnosticSchema.parse({
+		message: "legacy preservation",
+	}).success).toBe(false);
+	expect(EditorialDiagnosticSchema.safeParse({
 		kind: "final_product",
 		production_step: "announcements_copyedit",
 		code: "ungrounded_quote",
-		message: "Ungrounded quote: invented words",
-	})).toBeDefined();
-	expect(EditorialDiagnosticSchema.safeParse({
-		kind: "final_product",
-		production_step: "announcements_copyedit",
-		code: "paragraph_count",
-		message: "cross-kind code",
-	}).success).toBe(false);
-	expect(EditorialDiagnosticSchema.safeParse({
-		kind: "preservation",
-		production_step: "main_story_copyedit",
-		code: "paragraph_count",
-		message: "extra key",
-		path: "main_story.body",
+		message: "legacy step",
 	}).success).toBe(false);
 });
 
-test("main-story final-product diagnostics retain stable codes and deterministic order", () => {
+test("main-story final-product diagnostics retain stable codes and writer attribution", () => {
 	const diagnostics = mainStoryFinalProductDiagnostics({
 		title: "Regional News",
-		subtitle: "Work continued",
 		main_story: {
 			headline: "Bridge work completed",
 			lede: "system prompt",
@@ -62,21 +54,15 @@ test("main-story final-product diagnostics retain stable codes and deterministic
 		},
 	}, PREPARED_EVIDENCE);
 
-	expect(diagnostics.map(({ code }) => code)).toEqual([
-		"forbidden_marker",
-		"forbidden_marker",
-		"ungrounded_marked_name",
-		"ungrounded_quote",
-	]);
-	expect(diagnostics.map(({ message }) => message)).toEqual([
-		"Forbidden output marker: system prompt",
-		"Forbidden output marker: —",
-		"Ungrounded marked name: Mallory",
-		"Ungrounded quote: invented words",
+	expect(diagnostics.map(({ production_step, code }) => ({ production_step, code }))).toEqual([
+		{ production_step: "main_story_write", code: "forbidden_marker" },
+		{ production_step: "main_story_write", code: "forbidden_marker" },
+		{ production_step: "main_story_write", code: "ungrounded_marked_name" },
+		{ production_step: "main_story_write", code: "ungrounded_quote" },
 	]);
 });
 
-test("announcement final-product diagnostics remain attributed to announcements copyedit", () => {
+test("announcement final-product diagnostics remain attributed to announcements write", () => {
 	const diagnostics = announcementsFinalProductDiagnostics({
 		announcements: [{
 			title: "Bridge completed",
@@ -85,8 +71,8 @@ test("announcement final-product diagnostics remain attributed to announcements 
 	}, PREPARED_EVIDENCE);
 
 	expect(diagnostics.map(({ production_step, code }) => ({ production_step, code }))).toEqual([
-		{ production_step: "announcements_copyedit", code: "forbidden_marker" },
-		{ production_step: "announcements_copyedit", code: "ungrounded_marked_name" },
-		{ production_step: "announcements_copyedit", code: "ungrounded_quote" },
+		{ production_step: "announcements_write", code: "forbidden_marker" },
+		{ production_step: "announcements_write", code: "ungrounded_marked_name" },
+		{ production_step: "announcements_write", code: "ungrounded_quote" },
 	]);
 });

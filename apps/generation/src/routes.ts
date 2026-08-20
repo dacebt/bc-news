@@ -3,7 +3,8 @@ import { GenerationRunParamsSchema } from "@bc-news/contracts";
 import { EditionUnreadableError, readEdition } from "./edition-store";
 import { generationRunInstanceId } from "./generation-run";
 import {
-	GenerationRunProjectionSchema,
+	CurrentGenerationRunProjectionSchema,
+	LegacyGenerationRunProjectionSchema,
 	GenerationRunStatusUnreadableError,
 	readGenerationRunStatus,
 } from "./generation-run-status";
@@ -85,10 +86,20 @@ const WorkflowObservationSchema = z.discriminatedUnion("observation", [
 		error: ErrorShapeSchema,
 	}),
 ]);
-export const GenerationRunStatusResponseSchema = GenerationRunProjectionSchema.extend({
+const CurrentGenerationRunStatusResponseSchema = CurrentGenerationRunProjectionSchema.extend({
 	generation_run_id: z.string().min(1),
 	workflow: WorkflowObservationSchema,
 });
+
+const LegacyGenerationRunStatusResponseSchema = LegacyGenerationRunProjectionSchema.extend({
+	generation_run_id: z.string().min(1),
+	workflow: WorkflowObservationSchema,
+});
+
+export const GenerationRunStatusResponseSchema = z.union([
+	CurrentGenerationRunStatusResponseSchema,
+	LegacyGenerationRunStatusResponseSchema,
+]);
 
 export async function createGenerationRun(request: Request, env: Env): Promise<Response> {
 	if (!hasJsonContentType(request)) {

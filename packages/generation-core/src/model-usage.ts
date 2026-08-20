@@ -5,9 +5,7 @@ export const EditorialProductSchema = z.enum(["main_story", "announcements"]);
 
 export const PRODUCTION_MODEL_STEPS = [
 	"main_story_write",
-	"main_story_copyedit",
 	"announcements_write",
-	"announcements_copyedit",
 ] as const satisfies readonly ProductionModelStep[];
 
 export const ProductionModelStepSchema = z.enum(PRODUCTION_MODEL_STEPS);

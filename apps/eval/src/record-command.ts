@@ -5,17 +5,17 @@ import {
 	modelRequestSha256,
 	type RecordedModelConfiguration,
 	type RecordedModelResponseV3,
-	type RecordedModelResponseV3Roster,
-	type RecordedModelResponseRoster,
 } from "@bc-news/fixtures";
 import {
-	PRODUCTION_MODEL_STEPS,
 	prepareEvidence,
 	type EditorialDiagnostic,
 	type ModelProviderPort,
-	type ProductionModelStep,
 } from "@bc-news/generation-core";
 import { loadConfig } from "./config";
+import {
+	CURRENT_PRODUCTION_MODEL_STEPS,
+	type CurrentProductionModelStep,
+} from "./current-production-steps";
 import { loadFixture } from "./evidence-fixture";
 import {
 	compareFinalEditorialProducts,
@@ -42,7 +42,7 @@ export interface RecordCommandOptions {
 
 export interface RecordCommandResult {
 	readonly responseDirectory: string;
-	readonly recordedResponses: RecordedModelResponseV3Roster;
+	readonly recordedResponses: Record<CurrentProductionModelStep, RecordedModelResponseV3>;
 	readonly liveProducts: EvalProducts;
 	readonly liveDiagnostics: readonly EditorialDiagnostic[];
 	readonly replayProducts: EvalProducts;
@@ -52,12 +52,12 @@ export interface RecordCommandResult {
 
 export class RecordCommandError extends Error {
 	readonly code: "observation_roster_mismatch" | "completion_text_unavailable" | "final_product_mismatch";
-	readonly productionStep: ProductionModelStep | undefined;
+	readonly productionStep: CurrentProductionModelStep | undefined;
 
 	constructor(
 		code: RecordCommandError["code"],
 		message: string,
-		productionStep?: ProductionModelStep,
+		productionStep?: CurrentProductionModelStep,
 	) {
 		super(message);
 		this.name = "RecordCommandError";
@@ -66,8 +66,8 @@ export class RecordCommandError extends Error {
 	}
 }
 
-type ProviderRoster = Readonly<Record<ProductionModelStep, ModelProviderPort>>;
-type LiveModelConfig = RecorderConfig["production_steps"][ProductionModelStep];
+type ProviderRoster = Readonly<Record<CurrentProductionModelStep, ModelProviderPort>>;
+type LiveModelConfig = RecorderConfig["production_steps"][CurrentProductionModelStep];
 
 function recordedConfiguration(config: LiveModelConfig): RecordedModelConfiguration {
 	return structuredClone(config);
@@ -83,19 +83,9 @@ function resolveRecorderProviders(
 			config.production_steps.main_story_write,
 			environment,
 		),
-		main_story_copyedit: resolveModelProvider(
-			"main_story_copyedit",
-			config.production_steps.main_story_copyedit,
-			environment,
-		),
 		announcements_write: resolveModelProvider(
 			"announcements_write",
 			config.production_steps.announcements_write,
-			environment,
-		),
-		announcements_copyedit: resolveModelProvider(
-			"announcements_copyedit",
-			config.production_steps.announcements_copyedit,
 			environment,
 		),
 	};
@@ -104,14 +94,12 @@ function resolveRecorderProviders(
 function replayProviderRoster(provider: ModelProviderPort): ProviderRoster {
 	return {
 		main_story_write: provider,
-		main_story_copyedit: provider,
 		announcements_write: provider,
-		announcements_copyedit: provider,
 	};
 }
 
 async function recordedResponse(
-	expectedStep: ProductionModelStep,
+	expectedStep: CurrentProductionModelStep,
 	observation: ProductionStepObservation | undefined,
 	config: LiveModelConfig,
 ): Promise<RecordedModelResponseV3> {
@@ -143,32 +131,28 @@ async function recordedResponse(
 async function recordedResponseRoster(
 	config: RecorderConfig,
 	observations: readonly ProductionStepObservation[],
-): Promise<RecordedModelResponseV3Roster> {
-	if (observations.length !== PRODUCTION_MODEL_STEPS.length) {
+): Promise<Record<CurrentProductionModelStep, RecordedModelResponseV3>> {
+	if (observations.length !== CURRENT_PRODUCTION_MODEL_STEPS.length) {
 		throw new RecordCommandError(
 			"observation_roster_mismatch",
-			`Expected ${PRODUCTION_MODEL_STEPS.length} live observations, received ${observations.length}`,
+			`Expected ${CURRENT_PRODUCTION_MODEL_STEPS.length} live observations, received ${observations.length}`,
 		);
 	}
-	const [mainStoryWrite, mainStoryCopyedit, announcementsWrite, announcementsCopyedit] = await Promise.all([
+	const [mainStoryWrite, announcementsWrite] = await Promise.all([
 		recordedResponse("main_story_write", observations[0], config.production_steps.main_story_write),
-		recordedResponse("main_story_copyedit", observations[1], config.production_steps.main_story_copyedit),
-		recordedResponse("announcements_write", observations[2], config.production_steps.announcements_write),
-		recordedResponse("announcements_copyedit", observations[3], config.production_steps.announcements_copyedit),
+		recordedResponse("announcements_write", observations[1], config.production_steps.announcements_write),
 	]);
 	return {
 		main_story_write: mainStoryWrite,
-		main_story_copyedit: mainStoryCopyedit,
 		announcements_write: announcementsWrite,
-		announcements_copyedit: announcementsCopyedit,
 	};
 }
 
 async function writeRecordedResponses(
 	directory: string,
-	roster: RecordedModelResponseRoster,
+	roster: Record<CurrentProductionModelStep, RecordedModelResponseV3>,
 ): Promise<void> {
-	await Promise.all(PRODUCTION_MODEL_STEPS.map((step) =>
+	await Promise.all(CURRENT_PRODUCTION_MODEL_STEPS.map((step) =>
 		writeFile(join(directory, `${step}.json`), `${JSON.stringify(roster[step], null, 2)}\n`, { flag: "wx" }),
 	));
 }

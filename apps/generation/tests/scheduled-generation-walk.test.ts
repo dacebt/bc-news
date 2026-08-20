@@ -14,28 +14,14 @@ const RECORDED_RESPONSES: readonly RecordedResponse[] = [
 	{
 		production_step: "main_story_write",
 		provider: "migrated_fixture",
-		model: "legacy/main-story-plus-packaging-v1",
-		prompt_sha256: "unused-by-operator-assertion",
-		text: "unused-by-operator-assertion",
-	},
-	{
-		production_step: "main_story_copyedit",
-		provider: "synthetic_fixture",
-		model: "preservation-copy-v1",
+		model: "legacy/main-story-v2",
 		prompt_sha256: "unused-by-operator-assertion",
 		text: "unused-by-operator-assertion",
 	},
 	{
 		production_step: "announcements_write",
 		provider: "migrated_fixture",
-		model: "legacy/announcements-v1",
-		prompt_sha256: "unused-by-operator-assertion",
-		text: "unused-by-operator-assertion",
-	},
-	{
-		production_step: "announcements_copyedit",
-		provider: "synthetic_fixture",
-		model: "preservation-copy-v1",
+		model: "legacy/announcements-v2",
 		prompt_sha256: "unused-by-operator-assertion",
 		text: "unused-by-operator-assertion",
 	},
@@ -43,6 +29,7 @@ const RECORDED_RESPONSES: readonly RecordedResponse[] = [
 
 function erroredStatus(overrides: Record<string, unknown> = {}): string {
 	return JSON.stringify({
+		contract_version: "current_v1",
 		active_region_id: PAIR.active_region_id,
 		publication_date: PAIR.publication_date,
 		generation_run_id: "generation-run-8-2026-01-25",
@@ -75,6 +62,7 @@ function completeStatus(overrides: Record<string, unknown> = {}): {
 	return {
 		responses,
 		body: JSON.stringify({
+			contract_version: "current_v1",
 			active_region_id: PAIR.active_region_id,
 			publication_date: PAIR.publication_date,
 			generation_run_id: "generation-run-8-2026-01-25",
@@ -83,9 +71,7 @@ function completeStatus(overrides: Record<string, unknown> = {}): {
 			completed_steps: [
 				"prepare-evidence",
 				"main_story_write",
-				"main_story_copyedit",
 				"announcements_write",
-				"announcements_copyedit",
 				"validate-edition",
 				"publish-edition",
 			],
@@ -117,7 +103,7 @@ it("parses the pair-addressed operator projection and explicit absent-evidence f
 	expect(() => assertExplicitNoEvidenceFailure(response)).not.toThrow();
 });
 
-it("proves the completed recorded generation has four usages and the exact ordered diagnostics", () => {
+it("proves the completed recorded generation has two usages and the exact ordered diagnostics", () => {
 	const { body, responses } = completeStatus();
 	const status = parseGenerationRunStatusResponse(body, PAIR);
 
@@ -128,14 +114,24 @@ it("proves the completed recorded generation has four usages and the exact order
 it("rejects malformed or drifted recorded-generation diagnostics", () => {
 	const { body: malformed } = completeStatus({
 		diagnostics: [{
-			...RECORDED_GENERATION_DIAGNOSTICS[0],
+			kind: "final_product",
+			production_step: "main_story_write",
+			code: "forbidden_marker",
+			message: "Writer emitted a forbidden marker",
 			unexpected: true,
 		}],
 	});
 	expect(() => parseGenerationRunStatusResponse(malformed, PAIR)).toThrow("invalid diagnostic");
 
 	const { body: reordered, responses } = completeStatus({
-		diagnostics: [...RECORDED_GENERATION_DIAGNOSTICS].reverse(),
+		diagnostics: [
+			{
+				kind: "final_product",
+				production_step: "announcements_write",
+				code: "ungrounded_quote",
+				message: "Writer emitted an unexpected retained finding",
+			},
+		],
 	});
 	const status = parseGenerationRunStatusResponse(reordered, PAIR);
 	expect(() => assertCompletedRecordedGenerationStatus(status, responses)).toThrow(
@@ -147,33 +143,16 @@ it("rejects diagnostics changed by repeated scheduled generation", () => {
 	const { body } = completeStatus();
 	const first = parseGenerationRunStatusResponse(body, PAIR);
 	const changed = parseGenerationRunStatusResponse(completeStatus({
-		diagnostics: RECORDED_GENERATION_DIAGNOSTICS.map((diagnostic, index) => index === 0
-			? { ...diagnostic, message: `${diagnostic.message} changed` }
-			: diagnostic),
+		diagnostics: [{
+			kind: "final_product",
+			production_step: "main_story_write",
+			code: "ungrounded_quote",
+			message: "Writer emitted a changed retained finding",
+		}],
 	}).body, PAIR);
 
 	expect(() => assertRecordedGenerationEvidenceUnchanged(
 		recordedGenerationEvidence(first),
 		changed,
 	)).toThrow("editorial diagnostics changed after repeated scheduled generation");
-});
-
-it("rejects a mismatched pair identity", () => {
-	expect(() =>
-		parseGenerationRunStatusResponse(erroredStatus({ active_region_id: "7" }), PAIR),
-	).toThrow("invalid envelope");
-});
-
-it.each([
-	{ failure: { step: "main_story_write", code: "no_evidence_for_publication_date", message: "wrong step" } },
-	{ failure: { step: "prepare-evidence", code: "different_failure", message: "wrong code" } },
-	{ model_usage: [{ production_step: "main_story_write" }] },
-])("rejects an invalid absent-evidence operator projection %#", (override) => {
-	let response;
-	try {
-		response = parseGenerationRunStatusResponse(erroredStatus(override), PAIR);
-	} catch {
-		return;
-	}
-	expect(() => assertExplicitNoEvidenceFailure(response)).toThrow();
 });

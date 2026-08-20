@@ -1,17 +1,11 @@
 import { z } from "zod";
 import {
 	AnnouncementsWriterOutputSchema,
-	IdentifiedAnnouncementSchema,
-	MainStoryCopyeditOutputSchema,
 	MainStoryDraftSchema,
 	type ProductionModelStep,
 } from "@bc-news/generation-core";
 
 type JsonSchema = Readonly<Record<string, unknown>>;
-
-const AnnouncementsCopyeditDecodeSchema = z.strictObject({
-	announcements: z.array(IdentifiedAnnouncementSchema.extend({ id: z.string() })),
-});
 
 export interface ProductionStepOutputContract {
 	readonly name: string;
@@ -56,16 +50,8 @@ export function productionStepOutputContract(
 
 export const PRODUCTION_STEP_OUTPUT_CONTRACTS: ProductionStepOutputContracts = {
 	main_story_write: productionStepOutputContract("main_story_write_output", MainStoryDraftSchema),
-	main_story_copyedit: productionStepOutputContract(
-		"main_story_copyedit_output",
-		MainStoryCopyeditOutputSchema,
-	),
 	announcements_write: productionStepOutputContract(
 		"announcements_write_output",
 		AnnouncementsWriterOutputSchema,
-	),
-	announcements_copyedit: productionStepOutputContract(
-		"announcements_copyedit_output",
-		AnnouncementsCopyeditDecodeSchema,
 	),
 };

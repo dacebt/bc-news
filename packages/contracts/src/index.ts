@@ -14,13 +14,22 @@ export {
 } from "./timestamp";
 export {
 	AnnouncementSchema,
+	CURRENT_EDITION_VERSION,
 	EditorialProductProvenanceSchema,
 	EditionSchema,
+	EditionRecordSchema,
+	LegacyEditionSchema,
+	LegacyEditorialProductProvenanceSchema,
+	LegacyMainStorySchema,
 	MainStorySchema,
 	ModelProvenanceSchema,
 	type Announcement,
 	type EditorialProductProvenance,
 	type Edition,
+	type EditionRecord,
+	type LegacyEdition,
+	type LegacyEditorialProductProvenance,
+	type LegacyMainStory,
 	type MainStory,
 	type ModelProvenance,
 } from "./edition";

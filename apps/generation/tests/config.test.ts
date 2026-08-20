@@ -1,15 +1,22 @@
 import { env } from "cloudflare:workers";
 import { expect, it } from "vitest";
-import { PRODUCTION_MODEL_STEPS } from "@bc-news/generation-core";
 import { fixtureEvidenceInput, recordedModelProvider } from "@bc-news/fixtures";
-import { GenerationConfigError, resolveGenerationPorts } from "../src/config";
+import {
+	GENERATION_WRITER_STEPS,
+	GenerationConfigError,
+	resolveGenerationPorts,
+} from "../src/config";
 
 function envWith(overrides: Record<string, unknown>): Env {
 	return { ...env, ...overrides };
 }
 
 function recordedConfig(): Record<string, { adapter: "recorded" }> {
-	return Object.fromEntries(PRODUCTION_MODEL_STEPS.map((step) => [step, { adapter: "recorded" }]));
+	const config: Record<string, { adapter: "recorded" }> = {};
+	for (const step of GENERATION_WRITER_STEPS) {
+		config[step] = { adapter: "recorded" };
+	}
+	return config;
 }
 
 it("does not expose operator credentials to the test runtime", () => {
@@ -17,11 +24,11 @@ it("does not expose operator credentials to the test runtime", () => {
 	expect(Reflect.has(env, "CLOUDFLARE_API_TOKEN")).toBe(false);
 });
 
-it("resolves exactly four independently configured production providers", () => {
+it("resolves exactly two independently configured writer providers", () => {
 	const ports = resolveGenerationPorts(envWith({ EVIDENCE_INPUT: "fixture" }));
 	expect(ports.evidenceInput).toBe(fixtureEvidenceInput);
-	expect(Object.keys(ports.modelProviders)).toEqual(PRODUCTION_MODEL_STEPS);
-	for (const step of PRODUCTION_MODEL_STEPS) {
+	expect(Object.keys(ports.modelProviders)).toEqual([...GENERATION_WRITER_STEPS]);
+	for (const step of GENERATION_WRITER_STEPS) {
 		expect(ports.modelProviders[step]).toBe(recordedModelProvider);
 	}
 });
@@ -34,9 +41,10 @@ it("committed default resolves D1 evidence", () => {
 
 it.each([
 	["invalid json", "{not json"],
-	["missing step", JSON.stringify(Object.fromEntries(Object.entries(recordedConfig()).slice(0, 3)))],
+	["missing writer", JSON.stringify({ main_story_write: { adapter: "recorded" } })],
+	["obsolete copyedit key", JSON.stringify({ ...recordedConfig(), main_story_copyedit: { adapter: "recorded" } })],
+	["obsolete announcements copyedit key", JSON.stringify({ ...recordedConfig(), announcements_copyedit: { adapter: "recorded" } })],
 	["obsolete packaging key", JSON.stringify({ ...recordedConfig(), packaging: { adapter: "recorded" } })],
-	["obsolete product key", JSON.stringify({ ...recordedConfig(), main_story: { adapter: "recorded" } })],
 	["judge key", JSON.stringify({ ...recordedConfig(), judge: { adapter: "recorded" } })],
 ])("rejects %s before evidence or model work", (_label, modelConfig) => {
 	expect(() => resolveGenerationPorts(envWith({ MODEL_CONFIG: modelConfig }))).toThrow(
@@ -119,7 +127,7 @@ it("resolves independent provider-default and explicit LM Studio temperatures", 
 		MODEL_CONFIG: JSON.stringify({
 			...recordedConfig(),
 			main_story_write: { ...local, temperature: 0.6 },
-			main_story_copyedit: { ...local, model: "local-copyedit", temperature: 0.2 },
+			announcements_write: { ...local, model: "local-announcements", temperature: 0.2 },
 		}),
 	})).modelProviders.main_story_write).toBeDefined();
 });

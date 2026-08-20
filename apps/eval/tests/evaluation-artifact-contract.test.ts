@@ -49,6 +49,19 @@ test("accepts recovered retry evidence without classifying the trial as infrastr
 		const invocation = trial.invocations.find(({ id }) => id === evidence.invocation_id);
 		if (invocation !== undefined) evidence.ordinal = invocation.ordinal;
 	}
+	recovered.gateway_requests.unshift({
+		trial_id: trial.id,
+		invocation_id: failedWriterId,
+		config_identity: trial.config_identity,
+		production_step: "main_story_write",
+		ordinal: 1,
+		state: "unavailable",
+		reason: "transport_failed",
+	});
+	for (const request of recovered.gateway_requests) {
+		const invocation = trial.invocations.find(({ id }) => id === request.invocation_id);
+		if (invocation !== undefined) request.ordinal = invocation.ordinal;
+	}
 	expect(BenchmarkRunSchema.safeParse(recovered).success).toBe(true);
 	const misclassified = clone(recovered);
 	misclassified.trials[0]!.subject_outcome = "infrastructure_incomplete";
@@ -95,19 +108,12 @@ test("rejects unreachable track selections for both editorial tracks", async () 
 		const mutation = clone(result.benchmark);
 		mutation.trials[0]!.selected_invocation_ids[`${trackName}_write`] = null;
 		expect(BenchmarkRunSchema.safeParse(mutation).success).toBe(false);
-		const orderMutation = clone(result.benchmark);
-		const writerStep = `${trackName}_write` as const;
-		const copyeditStep = `${trackName}_copyedit` as const;
-		const writerId = orderMutation.trials[0]!.selected_invocation_ids[writerStep];
-		const copyeditId = orderMutation.trials[0]!.selected_invocation_ids[copyeditStep];
-		const writerIndex = orderMutation.trials[0]!.invocations.findIndex(({ id }) => id === writerId);
-		const copyeditIndex = orderMutation.trials[0]!.invocations.findIndex(({ id }) => id === copyeditId);
-		if (writerIndex < 0 || copyeditIndex < 0) throw new Error(`expected selected ${trackName} writer and copyeditor`);
-		const writer = orderMutation.trials[0]!.invocations[writerIndex]!;
-		const copyedit = orderMutation.trials[0]!.invocations[copyeditIndex]!;
-		orderMutation.trials[0]!.invocations[writerIndex] = { ...copyedit, ordinal: writerIndex + 1 };
-		orderMutation.trials[0]!.invocations[copyeditIndex] = { ...writer, ordinal: copyeditIndex + 1 };
-		expect(BenchmarkRunSchema.safeParse(orderMutation).success).toBe(false);
+		const wrongSelection = clone(result.benchmark);
+		wrongSelection.trials[0]!.selected_invocation_ids[`${trackName}_write`] =
+			trackName === "main_story"
+				? result.benchmark.trials[0]!.selected_invocation_ids.announcements_write
+				: result.benchmark.trials[0]!.selected_invocation_ids.main_story_write;
+		expect(BenchmarkRunSchema.safeParse(wrongSelection).success).toBe(false);
 	}
 });
 
@@ -210,6 +216,7 @@ test("binds usage and billing evidence to the declared adapter", async () => {
 	local.trials[0]!.config_identity = localIdentity;
 	for (const invocation of local.trials[0]!.invocations) invocation.config_identity = localIdentity;
 	for (const evidence of local.runtime_evidence) evidence.config_identity = localIdentity;
+	for (const request of local.gateway_requests) request.config_identity = localIdentity;
 	const localInvocation = local.trials[0]!.invocations[0]!;
 	const localRuntime = local.runtime_evidence.find(({ invocation_id }) => invocation_id === localInvocation.id);
 	if (localRuntime?.state !== "captured") throw new Error("expected local captured runtime evidence");
@@ -236,13 +243,13 @@ test("generated results do not change injected code provenance across runs", asy
 });
 
 test("keeps malformed JSON and strict schema mismatch as the only model-output rejections", async () => {
-	const malformed = await controlledEvaluation(undefined, 1, { main_story_copyedit: "not json" });
+	const malformed = await controlledEvaluation(undefined, 1, { main_story_write: "not json" });
 	expect(malformed.result.benchmark.trials[0]!.tracks.main_story.subject_outcome).toBe("parse_rejected");
-	expect(malformed.result.benchmark.trials[0]!.selected_invocation_ids.main_story_copyedit).toBeNull();
+	expect(malformed.result.benchmark.trials[0]!.selected_invocation_ids.main_story_write).toBeNull();
 
-	const retained = JSON.parse(await readFile(new URL("../../../packages/fixtures/model-responses/main_story_copyedit.json", import.meta.url), "utf8")) as { text: string };
+	const retained = JSON.parse(await readFile(new URL("../../../packages/fixtures/model-responses/main_story_write.json", import.meta.url), "utf8")) as { text: string };
 	const schemaInvalid = { ...(JSON.parse(retained.text) as Record<string, unknown>), invented: true };
-	const mismatch = await controlledEvaluation(undefined, 1, { main_story_copyedit: JSON.stringify(schemaInvalid) });
+	const mismatch = await controlledEvaluation(undefined, 1, { main_story_write: JSON.stringify(schemaInvalid) });
 	expect(mismatch.result.benchmark.trials[0]!.tracks.main_story.subject_outcome).toBe("contract_rejected");
 	expect(Object.keys(mismatch.result.benchmark.outcome_counts)).toEqual([
 		"completed", "parse_rejected", "contract_rejected", "infrastructure_incomplete",

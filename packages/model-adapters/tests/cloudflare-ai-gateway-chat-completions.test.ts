@@ -5,7 +5,6 @@ import {
 } from "../src/index";
 import {
 	completionResponse,
-	completionResponseWithContent,
 	provider,
 	request,
 	streamingCompletionResponse,
@@ -16,19 +15,16 @@ afterEach(() => vi.restoreAllMocks());
 it("streams only GPT-5 Mini, buffers the full content, and retains reported usage", async () => {
 	const content = JSON.stringify({
 		title: "The Daily",
-		subtitle: "Market report",
 		main_story: {
 			headline: "Trade moved",
 			lede: "Merchants gathered.",
 			body: "The market was active.",
-			image: null,
 		},
 	});
 	const fetchCall = vi.spyOn(globalThis, "fetch").mockResolvedValue(streamingCompletionResponse(content));
 	await expect(provider("openai/gpt-5-mini").complete(request())).resolves.toMatchObject({
 		text: JSON.stringify({
 			title: "The Daily",
-			subtitle: "Market report",
 			main_story: {
 				headline: "Trade moved",
 				lede: "Merchants gathered.",
@@ -105,55 +101,6 @@ it("preserves the application-facing completion text exactly", async () => {
 		usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
 	}), { headers: { "cf-aig-log-id": "gateway-log-one" } }));
 	await expect(provider().complete(request())).resolves.toMatchObject({ text: "  completion\n" });
-});
-
-it("normalizes OpenAI null placeholders back to canonical optional fields", async () => {
-	vi.spyOn(globalThis, "fetch").mockResolvedValue(completionResponseWithContent(JSON.stringify({
-		title: "The Daily",
-		subtitle: "Market report",
-		main_story: {
-			headline: "Trade moved",
-			lede: "Merchants gathered.",
-			body: "The market was active.",
-			image: null,
-		},
-	})));
-	await expect(provider("openai/gpt-4o").complete(request())).resolves.toMatchObject({
-		text: JSON.stringify({
-			title: "The Daily",
-			subtitle: "Market report",
-			main_story: {
-				headline: "Trade moved",
-				lede: "Merchants gathered.",
-				body: "The market was active.",
-			},
-		}),
-	});
-});
-
-it("normalizes a nested OpenAI null placeholder without removing its parent", async () => {
-	vi.spyOn(globalThis, "fetch").mockResolvedValue(completionResponseWithContent(JSON.stringify({
-		title: "The Daily",
-		subtitle: "Market report",
-		main_story: {
-			headline: "Trade moved",
-			lede: "Merchants gathered.",
-			body: "The market was active.",
-			image: { url: "https://example.com/image.png", caption: "Market", credit: null },
-		},
-	})));
-	await expect(provider("openai/gpt-5-nano").complete(request())).resolves.toMatchObject({
-		text: JSON.stringify({
-			title: "The Daily",
-			subtitle: "Market report",
-			main_story: {
-				headline: "Trade moved",
-				lede: "Merchants gathered.",
-				body: "The market was active.",
-				image: { url: "https://example.com/image.png", caption: "Market" },
-			},
-		}),
-	});
 });
 
 it("retains a successful response when Cloudflare omits the Gateway log id", async () => {

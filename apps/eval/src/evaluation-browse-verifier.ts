@@ -2,7 +2,6 @@ import { isDeepStrictEqual } from "node:util";
 import { mkdir, mkdtemp, readFile, rm, unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { PRODUCTION_MODEL_STEPS, type ProductionModelStep } from "@bc-news/generation-core";
 import { RecordedModelResponseSchema } from "@bc-news/fixtures";
 import { REPRESENTATIVE_FIXTURE_PATH } from "./representative-fixture";
 import { runEvalCliApplication } from "./cli";
@@ -13,6 +12,10 @@ import { evaluateBenchmarkCommand } from "./evaluation-benchmark-command";
 import { compareBenchmarkRuns } from "./evaluation-comparison";
 import { projectBenchmarkBehavior } from "./evaluation-observation";
 import { startRecordLoopbackServer } from "./record-loopback-server";
+import {
+	CURRENT_PRODUCTION_MODEL_STEPS,
+	type CurrentProductionModelStep,
+} from "./current-production-steps";
 
 const RESPONSE_DIRECTORY = new URL("../../../packages/fixtures/model-responses/", import.meta.url).pathname;
 const FIRST_PROVENANCE = {
@@ -40,7 +43,7 @@ function assertProof(condition: boolean, code: string, message: string): asserts
 
 function productionConfiguration(modelPrefix: string) {
 	return {
-		production_steps: Object.fromEntries(PRODUCTION_MODEL_STEPS.map((step) => [step, {
+		production_steps: Object.fromEntries(CURRENT_PRODUCTION_MODEL_STEPS.map((step) => [step, {
 			adapter: "openai_compatible_hosted",
 			provider: "repository_loopback",
 			model: `${modelPrefix}/${step}`,
@@ -50,7 +53,7 @@ function productionConfiguration(modelPrefix: string) {
 				output_usd_per_million_tokens: 0,
 				pricing_reference: "repository browse proof",
 			},
-		}])) as Record<ProductionModelStep, unknown>,
+		}])) as Record<CurrentProductionModelStep, unknown>,
 	};
 }
 
@@ -63,7 +66,7 @@ function benchmarkConfig() {
 }
 
 async function retainedOutputs(): Promise<Record<string, string>> {
-	const entries = await Promise.all(PRODUCTION_MODEL_STEPS.map(async (step) => {
+	const entries = await Promise.all(CURRENT_PRODUCTION_MODEL_STEPS.map(async (step) => {
 		const input = JSON.parse(await readFile(join(RESPONSE_DIRECTORY, `${step}.json`), "utf8")) as unknown;
 		const output = RecordedModelResponseSchema.parse(input).text;
 		return [[`browse-a/${step}`, output], [`browse-b/${step}`, output]] as const;
@@ -153,7 +156,7 @@ export async function verifyEvaluationBenchmarkBrowsing(temporaryRoot?: string):
 			sourceProvenance: FIRST_PROVENANCE,
 		});
 		const evaluated = BenchmarkRunSchema.parse(result.benchmark);
-		assertProof(evaluated.version === 7, "current_artifact_version", "Browse proof did not produce current artifact version 7");
+		assertProof(evaluated.version === 9, "current_artifact_version", "Browse proof did not produce current artifact version 9");
 		await unlink(result.path);
 		const newer = withArtifactIdentity(evaluated, "a-chronologically-newer", evaluated.started_at);
 		const older = withArtifactIdentity(

@@ -1,5 +1,6 @@
 import type { RecordedModelConfiguration } from "@bc-news/fixtures";
-import { PRODUCTION_MODEL_STEPS, type EditorialDiagnostic } from "@bc-news/generation-core";
+import type { EditorialDiagnostic } from "@bc-news/generation-core";
+import { CURRENT_PRODUCTION_MODEL_STEPS } from "./current-production-steps";
 import type { RunComparison } from "./compare";
 import type { RecordCommandResult } from "./record-command";
 import type { RunFile, RunFileRead } from "./run-file";
@@ -64,7 +65,7 @@ export function formatRecordSummary(result: RecordCommandResult): string {
 	const lines = [`Recorded responses: ${result.responseDirectory}`];
 	lines.push("Artifact version: 3");
 	lines.push("Agent configurations:");
-	for (const productionStep of PRODUCTION_MODEL_STEPS) {
+	for (const productionStep of CURRENT_PRODUCTION_MODEL_STEPS) {
 		lines.push(`- ${productionStep}: ${formatRecordedConfiguration(result.recordedResponses[productionStep].configuration)}`);
 	}
 	lines.push(...formatDiagnostics("Live diagnostics", result.liveDiagnostics));

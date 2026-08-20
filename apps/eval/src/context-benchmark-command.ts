@@ -2,24 +2,14 @@ import { createHash } from "node:crypto";
 import { relative } from "node:path";
 import { modelRequestSha256 } from "@bc-news/fixtures";
 import {
-	COPYEDIT_SYSTEM_CONSTRAINTS,
-	PRODUCTION_MODEL_STEPS,
 	PreparedEvidenceSchema,
 	WRITER_SYSTEM_CONSTRAINTS,
-	attachAnnouncementIds,
-	buildAnnouncementsCopyeditPrompt,
 	buildAnnouncementsWriterPrompt,
-	buildMainStoryCopyeditPrompt,
 	buildMainStoryWriterPrompt,
-	parseAnnouncementsWriterOutput,
-	parseMainStoryWriterOutput,
 	prepareEvidence,
-	type IdentifiedAnnouncementsDraft,
-	type MainStoryDraft,
 	type ModelCompletion,
 	type ModelProviderPort,
 	type PreparedEvidence,
-	type ProductionModelStep,
 } from "@bc-news/generation-core";
 import {
 	PRODUCTION_STEP_OUTPUT_CONTRACTS,
@@ -41,18 +31,15 @@ import {
 	type ContextBenchmarkPrompt,
 	type ContextBenchmarkRuntime,
 } from "./context-benchmark-runtime";
+import {
+	CURRENT_PRODUCTION_MODEL_STEPS,
+	type CurrentProductionModelStep,
+} from "./current-production-steps";
 import { ProductionStepsConfigSchema } from "./config";
 import { loadFixture } from "./evidence-fixture";
 import { resolveModelProvider, type ModelProviderEnvironment } from "./model-adapters";
 
 const WORKSPACE_ROOT = new URL("../../../", import.meta.url).pathname;
-
-const EMPTY_MAIN_STORY_DRAFT: MainStoryDraft = {
-	title: "",
-	subtitle: "",
-	main_story: { headline: "", lede: "", body: "" },
-};
-const EMPTY_ANNOUNCEMENTS_DRAFT: IdentifiedAnnouncementsDraft = { announcements: [] };
 
 export interface ContextBenchmarkEnvironment extends ModelProviderEnvironment {
 	readonly MODEL_CONFIG?: string;
@@ -87,7 +74,7 @@ export class ContextBenchmarkCommandError extends Error {
 
 function parseLmStudioConfig(environment: ContextBenchmarkEnvironment): {
 	readonly baseUrl: string;
-	readonly steps: Readonly<Record<ProductionModelStep, LmStudioAdapterConfig>>;
+	readonly steps: Readonly<Record<CurrentProductionModelStep, LmStudioAdapterConfig>>;
 } {
 	const raw = environment.MODEL_CONFIG;
 	const baseUrl = environment.LMSTUDIO_BASE_URL;
@@ -107,7 +94,9 @@ function parseLmStudioConfig(environment: ContextBenchmarkEnvironment): {
 	if (!parsed.success) {
 		throw new ContextBenchmarkCommandError("invalid_model_config", parsed.error.message);
 	}
-	const requireLocal = (step: ProductionModelStep): LmStudioAdapterConfig => {
+	const requireLocal = (
+		step: CurrentProductionModelStep,
+	): LmStudioAdapterConfig => {
 		const config = parsed.data[step];
 		if (config.adapter !== "lmstudio") {
 			throw new ContextBenchmarkCommandError(
@@ -119,15 +108,15 @@ function parseLmStudioConfig(environment: ContextBenchmarkEnvironment): {
 	};
 	const steps = {
 		main_story_write: requireLocal("main_story_write"),
-		main_story_copyedit: requireLocal("main_story_copyedit"),
 		announcements_write: requireLocal("announcements_write"),
-		announcements_copyedit: requireLocal("announcements_copyedit"),
 	};
-	const models = new Set(PRODUCTION_MODEL_STEPS.map((step) => steps[step].model));
+	const models = new Set(
+		CURRENT_PRODUCTION_MODEL_STEPS.map((step) => steps[step].model),
+	);
 	if (models.size !== 1) {
 		throw new ContextBenchmarkCommandError(
 			"mixed_model_config",
-			"All four production steps must name the same loaded Qwen model for this benchmark",
+			"Both production steps must name the same loaded Qwen model for this benchmark",
 		);
 	}
 	return { baseUrl, steps };
@@ -171,19 +160,15 @@ function emptyEvidence(canonical: PreparedEvidence): PreparedEvidence {
 	});
 }
 
-function baselinePrompt(step: ProductionModelStep, canonical: PreparedEvidence): ContextBenchmarkPrompt {
+function baselinePrompt(
+	step: CurrentProductionModelStep,
+	canonical: PreparedEvidence,
+): ContextBenchmarkPrompt {
 	switch (step) {
 		case "main_story_write":
 			return { system: WRITER_SYSTEM_CONSTRAINTS, user: buildMainStoryWriterPrompt(emptyEvidence(canonical)) };
-		case "main_story_copyedit":
-			return { system: COPYEDIT_SYSTEM_CONSTRAINTS, user: buildMainStoryCopyeditPrompt(EMPTY_MAIN_STORY_DRAFT) };
 		case "announcements_write":
 			return { system: WRITER_SYSTEM_CONSTRAINTS, user: buildAnnouncementsWriterPrompt(emptyEvidence(canonical)) };
-		case "announcements_copyedit":
-			return {
-				system: COPYEDIT_SYSTEM_CONSTRAINTS,
-				user: buildAnnouncementsCopyeditPrompt(EMPTY_ANNOUNCEMENTS_DRAFT),
-			};
 	}
 }
 
@@ -193,13 +178,13 @@ function sha256Json(value: unknown): string {
 
 function retainedAgentConfiguration(
 	config: LmStudioAdapterConfig,
-): ContextBenchmarkFileV3["agent_configurations"][ProductionModelStep] {
+): ContextBenchmarkFileV3["agent_configurations"][CurrentProductionModelStep] {
 	return structuredClone(config);
 }
 
 async function measureCompletion(input: {
 	readonly messageLoad: number;
-	readonly step: ProductionModelStep;
+	readonly step: CurrentProductionModelStep;
 	readonly prompt: ContextBenchmarkPrompt;
 	readonly baseline: ContextBenchmarkPrompt;
 	readonly config: LmStudioAdapterConfig;
@@ -294,12 +279,15 @@ async function benchmarkLoad(input: {
 	readonly messageLoad: number;
 	readonly evidence: PreparedEvidence;
 	readonly canonical: PreparedEvidence;
-	readonly configs: Readonly<Record<ProductionModelStep, LmStudioAdapterConfig>>;
-	readonly providers: Readonly<Record<ProductionModelStep, ModelProviderPort>>;
+	readonly configs: Readonly<Record<CurrentProductionModelStep, LmStudioAdapterConfig>>;
+	readonly providers: Readonly<Record<CurrentProductionModelStep, ModelProviderPort>>;
 	readonly model: ContextBenchmarkModel;
 }): Promise<ContextBenchmarkRow[]> {
 	const rows: ContextBenchmarkRow[] = [];
-	const complete = async (step: ProductionModelStep, prompt: ContextBenchmarkPrompt) => {
+	const complete = async (
+		step: CurrentProductionModelStep,
+		prompt: ContextBenchmarkPrompt,
+	) => {
 		const measured = await measureCompletion({
 			messageLoad: input.messageLoad,
 			step,
@@ -310,24 +298,15 @@ async function benchmarkLoad(input: {
 			model: input.model,
 		});
 		rows.push(measured.row);
-		return measured.completion.text;
 	};
 
-	const mainStoryDraft = parseMainStoryWriterOutput(await complete("main_story_write", {
+	await complete("main_story_write", {
 		system: WRITER_SYSTEM_CONSTRAINTS,
 		user: buildMainStoryWriterPrompt(input.evidence),
-	}));
-	await complete("main_story_copyedit", {
-		system: COPYEDIT_SYSTEM_CONSTRAINTS,
-		user: buildMainStoryCopyeditPrompt(mainStoryDraft),
 	});
-	const announcementsDraft = parseAnnouncementsWriterOutput(await complete("announcements_write", {
+	await complete("announcements_write", {
 		system: WRITER_SYSTEM_CONSTRAINTS,
 		user: buildAnnouncementsWriterPrompt(input.evidence),
-	}));
-	await complete("announcements_copyedit", {
-		system: COPYEDIT_SYSTEM_CONSTRAINTS,
-		user: buildAnnouncementsCopyeditPrompt(attachAnnouncementIds(announcementsDraft)),
 	});
 	return rows;
 }
@@ -358,25 +337,15 @@ export async function runContextBenchmark(
 	try {
 		model = await runtime.getOnlyLoadedQwen();
 		assertConfiguredModel(config.steps.main_story_write.model, model);
-		const providers: Record<ProductionModelStep, ModelProviderPort> = {
+		const providers: Record<CurrentProductionModelStep, ModelProviderPort> = {
 			main_story_write: resolveModelProvider(
 				"main_story_write",
 				config.steps.main_story_write,
 				environment,
 			),
-			main_story_copyedit: resolveModelProvider(
-				"main_story_copyedit",
-				config.steps.main_story_copyedit,
-				environment,
-			),
 			announcements_write: resolveModelProvider(
 				"announcements_write",
 				config.steps.announcements_write,
-				environment,
-			),
-			announcements_copyedit: resolveModelProvider(
-				"announcements_copyedit",
-				config.steps.announcements_copyedit,
 				environment,
 			),
 		};
@@ -412,9 +381,7 @@ export async function runContextBenchmark(
 		},
 		agent_configurations: {
 			main_story_write: retainedAgentConfiguration(config.steps.main_story_write),
-			main_story_copyedit: retainedAgentConfiguration(config.steps.main_story_copyedit),
 			announcements_write: retainedAgentConfiguration(config.steps.announcements_write),
-			announcements_copyedit: retainedAgentConfiguration(config.steps.announcements_copyedit),
 		},
 		rows,
 		started_at: startedAt,

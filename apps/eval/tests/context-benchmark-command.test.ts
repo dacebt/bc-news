@@ -44,31 +44,17 @@ const MODEL_METADATA = {
 
 const MODEL_CONFIG = JSON.stringify({
 	main_story_write: localStepConfig(MODEL, 0.7),
-	main_story_copyedit: localStepConfig(MODEL, 0.2),
 	announcements_write: localStepConfig(MODEL, 0.6),
-	announcements_copyedit: localStepConfig(MODEL, 0.3),
 });
 
 const PROVIDER_DEFAULT_MODEL_CONFIG = JSON.stringify({
 	main_story_write: providerDefaultLocalStepConfig(MODEL),
-	main_story_copyedit: providerDefaultLocalStepConfig(MODEL),
 	announcements_write: providerDefaultLocalStepConfig(MODEL),
-	announcements_copyedit: providerDefaultLocalStepConfig(MODEL),
 });
 
 const RESPONSE_TEXT = {
 	main_story_write: JSON.stringify({
 		title: "Regional Chronicle",
-		subtitle: "January 25, 2026",
-		main_story: {
-			headline: "Aryn Organizes a Dungeon Muster",
-			lede: "Aryn organized a regional dungeon muster.",
-			body: "**Aryn** invited the region to a dungeon crawl.\n\n**Archaelic** joined the group.",
-		},
-	}),
-	main_story_copyedit: JSON.stringify({
-		title: "Regional Chronicle",
-		subtitle: "January 25, 2026",
 		main_story: {
 			headline: "Aryn Organizes a Dungeon Muster",
 			lede: "Aryn organized a regional dungeon muster.",
@@ -77,13 +63,6 @@ const RESPONSE_TEXT = {
 	}),
 	announcements_write: JSON.stringify({
 		announcements: [{ title: "Sailing Milestone", summary: "**KeyserSoze** reached level 75." }],
-	}),
-	announcements_copyedit: JSON.stringify({
-		announcements: [{
-			id: "announcement-1",
-			title: "Sailing Milestone",
-			summary: "**KeyserSoze** reached level 75.",
-		}],
 	}),
 } as const;
 
@@ -153,9 +132,7 @@ function installNativeCompletions(input?: {
 }) {
 	const steps: ProductionStep[] = CONTEXT_BENCHMARK_LOADS.flatMap(() => [
 		"main_story_write",
-		"main_story_copyedit",
 		"announcements_write",
-		"announcements_copyedit",
 	]);
 	const requests: NativeRequest[] = [];
 	nativeSdk.respond.mockImplementation((chat: NativeRequest["chat"], options: NativeRequest["options"]) => {
@@ -196,7 +173,7 @@ afterEach(() => {
 	nativeSdk.dispose.mockResolvedValue(undefined);
 });
 
-test("benchmarks the exact dependent four-step roster at every canonical message load", async () => {
+test("benchmarks the exact dependent two-step roster at every canonical message load", async () => {
 	const { runtime, close } = createRuntime();
 	const { requests } = installNativeCompletions();
 	const resultsDirectory = await mkdtemp(join(tmpdir(), "bc-news-context-benchmark-"));
@@ -211,23 +188,19 @@ test("benchmarks the exact dependent four-step roster at every canonical message
 
 	const expectedSteps: ProductionStep[] = CONTEXT_BENCHMARK_LOADS.flatMap(() => [
 		"main_story_write",
-		"main_story_copyedit",
 		"announcements_write",
-		"announcements_copyedit",
 	]);
 	expect(requests.map(({ step }) => step)).toEqual(expectedSteps);
 	expect(report.rows.map((row) => row.message_load)).toEqual(
-		CONTEXT_BENCHMARK_LOADS.flatMap((load) => [load, load, load, load]),
+		CONTEXT_BENCHMARK_LOADS.flatMap((load) => [load, load]),
 	);
-	expect(nativeSdk.respond).toHaveBeenCalledTimes(20);
-	expect(nativeSdk.dispose).toHaveBeenCalledTimes(20);
+	expect(nativeSdk.respond).toHaveBeenCalledTimes(10);
+	expect(nativeSdk.dispose).toHaveBeenCalledTimes(10);
 	expect(close).toHaveBeenCalledOnce();
 
 	const temperatures = {
 		main_story_write: 0.7,
-		main_story_copyedit: 0.2,
 		announcements_write: 0.6,
-		announcements_copyedit: 0.3,
 	};
 	for (const [index, request] of requests.entries()) {
 		expect(request.step).toBe(expectedSteps[index]);
@@ -259,9 +232,7 @@ test("benchmarks the exact dependent four-step roster at every canonical message
 	}
 	expect(report.agent_configurations).toEqual({
 		main_story_write: localStepConfig(MODEL, 0.7),
-		main_story_copyedit: localStepConfig(MODEL, 0.2),
 		announcements_write: localStepConfig(MODEL, 0.6),
-		announcements_copyedit: localStepConfig(MODEL, 0.3),
 	});
 
 	const saved = await readFile(path, "utf8");
@@ -286,9 +257,7 @@ test("omits temperature independently for provider-default candidates", async ()
 	}
 	expect(report.agent_configurations).toEqual({
 		main_story_write: providerDefaultLocalStepConfig(MODEL),
-		main_story_copyedit: providerDefaultLocalStepConfig(MODEL),
 		announcements_write: providerDefaultLocalStepConfig(MODEL),
-		announcements_copyedit: providerDefaultLocalStepConfig(MODEL),
 	});
 });
 
@@ -323,7 +292,7 @@ test("rejects recorded and hosted adapters before opening the local runtime", as
 test("rejects mixed local model names before opening the local runtime", async () => {
 	const { runtime, getOnlyLoadedQwen } = createRuntime();
 	const config = JSON.parse(MODEL_CONFIG) as Record<string, unknown>;
-	config.announcements_copyedit = localStepConfig("another-qwen", 0.3);
+	config.announcements_write = localStepConfig("another-qwen", 0.3);
 
 	await expect(runContextBenchmark({
 		fixturePath: REPRESENTATIVE_FIXTURE_PATH,
@@ -338,7 +307,7 @@ test("accepts independent explicit and provider-default temperatures", async () 
 	const { runtime, getOnlyLoadedQwen } = createRuntime();
 	installNativeCompletions();
 	const config = JSON.parse(MODEL_CONFIG) as Record<string, unknown>;
-	config.announcements_copyedit = providerDefaultLocalStepConfig(MODEL);
+	config.announcements_write = providerDefaultLocalStepConfig(MODEL);
 
 	const { report } = await runContextBenchmark({
 		fixturePath: REPRESENTATIVE_FIXTURE_PATH,
@@ -347,7 +316,7 @@ test("accepts independent explicit and provider-default temperatures", async () 
 		runtime,
 	});
 	expect(report.agent_configurations.main_story_write).toHaveProperty("temperature", 0.7);
-	expect(report.agent_configurations.announcements_copyedit).not.toHaveProperty("temperature");
+	expect(report.agent_configurations.announcements_write).not.toHaveProperty("temperature");
 	expect(getOnlyLoadedQwen).toHaveBeenCalledOnce();
 });
 

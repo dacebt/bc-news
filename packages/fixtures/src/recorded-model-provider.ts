@@ -3,9 +3,7 @@ import type {
 	ModelProviderPort,
 	ProductionModelStep,
 } from "@bc-news/generation-core";
-import announcementsCopyeditResponseJson from "../model-responses/announcements_copyedit.json";
 import announcementsWriteResponseJson from "../model-responses/announcements_write.json";
-import mainStoryCopyeditResponseJson from "../model-responses/main_story_copyedit.json";
 import mainStoryWriteResponseJson from "../model-responses/main_story_write.json";
 import {
 	RecordedModelProviderError,
@@ -29,9 +27,7 @@ export type RecordedModelResponseV3Roster = Readonly<
 
 const committedRecordedModelResponses: RecordedModelResponseRoster = {
 	main_story_write: RecordedModelResponseSchema.parse(mainStoryWriteResponseJson),
-	main_story_copyedit: RecordedModelResponseSchema.parse(mainStoryCopyeditResponseJson),
 	announcements_write: RecordedModelResponseSchema.parse(announcementsWriteResponseJson),
-	announcements_copyedit: RecordedModelResponseSchema.parse(announcementsCopyeditResponseJson),
 };
 
 export function createRecordedModelProvider(roster: RecordedModelResponseRoster): ModelProviderPort {

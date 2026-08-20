@@ -4,11 +4,13 @@ import { EditionSchema } from "@bc-news/contracts";
 import {
 	EditorialDiagnosticSchema,
 	ModelUsageRecordSchema,
-	PRODUCTION_MODEL_STEPS,
-	ProductionModelStepSchema,
 } from "@bc-news/generation-core";
 import { z } from "zod";
 import { EvalConfigSchema } from "./config";
+import {
+	CurrentProductionModelStepSchema,
+	CURRENT_PRODUCTION_MODEL_STEPS,
+} from "./current-production-steps";
 
 export const Sha256HashSchema = z.string().regex(/^[0-9a-f]{64}$/);
 export const RunIdSchema = z.string().regex(
@@ -17,7 +19,7 @@ export const RunIdSchema = z.string().regex(
 );
 
 export const RunStepSchema = z.strictObject({
-	production_step: ProductionModelStepSchema,
+	production_step: CurrentProductionModelStepSchema,
 	prompt_sha256: Sha256HashSchema,
 	output: z.record(z.string(), z.unknown()),
 	model_usage: ModelUsageRecordSchema,
@@ -30,14 +32,14 @@ export const RunFileSchema = z.strictObject({
 	id: RunIdSchema,
 	config: EvalConfigSchema,
 	fixture: z.strictObject({ path: z.string().min(1), fixture_sha256: Sha256HashSchema }),
-	steps: z.array(RunStepSchema).length(PRODUCTION_MODEL_STEPS.length),
+	steps: z.array(RunStepSchema).length(CURRENT_PRODUCTION_MODEL_STEPS.length),
 	edition: EditionSchema,
 	diagnostics: z.array(EditorialDiagnosticSchema),
 	started_at: z.iso.datetime({ offset: true }),
 	completed_at: z.iso.datetime({ offset: true }),
 }).superRefine((run, context) => {
 	const observed = run.steps.map((step) => step.production_step);
-	if (observed.some((step, index) => step !== PRODUCTION_MODEL_STEPS[index])) {
+	if (observed.some((step, index) => step !== CURRENT_PRODUCTION_MODEL_STEPS[index])) {
 		context.addIssue({
 			code: "custom",
 			path: ["steps"],
@@ -46,7 +48,7 @@ export const RunFileSchema = z.strictObject({
 	}
 	let previousDiagnosticStep = -1;
 	for (const [index, diagnostic] of run.diagnostics.entries()) {
-		const diagnosticStep = PRODUCTION_MODEL_STEPS.indexOf(diagnostic.production_step);
+		const diagnosticStep = CURRENT_PRODUCTION_MODEL_STEPS.indexOf(diagnostic.production_step);
 		if (diagnosticStep < previousDiagnosticStep) {
 			context.addIssue({
 				code: "custom",
