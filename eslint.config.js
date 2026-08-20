@@ -4,7 +4,7 @@ import tseslint from "typescript-eslint";
 
 export default tseslint.config(
 	{
-		ignores: ["**/node_modules/", "**/dist/", "**/.wrangler/", "**/.worktrees/", "**/worker-configuration.d.ts"],
+		ignores: ["**/node_modules/", "**/dist/", "**/.wrangler/", "**/.worktrees/", "**/worker-configuration.d.ts", "apps/eval/local-data/"],
 	},
 	js.configs.recommended,
 	tseslint.configs.recommendedTypeChecked,
