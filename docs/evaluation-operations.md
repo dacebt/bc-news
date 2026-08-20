@@ -30,7 +30,7 @@ pnpm --filter @bc-news/eval eval -- <route>
 
 | Intent | Route | Default artifact location or required destination |
 |---|---|---|
-| Inspect one disposable live four-step run | `scratch run --fixture <path> --config <path> --results-dir <path>` | Caller must select `--results-dir`; use a path under `/tmp` for disposable work |
+| Inspect one disposable live two-writer run | `scratch run --fixture <path> --config <path> --results-dir <path>` | Caller must select `--results-dir`; use a path under `/tmp` for disposable work |
 | Retain a declared experiment | `benchmark run --fixture <path> --config <path> [--results-dir <path>]` | `apps/eval/local-data/evaluation-results` |
 | Browse or compare benchmarks | `benchmark list`, `benchmark show <id>`, `benchmark summary <id>`, `benchmark compare <left-id> <right-id>` | Same benchmark directory; each route accepts `--results-dir` |
 | Build or inspect a reference corpus | `corpus extract --snapshot <sqlite-path> --selection <selection-path>`, `corpus show --corpus <manifest-path>` | `apps/eval/local-data/corpus-workspaces` |
@@ -67,9 +67,9 @@ pnpm --filter @bc-news/eval eval -- benchmark run \
 The example is an editable starting point, not a current recommendation. A
 benchmark configuration declares an ordered nonempty roster, a positive
 `repetition_count`, and `transport_retry_limit` from zero through three. Each of
-the four production steps has its own adapter/model configuration. The
-main-story and announcements chains can dispatch concurrently in evaluation,
-while each writer still precedes its copyeditor; the production Workflow itself
+the two production steps has its own adapter/model configuration. The
+main-story and announcements writers can dispatch concurrently in evaluation;
+the production Workflow itself
 remains serial.
 
 ## Artifact and outcome boundaries
@@ -78,23 +78,25 @@ remains serial.
   enter either the current or legacy benchmark browse store or establish a
   baseline.
 - Benchmark Runs retain strict step, transport, runtime, and harness evidence.
-  Current non-Gateway runs use artifact version 7; Gateway runs use version 8
-  with lifecycle-matched Gateway provenance. Neither version produces a score
-  or acceptance verdict. Default browsing also checks the legacy
+  Current runs use artifact version 9. Historical version 7 and Gateway
+  version 8 runs remain readable, and Gateway-backed records retain
+  lifecycle-matched provenance. No version produces a score or acceptance
+  verdict. Default browsing also checks the legacy
   `apps/eval/evaluation-results` directory for historical runs.
-- Corpus workspaces retain selection-bound source truth. Scorecards measure four
-  roles; aggregates export content-free descriptive results; longitudinal
+- Corpus workspaces retain selection-bound source truth. Current scorecards
+  measure two roles; historical four-role families remain readable; aggregates
+  export content-free descriptive results; longitudinal
   series classify context, sufficiency, baseline variation, or potential drift.
   None selects a winner or production model.
-- Fixture recording calls four dependent production steps, stages and validates
-  the full response roster, replays it, then promotes the directory as one
+- Fixture recording calls two production steps, stages and validates the full
+  response roster, replays it, then promotes the directory as one
   recoverable unit. The current recorder supports LM Studio and the legacy
   OpenAI-compatible hosted adapter; it rejects `recorded` and
   `cloudflare_ai_gateway` configurations. Its single-writer, recovery, and
   provenance constraints are documented in the [fixture package guide](../packages/fixtures/README.md).
 - Recorded-replay acceptance uses committed recorded responses and retains
   diagnostics. Its direct verifier succeeds with
-  `acceptance: four recorded production steps replayed by step and deterministic; diagnostics retained: 4`.
+  `acceptance: recorded production steps replayed by step and deterministic; writer diagnostics retained`.
 - `pnpm walk` owns the local composed-product result and terminal `WALK PASS`.
   It consumes committed recorded responses but never authors them.
 

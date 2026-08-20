@@ -49,15 +49,30 @@ The prototype proved that regional chat can become a useful newspaper, but its g
 1. Ingest collects and validates regional chat messages from BitJita.
 2. The system identifies each active region that needs an edition.
 3. One instance of the generation Workflow builds one region's edition for one publication date.
-4. Two writer-to-copyedit tracks produce the main-story and announcements editorial products.
-5. Code validates those products and assembles the edition without another model call.
+4. Two final evidence-reading writers produce the main-story and announcements editorial products.
+5. Code validates those products, normalizes unambiguous decoded strings, and assembles the edition without another model call.
 6. The completed edition becomes available to the client.
 7. The client presents published regional newspapers to readers.
 
-The settled production model steps are `main_story_write`,
-`main_story_copyedit`, `announcements_write`, and
-`announcements_copyedit`. Each copyeditor is a narrow cleanup pass over its
-own track's typed draft, not a story judge or another evidence-reading editor.
+The settled production model steps are `main_story_write` and
+`announcements_write`. Each writer files final structured copy for its own
+editorial product; code owns validation, unambiguous decoded-string cleanup,
+assembly, and every non-creative edition field.
+
+### Editorial generation
+
+- If evidence preparation ends with `final_count === 0`, the generation run
+  fails on the existing no-evidence path before either writer is invoked.
+- With at least one prepared message, every successful writer-output path
+  produces the structured main story and announcements. There is no current
+  editorial abstention or no-story result on the schema-valid prepared-evidence
+  path; infrastructure and model-contract failures remain terminal.
+- The main-story writer may turn ordinary or consequential public chat into
+  proportionate in-world reporting, including dry wit, social inference, scene,
+  and signaled uncertainty, but it must not assert invented concrete facts.
+- `title` is model-authored copy. The current main-story contract retains
+  `headline`, `lede`, and `body`; `subtitle` and image fields are removed from
+  the current edition shape.
 
 ## Required behavior
 
@@ -75,7 +90,7 @@ own track's typed draft, not a story judge or another evidence-reading editor.
 
 ### Model flexibility
 
-- Models must be replaceable independently across the four production model steps.
+- Models must be replaceable independently across the two production model steps.
 - Both hosted and local LLMs must be usable during development and evaluation.
 - Routine inference cost must remain understandable.
 - Model access protocols and integration layers are settled in the
@@ -156,7 +171,7 @@ availability behavior, and repository deployment topology in the
 following product decisions remain open; the prototype's observed behavior is
 still the default answer where it applies.
 
-- Whether a later evidence-research capability needs bounded agent autonomy. It is not part of the current four-step editorial workflow.
+- Whether a later evidence-research capability needs bounded agent autonomy. It is not part of the current two-writer editorial workflow.
 - The first live production model configuration and fallback policy.
 - Late-data and regeneration policy beyond the settled explicit no-evidence
   failure and authenticated pair-addressed manual launch.

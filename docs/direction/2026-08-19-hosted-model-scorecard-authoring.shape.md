@@ -5,10 +5,10 @@ title: >-
 description: >-
   Redeclared session boundary for four local scorecards with one-off ignored mechanical authoring helpers.
 tags: [wsd, direction, shape, evaluation, scorecards]
-status: stable
+status: deprecated
 generated:
   by: ebt-wsd/okf-v0.2
-  at: "2026-08-19T06:00:07Z"
+  at: "2026-08-20T03:00:46Z"
 ---
 # Shape: hosted model scorecard authoring
 

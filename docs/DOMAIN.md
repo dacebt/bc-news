@@ -3,7 +3,7 @@ type: doc
 title: >-
   bc-news domain model
 description: >-
-  The binding domain vocabulary and identity rules for bc-news v2, including the two editorial products and four production model steps.
+  The binding domain vocabulary and identity rules for bc-news v2, including the two editorial products and two production model steps.
 tags: [documentation, domain, vocabulary, editions]
 status: stable
 generated:
@@ -45,21 +45,18 @@ verbatim in code, schema, tests, and APIs — no synonyms.
   the single Cloudflare Workflow definition, invoked for one active region
   and one publication date.
 - **editorial product** — one reader-facing part of an edition. The two
-  products are `main_story` (title, subtitle, and main story) and
+  products are `main_story` (title plus the main story's headline, lede, and
+  body) and
   `announcements` (the ordered announcement list).
 - **production model step** — one independently configured model call inside
-  a generation run. The exact ordered roster is `main_story_write`,
-  `main_story_copyedit`, `announcements_write`, and
-  `announcements_copyedit`.
-- **writer** — the evidence-reading step for one editorial product.
-- **copyeditor** — the single narrow cleanup step for its own typed draft. It
-  receives no source transcript or other editorial product and is instructed
-  to correct grammar, spelling, punctuation, and phrasing without changing
-  facts, quotations, numbers, coverage, order, structure, or meaning.
-  Detected schema-valid departures from that authority are retained as
-  non-terminal diagnostics rather than causing another model call, rejection,
-  or publication stop. Mechanical preservation checks observe some departures
-  but do not prove semantic equivalence.
+  a generation run. The exact ordered roster is `main_story_write` and
+  `announcements_write`.
+- **writer** — the evidence-reading step for one editorial product. Writers
+  file final structured copy; code validates it, normalizes unambiguous
+  decoded strings, assembles the edition, and supplies non-creative fields.
+- **editorial diagnostic** — a retained non-terminal preservation or
+  final-product finding on schema-valid writer output. Infrastructure and
+  model-output contract failures remain terminal instead.
 - **context benchmark** — an eval-only measurement of the exact four
   production requests against one already-loaded local Qwen model. It reports
   model-template input, evidence or draft marginal, runtime delta, completion,
@@ -124,15 +121,19 @@ Inherited defaults until deliberately changed:
 - Missing-data and availability behavior follow what v1 observably did.
 - The edition contract carries v1's reader-facing shape with these settled
   deviations: identity fields use the domain terms (`active_region_id`,
-  `publication_date`); `meta.editorial_products` records writer and copyeditor
-  provider/model provenance under each editorial product; provider is an open
-  string so local and recorded models are representable; `meta` is required at
-  publish and read; identity, provenance, counts, and generation time are
-  never model-authored.
-- The main-story writer authors the edition title, subtitle, and main story.
-  The announcements writer authors the announcement list. Their respective
-  copyeditors return final products, and code deterministically assembles all
-  remaining edition fields. There is no packaging or judging model step.
+  `publication_date`); current edition and generation-status records carry
+  explicit contract discriminators and stored untagged records are legacy-only
+  readers; `meta.editorial_products` records writer provenance under each
+  editorial product; provider is an open string so local and recorded models
+  are representable; `meta` is required at publish and read; identity,
+  provenance, counts, and generation time are never model-authored.
+- The main-story writer authors the edition title and main story. The
+  announcements writer authors the announcement list. Code deterministically
+  assembles all remaining edition fields. There is no packaging, judging, or
+  copyedit model step in the current production shape.
+- If evidence preparation ends with `final_count === 0`, the run fails before
+  inference. With at least one prepared message, schema-valid writer output
+  continues to publication with no abstention/no-story branch.
 
 ## Links
 

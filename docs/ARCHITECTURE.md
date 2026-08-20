@@ -219,23 +219,28 @@ JSON Schema and leaves the provider's output-token ceiling unset. Successful
 Gateway provenance retains the exact request format, response-delivery mode,
 and structured-output contract name in addition to the existing transport
 policy.
-Gateway Benchmark Run version 8 alone retains explicit null completion content;
-current non-Gateway version 7 requires textual completion content.
+Current evaluation artifacts are version 9. Historical Benchmark Run versions 7
+and 8 remain readable; version 8 alone retained explicit null completion
+content, while historical non-Gateway version 7 required textual completion
+content.
 
-The production workflow has two editorial products and four model steps. The
-main-story writer receives prepared evidence and owns `title`, `subtitle`, and
-`main_story`; its copyeditor receives only that typed draft plus house rules.
-The announcements writer independently receives prepared evidence; its
-copyeditor receives only its typed draft plus stable internal announcement ids.
-Those ids support count, correspondence, and order diagnostics through
-copyediting and are stripped before publication. Malformed JSON or strict
-schema mismatch is the only terminal model-output failure. Infrastructure and
-provider failures are a separate failure class. Every schema-valid grammar,
-punctuation, markdown, wording, preservation, or editorial-policy finding is an
-ordered non-terminal diagnostic after the single copyedit pass; it never causes
-another model call, model-output rejection, or publication stop. Preservation
-diagnostics observe field shape, paragraph count, quotes, numeric literals, and
-protected markdown spans, but do not prove semantic equivalence. Code retains
+The production workflow has two editorial products and two model steps. The
+main-story writer receives prepared evidence and owns `title` plus
+`main_story.headline`, `main_story.lede`, and `main_story.body`. The
+announcements writer independently receives prepared evidence and owns the final
+ordered announcement list. Malformed JSON or strict schema mismatch is the only
+terminal model-output failure. Infrastructure and provider failures are a
+separate failure class. Every schema-valid grammar, punctuation, markdown,
+wording, preservation, or editorial-policy finding is an ordered non-terminal
+diagnostic on writer output; it never causes another model call,
+model-output rejection, or publication stop. Code retains diagnostics,
+validates output, normalizes unambiguous decoded strings, adds identity,
+writer provenance, counts, and time, then assembles and publishes both final
+products deterministically. There is no packaging model, judge call, score,
+verdict, or automatic revision loop in production. If evidence preparation
+reaches `final_count === 0`, the run fails before inference. With at least one
+prepared message, schema-valid writer output continues with no abstention or
+no-story branch.
 the diagnostics, adds identity, provenance, counts, and time, then assembles and
 publishes both final products deterministically. There is no packaging model,
 judge call, score, verdict, or automatic revision loop in production.
@@ -248,7 +253,7 @@ observations do not cross domain boundaries.
 | Owner | Command surface | Evidence | Outcome owner |
 |---|---|---|---|
 | Deterministic tests | `pnpm test` | Isolated invariants, reproduced defects, and high-risk state transitions | Test pass or hard test failure |
-| Scratch model run | `scratch run` | One caller-directed live four-step inspection artifact | Development observation only; no Benchmark Run, scorecard, baseline, or acceptance verdict |
+| Scratch model run | `scratch run` | One caller-directed live two-writer inspection artifact | Development observation only; no Benchmark Run, scorecard, baseline, or acceptance verdict |
 | Model evaluation | `benchmark run/list/show/summary/compare` | Strict versioned Benchmark Runs under `apps/eval/local-data/evaluation-results` by default | Model subject outcome and evidence-retention harness outcome, reported as `evaluation:` observations |
 | Evaluation reference corpus | `corpus extract --snapshot <sqlite-path> --selection <selection-path>` and `corpus show --corpus <manifest-path>` | Current local V3 selection-bound corpus workspaces under `apps/eval/local-data/corpus-workspaces/` plus historical Git-addressed V2 synthetic readers | Auditable source truth and objective variation coverage; no model result or verdict |
 | Evaluation scorecards | `scorecard build/show` | Current local hash-addressed scorecards under `apps/eval/local-data/scorecards` by default, plus embedded V1 and Git-addressed V2 historical readers | Four role-specific transparent evidence reports plus current/outdated checkout information; no aggregate score, ranking, recommendation, or acceptance verdict |
@@ -267,8 +272,7 @@ architectural separation.
 For local development, copy `apps/generation/.dev.vars.example` to the ignored
 `apps/generation/.dev.vars`. Wrangler loads that file for the generation Worker.
 `MODEL_CONFIG` is strict and contains exactly
-`main_story_write`, `main_story_copyedit`, `announcements_write`, and
-`announcements_copyedit`. Every LM Studio adapter requires
+`main_story_write` and `announcements_write`. Every LM Studio adapter requires
 `reasoning_effort: provider_default`. Finite `temperature` from zero through two
 is the only operator-configurable decoding control and is optional independently
 on every step. Omission sends no temperature override for that agent. `top_p`
@@ -280,14 +284,13 @@ and profiled Gateway requests use strict inline JSON schemas derived from the
 same Zod contracts that validate outputs. Recorded requests receive no provider
 decoding controls.
 
-The committed recorded-response set has exactly four files:
-`main_story_write.json`, `main_story_copyedit.json`,
-`announcements_write.json`, and `announcements_copyedit.json`. Each record's
+The committed recorded-response set has exactly two files:
+`main_story_write.json` and `announcements_write.json`. Each record's
 `prompt_sha256` is inert metadata describing the request observed when the
 artifact was created. Current code never compares it with prompt builders or
 uses it as a development gate. Automated tests and the composed skeleton walk
 use recorded or repository-owned loopback providers and never call configured
-endpoints. The walk supplies an explicit four-step recorded
+endpoints. The walk supplies an explicit two-step recorded
 `MODEL_CONFIG`, overriding any developer `.dev.vars` model assignment.
 
 The `fixture record-responses --fixture <path> --config <path>
@@ -296,10 +299,10 @@ with either `lmstudio` or `openai_compatible_hosted` for each production step.
 The `recorded` adapter rejects because replay is not live recording, and
 `cloudflare_ai_gateway` rejects because the current recorder contract cannot
 retain its Gateway request provenance. The committed recorded configuration is
-not a recording default. The recorder executes exactly four dependent
-calls in production-step order, so each copyeditor receives the draft produced
-by its writer. The recorder retains request hashes as observation metadata but
-does not verify them against prompt text. It stages the exact four-file directory on the
+not a recording default. The recorder executes exactly two production calls in
+production-step order. The recorder retains request hashes as observation
+metadata but does not verify them against prompt text. It stages the exact
+two-file directory on the
 same filesystem, validates every record, replays that staged set through the
 shared runner, and compares only the final main-story and announcements
 products before promotion. Promotion is recoverable and all-or-none at the
@@ -316,24 +319,25 @@ for every step; retained configuration is evidence, not a replay instruction.
 
 The model-evaluation command is a separate surface:
 `benchmark run --fixture <path> --config <path> [--results-dir <path>]`. Its strict
-benchmark declaration contains a nonempty ordered list of exact four-step live
+benchmark declaration contains a nonempty ordered list of exact two-step live
 configurations, a positive repetition count, and an explicit transport retry
 limit from zero through three. Recorded adapters and duplicate configuration
 identities reject before artifact creation. Historical run files keep their
 existing directory, schema, and meaning. Configuration-order and
 repetition-order roster members execute serially. Within each Evaluation Trial,
-the main-story and announcements writer-to-copyeditor chains dispatch
-concurrently, while each writer remains a prerequisite for its own copyeditor.
-This is application scheduling, not a promise that an underlying model runtime
+the main-story and announcements writers may dispatch concurrently. This is
+application scheduling, not a promise that an underlying model runtime
 processes the requests in parallel. The eval application owns this artifact
 boundary directly, adding no third domain port and changing neither provider
 adapters nor production Workflow scheduling.
 
-Non-Gateway live configurations emit Benchmark Run version 7.
-Configurations containing `cloudflare_ai_gateway` emit version 8, whose
+Current live configurations emit Benchmark Run version 9. Historical version 8
+Gateway records and older version 7 runs remain readable, and a
+`cloudflare_ai_gateway` configuration still retains the
 additional Gateway-request roster is allocated and resolved atomically beside
 the invocation and runtime-evidence rosters. Current readers accept only versions
-7 and 8; old Benchmark Run formats are inert files and have no parser,
+9 for new artifacts; versions 7 and 8 are historical readers only, and older
+Benchmark Run formats are inert files and have no parser,
 migration, prompt contract, or development gate.
 
 The evaluation reference corpus is selected only through `corpus extract
@@ -372,8 +376,10 @@ Evaluation scorecards are a separate eval-owned evidence boundary selected only
 through `scorecard build --input <declaration-path> [--results-dir <path>]` and
 `scorecard show <scorecard-id> [--results-dir <path>]`. A declaration binds one
 exact configuration to the complete ordered reference corpus, every complete
-retained version 7 or Gateway version 8 Benchmark Run for that corpus, exact
-Codex output annotations, and separate Codex qualitative reviews. Version 1
+current version 9 Benchmark Run for that corpus, exact Codex output
+annotations, and separate Codex qualitative reviews. Historical version 7 and
+Gateway version 8 Benchmark Runs remain readable inputs when explicitly
+addressed. Version 1
 human evidence retains its historical schema and is not rewritten. No Benchmark
 Run, corpus entry, production prompt, retry policy, generation path, or
 historical artifact is changed by scorecard construction, and this boundary adds
@@ -392,7 +398,9 @@ additionally hash their exact Gateway-request records, while the source
 descriptors retain the complete ordered Gateway-request hash roster. Current
 scorecard V3 consumes the canonical current corpus V3, while repository version
 2 remains a historical Git-addressed reader.
-Reports contain exactly four separate production-role sections. Deterministic measurements expose named units,
+Current reports contain exactly two production-role sections: `main_story` and
+`announcements`. Historical four-role scorecard families remain readable.
+Deterministic measurements expose named units,
 denominators, sample counts, and unavailable or inapplicable states. Semantic
 grounding, attribution, event coverage, announcement relevance, coherence,
 usefulness, newsworthiness, and voice remain visibly Codex-authored evidence.
@@ -456,7 +464,8 @@ distributions; strict observed-range disjointness is a named signal. At least
 one signal yields `potential_drift`, otherwise the role is `within_baseline`.
 Categorical qualitative histories retain reviewer and rubric evidence but do
 not drive the classifier. The rule deliberately makes exact corpus-source or
-evaluated-code commit changes new context, treats variable upstream drafts as copyeditor request context, and
+evaluated-code commit changes new context, treats variable writer output as
+request context when a measured surface retains it, and
 exposes correlation, range-extreme, multiplicity, evaluator-variation, and
 non-causality limits. It adds no overall score, judge, rank, recommendation,
 quality threshold, verdict, retry action, publication decision, or production
@@ -468,19 +477,19 @@ commit with the explicitly resolved repository-root `HEAD`. `current` and
 source reference, prevents reconstruction, blocks a build/show command, or
 decides whether another evaluation may run.
 
-Current Benchmark Run version 7 is the non-Gateway contract. It retains each
+Current Benchmark Run version 9 is the active contract. It retains each
 role's exact adapter configuration, diagnostics, invocation lifecycle, and
-normalized runtime evidence. Version 8 is the Gateway contract: it preserves
-that structure and adds one lifecycle-matched Gateway-request record per
-invocation. Current readers accept only versions 7 and 8; neither version is a
-migration or reinterpretation of older inert artifact formats. Both expose the
-same four subject outcomes: `completed`, `parse_rejected`,
+normalized runtime evidence. Historical version 8 is the Gateway contract and
+historical version 7 is the pre-Gateway contract; both remain readable and are
+not migrated in place. Current readers emit only version 9 artifacts. All
+three readable families expose the same four subject outcomes: `completed`, `parse_rejected`,
 `contract_rejected`, and `infrastructure_incomplete`.
 
 One ordered application owner creates the run in `running` state before
-transport, allocates invocation ordinals, and applies every current V7/V8
+transport, allocates invocation ordinals, and applies every current V9
 transition. It atomically retains each request, configuration identity,
-invocation state, runtime-evidence state, and, for V8, Gateway-request state.
+invocation state, runtime-evidence state, and, for Gateway-backed historical
+or current records, the Gateway-request state.
 Concurrent editorial tracks therefore enter one monotonic interleaved history
 without concurrent authoritative-file replacement. Eligible retries link to the
 immediately preceding same-step failure and preserve the request; deterministic
@@ -495,7 +504,7 @@ volatile prediction observations. The [test and verification
 posture](TESTING.md) owns the exact lifecycle invariants, verifier observations,
 and corruption cases that prove this structure.
 
-The current V7/V8 roster follows declared configuration order and repetition
+The current V9 roster follows declared configuration order and repetition
 order. Trials form an append-only prefix, only the final retained trial may be
 running, terminal predecessors are immutable, and a benchmark becomes retained
 only after every declared trial is terminal. A track-local subject rejection or
@@ -508,17 +517,16 @@ artifact identity and reject corrupt evidence. Recorded-replay Run Files remain
 a distinct contract under `apps/eval/local-data/acceptance-results` by default,
 owned only by the `acceptance` routes. They are never relabeled as Benchmark
 Runs. Comparison keeps exact evidence, configuration, retry policy, provenance,
-and V7/V8 execution context separate from lifecycle, outputs, failures, usage,
-billing, duration, retry relationships, and V7/V8 prediction observations. It
+and execution context separate from lifecycle, outputs, failures, usage,
+billing, duration, retry relationships, and prediction observations. It
 owns no score, judge, recommendation, or acceptance decision.
 
 Main-story and announcements evaluation tracks dispatch concurrently and
-execute independently as two track-local writer-to-copyeditor chains. A
-rejection or exhausted provider in one does not suppress the other, and both
-chains quiesce before terminal aggregation. Preservation and final-product
-findings are deterministic diagnostics attributed to each track's terminal
-copyedit step; a schema-valid product completes its track with those diagnostics
-retained. Subject outcome describes model behavior, while harness outcome states
+execute independently as two track-local writer calls. A rejection or exhausted
+provider in one does not suppress the other, and both tracks quiesce before
+terminal aggregation. Preservation and final-product findings are deterministic
+diagnostics attributed to writer output; a schema-valid product completes its
+track with those diagnostics retained. Subject outcome describes model behavior, while harness outcome states
 only whether trustworthy evidence was retained. Current validation protects
 structure, identity, lifecycle, provenance, retry linkage, and evidence rosters.
 It does not reconstruct prompt text, reparse retained completions, or preserve
@@ -656,19 +664,19 @@ The same walk uses authenticated
 `GET /generation-run?active_region_id=...&publication_date=...` as the operator
 surface rather than exposing an opaque Workflow id. It proves
 the absent-evidence pair reaches a structured prepare-evidence failure with no
-model usage, and proves region 7 reaches complete with all seven ordered
+model usage, and proves region 7 reaches complete with all five ordered
 generation steps and exactly one recorded-replay usage record for each of the
-four production model steps, each with unavailable token measurement and zero
-external billing. It strictly observes the exact ordered preservation and
-final-product diagnostics carried by the representative schema-valid copyedit,
-then proves deterministic assembly serves that copyedited product. Repeated
+two production model steps, each with unavailable token measurement and zero
+external billing. It strictly observes writer-only diagnostics on the
+representative schema-valid output, then proves deterministic assembly serves
+those writer products. Repeated
 scheduled delivery must leave edition bytes, retained usage, and retained
 diagnostics unchanged. The walk does not invoke evaluation, fixture-authoring,
 context, or recorded-replay acceptance verifiers. It owns only its composed
 product observations and terminal `WALK PASS`; the exact successful observations
 from those direct verifiers must not appear in walk output.
 
-Recorded-replay acceptance executes the four dependent production steps twice
+Recorded-replay acceptance executes the two production model steps twice
 against explicitly selected committed replay fixtures, then reloads its distinct
 Run File contract. It proves deterministic replay by re-execution, not by
 comparing current behavior with a stored expected Run File, and it remains
@@ -685,10 +693,10 @@ It reuses the production prompt builders, strict structured-output contracts,
 and pure LM Studio request builder, while an eval-local SDK runtime only lists
 the loaded LLM, applies its chat template, counts with its tokenizer, and reads
 its configured context length. The live command requires exactly one loaded
-Qwen model and the same model id across all four production-step configs; it
+Qwen model and the same model id across both production-step configs; it
 never loads, switches, unloads, or contacts a hosted model.
 
-Current context-result version 3 artifacts retain the exact four independent LM
+Current context-result version 3 artifacts retain the exact two independent LM
 Studio production-step configurations and optional temperatures. Version 2 and
 absent-version context results retain their historical meanings. The command
 requires one loaded model because it measures one runtime context, but each role
@@ -697,8 +705,8 @@ still retains and uses its own temperature choice.
 The representative evidence corpus produces 208 prepared messages under the
 unchanged evidence-message sampler, so its fixed measurement matrix is 1, 50,
 100, 150, and 208.
-Each load preserves the retained message order and builds both copyedit requests
-from that load's actual writer drafts. Provider-reported usage is reconciled
+Each load preserves the retained message order and builds both writer requests
+from the prepared evidence. Provider-reported usage is reconciled
 against model-native template/token counts and written as strict JSON. Schema
 constraints are recorded by name and digest rather than assigned a fictional
 token cost. This architecture still introduces no filtering, retrieval, or

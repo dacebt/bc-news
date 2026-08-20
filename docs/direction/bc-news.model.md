@@ -29,9 +29,9 @@ generated:
 | Subject outcome | The typed behavior observed from the model: completed, parse-rejected, contract-rejected, or infrastructure-incomplete. | Harness outcome |
 | Harness outcome | Whether the evaluation program retained valid, trustworthy evidence for its declared observation. | Subject outcome |
 | Evaluation finding | A structured parse, contract, preservation, or final-product observation derived from retained evidence. | Quality verdict |
-| Editorial diagnostic | A retained non-terminal preservation or final-product finding on schema-valid copyedit output. | Model-output contract failure |
+| Editorial diagnostic | A retained non-terminal preservation or final-product finding on schema-valid writer output. | Model-output contract failure |
 | Model-output contract failure | Malformed JSON or strict schema mismatch; the only terminal model-output failure. | Infrastructure failure or editorial diagnostic |
-| Production model step | One of the four configured writer or copyeditor calls in a generation run or evaluation trial. | Step invocation |
+| Production model step | One of the two configured writer calls in a generation run or evaluation trial. | Step invocation |
 | Runtime evidence record | One top-level Benchmark Run record whose identity and lifecycle exactly match one Step Invocation. | Model usage record |
 | Execution context | Normalized runtime observations that identify what comparable model environment executed an invocation. | Prediction observation |
 | Prediction observation | Volatile response behavior such as stop reason, timing, throughput, speculative counts, and reasoning-content presence. | Execution context |
@@ -61,7 +61,7 @@ generated:
 
 | Context | Scope | Vocabulary notes |
 |---|---|---|
-| Production generation | Creation and publication of one edition through four production model steps, with diagnostics retained separately from the edition. | Model-output contract or infrastructure failure is terminal; every schema-valid editorial finding is diagnostic and publication continues. |
+| Production generation | Creation and publication of one edition through two production model steps, with diagnostics retained separately from the edition. | Model-output contract or infrastructure failure is terminal; every schema-valid editorial finding is diagnostic and publication continues. |
 | Model evaluation | Durable observation of real model behavior across declared benchmark runs and trials. | Parse rejection, contract rejection, and infrastructure incompletion are subject outcomes; lost invocation or runtime evidence is a harness failure. |
 | Acceptance verification | Recorded replay and explicit policies that accept or reject evidence. | It consumes evidence; it does not create a quality verdict. |
 | Composed product verification | The canonical local skeleton walk through deployable entrypoints. | Walking proves composition, not model quality. |
@@ -80,9 +80,9 @@ generated:
 | Evaluation Trial | One configuration's two-track behavior and terminal subject outcome within a benchmark. |
 | Step Invocation | Immutable request, response or transport outcome, timing, findings, and retry linkage for one model call. |
 | Evaluation Reference Corpus | Current local V3 selection-bound snapshot copy, copied selection, derived fixtures, root-authored semantic references, and objective variation witnesses, plus the historical Git-addressed V2 synthetic reader. |
-| Evaluation Scorecard | A local hash-addressed current V3 declaration plus compact source descriptors, four role-specific contexts, sample counts, rates, distributions, qualitative summaries, and freshness information; embedded V1 and Git-addressed V2 remain historical readers. |
+| Evaluation Scorecard | A local hash-addressed current V3 declaration plus compact source descriptors, two current-role contexts, sample counts, rates, distributions, qualitative summaries, and freshness information; embedded V1 and Git-addressed V2 remain historical readers. |
 | Aggregate Evaluation Result | A whitelist-only role summary exported from a validated scorecard with `cohort.evidence_identity_sha256` bound to its source corpus identity, with subject descriptor, counts, rates and intervals, aggregate distributions, and qualitative counts only. |
-| Longitudinal Evaluation Scorecard Series | Local hash-addressed current scorecard audit packs plus four stable cohort histories, baseline/subject summaries, signal witnesses, evidence classifications, and per-scorecard freshness information; embedded V1 and Git-addressed V2 remain historical readers. |
+| Longitudinal Evaluation Scorecard Series | Local hash-addressed current scorecard audit packs plus two stable current-role cohort histories, baseline/subject summaries, signal witnesses, evidence classifications, and per-scorecard freshness information; embedded V1 and Git-addressed V2 remain historical readers. |
 
 ## Notes
 

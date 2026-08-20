@@ -29,13 +29,13 @@ TypeScript and lint are supporting static guarantees, not an eleventh result.
 | Domain | Command | Evidence | Outcome |
 |---|---|---|---|
 | Deterministic tests | `pnpm test` | Isolated warranted invariants, reproduced defects, and high-risk state transitions | Test pass or hard test failure; never a retained model attempt |
-| Scratch model run | `scratch run` | One live four-step production pass saved only to an explicitly selected results directory | Development inspection artifact; never a Benchmark Run, scorecard source, baseline, or acceptance verdict |
+| Scratch model run | `scratch run` | One live two-writer production pass saved only to an explicitly selected results directory | Development inspection artifact; never a Benchmark Run, scorecard source, baseline, or acceptance verdict |
 | Model evaluation | `benchmark run/list/show/summary/compare` | Strict versioned Benchmark Runs under `apps/eval/local-data/evaluation-results` by default | Retained model subject and harness outcomes with `evaluation:` observations; never a score or acceptance verdict |
 | Evaluation reference corpus | `corpus extract --snapshot <sqlite-path> --selection <selection-path>`, `corpus show --corpus <manifest-path>`, and direct verifiers | Current local V3 selection-bound corpus workspaces under `apps/eval/local-data/corpus-workspaces/` plus historical Git-addressed V2 synthetic readers | Auditable source truth and objective variation coverage; never a model result, score, or acceptance verdict |
-| Evaluation scorecards | `scorecard build/show` and `verify:evaluation-scorecards` | Current local hash-addressed scorecards under `apps/eval/local-data/scorecards` by default, plus embedded V1 and Git-addressed V2 historical readers | Four transparent role-specific measurements plus current/outdated checkout information; never an aggregate score, ranking, recommendation, or acceptance verdict |
+| Evaluation scorecards | `scorecard build/show` and `verify:evaluation-scorecards` | Current local hash-addressed scorecards under `apps/eval/local-data/scorecards` by default, plus embedded V1 and Git-addressed V2 historical readers | Two transparent current-role measurements plus current/outdated checkout information; historical four-role families remain readable; never an aggregate score, ranking, recommendation, or acceptance verdict |
 | Aggregate evaluation results | `aggregate export/show/compare` and `verify:evaluation-aggregate-results` | Strict content-free aggregate JSON under `apps/eval/summaries/` by default, with `cohort.evidence_identity_sha256` bound to the source corpus identity | Descriptive role aggregates only: subject descriptor, counts, rates and intervals, aggregate distributions, and qualitative counts; never source or model-output evidence, a winner, a rank, a recommendation, acceptance, or production selection |
 | Longitudinal evaluation scorecards | `longitudinal build/show` and `verify:evaluation-longitudinal-scorecards` | Current local hash-addressed series under `apps/eval/local-data/longitudinal-scorecards` by default, plus embedded V1 and Git-addressed V2 historical readers | Four role-specific context, sufficiency, baseline-variation, or potential-drift observations; never a judge or product gate |
-| Fixture and context tooling | `fixture record-responses` and `context benchmark` | Four step-keyed recorded responses, or strict context results | Fixture-authoring or context-measurement tooling result; never acceptance or a walk |
+| Fixture and context tooling | `fixture record-responses` and `context benchmark` | Two step-keyed recorded responses, or strict context results | Fixture-authoring or context-measurement tooling result; never acceptance or a walk |
 | Recorded-replay acceptance | `acceptance run/list/show/compare` and its direct verifier | Current local Run Files under `apps/eval/local-data/acceptance-results` by default, plus historical readers when explicitly addressed | `acceptance:` result over controlled replay; never a Benchmark Run outcome |
 | Composed skeleton walk | `pnpm walk` | The running local ingest, generation, persistence, API, status, and browser product | Walk-owned `walk:` observations followed by independent terminal `WALK PASS` |
 
@@ -53,7 +53,7 @@ high-risk state transitions. A failing test is a hard failed test; it is not a
 retained model-evaluation attempt.
 
 **Scratch model runs** use `scratch run --fixture <path> --config <path>
---results-dir <path>` to execute the current four-step production path against
+--results-dir <path>` to execute the current two-writer production path against
 local or hosted models while prompts and configurations are still changing.
 The caller must choose the results directory; use a path under `/tmp` for
 disposable comparisons. Hosted requests receive run and invocation correlation.
@@ -64,8 +64,7 @@ baseline, or supply scorecard or acceptance evidence.
 **Model evaluation** uses `benchmark run --fixture <path> --config <path>
 [--results-dir <path>]` to observe an ordered configuration and repetition
 roster serially. Within each Evaluation Trial, the main-story and announcements
-writer-to-copyeditor chains dispatch concurrently, with each writer preceding
-its own copyeditor. One ordered application owner allocates invocations and
+writers may dispatch concurrently. One ordered application owner allocates invocations and
 applies every retained current transition, retaining each invocation and its
 pending runtime-evidence record before provider transport. This produces one
 truthful interleaved history while the artifact store's atomic full-file
@@ -84,9 +83,10 @@ response-contract rejection retains and prints sanitized schema issue paths,
 codes, expected types, and received structural types without retaining rejected
 values. A provider-reported explicit null completion instead retains successful
 transport, usage, provenance, and runtime evidence, then becomes a strict
-schema-mismatch model-output rejection in Gateway artifact version 8. Current
-non-Gateway version 7 artifacts require textual completion content. Both tracks quiesce before terminal
-aggregation; interruption leaves a strict running version 7 or
+schema-mismatch model-output rejection in historical Gateway artifact version
+8. Historical non-Gateway version 7 artifacts required textual completion
+content. Both tracks quiesce before terminal aggregation; interruption leaves a
+strict running current version 9 artifact, while historical version 7 and
 Gateway-only version 8
 artifact browseable through `benchmark list`, `benchmark show`, `benchmark
 summary`, and `benchmark compare`. Concurrent dispatch proves harness
@@ -94,13 +94,14 @@ scheduling, not parallel processing inside a selected model runtime. Comparison
 separates fixture, configuration, and provenance context from behavior and
 reports no score, judge result, recommendation, or acceptance decision.
 
-Benchmark Run version 7 retains existing live configurations. A
-`cloudflare_ai_gateway` configuration emits version 8 and additionally requires
+Current Benchmark Run version 9 retains existing live configurations.
+Historical version 7 and Gateway version 8 artifacts remain readable. A
+`cloudflare_ai_gateway` configuration additionally requires
 one lifecycle-matched Gateway-request record for every invocation, including
 the response-scoped log id and declared cache/logging/retry/timeout policy on
 success. New Gateway records additionally retain the exact model-profile
 request format, response-delivery mode, and structured-output contract name.
-Gemini Chat Completions and Luna Responses are both strict version 8 paths:
+Gemini Chat Completions and Luna Responses are both strict Gateway paths:
 Luna retains the routed `openai/gpt-5.6-luna` request id, the returned
 `gpt-5.6-luna` response model, and only a `completed` Responses envelope whose
 `output` contains zero or more `reasoning` items plus exactly one completed
@@ -111,7 +112,7 @@ identifies the rejected parameter and provider reason rather than only the
 status code. OpenAI request profiles prove that every wire property is required,
 canonical optional properties are nullable, and returned null placeholders
 normalize back to the canonical optional shape. Both current paths
-retain every exact per-role configuration, schema-valid copyedit diagnostic,
+retain every exact per-role configuration, schema-valid writer diagnostic,
 and a lifecycle-matched runtime-evidence record for every invocation. Each role
 independently chooses a provider, model, and optional temperature; omission
 includes that role's provider default as a candidate. Temperature is the only
@@ -120,7 +121,8 @@ receive the same strict production-step JSON Schema, while each Gateway model
 profile owns its provider request encoding. Model evaluation compares these
 candidate configurations to select production settings; it is not a
 deterministic test or a provider-default quality gate.
-Version 8 preserves version 7's four subject outcomes: `completed`,
+Current version 9, historical version 8, and historical version 7 preserve the
+same four subject outcomes: `completed`,
 `parse_rejected`, `contract_rejected`, and
 `infrastructure_incomplete`. Runtime evidence separates comparable execution
 context from volatile prediction observation and represents every unavailable
@@ -129,13 +131,13 @@ field as an explicit unknown or externally controlled state.
 Malformed JSON or strict schema mismatch is the only terminal model-output
 failure. Infrastructure failure is classified separately. Every schema-valid
 grammar, punctuation, markdown, wording, preservation, or editorial-policy
-finding is retained as a non-terminal diagnostic after one copyedit pass and
+finding is retained as a non-terminal diagnostic on writer output and
 never causes another model call, rejection, or publication stop.
 
 **Fixture and context tooling** owns two different development artifacts.
 `fixture record-responses --fixture <path> --config <path> [--response-dir
 <path>]` accepts only `lmstudio` and `openai_compatible_hosted` production-step
-adapters and writes the exact four step-keyed response files only after staged
+adapters and writes the exact two step-keyed response files only after staged
 replay and comparison. The `recorded` adapter rejects because it is not live;
 `cloudflare_ai_gateway` rejects because the current recorder format cannot
 retain its Gateway request provenance. `context benchmark --fixture <path> [--results-dir
@@ -169,9 +171,11 @@ prepared-message roster; historical V2 sparse remains frozen at at most 6. The
 full 13-region day remains a later local stress corpus, not part of this
 capability.
 
-**Evaluation scorecards** consume, but never alter, complete retained version 7
-or Gateway version 8 Benchmark Runs and the full ordered reference corpus. A
-version 8 output identity requires the hash of its exact Gateway-request record,
+**Evaluation scorecards** consume, but never alter, complete retained current
+version 9 Benchmark Runs and the full ordered reference corpus. Historical
+version 7 and Gateway version 8 Benchmark Runs remain readable inputs when
+explicitly addressed. A Gateway-backed output identity requires the hash of its
+exact Gateway-request record,
 and identified role context retains the ordered request-record hashes without
 turning response-scoped log ids into stable longitudinal context. `scorecard
 build --input <declaration-path> [--results-dir <path>]` requires one exact
@@ -190,7 +194,7 @@ must stay contained under the ignored `apps/eval/local-data/` root, where V3
 artifacts use SHA-256-bound contained relative references instead of embedded
 raw bytes. Embedded V1 and Git-addressed V2 remain historical readers.
 
-The four production roles remain separate. Rates expose their exact numerator,
+The two current production roles remain separate. Rates expose their exact numerator,
 denominator, denominator unit, sample count, comparable-context identity, and a
 95% Wilson score interval. Token usage, application latency, and provider timing
 remain separate descriptive distributions, with unavailable observations never
@@ -254,8 +258,8 @@ classifier.
 
 These four labels are model-evaluation observations only. They do not establish
 causality, equivalence, editorial quality, model rank, recommendation, retry,
-acceptance, or production action. Copyeditor prompt identity includes the upstream writer
-draft. Counted units can be correlated, baseline extremes can mask range
+acceptance, or production action. Writer output identity remains part of the
+measured context. Counted units can be correlated, baseline extremes can mask range
 movement, multiple named metrics raise multiplicity risk, and Codex annotations
 or reviews can vary without proving model drift.
 
@@ -266,10 +270,10 @@ failure, rejection, acceptance gate, or reason to prevent another evaluation.
 
 **Recorded-replay acceptance** uses `acceptance run --fixture <path> [--config
 <path>] [--results-dir <path>]` and `acceptance list/show/compare`. It executes
-the four dependent production steps twice. Results must be identical apart from
+the two production model steps twice. Results must be identical apart from
 run identity and timestamps, carry the exact ordered roster and usage, match
 parsed recorded responses, recompute request relations from the requests
-actually built, and assemble the final edition from the two copyedited
+actually built, and assemble the final edition from the two writer
 products. This is an explicit acceptance gate over controlled evidence, not a
 live model evaluation. Its artifact is a distinct Run File, not a Benchmark
 Run. Current Run Files require exact ordered diagnostics; historical files
@@ -277,20 +281,19 @@ without the field report diagnostics as unknown, never as observed empty.
 
 **The composed skeleton walk** runs a fixed local conversation through the whole
 pipeline: ingest into a fresh isolated D1 database; the real scheduled
-generation Workflow; `main_story_write`, `main_story_copyedit`,
-`announcements_write`, and `announcements_copyedit`; deterministic validation,
+generation Workflow; `main_story_write` and `announcements_write`; deterministic validation,
 assembly, and publication; the operator status projection; API read; and the
 published/unavailable/Back reader experience in installed Chrome. It uses
-exactly four recorded responses and no production data, live model, paid
-service, or external origin. The status proof requires all seven generation
-steps in order, exactly four ordered recorded-replay usage records at zero
-external billing, and the exact ordered diagnostics from the representative
-schema-valid copyedit. A fixed walk-only bearer token is injected into local
+exactly two recorded responses and no production data, live model, paid
+service, or external origin. The status proof requires all five generation
+steps in order, exactly two ordered recorded-replay usage records at zero
+external billing, and writer-only diagnostics from the representative
+schema-valid output. A fixed walk-only bearer token is injected into local
 Wrangler: unauthenticated launch and pair status must be rejected without a
 created run, authenticated launch and pair status must succeed, and opaque
 Workflow-id paths must remain generic 404s with or without credentials. The
-served edition must equal the two copyedited products,
-derive grouped writer/copyeditor provenance from those four usages, and contain
+served edition must equal the two writer products,
+derive writer-only provenance from those two usages, and contain
 no internal announcement ids. Duplicate delivery must preserve edition bytes
 and usage, and an unknown pair must remain absent. The main document and both
 successful and absent edition responses must carry the declared CSP, framing,
@@ -383,13 +386,14 @@ context, sample, or rationale field that escapes the whitelist. Longitudinal
 verification creates a
 compact committed 3+2 audit pack and independently recomputes stable cohort
 normalization, pooled rates, Wilson intervals, raw token/latency distributions,
-four role classifications, store/read/report/CLI behavior, commit-backed
+two current-role classifications, with historical four-role families remaining
+readable, plus store/read/report/CLI behavior, commit-backed
 reopen, and outdated reporting, then ends exactly with
 `EVALUATION LONGITUDINAL SCORECARDS VERIFIED`. Fixture proof ends
-with `fixture authoring: four strict v3 hosted responses retained exact
+with `fixture authoring: two strict v3 hosted responses retained exact
 production-step configurations, replayed, and compared`. Acceptance proof ends with `acceptance: four
-recorded production steps replayed by step and deterministic; diagnostics
-retained: 4`. The composed walk prints none
+recorded production steps replayed by step and deterministic; writer
+diagnostics retained`. The composed walk prints none
 of those exact verifier observations; it ends with its independent `WALK PASS`.
 
 ## What isolated tests defend here
@@ -441,10 +445,10 @@ proves, tests of glue and framework wiring, tests to satisfy coverage.
 - Determinism is proved by re-executing recorded-replay acceptance rather than
   against a stored file. Its comparison reports every differing field except
   `id`, `started_at`, and `completed_at`.
-- Current Benchmark Runs validate only as version 7 or Gateway version 8.
-  Versions 1 through 6 have no active schemas, parsers, prompt copies, migration
-  path, or development tests. Old run files may remain on disk, but current
-  readers reject them and no gate reparses them.
+- Current Benchmark Runs validate only as version 9. Historical versions 7 and
+  8 remain readable. Versions 1 through 6 have no active schemas, parsers,
+  prompt copies, migration path, or development tests. Old run files may remain
+  on disk, but current readers reject them and no gate reparses them.
 - Current artifact tests reject changed prepared-evidence identity, impossible
   timestamp or duration relations, invalid transition order, detached runtime
   evidence, and malformed lifecycle state. They do not reconstruct or compare
@@ -465,23 +469,23 @@ proves, tests of glue and framework wiring, tests to satisfy coverage.
   observer snapshot must parse before the verifier prints
   `evaluation: serial benchmark retained linked retries and continued
   later trials`.
-- Version 7 is the current non-Gateway artifact. Its top-level runtime-evidence roster must match trial
+- Version 9 is the current artifact. Its top-level runtime-evidence roster must match trial
   order then invocation ordinal exactly. Invocation append and pending evidence
   append are atomic; failed transport resolves only to an unavailable record;
   successful transport resolves only to captured normalized evidence; resolved
   evidence is immutable through parsing and terminal transitions. Tests reject
   missing, duplicate, reordered, detached, prematurely resolved, or mutated
-  records. Version 8 adds the Gateway-request roster without projecting through
-  or validating against any prior artifact version.
+  records. Historical version 8 adds the Gateway-request roster without
+  projecting through or validating against any prior artifact version.
 - The repository-owned trial-retention verifier controls provider release and
   directly observes both writer invocations durably `in_flight` before either
-  completes. It then observes deliberate cross-track interleaving, each
-  writer-before-copyeditor dependency, an expected rejection or provider
+  completes. It then observes deliberate cross-track interleaving, an expected
+  rejection or provider
   exhaustion isolated to one track, and both chains quiesced before aggregation.
   A controlled observer rejection after both writers dispatch proves that an
   unexpected harness failure waits for the held sibling, propagates without
   terminal aggregation or changed outcome counts, and leaves a strict browseable
-  running version 7 interruption artifact. The verifier also proves normal
+  running version 9 interruption artifact. The verifier also proves normal
   terminal completion before printing `evaluation: concurrent tracks retained
   interleaved progress, diagnostics, schema rejection, infrastructure failure,
   interruption evidence, and completion`. This proves concurrent harness
@@ -538,9 +542,9 @@ proves, tests of glue and framework wiring, tests to satisfy coverage.
   input usage, all non-input output usage including hidden reasoning, total,
   and remaining headroom. Component sums and model identity are rejecting
   contracts; unsupported attribution is never estimated.
-- The live recorder requires an explicit four-step eval configuration using
-  only `lmstudio` or `openai_compatible_hosted` adapters and performs four
-  dependent calls. It stages and validates the exact four-file
+- The live recorder requires an explicit two-step eval configuration using
+  only `lmstudio` or `openai_compatible_hosted` adapters and performs two
+  production calls. It stages and validates the exact two-file
   set on the target filesystem, replays the staged records through the shared
   runner, compares only the final editorial products, and promotes the response
   directory all-or-none with recoverable backup handling. It does not promise

@@ -1,5 +1,6 @@
 # Direction
 
+- [Shape: editorial generation ownership](2026-08-19-editorial-generation-ownership.shape.md) — Tight-cadence session boundary for two final editorial writers, proportionate in-world storytelling, and deterministic edition assembly.
 - [Shape: hosted model scorecard authoring](2026-08-19-hosted-model-scorecard-authoring.shape.md) — Redeclared session boundary for four local scorecards with one-off ignored mechanical authoring helpers.
 - [Shape: hosted model scorecards](2026-08-19-hosted-model-scorecards.shape.md) — Superseded artifact-only boundary that omitted the mechanical authoring path needed for the review evidence.
 - [Shape: hosted model evaluation expansion](2026-08-18-hosted-model-evaluation-expansion.shape.md) — Session boundaries, loose cadence, and success signal for admitting Gemini 3.7 Flash and GPT-5.6 Luna and retaining a four-model hosted benchmark.
