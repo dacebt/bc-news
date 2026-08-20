@@ -9,7 +9,7 @@ const ZERO_WIDTH_SPACE = "\u200b";
 /**
  * The transcript is newline-delimited, so a line break inside untrusted
  * message content (or an author name) would forge a fully-formed
- * "[timestamp] Name:" record attributed to another player. Flattening line
+ * "Name:" record attributed to another player. Flattening line
  * breaks at this boundary keeps one evidence message to exactly one
  * transcript line, so content can never mint a record.
  */
@@ -37,12 +37,11 @@ function neutralizeBrackets(value: string): string {
 function formatMessages(preparedEvidence: PreparedEvidence): string {
 	return preparedEvidence.messages
 		.map((msg) => {
-			const timestamp = new Date(msg.ts).toISOString();
 			const author = neutralizeBrackets(
 				asSingleTranscriptLine(msg.author_name || `user_${msg.author_id}`),
 			);
 			const text = neutralizeBrackets(asSingleTranscriptLine(msg.text));
-			return `[${timestamp}] ${author}: ${text}`;
+			return `${author}: ${text}`;
 		})
 		.join("\n");
 }
