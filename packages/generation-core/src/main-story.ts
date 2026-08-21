@@ -99,6 +99,11 @@ You are the regional correspondent. In any nonempty prepared chat, the story is 
 [CHAT MESSAGES]
 ${fenceUntrustedTranscript(preparedEvidence)}
 
+[FINAL REQUIREMENTS]
+- Cover every materially reportable development established by the chat;
+- Use only inhabitant names that occur exactly in the chat;
+- Keep every item, quantity, and price linked exactly as they appear together in the chat.
+
 [OUTPUT]
 Return one valid JSON object matching this field contract:
 - title (string): a creative plain-text regional edition title;
