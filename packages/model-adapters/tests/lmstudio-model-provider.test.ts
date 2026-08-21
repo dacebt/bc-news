@@ -287,7 +287,9 @@ it("uses the exact loaded model, native structured prediction, truthful evidence
 			temperature: LOCAL_TEMPERATURE,
 			topPSampling: 0.95,
 			topKSampling: 20,
-			enableThinking: false,
+			raw: {
+				fields: [{ key: "llm.prediction.reasoning.enableThinking", value: false }],
+			},
 			structured: {
 				type: "json",
 				jsonSchema: PRODUCTION_STEP_OUTPUT_CONTRACTS.main_story_write.schema,
@@ -299,10 +301,12 @@ it("uses the exact loaded model, native structured prediction, truthful evidence
 	expect(options).toHaveProperty("temperature", LOCAL_TEMPERATURE);
 	expect(options).toHaveProperty("topPSampling", 0.95);
 	expect(options).toHaveProperty("topKSampling", 20);
-	expect(options).toHaveProperty("enableThinking", false);
+	expect(options).toHaveProperty("raw", {
+		fields: [{ key: "llm.prediction.reasoning.enableThinking", value: false }],
+	});
+	expect(options).not.toHaveProperty("enableThinking");
 	expect(options).not.toHaveProperty("reasoningEffort");
 	expect(options).not.toHaveProperty("reasoning_effort");
-	expect(options).not.toHaveProperty("raw");
 	expect(client[Symbol.asyncDispose]).toHaveBeenCalledOnce();
 });
 
@@ -435,6 +439,7 @@ it("omits every inference override for a provider-default evaluation candidate",
 	expect(options).not.toHaveProperty("topPSampling");
 	expect(options).not.toHaveProperty("topKSampling");
 	expect(options).not.toHaveProperty("enableThinking");
+	expect(options).not.toHaveProperty("raw");
 	expect(options).toMatchObject({
 		structured: {
 			type: "json",

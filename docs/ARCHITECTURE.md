@@ -278,10 +278,14 @@ For local development, copy `apps/generation/.dev.vars.example` to the ignored
 one through 500, and boolean `enable_thinking`. Each omitted field independently
 uses the loaded model's LM Studio inference default. One typed application
 configuration maps those names once to the native SDK's `temperature`,
-`topPSampling`, `topKSampling`, and `enableThinking` request options. Invalid or
-obsolete fields reject rather than being completed or approximated by the
-application. `reasoning_effort` remains a declaration rather than an SDK request
-field; explicit effort values reject instead of being approximated. LM Studio
+`topPSampling`, and `topKSampling` request options. The pinned SDK 1.5.0 does not
+yet expose `enableThinking` on `LLMPredictionConfig`, so the same mapper sends
+that value through the SDK's typed raw-KV escape hatch as
+`llm.prediction.reasoning.enableThinking`; no unsupported top-level prediction
+property is sent. Invalid or obsolete fields reject rather than being completed
+or approximated by the application. `reasoning_effort` remains a declaration
+rather than an SDK request field; explicit effort values reject instead of being
+approximated. LM Studio
 and profiled Gateway requests use strict inline JSON schemas derived from the
 same Zod contracts that validate outputs. Recorded requests receive no provider
 decoding controls.

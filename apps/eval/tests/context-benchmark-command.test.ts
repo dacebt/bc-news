@@ -77,7 +77,9 @@ type NativeRequest = {
 		readonly temperature?: number;
 		readonly topPSampling?: number;
 		readonly topKSampling?: number;
-		readonly enableThinking?: boolean;
+		readonly raw?: {
+			readonly fields: readonly { readonly key: string; readonly value: unknown }[];
+		};
 		readonly structured: {
 			readonly type: "json";
 			readonly jsonSchema: Readonly<Record<string, unknown>>;
@@ -212,7 +214,9 @@ test("benchmarks the exact dependent two-step roster at every canonical message 
 			temperature: temperatures[request.step],
 			topPSampling: 0.95,
 			topKSampling: 20,
-			enableThinking: false,
+			raw: {
+				fields: [{ key: "llm.prediction.reasoning.enableThinking", value: false }],
+			},
 		});
 		expect(request.options.structured.type).toBe("json");
 		expect(request.options.structured.jsonSchema).toEqual(expect.objectContaining({ type: "object" }));
@@ -259,7 +263,7 @@ test("omits inference settings independently for provider-default candidates", a
 		expect(request.options).not.toHaveProperty("temperature");
 		expect(request.options).not.toHaveProperty("topPSampling");
 		expect(request.options).not.toHaveProperty("topKSampling");
-		expect(request.options).not.toHaveProperty("enableThinking");
+		expect(request.options).not.toHaveProperty("raw");
 	}
 	expect(report.agent_configurations).toEqual({
 		main_story_write: providerDefaultLocalStepConfig(MODEL),

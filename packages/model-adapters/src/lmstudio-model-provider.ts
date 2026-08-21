@@ -1,4 +1,10 @@
-import { LMStudioClient, type LLM, type LLMPredictionStats, type PredictionResult } from "@lmstudio/sdk";
+import {
+	LMStudioClient,
+	type LLM,
+	type LLMPredictionConfig,
+	type LLMPredictionStats,
+	type PredictionResult,
+} from "@lmstudio/sdk";
 import type {
 	ModelCompletion,
 	ModelRuntimeEvidence,
@@ -23,6 +29,7 @@ import { lmStudioRuntimeEvidence, observeLmStudioAuxiliary } from "./lmstudio-ru
 
 const COMPLETION_TIMEOUT_MS = 1_800_000;
 const SUCCESSFUL_STOP_REASONS = new Set(["eosFound", "stopStringFound"]);
+const LM_STUDIO_ENABLE_THINKING_CONFIG_KEY = "llm.prediction.reasoning.enableThinking";
 
 export interface LmStudioInferenceConfig {
 	readonly temperature: ModelTemperature | undefined;
@@ -56,14 +63,19 @@ export interface LmStudioPredictionRequestInput {
 	readonly structuredOutputContracts: ProductionStepOutputContracts;
 }
 
-interface LmStudioSdkPredictionOptions {
-	temperature?: ModelTemperature;
-	topPSampling?: LmStudioTopP;
-	topKSampling?: LmStudioTopK;
-	enableThinking?: boolean;
+type LmStudioSdkPredictionOptions = Pick<
+	LLMPredictionConfig,
+	"temperature" | "topPSampling" | "topKSampling" | "raw"
+> & {
 	structured: {
-			readonly type: "json";
-			readonly jsonSchema: Readonly<Record<string, unknown>>;
+		readonly type: "json";
+		readonly jsonSchema: Readonly<Record<string, unknown>>;
+	};
+};
+
+function lmStudioThinkingOverride(enableThinking: boolean): NonNullable<LLMPredictionConfig["raw"]> {
+	return {
+		fields: [{ key: LM_STUDIO_ENABLE_THINKING_CONFIG_KEY, value: enableThinking }],
 	};
 }
 
@@ -85,7 +97,9 @@ export function buildLmStudioPredictionRequest(
 	if (input.inference.temperature !== undefined) options.temperature = input.inference.temperature;
 	if (input.inference.topP !== undefined) options.topPSampling = input.inference.topP;
 	if (input.inference.topK !== undefined) options.topKSampling = input.inference.topK;
-	if (input.inference.enableThinking !== undefined) options.enableThinking = input.inference.enableThinking;
+	if (input.inference.enableThinking !== undefined) {
+		options.raw = lmStudioThinkingOverride(input.inference.enableThinking);
+	}
 	return {
 		chat: [
 			{ role: "system" as const, content: input.system },
