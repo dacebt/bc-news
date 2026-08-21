@@ -4,7 +4,14 @@ function formatSubject(subject: EvaluationAggregateResult["roles"][number]["subj
 	const fields = [`adapter=${subject.adapter}`];
 	if ("provider" in subject) fields.push(`provider=${subject.provider}`);
 	if ("model" in subject) fields.push(`model=${subject.model}`);
-	if ("temperature" in subject) fields.push(`temperature=${String(subject.temperature)}`);
+	if (subject.adapter === "lmstudio") {
+		fields.push(`temperature=${subject.temperature === undefined ? "provider_default" : String(subject.temperature)}`);
+		fields.push(`top_p=${subject.top_p === undefined ? "provider_default" : String(subject.top_p)}`);
+		fields.push(`top_k=${subject.top_k === undefined ? "provider_default" : String(subject.top_k)}`);
+		fields.push(`enable_thinking=${subject.enable_thinking === undefined ? "provider_default" : String(subject.enable_thinking)}`);
+	} else if ("temperature" in subject) {
+		fields.push(`temperature=${String(subject.temperature)}`);
+	}
 	if ("reasoning_effort" in subject) fields.push(`reasoning_effort=${subject.reasoning_effort}`);
 	return fields.join(" | ");
 }

@@ -104,7 +104,7 @@ it("resolves Cloudflare AI Gateway only with account and token bindings", () => 
 	}))).toThrow(GenerationConfigError);
 });
 
-it("resolves independent provider-default and explicit LM Studio temperatures", () => {
+it("resolves independent provider-default and explicit LM Studio inference settings", () => {
 	const local = {
 		adapter: "lmstudio",
 		model: "local-main",
@@ -126,20 +126,36 @@ it("resolves independent provider-default and explicit LM Studio temperatures", 
 		LMSTUDIO_BASE_URL: "http://127.0.0.1:1234/v1",
 		MODEL_CONFIG: JSON.stringify({
 			...recordedConfig(),
-			main_story_write: { ...local, temperature: 0.6 },
-			announcements_write: { ...local, model: "local-announcements", temperature: 0.2 },
+			main_story_write: {
+				...local,
+				temperature: 0.6,
+				top_p: 0.95,
+				top_k: 20,
+				enable_thinking: false,
+			},
+			announcements_write: {
+				...local,
+				model: "local-announcements",
+				temperature: 0.2,
+				top_p: 0.9,
+				top_k: 40,
+				enable_thinking: true,
+			},
 		}),
 	})).modelProviders.main_story_write).toBeDefined();
 });
 
-it("rejects incomplete LM Studio model, obsolete decoding controls, invalid temperature, and reasoning fields", () => {
+it("rejects incomplete LM Studio model, obsolete decoding controls, invalid inference settings, and reasoning fields", () => {
 	for (const local of [
 		{ adapter: "lmstudio", temperature: 0.6, reasoning_effort: "provider_default" },
 		{ adapter: "lmstudio", model: " \t ", reasoning_effort: "provider_default" },
 		{ adapter: "lmstudio", model: "local", temperature: 2.1, reasoning_effort: "provider_default" },
 		{ adapter: "lmstudio", model: "local", sampling: { temperature: 1, top_p: 0.95, top_k: 20 }, reasoning_effort: "provider_default" },
-		{ adapter: "lmstudio", model: "local", top_p: 0.95, reasoning_effort: "provider_default" },
-		{ adapter: "lmstudio", model: "local", top_k: 20, reasoning_effort: "provider_default" },
+		{ adapter: "lmstudio", model: "local", top_p: -0.01, reasoning_effort: "provider_default" },
+		{ adapter: "lmstudio", model: "local", top_p: 1.01, reasoning_effort: "provider_default" },
+		{ adapter: "lmstudio", model: "local", top_k: 0, reasoning_effort: "provider_default" },
+		{ adapter: "lmstudio", model: "local", top_k: 501, reasoning_effort: "provider_default" },
+		{ adapter: "lmstudio", model: "local", enable_thinking: "false", reasoning_effort: "provider_default" },
 		{ adapter: "lmstudio", model: "local" },
 		{ adapter: "lmstudio", model: "local", temperature: 0.6, reasoning_effort: "none" },
 		{ adapter: "lmstudio", model: "local", temperature: 0.6, reasoning_effort: "maximum" },

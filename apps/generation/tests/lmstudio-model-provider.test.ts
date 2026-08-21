@@ -17,15 +17,26 @@ it("constructs the production native provider with provider-default temperature"
 	expect(createLmStudioModelProvider({
 		baseUrl: "http://127.0.0.1:1234/v1",
 		model: "qwen/qwen3.5-9b",
+		inference: {
+			temperature: undefined,
+			topP: undefined,
+			topK: undefined,
+			enableThinking: undefined,
+		},
 		reasoningEffort: "provider_default",
 	})).toBeDefined();
 });
 
-it("constructs the production native provider with an explicit temperature", () => {
+it("constructs the production native provider with explicit inference settings", () => {
 	expect(createLmStudioModelProvider({
 		baseUrl: "http://127.0.0.1:1234/v1",
 		model: "qwen/qwen3.5-9b",
-		temperature: 0.6,
+		inference: {
+			temperature: 0.6,
+			topP: 0.95,
+			topK: 20,
+			enableThinking: false,
+		},
 		reasoningEffort: "provider_default",
 	})).toBeDefined();
 });

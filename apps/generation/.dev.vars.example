@@ -4,12 +4,12 @@ OPERATOR_API_TOKEN="replace-with-random-operator-token"
 
 # Copy to apps/generation/.dev.vars and replace each local model id with one
 # installed in LM Studio. Each writer is configured independently; they may
-# intentionally use the same model. Add a numeric `temperature` to either
-# writer after evaluation selects it; omission keeps that one writer on its
-# provider default. The application never sets top-p or top-k. The generation
-# Worker has no copyedit, packaging, or judge model slot.
+# intentionally use the same model. Set `temperature`, `top_p`, `top_k`, and
+# `enable_thinking` only to values selected for that model; omitting any one
+# field keeps that field on its provider default. The generation Worker has no
+# copyedit, packaging, or judge model slot.
 LMSTUDIO_BASE_URL="http://127.0.0.1:1234/v1"
-MODEL_CONFIG='{"main_story_write":{"adapter":"lmstudio","model":"replace-with-local-model-id","reasoning_effort":"provider_default"},"announcements_write":{"adapter":"lmstudio","model":"replace-with-local-model-id","reasoning_effort":"provider_default"}}'
+MODEL_CONFIG='{"main_story_write":{"adapter":"lmstudio","model":"replace-with-local-model-id","temperature":0.7,"top_p":0.95,"top_k":20,"enable_thinking":false,"reasoning_effort":"provider_default"},"announcements_write":{"adapter":"lmstudio","model":"replace-with-local-model-id","temperature":0.7,"top_p":0.95,"top_k":20,"enable_thinking":false,"reasoning_effort":"provider_default"}}'
 
 # Hosted alternative: comment the local block above, uncomment this block,
 # replace all placeholders, and never commit the secret.

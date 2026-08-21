@@ -12,6 +12,7 @@ import {
 	createLmStudioModelProvider,
 	createCloudflareAiGatewayModelProvider,
 	createOpenAiCompatibleModelProvider,
+	lmStudioInferenceConfig,
 } from "@bc-news/model-adapters";
 
 export const ModelAdapterConfigSchema = z.discriminatedUnion("adapter", [
@@ -49,7 +50,7 @@ export function resolveModelProvider(
 			return createLmStudioModelProvider({
 				baseUrl,
 				requestedModel: config.model,
-				...(config.temperature === undefined ? {} : { temperature: config.temperature }),
+				inference: lmStudioInferenceConfig(config),
 				reasoningEffort: config.reasoning_effort,
 				structuredOutputContracts: PRODUCTION_STEP_OUTPUT_CONTRACTS,
 			});

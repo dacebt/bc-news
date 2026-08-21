@@ -12,12 +12,19 @@ export const CloudflareAiGatewayModelSchema = NonBlankStringSchema.refine((model
 
 export const ModelTemperatureSchema = z.number().finite().min(0).max(2);
 
+export const LmStudioTopPSchema = z.number().finite().min(0).max(1);
+
+export const LmStudioTopKSchema = z.number().int().min(1).max(500);
+
 export const LmStudioReasoningEffortSchema = z.literal("provider_default");
 
 export const LmStudioAdapterConfigSchema = z.strictObject({
 	adapter: z.literal("lmstudio"),
 	model: NonBlankStringSchema,
 	temperature: ModelTemperatureSchema.optional(),
+	top_p: LmStudioTopPSchema.optional(),
+	top_k: LmStudioTopKSchema.optional(),
+	enable_thinking: z.boolean().optional(),
 	reasoning_effort: LmStudioReasoningEffortSchema,
 });
 
@@ -58,6 +65,8 @@ export const CloudflareAiGatewayAdapterConfigSchema = z.strictObject({
 
 export type LmStudioAdapterConfig = z.infer<typeof LmStudioAdapterConfigSchema>;
 export type ModelTemperature = z.infer<typeof ModelTemperatureSchema>;
+export type LmStudioTopP = z.infer<typeof LmStudioTopPSchema>;
+export type LmStudioTopK = z.infer<typeof LmStudioTopKSchema>;
 export type LmStudioReasoningEffort = z.infer<typeof LmStudioReasoningEffortSchema>;
 export type HostedModelAdapterConfig = z.infer<typeof HostedModelAdapterConfigSchema>;
 export type CalculatedBillingConfig = z.infer<typeof CalculatedBillingConfigSchema>;

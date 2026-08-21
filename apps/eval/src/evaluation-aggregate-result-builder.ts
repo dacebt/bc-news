@@ -113,12 +113,7 @@ function subjectDescriptor(source: EvaluationRoleScorecard["adapter"]): Evaluati
 		case "recorded":
 			return { adapter: "recorded" };
 		case "lmstudio":
-			return {
-				adapter: "lmstudio",
-				model: source.model,
-				...(source.temperature === undefined ? {} : { temperature: source.temperature }),
-				reasoning_effort: source.reasoning_effort,
-			};
+			return lmStudioSubjectDescriptor(source);
 		case "openai_compatible_hosted":
 			return {
 				adapter: "openai_compatible_hosted",
@@ -133,6 +128,21 @@ function subjectDescriptor(source: EvaluationRoleScorecard["adapter"]): Evaluati
 				...(source.temperature === undefined ? {} : { temperature: source.temperature }),
 			};
 	}
+}
+
+function lmStudioSubjectDescriptor(
+	source: Extract<EvaluationRoleScorecard["adapter"], { readonly adapter: "lmstudio" }>,
+): Extract<EvaluationAggregateSubjectDescriptor, { readonly adapter: "lmstudio" }> {
+	const subject: Extract<EvaluationAggregateSubjectDescriptor, { adapter: "lmstudio" }> = {
+		adapter: "lmstudio",
+		model: source.model,
+		reasoning_effort: source.reasoning_effort,
+	};
+	if (source.temperature !== undefined) subject.temperature = source.temperature;
+	if (source.top_p !== undefined) subject.top_p = source.top_p;
+	if (source.top_k !== undefined) subject.top_k = source.top_k;
+	if (source.enable_thinking !== undefined) subject.enable_thinking = source.enable_thinking;
+	return subject;
 }
 
 function sampleCounts(source: EvaluationRoleScorecard["sample_counts"]) {

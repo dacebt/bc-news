@@ -80,6 +80,15 @@ function localAdapterConfig(temperature?: number) {
 	return temperature === undefined ? config : { ...config, temperature };
 }
 
+function tunedLocalAdapterConfig(temperature: number) {
+	return {
+		...localAdapterConfig(temperature),
+		top_p: 0.95,
+		top_k: 20,
+		enable_thinking: false,
+	} as const;
+}
+
 function hostedAdapterConfig(temperature?: number) {
 	return {
 		adapter: "openai_compatible_hosted",
@@ -97,8 +106,8 @@ function hostedAdapterConfig(temperature?: number) {
 
 function explicitProductionSteps() {
 	return {
-		main_story_write: localAdapterConfig(0.7),
-		announcements_write: localAdapterConfig(0.6),
+		main_story_write: tunedLocalAdapterConfig(0.7),
+		announcements_write: tunedLocalAdapterConfig(0.6),
 	};
 }
 
@@ -230,13 +239,14 @@ test("retains every response from the live production-step roster", async () => 
 	expect(summary).toContain("Artifact version: 3");
 	expect(reportedConfiguration(summary, "main_story_write"))
 		.toEqual(explicitProductionSteps().main_story_write);
-	expect(summary).not.toContain("top_p");
-	expect(summary).not.toContain("top_k");
+	expect(summary).toContain('"top_p":0.95');
+	expect(summary).toContain('"top_k":20');
+	expect(summary).toContain('"enable_thinking":false');
 	expect(summary).toContain("Live diagnostics:");
 	expect(summary).toContain("Replay diagnostics:");
 });
 
-test("retains independent provider-default and explicit temperature truth per production step", async () => {
+test("retains independent provider-default and explicit inference truth per production step", async () => {
 	const root = await mkdtemp(join(tmpdir(), "bc-news-record-sampling-"));
 	const responseDirectory = join(root, "responses");
 	const configPath = await writeConfig(root, {

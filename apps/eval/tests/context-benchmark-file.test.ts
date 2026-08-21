@@ -84,7 +84,15 @@ function validV3Report(): ContextBenchmarkFileV3 {
 		version: 3,
 		...legacy,
 		agent_configurations: {
-			main_story_write: { adapter: "lmstudio", model: "qwen3-local", temperature: 0.7, reasoning_effort: "provider_default" },
+			main_story_write: {
+				adapter: "lmstudio",
+				model: "qwen3-local",
+				temperature: 0.7,
+				top_p: 0.95,
+				top_k: 20,
+				enable_thinking: false,
+				reasoning_effort: "provider_default",
+			},
 			announcements_write: { adapter: "lmstudio", model: "qwen3-local", reasoning_effort: "provider_default" },
 		},
 	});
@@ -115,17 +123,24 @@ test.each(["provider_default", "explicit"] as const)(
 	},
 );
 
-test("parses strict version 3 independent agent temperatures", () => {
+test("parses strict version 3 independent agent inference settings", () => {
 	const report = validV3Report();
-	expect(report.agent_configurations.main_story_write).toHaveProperty("temperature", 0.7);
+	expect(report.agent_configurations.main_story_write).toMatchObject({
+		temperature: 0.7,
+		top_p: 0.95,
+		top_k: 20,
+		enable_thinking: false,
+	});
 	expect(report.agent_configurations.announcements_write).not.toHaveProperty("temperature");
+	expect(report.agent_configurations.announcements_write).not.toHaveProperty("enable_thinking");
 	expect(ContextBenchmarkFileSchema.parse(report)).toEqual(report);
 
 	for (const configuration of [
 		{ ...report.agent_configurations.main_story_write, temperature: 2.1 },
 		{ ...report.agent_configurations.main_story_write, sampling: { temperature: 0, top_p: 1, top_k: 40 } },
-		{ ...report.agent_configurations.main_story_write, top_p: 1 },
-		{ ...report.agent_configurations.main_story_write, top_k: 40 },
+		{ ...report.agent_configurations.main_story_write, top_p: 1.1 },
+		{ ...report.agent_configurations.main_story_write, top_k: 0 },
+		{ ...report.agent_configurations.main_story_write, enable_thinking: "false" },
 	]) {
 		expect(ContextBenchmarkFileV3Schema.safeParse({
 			...report,
@@ -174,10 +189,14 @@ test("rejects version 3 agent models that do not identify one retained loaded mo
 	}
 });
 
-test("reports version 3 exact agent temperatures before measurement rows", () => {
+test("reports version 3 exact agent inference settings before measurement rows", () => {
 	const output = formatContextBenchmarkReport(validV3Report(), "context.json");
-	expect(output).toContain("Agent configurations:\n  main_story_write: qwen3-local, temperature=0.7");
-	expect(output).toContain("announcements_write: qwen3-local, temperature=provider_default");
+	expect(output).toContain(
+		"Agent configurations:\n  main_story_write: qwen3-local, temperature=0.7, top_p=0.95, top_k=20, enable_thinking=false",
+	);
+	expect(output).toContain(
+		"announcements_write: qwen3-local, temperature=provider_default, top_p=provider_default, top_k=provider_default, enable_thinking=provider_default",
+	);
 	expect(output.indexOf("Agent configurations:")).toBeLessThan(output.indexOf(" load  production step"));
 });
 

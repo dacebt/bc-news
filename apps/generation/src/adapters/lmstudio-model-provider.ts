@@ -4,8 +4,8 @@ import {
 	LmStudioRetryableError,
 	createLmStudioModelProvider as createSharedLmStudioModelProvider,
 	lmStudioSdkBaseUrl,
+	type LmStudioInferenceConfig,
 	type LmStudioReasoningEffort,
-	type ModelTemperature,
 } from "@bc-news/model-adapters";
 
 export { LmStudioDeterministicError, LmStudioRetryableError };
@@ -14,13 +14,13 @@ export const lmStudioNativeBaseUrl = lmStudioSdkBaseUrl;
 export function createLmStudioModelProvider(input: {
 	baseUrl: string;
 	model: string;
-	temperature?: ModelTemperature;
+	inference: LmStudioInferenceConfig;
 	reasoningEffort: LmStudioReasoningEffort;
 }) {
 	return createSharedLmStudioModelProvider({
 		baseUrl: input.baseUrl,
 		requestedModel: input.model,
-		...(input.temperature === undefined ? {} : { temperature: input.temperature }),
+		inference: input.inference,
 		reasoningEffort: input.reasoningEffort,
 		structuredOutputContracts: PRODUCTION_STEP_OUTPUT_CONTRACTS,
 	});

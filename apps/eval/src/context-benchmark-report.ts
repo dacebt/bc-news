@@ -5,6 +5,10 @@ function pad(value: string | number, width: number): string {
 	return String(value).padStart(width);
 }
 
+function providerSetting(value: number | boolean | undefined): string {
+	return value === undefined ? "provider_default" : String(value);
+}
+
 export function formatContextBenchmarkReport(report: ContextBenchmarkFile, outputPath: string): string {
 	const lines = [
 		`Saved: ${outputPath}`,
@@ -16,7 +20,9 @@ export function formatContextBenchmarkReport(report: ContextBenchmarkFile, outpu
 		lines.push("Agent configurations:");
 		for (const step of PRODUCTION_MODEL_STEPS) {
 			const configuration = report.agent_configurations[step];
-			lines.push(`  ${step}: ${configuration.model}, temperature=${configuration.temperature === undefined ? "provider_default" : String(configuration.temperature)}`);
+			lines.push(
+				`  ${step}: ${configuration.model}, temperature=${providerSetting(configuration.temperature)}, top_p=${providerSetting(configuration.top_p)}, top_k=${providerSetting(configuration.top_k)}, enable_thinking=${providerSetting(configuration.enable_thinking)}`,
+			);
 		}
 	} else if ("version" in report) {
 		lines.push("Sampling:");

@@ -141,6 +141,7 @@ export function lmStudioRuntimeEvidence(input: {
 	readonly model: LLM;
 	readonly requestedModel: string;
 	readonly reasoningEffort: LmStudioReasoningEffort;
+	readonly enableThinking: boolean | undefined;
 	readonly version: LmStudioAuxiliaryObservation<{ readonly version: string; readonly build: number }>;
 	readonly modelInfo: LmStudioAuxiliaryObservation<Awaited<ReturnType<LLM["getModelInfo"]>>>;
 	readonly contextLength: LmStudioAuxiliaryObservation<number>;
@@ -162,7 +163,9 @@ export function lmStudioRuntimeEvidence(input: {
 			context_length: input.contextLength.state === "failed"
 				? { state: "unknown", reason: "observation_failed" }
 				: observedPositiveInteger(input.contextLength.value),
-			requested_reasoning_posture: observedString(input.reasoningEffort),
+			requested_reasoning_posture: observedString(input.enableThinking === undefined
+				? input.reasoningEffort
+				: input.enableThinking ? "thinking_enabled" : "thinking_disabled"),
 			effective_reasoning_setting: { state: "externally_controlled", reason: "provider_controlled" },
 			speculative_draft_model_identity: observedString(input.result.stats.usedDraftModelKey),
 		},

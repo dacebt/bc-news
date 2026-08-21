@@ -145,6 +145,9 @@ const ContextBenchmarkAgentConfigurationSchema = z.strictObject({
 	adapter: z.literal("lmstudio"),
 	model: z.string().trim().min(1),
 	temperature: z.number().finite().min(0).max(2).optional(),
+	top_p: z.number().finite().min(0).max(1).optional(),
+	top_k: z.number().int().min(1).max(500).optional(),
+	enable_thinking: z.boolean().optional(),
 	reasoning_effort: z.literal("provider_default"),
 });
 

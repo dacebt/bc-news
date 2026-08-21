@@ -1,5 +1,11 @@
 import { z } from "zod";
-import { CloudflareAiGatewayModelSchema, LmStudioReasoningEffortSchema, ModelTemperatureSchema } from "@bc-news/model-adapters";
+import {
+	CloudflareAiGatewayModelSchema,
+	LmStudioReasoningEffortSchema,
+	LmStudioTopKSchema,
+	LmStudioTopPSchema,
+	ModelTemperatureSchema,
+} from "@bc-news/model-adapters";
 import { EvaluationIdSchema, EvaluationTimestampSchema } from "./evaluation-artifact-schemas";
 
 const NonBlankStringSchema = z.string().trim().min(1);
@@ -42,6 +48,9 @@ const SubjectDescriptorSchema = z.discriminatedUnion("adapter", [
 		adapter: z.literal("lmstudio"),
 		model: NonBlankStringSchema,
 		temperature: ModelTemperatureSchema.optional(),
+		top_p: LmStudioTopPSchema.optional(),
+		top_k: LmStudioTopKSchema.optional(),
+		enable_thinking: z.boolean().optional(),
 		reasoning_effort: LmStudioReasoningEffortSchema,
 	}),
 	z.strictObject({

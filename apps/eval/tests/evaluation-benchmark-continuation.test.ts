@@ -64,12 +64,15 @@ test("rejects ambiguous or unbounded benchmark declarations", () => {
 	expect(LiveBenchmarkConfigSchema.safeParse({ configurations: [configuration], repetition_count: 1, transport_retry_limit: 1, extra: true }).success).toBe(false);
 });
 
-test("retains independent temperature choices for every LM Studio production step", () => {
+test("retains independent inference settings for every LM Studio production step", () => {
 	type LocalConfiguration = {
 		adapter: "lmstudio";
 		model: string;
 		reasoning_effort: "provider_default";
 		temperature?: number;
+		top_p?: number;
+		top_k?: number;
+		enable_thinking?: boolean;
 	};
 	const localConfiguration = () => ({
 		production_steps: Object.fromEntries(PRODUCTION_MODEL_STEPS.map((step): [typeof step, LocalConfiguration] => [step, {
@@ -82,20 +85,37 @@ test("retains independent temperature choices for every LM Studio production ste
 	independent.production_steps.main_story_write = {
 		...independent.production_steps.main_story_write,
 		temperature: 0.7,
+		top_p: 0.95,
+		top_k: 20,
+		enable_thinking: false,
 	};
 	independent.production_steps.announcements_write = {
 		...independent.production_steps.announcements_write,
 		temperature: 0.2,
+		top_p: 0.9,
+		top_k: 40,
+		enable_thinking: true,
 	};
 	const parsed = EvalConfigSchema.parse(independent);
-	expect(parsed.production_steps.main_story_write).toHaveProperty("temperature", 0.7);
-	expect(parsed.production_steps.announcements_write).toHaveProperty("temperature", 0.2);
+	expect(parsed.production_steps.main_story_write).toMatchObject({
+		temperature: 0.7,
+		top_p: 0.95,
+		top_k: 20,
+		enable_thinking: false,
+	});
+	expect(parsed.production_steps.announcements_write).toMatchObject({
+		temperature: 0.2,
+		top_p: 0.9,
+		top_k: 40,
+		enable_thinking: true,
+	});
 
 	for (const invalidStep of [
 		{ ...independent.production_steps.main_story_write, temperature: 2.1 },
 		{ ...independent.production_steps.main_story_write, sampling: { temperature: 0, top_p: 1, top_k: 1 } },
-		{ ...independent.production_steps.main_story_write, top_p: 1 },
-		{ ...independent.production_steps.main_story_write, top_k: 1 },
+		{ ...independent.production_steps.main_story_write, top_p: 1.1 },
+		{ ...independent.production_steps.main_story_write, top_k: 0 },
+		{ ...independent.production_steps.main_story_write, enable_thinking: "false" },
 	]) {
 		expect(EvalConfigSchema.safeParse({
 			production_steps: { ...independent.production_steps, main_story_write: invalidStep },

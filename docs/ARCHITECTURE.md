@@ -163,7 +163,7 @@ production code traverse package internals.
 
 `MODEL_CONFIG` and eval configuration contain one complete independent
 configuration per production agent: non-secret adapter identity, requested
-model, optional temperature, and adapter-specific reasoning or billing
+model, optional adapter-specific inference settings, and reasoning or billing
 declarations. `LMSTUDIO_BASE_URL`,
 `HOSTED_MODEL_BASE_URL`, `HOSTED_MODEL_API_KEY`, `CLOUDFLARE_ACCOUNT_ID`, and
 `CLOUDFLARE_API_TOKEN` are environment-only, and a
@@ -273,13 +273,15 @@ For local development, copy `apps/generation/.dev.vars.example` to the ignored
 `apps/generation/.dev.vars`. Wrangler loads that file for the generation Worker.
 `MODEL_CONFIG` is strict and contains exactly
 `main_story_write` and `announcements_write`. Every LM Studio adapter requires
-`reasoning_effort: provider_default`. Finite `temperature` from zero through two
-is the only operator-configurable decoding control and is optional independently
-on every step. Omission sends no temperature override for that agent. `top_p`
-and `top_k` are not admitted or sent. Invalid or obsolete fields reject rather
-than being completed or approximated by the application. The native SDK request
-omits reasoning effort because its public prediction options do not expose that
-control; explicit effort values reject instead of being approximated. LM Studio
+`reasoning_effort: provider_default`. Each step may independently declare
+`temperature` from zero through two, `top_p` from zero through one, `top_k` from
+one through 500, and boolean `enable_thinking`. Each omitted field independently
+uses the loaded model's LM Studio inference default. One typed application
+configuration maps those names once to the native SDK's `temperature`,
+`topPSampling`, `topKSampling`, and `enableThinking` request options. Invalid or
+obsolete fields reject rather than being completed or approximated by the
+application. `reasoning_effort` remains a declaration rather than an SDK request
+field; explicit effort values reject instead of being approximated. LM Studio
 and profiled Gateway requests use strict inline JSON schemas derived from the
 same Zod contracts that validate outputs. Recorded requests receive no provider
 decoding controls.
@@ -312,10 +314,11 @@ previous committed set in place. Recording has no judge, score, threshold,
 byte pin, or source-digest acceptance gate.
 
 Current recorded-response version 3 artifacts retain the exact adapter, model,
-optional temperature, and adapter-specific declarations for each production
-step. Absent-version and version 2 responses keep their historical meaning and
-remain parseable. Fixture authoring may omit or set temperature independently
-for every step; retained configuration is evidence, not a replay instruction.
+optional per-step inference settings, and adapter-specific declarations for
+each production step. Absent-version and version 2 responses keep their
+historical meaning and remain parseable. Fixture authoring may omit or set each
+inference field independently for every step; retained configuration is
+evidence, not a replay instruction.
 
 The model-evaluation command is a separate surface:
 `benchmark run --fixture <path> --config <path> [--results-dir <path>]`. Its strict
@@ -538,10 +541,11 @@ clean commit; no second unbound workspace digest competes with the commit
 identity.
 
 Model evaluation declarations assign an exact configuration to every role and
-may vary model and temperature independently across those roles. Omitting
-temperature for one role includes that provider default as a candidate without
-affecting the other three. Declarations retain repetition and transport retry
-limits as run-level experiment and infrastructure controls. Results are
+may vary model and adapter-specific inference settings independently across
+those roles. Omitting one inference field for one role includes that field's
+provider default as a candidate without affecting any other role or field.
+Declarations retain repetition and transport retry limits as run-level
+experiment and infrastructure controls. Results are
 inspected through `benchmark summary`; the summary retains every actual trial
 outcome and exact configuration identity but does not decide quality or
 acceptance.
@@ -697,10 +701,11 @@ Qwen model and the same model id across both production-step configs; it
 never loads, switches, unloads, or contacts a hosted model.
 
 Current context-result version 3 artifacts retain the exact two independent LM
-Studio production-step configurations and optional temperatures. Version 2 and
-absent-version context results retain their historical meanings. The command
-requires one loaded model because it measures one runtime context, but each role
-still retains and uses its own temperature choice.
+Studio production-step configurations, including optional `temperature`,
+`top_p`, `top_k`, and `enable_thinking`. Version 2 and absent-version context
+results retain their historical meanings. The command requires one loaded model
+because it measures one runtime context, but each role still retains and uses
+its own inference choices.
 
 The representative evidence corpus produces 208 prepared messages under the
 unchanged evidence-message sampler, so its fixed measurement matrix is 1, 50,

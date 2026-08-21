@@ -56,15 +56,15 @@ and replay unchanged. Version 2 remains a frozen historical contract with its
 former provider-default or complete `temperature`/`top_p`/`top_k` sampling
 evidence. The current recorder writes strict response version 3. Every v3
 response retains the exact adapter configuration accepted for that production
-step: provider, model, optional temperature, reasoning declaration, and hosted
-billing evidence where applicable.
+step: provider, model, optional inference settings, reasoning declaration, and
+hosted billing evidence where applicable.
 
-Temperature omission means that exact production model step used its provider
-default for that run. Temperature presence records the exact value sent. Current configuration
-does not admit or send `top_p` or `top_k`, and there is no run-wide sampling
-posture: every production step is independently configurable.
+For LM Studio, omission of `temperature`, `top_p`, `top_k`, or
+`enable_thinking` means that exact field used its provider default for that run;
+presence records the exact value sent. There is no run-wide sampling posture:
+every production step and every field are independently configurable.
 
-Obsolete decoding fields, invalid temperatures, extra fields, and unknown
+Obsolete decoding containers, invalid inference values, extra fields, and unknown
 versions reject at the current response boundary. Configuration is retained
 evidence; the recorded provider never applies it during replay.
 
@@ -79,7 +79,7 @@ observed request hash, and v3 production-step configuration into a
 same-filesystem staging directory, validates and replays the complete staged
 roster, and compares only the final main-story and announcements products
 before recoverable all-or-none directory promotion. The command report lists
-each production step's retained model and optional temperature.
+each production step's complete retained configuration.
 Only one recorder may own a response directory at a time. A concurrent recorder
 is rejected; one stale owner may be quarantined before recovery, and a recorder
 whose lock ownership changes cannot release the replacement owner's lock.

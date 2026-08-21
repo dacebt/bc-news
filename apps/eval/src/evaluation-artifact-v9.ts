@@ -946,6 +946,13 @@ export const V9BenchmarkRunSchema = V9BenchmarkRunBaseSchema.superRefine(
 				}
 				const declaration = run.declaration.configurations.find(({ identity }) => identity === gateway.config_identity);
 				const adapter = declaration?.config.production_steps[gateway.production_step];
+				let expectedReasoningPosture: "provider_default" | "thinking_enabled" | "thinking_disabled" = "provider_default";
+				if (adapter?.adapter === "lmstudio" && adapter.enable_thinking === true) {
+					expectedReasoningPosture = "thinking_enabled";
+				}
+				if (adapter?.adapter === "lmstudio" && adapter.enable_thinking === false) {
+					expectedReasoningPosture = "thinking_disabled";
+				}
 				const retainedInvocation = run.trials
 					.flatMap(({ invocations }) => invocations)
 					.find(({ id }) => id === gateway.invocation_id);
@@ -954,7 +961,7 @@ export const V9BenchmarkRunSchema = V9BenchmarkRunBaseSchema.superRefine(
 					(evidence.evidence.execution_context.requested_reasoning_posture
 						.state !== "observed" ||
 						evidence.evidence.execution_context.requested_reasoning_posture.value !==
-							"provider_default")
+							expectedReasoningPosture)
 				) {
 					context.addIssue({
 						code: "custom",
@@ -965,8 +972,7 @@ export const V9BenchmarkRunSchema = V9BenchmarkRunBaseSchema.superRefine(
 							"execution_context",
 							"requested_reasoning_posture",
 						],
-						message:
-							"captured runtime evidence must retain the provider_default reasoning posture",
+						message: `captured runtime evidence must retain the ${expectedReasoningPosture} reasoning posture`,
 					});
 				}
 				if (

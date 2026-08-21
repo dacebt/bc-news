@@ -7,7 +7,7 @@ import {
 	LmStudioRetryableError,
 	createLmStudioModelProvider,
 	lmStudioSdkBaseUrl,
-	type ModelTemperature,
+	type LmStudioInferenceConfig,
 } from "../src/index";
 
 const sdk = vi.hoisted(() => ({ constructor: vi.fn() }));
@@ -15,6 +15,19 @@ const sdk = vi.hoisted(() => ({ constructor: vi.fn() }));
 vi.mock("@lmstudio/sdk", () => ({ LMStudioClient: sdk.constructor }));
 
 const LOCAL_TEMPERATURE = 0.6;
+const PROVIDER_DEFAULT_INFERENCE: LmStudioInferenceConfig = {
+	temperature: undefined,
+	topP: undefined,
+	topK: undefined,
+	enableThinking: undefined,
+};
+const LOCAL_INFERENCE: LmStudioInferenceConfig = {
+	...PROVIDER_DEFAULT_INFERENCE,
+	temperature: LOCAL_TEMPERATURE,
+	topP: 0.95,
+	topK: 20,
+	enableThinking: false,
+};
 const request = {
 	productionStep: "main_story_write" as const,
 	system: "system constraints",
@@ -115,12 +128,12 @@ function queueClient(
 }
 
 function provider(
-	options: { readonly temperature?: ModelTemperature } = { temperature: LOCAL_TEMPERATURE },
+	inference: LmStudioInferenceConfig = LOCAL_INFERENCE,
 ) {
 	return createLmStudioModelProvider({
 		baseUrl: "http://127.0.0.1:1234/v1",
 		requestedModel: "qwen/qwen3.5-9b",
-		...(options.temperature === undefined ? {} : { temperature: options.temperature }),
+		inference,
 		reasoningEffort: "provider_default",
 		structuredOutputContracts: PRODUCTION_STEP_OUTPUT_CONTRACTS,
 	});
@@ -144,22 +157,32 @@ it("accepts only provider-default reasoning for current LM Studio configuration"
 	}
 });
 
-it("accepts an optional temperature and rejects obsolete or invalid decoding settings", () => {
+it("accepts independent LM Studio inference controls and rejects invalid values", () => {
 	const candidate = {
 		adapter: "lmstudio",
 		model: "qwen/qwen3.5-9b",
 		reasoning_effort: "provider_default",
 	};
 	expect(LmStudioAdapterConfigSchema.safeParse(candidate).success).toBe(true);
-	expect(LmStudioAdapterConfigSchema.safeParse({ ...candidate, temperature: LOCAL_TEMPERATURE }).success).toBe(true);
+	expect(LmStudioAdapterConfigSchema.safeParse({
+		...candidate,
+		temperature: LOCAL_TEMPERATURE,
+		top_p: 0.95,
+		top_k: 20,
+		enable_thinking: false,
+	}).success).toBe(true);
 
 	for (const invalid of [
 		{ ...candidate, temperature: -0.1 },
 		{ ...candidate, temperature: 2.1 },
 		{ ...candidate, temperature: Number.NaN },
 		{ ...candidate, sampling: { temperature: 1, top_p: 0.95, top_k: 20 } },
-		{ ...candidate, top_p: 0.95 },
-		{ ...candidate, top_k: 20 },
+		{ ...candidate, top_p: -0.1 },
+		{ ...candidate, top_p: 1.1 },
+		{ ...candidate, top_k: 0 },
+		{ ...candidate, top_k: 501 },
+		{ ...candidate, top_k: 20.5 },
+		{ ...candidate, enable_thinking: "false" },
 	]) {
 		expect(LmStudioAdapterConfigSchema.safeParse(invalid).success).toBe(false);
 	}
@@ -236,7 +259,7 @@ it("uses the exact loaded model, native structured prediction, truthful evidence
 				trained_for_tool_use: { state: "observed", value: true },
 			},
 			context_length: { state: "observed", value: 32_768 },
-			requested_reasoning_posture: { state: "observed", value: "provider_default" },
+			requested_reasoning_posture: { state: "observed", value: "thinking_disabled" },
 			effective_reasoning_setting: { state: "externally_controlled", reason: "provider_controlled" },
 			speculative_draft_model_identity: { state: "unknown", reason: "not_reported" },
 		},
@@ -262,6 +285,9 @@ it("uses the exact loaded model, native structured prediction, truthful evidence
 		],
 		expect.objectContaining({
 			temperature: LOCAL_TEMPERATURE,
+			topPSampling: 0.95,
+			topKSampling: 20,
+			enableThinking: false,
 			structured: {
 				type: "json",
 				jsonSchema: PRODUCTION_STEP_OUTPUT_CONTRACTS.main_story_write.schema,
@@ -271,8 +297,9 @@ it("uses the exact loaded model, native structured prediction, truthful evidence
 	const options = model.respond.mock.calls[0]?.[1] as Record<string, unknown>;
 	expect(options.signal).toBeInstanceOf(AbortSignal);
 	expect(options).toHaveProperty("temperature", LOCAL_TEMPERATURE);
-	expect(options).not.toHaveProperty("topPSampling");
-	expect(options).not.toHaveProperty("topKSampling");
+	expect(options).toHaveProperty("topPSampling", 0.95);
+	expect(options).toHaveProperty("topKSampling", 20);
+	expect(options).toHaveProperty("enableThinking", false);
 	expect(options).not.toHaveProperty("reasoningEffort");
 	expect(options).not.toHaveProperty("reasoning_effort");
 	expect(options).not.toHaveProperty("raw");
@@ -397,16 +424,17 @@ it("normalizes invalid and missing runtime observations instead of retaining fal
 	});
 });
 
-it("omits temperature for a provider-default evaluation candidate", async () => {
+it("omits every inference override for a provider-default evaluation candidate", async () => {
 	const model = loadedModel();
 	queueClient([model]);
 
-	await provider({}).complete(request);
+	await provider(PROVIDER_DEFAULT_INFERENCE).complete(request);
 
 	const options = model.respond.mock.calls[0]?.[1] as Record<string, unknown>;
 	expect(options).not.toHaveProperty("temperature");
 	expect(options).not.toHaveProperty("topPSampling");
 	expect(options).not.toHaveProperty("topKSampling");
+	expect(options).not.toHaveProperty("enableThinking");
 	expect(options).toMatchObject({
 		structured: {
 			type: "json",

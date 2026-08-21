@@ -6,6 +6,8 @@ export {
 	HostedModelAdapterConfigSchema,
 	LmStudioAdapterConfigSchema,
 	LmStudioReasoningEffortSchema,
+	LmStudioTopKSchema,
+	LmStudioTopPSchema,
 	ModelTemperatureSchema,
 	type CalculatedBillingConfig,
 	type CloudflareAiGatewayAdapterConfig,
@@ -13,6 +15,8 @@ export {
 	type HostedModelAdapterConfig,
 	type LmStudioAdapterConfig,
 	type LmStudioReasoningEffort,
+	type LmStudioTopK,
+	type LmStudioTopP,
 	type ModelTemperature,
 } from "./config";
 export {
@@ -61,6 +65,8 @@ export {
 export {
 	buildLmStudioPredictionRequest,
 	createLmStudioModelProvider,
+	lmStudioInferenceConfig,
+	type LmStudioInferenceConfig,
 	type LmStudioPredictionRequest,
 	type LmStudioPredictionRequestInput,
 	type LmStudioProviderInput,

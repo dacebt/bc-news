@@ -114,9 +114,10 @@ canonical optional properties are nullable, and returned null placeholders
 normalize back to the canonical optional shape. Both current paths
 retain every exact per-role configuration, schema-valid writer diagnostic,
 and a lifecycle-matched runtime-evidence record for every invocation. Each role
-independently chooses a provider, model, and optional temperature; omission
-includes that role's provider default as a candidate. Temperature is the only
-operator-configurable decoding control. LM Studio and profiled Gateway models
+independently chooses a provider, model, and adapter-specific inference
+settings. For LM Studio, `temperature`, `top_p`, `top_k`, and
+`enable_thinking` are independently optional; omission includes that field's
+provider default as a candidate. LM Studio and profiled Gateway models
 receive the same strict production-step JSON Schema, while each Gateway model
 profile owns its provider request encoding. Model evaluation compares these
 candidate configurations to select production settings; it is not a
@@ -144,10 +145,11 @@ retain its Gateway request provenance. `context benchmark --fixture <path> [--re
 <path>]` writes strict context-measurement results. Neither tool creates a
 Benchmark Run or Run File and neither confers acceptance.
 Current recorded-response version 3 and context-result version 3 artifacts
-retain every exact per-step configuration and optional temperature. Historical
-versions keep their original meanings. Either tool may independently omit or
-set temperature for each step; the declaration, not the command name,
-determines the experiment.
+retain every exact per-step configuration and optional LM Studio inference
+setting. Historical versions keep their original meanings. Either tool may
+independently omit or set `temperature`, `top_p`, `top_k`, and
+`enable_thinking` for each LM Studio step; the declaration, not the command
+name, determines the experiment.
 
 **The evaluation reference corpus** is a deterministic input-evidence domain,
 not a model evaluation result. `corpus extract --snapshot <sqlite-path>
@@ -517,8 +519,8 @@ proves, tests of glue and framework wiring, tests to satisfy coverage.
   announcement identity/order, paragraph count, quotes, numeric literals,
   and protected markdown spans. They cannot prove semantic equivalence or prose
   quality. Representative live-model evaluation compares candidate model and
-  temperature configurations for each role before production selection;
-  provider defaults are candidates rather than a privileged baseline.
+  inference configurations for each role before production selection; provider
+  defaults are candidates rather than a privileged baseline.
 - Exact context-budget measurement runs through
   `pnpm --filter @bc-news/eval eval -- context benchmark --fixture packages/fixtures`.
   Automated tests use a fake local runtime and fake completion endpoint; they
@@ -526,8 +528,9 @@ proves, tests of glue and framework wiring, tests to satisfy coverage.
   already-loaded local Qwen model, rejects any hosted or mixed-model config,
   and never loads, unloads, or switches model state.
 - Current context-result version 3 tests require every production-step model and
-  optional temperature to survive write and reparse independently. Version 2
-  and absent-version context results continue through their frozen parsers.
+  optional `temperature`, `top_p`, `top_k`, and `enable_thinking` value to
+  survive write and reparse independently. Version 2 and absent-version context
+  results continue through their frozen parsers.
 - The representative corpus prepares to 208 messages under the unchanged
   evidence-message sampler, so the truthful representative matrix is 1, 50,
   100, 150, and 208.

@@ -6,7 +6,13 @@ import type {
 	ModelProviderRequest,
 	ProductionModelStep,
 } from "@bc-news/generation-core";
-import type { LmStudioReasoningEffort, ModelTemperature } from "./config";
+import type {
+	LmStudioAdapterConfig,
+	LmStudioReasoningEffort,
+	LmStudioTopK,
+	LmStudioTopP,
+	ModelTemperature,
+} from "./config";
 import { lmStudioSdkBaseUrl } from "./lmstudio-base-url";
 import {
 	LmStudioDeterministicError,
@@ -18,10 +24,26 @@ import { lmStudioRuntimeEvidence, observeLmStudioAuxiliary } from "./lmstudio-ru
 const COMPLETION_TIMEOUT_MS = 1_800_000;
 const SUCCESSFUL_STOP_REASONS = new Set(["eosFound", "stopStringFound"]);
 
+export interface LmStudioInferenceConfig {
+	readonly temperature: ModelTemperature | undefined;
+	readonly topP: LmStudioTopP | undefined;
+	readonly topK: LmStudioTopK | undefined;
+	readonly enableThinking: boolean | undefined;
+}
+
+export function lmStudioInferenceConfig(config: LmStudioAdapterConfig): LmStudioInferenceConfig {
+	return {
+		temperature: config.temperature,
+		topP: config.top_p,
+		topK: config.top_k,
+		enableThinking: config.enable_thinking,
+	};
+}
+
 export interface LmStudioProviderInput {
 	readonly baseUrl: string;
 	readonly requestedModel: string;
-	readonly temperature?: ModelTemperature;
+	readonly inference: LmStudioInferenceConfig;
 	readonly reasoningEffort: LmStudioReasoningEffort;
 	readonly structuredOutputContracts: ProductionStepOutputContracts;
 }
@@ -30,43 +52,46 @@ export interface LmStudioPredictionRequestInput {
 	readonly productionStep: ProductionModelStep;
 	readonly system: string;
 	readonly user: string;
-	readonly temperature?: ModelTemperature;
+	readonly inference: LmStudioInferenceConfig;
 	readonly structuredOutputContracts: ProductionStepOutputContracts;
 }
 
-type LmStudioTemperaturePredictionOption =
-	| { readonly temperature: number }
-	| { readonly temperature?: never };
+interface LmStudioSdkPredictionOptions {
+	temperature?: ModelTemperature;
+	topPSampling?: LmStudioTopP;
+	topKSampling?: LmStudioTopK;
+	enableThinking?: boolean;
+	structured: {
+			readonly type: "json";
+			readonly jsonSchema: Readonly<Record<string, unknown>>;
+	};
+}
 
 export interface LmStudioPredictionRequest {
 	readonly chat: [
 		{ readonly role: "system"; readonly content: string },
 		{ readonly role: "user"; readonly content: string },
 	];
-	readonly options: LmStudioTemperaturePredictionOption & {
-		readonly structured: {
-			readonly type: "json";
-			readonly jsonSchema: Readonly<Record<string, unknown>>;
-		};
-	};
+	readonly options: Readonly<LmStudioSdkPredictionOptions>;
 }
 
 export function buildLmStudioPredictionRequest(
 	input: LmStudioPredictionRequestInput,
 ): LmStudioPredictionRequest {
 	const contract = input.structuredOutputContracts[input.productionStep];
-	const temperatureOption: LmStudioTemperaturePredictionOption = input.temperature === undefined
-		? {}
-		: { temperature: input.temperature };
+	const options: LmStudioSdkPredictionOptions = {
+		structured: { type: "json", jsonSchema: contract.schema },
+	};
+	if (input.inference.temperature !== undefined) options.temperature = input.inference.temperature;
+	if (input.inference.topP !== undefined) options.topPSampling = input.inference.topP;
+	if (input.inference.topK !== undefined) options.topKSampling = input.inference.topK;
+	if (input.inference.enableThinking !== undefined) options.enableThinking = input.inference.enableThinking;
 	return {
 		chat: [
 			{ role: "system" as const, content: input.system },
 			{ role: "user" as const, content: input.user },
 		],
-		options: {
-			...temperatureOption,
-			structured: { type: "json" as const, jsonSchema: contract.schema },
-		},
+		options,
 	};
 }
 
@@ -255,7 +280,7 @@ export function createLmStudioModelProvider(input: LmStudioProviderInput): Model
 						productionStep: request.productionStep,
 						system: request.system,
 						user: request.user,
-						...(input.temperature === undefined ? {} : { temperature: input.temperature }),
+						inference: input.inference,
 						structuredOutputContracts: input.structuredOutputContracts,
 					});
 					const result = await model.respond(
@@ -282,6 +307,7 @@ export function createLmStudioModelProvider(input: LmStudioProviderInput): Model
 							model,
 							requestedModel: input.requestedModel,
 							reasoningEffort: input.reasoningEffort,
+							enableThinking: input.inference.enableThinking,
 							version: await versionObservation,
 							modelInfo: await modelInfoObservation,
 							contextLength: await contextLengthObservation,

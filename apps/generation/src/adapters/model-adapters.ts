@@ -11,6 +11,7 @@ import {
 	OpenAiCompatibleDeterministicError,
 	createOpenAiCompatibleModelProvider,
 	createCloudflareAiGatewayModelProvider,
+	lmStudioInferenceConfig,
 } from "@bc-news/model-adapters";
 import { GenerationConfigError } from "../config-error";
 import { createLmStudioModelProvider } from "./lmstudio-model-provider";
@@ -59,7 +60,7 @@ export function resolveModelProvider(
 			return construct(() => createLmStudioModelProvider({
 				baseUrl,
 				model: config.model,
-				...(config.temperature === undefined ? {} : { temperature: config.temperature }),
+				inference: lmStudioInferenceConfig(config),
 				reasoningEffort: config.reasoning_effort,
 			}));
 		}

@@ -42,11 +42,16 @@ export const RecordedModelResponseV2Schema = z.strictObject({
 });
 
 const RecordedModelTemperatureSchema = z.number().finite().min(0).max(2);
+const RecordedLmStudioTopPSchema = z.number().finite().min(0).max(1);
+const RecordedLmStudioTopKSchema = z.number().int().min(1).max(500);
 const RecordedModelConfigurationSchema = z.discriminatedUnion("adapter", [
 	z.strictObject({
 		adapter: z.literal("lmstudio"),
 		model: z.string().trim().min(1),
 		temperature: RecordedModelTemperatureSchema.optional(),
+		top_p: RecordedLmStudioTopPSchema.optional(),
+		top_k: RecordedLmStudioTopKSchema.optional(),
+		enable_thinking: z.boolean().optional(),
 		reasoning_effort: z.literal("provider_default"),
 	}),
 	z.strictObject({

@@ -14,6 +14,7 @@ import {
 import {
 	PRODUCTION_STEP_OUTPUT_CONTRACTS,
 	buildLmStudioPredictionRequest,
+	lmStudioInferenceConfig,
 	type LmStudioAdapterConfig,
 } from "@bc-news/model-adapters";
 import {
@@ -241,7 +242,7 @@ async function measureCompletion(input: {
 		productionStep: input.step,
 		system: input.prompt.system,
 		user: input.prompt.user,
-		...(input.config.temperature === undefined ? {} : { temperature: input.config.temperature }),
+		inference: lmStudioInferenceConfig(input.config),
 		structuredOutputContracts: PRODUCTION_STEP_OUTPUT_CONTRACTS,
 	});
 	const contract = PRODUCTION_STEP_OUTPUT_CONTRACTS[input.step];

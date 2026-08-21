@@ -77,6 +77,7 @@ type NativeRequest = {
 		readonly temperature?: number;
 		readonly topPSampling?: number;
 		readonly topKSampling?: number;
+		readonly enableThinking?: boolean;
 		readonly structured: {
 			readonly type: "json";
 			readonly jsonSchema: Readonly<Record<string, unknown>>;
@@ -89,6 +90,9 @@ function localStepConfig(model: string, temperature: number) {
 		adapter: "lmstudio",
 		model,
 		temperature,
+		top_p: 0.95,
+		top_k: 20,
+		enable_thinking: false,
 		reasoning_effort: "provider_default",
 	};
 }
@@ -206,9 +210,10 @@ test("benchmarks the exact dependent two-step roster at every canonical message 
 		expect(request.step).toBe(expectedSteps[index]);
 		expect(request.options).toMatchObject({
 			temperature: temperatures[request.step],
+			topPSampling: 0.95,
+			topKSampling: 20,
+			enableThinking: false,
 		});
-		expect(request.options).not.toHaveProperty("topPSampling");
-		expect(request.options).not.toHaveProperty("topKSampling");
 		expect(request.options.structured.type).toBe("json");
 		expect(request.options.structured.jsonSchema).toEqual(expect.objectContaining({ type: "object" }));
 	}
@@ -240,7 +245,7 @@ test("benchmarks the exact dependent two-step roster at every canonical message 
 	expect(JSON.parse(saved)).toEqual(report);
 });
 
-test("omits temperature independently for provider-default candidates", async () => {
+test("omits inference settings independently for provider-default candidates", async () => {
 	const { runtime } = createRuntime();
 	const { requests } = installNativeCompletions();
 	const { report } = await runContextBenchmark({
@@ -254,6 +259,7 @@ test("omits temperature independently for provider-default candidates", async ()
 		expect(request.options).not.toHaveProperty("temperature");
 		expect(request.options).not.toHaveProperty("topPSampling");
 		expect(request.options).not.toHaveProperty("topKSampling");
+		expect(request.options).not.toHaveProperty("enableThinking");
 	}
 	expect(report.agent_configurations).toEqual({
 		main_story_write: providerDefaultLocalStepConfig(MODEL),
@@ -303,7 +309,7 @@ test("rejects mixed local model names before opening the local runtime", async (
 	expect(getOnlyLoadedQwen).not.toHaveBeenCalled();
 });
 
-test("accepts independent explicit and provider-default temperatures", async () => {
+test("accepts independent explicit and provider-default inference settings", async () => {
 	const { runtime, getOnlyLoadedQwen } = createRuntime();
 	installNativeCompletions();
 	const config = JSON.parse(MODEL_CONFIG) as Record<string, unknown>;
@@ -315,7 +321,12 @@ test("accepts independent explicit and provider-default temperatures", async () 
 		environment: benchmarkEnvironment(JSON.stringify(config)),
 		runtime,
 	});
-	expect(report.agent_configurations.main_story_write).toHaveProperty("temperature", 0.7);
+	expect(report.agent_configurations.main_story_write).toMatchObject({
+		temperature: 0.7,
+		top_p: 0.95,
+		top_k: 20,
+		enable_thinking: false,
+	});
 	expect(report.agent_configurations.announcements_write).not.toHaveProperty("temperature");
 	expect(getOnlyLoadedQwen).toHaveBeenCalledOnce();
 });

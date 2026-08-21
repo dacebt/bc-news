@@ -53,7 +53,7 @@ test.each([
 	expect(RecordedModelResponseSchema.parse(response)).toEqual(response);
 });
 
-test("accepts strict v3 configuration and rejects obsolete decoding controls", () => {
+test("accepts strict v3 inference configuration and rejects invalid decoding controls", () => {
 	const response = RecordedModelResponseV3Schema.parse({
 		...mainStoryWriteResponseJson,
 		version: 3,
@@ -61,16 +61,25 @@ test("accepts strict v3 configuration and rejects obsolete decoding controls", (
 			adapter: "lmstudio",
 			model: "local/main-story-writer",
 			temperature: 0.7,
+			top_p: 0.95,
+			top_k: 20,
+			enable_thinking: false,
 			reasoning_effort: "provider_default",
 		},
 	});
-	expect(response.configuration).toHaveProperty("temperature", 0.7);
+	expect(response.configuration).toMatchObject({
+		temperature: 0.7,
+		top_p: 0.95,
+		top_k: 20,
+		enable_thinking: false,
+	});
 	expect(RecordedModelResponseSchema.parse(response)).toEqual(response);
 	for (const configuration of [
 		{ ...response.configuration, temperature: 2.1 },
 		{ ...response.configuration, sampling: { temperature: 0, top_p: 1, top_k: 40 } },
-		{ ...response.configuration, top_p: 1 },
-		{ ...response.configuration, top_k: 40 },
+		{ ...response.configuration, top_p: 1.1 },
+		{ ...response.configuration, top_k: 0 },
+		{ ...response.configuration, enable_thinking: "false" },
 	]) {
 		expect(RecordedModelResponseV3Schema.safeParse({ ...response, configuration }).success).toBe(false);
 	}
@@ -162,6 +171,9 @@ test("replays v3 response text without treating retained configuration as an ins
 			adapter: "lmstudio",
 			model: "local/main-story-writer",
 			temperature: 0.7,
+			top_p: 0.95,
+			top_k: 20,
+			enable_thinking: false,
 			reasoning_effort: "provider_default",
 		},
 	});

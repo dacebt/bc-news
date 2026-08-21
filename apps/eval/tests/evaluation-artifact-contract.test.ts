@@ -208,6 +208,9 @@ test("binds usage and billing evidence to the declared adapter", async () => {
 		adapter: "lmstudio",
 		model: "local/requested-model",
 		temperature: 0.2,
+		top_p: 0.95,
+		top_k: 20,
+		enable_thinking: false,
 		reasoning_effort: "provider_default",
 	};
 	const localIdentity = evaluationConfigIdentity(localDeclaration.config);
@@ -223,6 +226,10 @@ test("binds usage and billing evidence to the declared adapter", async () => {
 	localRuntime.evidence.execution_context.selected_model.requested_identity = {
 		state: "observed",
 		value: "local/requested-model",
+	};
+	localRuntime.evidence.execution_context.requested_reasoning_posture = {
+		state: "observed",
+		value: "thinking_disabled",
 	};
 	if (localInvocation.transport !== "succeeded") throw new Error("expected local completion");
 	localInvocation.completion.execution = "local_inference";

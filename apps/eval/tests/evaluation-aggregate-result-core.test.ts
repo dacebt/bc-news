@@ -28,7 +28,15 @@ const HASH = "1".repeat(64);
 const ALT_HASH = "2".repeat(64);
 
 const CURRENT_PRODUCTION_STEPS = {
-	main_story_write: { adapter: "recorded" },
+	main_story_write: {
+		adapter: "lmstudio",
+		model: "local-main-story",
+		temperature: 0.7,
+		top_p: 0.95,
+		top_k: 20,
+		enable_thinking: false,
+		reasoning_effort: "provider_default",
+	},
 	announcements_write: {
 		adapter: "openai_compatible_hosted",
 		provider: "openai",
@@ -373,7 +381,15 @@ test("builds a strict v3 aggregate projection with current scorecard provenance"
 		"main_story_write",
 		"announcements_write",
 	]);
-	expect(mainStoryWrite.subject).toEqual({ adapter: "recorded" });
+	expect(mainStoryWrite.subject).toEqual({
+		adapter: "lmstudio",
+		model: "local-main-story",
+		temperature: 0.7,
+		top_p: 0.95,
+		top_k: 20,
+		enable_thinking: false,
+		reasoning_effort: "provider_default",
+	});
 	expect(announcementsWrite.subject).toEqual({
 		adapter: "openai_compatible_hosted",
 		provider: "openai",
@@ -451,6 +467,9 @@ test("keeps historical v1 and v2 aggregate readers explicit while current report
 	expect(report).toContain("Benchmark Run version: v9");
 	expect(report).toContain("Annotation protocol: bc-news-output-annotation v3");
 	expect(report).toContain("Qualitative rubric: bc-news-editorial-qualitative v3");
+	expect(report).toContain(
+		"Subject: adapter=lmstudio | model=local-main-story | temperature=0.7 | top_p=0.95 | top_k=20 | enable_thinking=false | reasoning_effort=provider_default",
+	);
 	expect(report).not.toContain("Role: main_story_copyedit");
 	expect(report).not.toContain("Role: announcements_copyedit");
 
