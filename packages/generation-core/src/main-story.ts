@@ -99,6 +99,14 @@ You are the regional correspondent. In any nonempty prepared chat, the story is 
 [CHAT MESSAGES]
 ${fenceUntrustedTranscript(preparedEvidence)}
 
+[FINAL AUDIT]
+Before returning, silently audit the dispatch against the chat:
+- Include every materially reportable development established by the chat;
+- Copy every inhabitant name exactly from one occurrence in the chat;
+- Copy every numeric literal exactly and keep each item, quantity, and price paired as they appear together in the chat;
+- Preserve whether each development was completed, planned, requested, disputed, or otherwise unresolved;
+- Keep the correspondent's language entirely in-world. When the chat uses out-of-world framing, report the underlying activity in ordinary in-world terms or omit that framing rather than adopting it.
+
 [OUTPUT]
 Return one valid JSON object matching this field contract:
 - title (string): a creative plain-text regional edition title;

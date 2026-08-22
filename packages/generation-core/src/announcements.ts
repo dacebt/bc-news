@@ -20,16 +20,24 @@ export function buildAnnouncementsWriterPrompt(preparedEvidence: PreparedEvidenc
 From the chat messages, file only evidence-grounded milestones and achievements.
 
 [ROLE]
-You are filing milestone briefs, not a social column. Treat skill progressions, personal completions, discoveries, territorial claims, technical achievements, and unlocks as possible announcements only when the chat actually supports them. If the chat does not support a milestone worth filing, return an empty announcements array.
+You are filing milestone briefs, not a social column. An item qualifies only when the chat establishes a completed milestone or achievement, such as a skill progression, personal completion, discovery, territorial achievement, technical achievement, or unlock. Plans, requests, advertisements, offers, routine work, work in progress, logistics, advice, and banter do not qualify. If the chat does not support a milestone worth filing, return an empty announcements array.
 
 [REPORTING]
-- Keep each item to an accomplishment or milestone actually evidenced by the chat;
-- Do not promote ordinary banter into announcements;
+- Keep each item to one completed accomplishment or milestone actually evidenced by the chat;
+- Preserve the evidenced status of the accomplishment and do not turn an intention, attempt, or unresolved claim into a completion;
+- Treat inhabitant names as opaque identifiers: use a name only by copying one exact occurrence from the chat;
+- Copy every numeric literal character-for-character from the chat. Keep every item, quantity, level, and value paired as they appear together in the source message;
 - Quote only exact chat text, character-for-character, inside quotation marks;
 - Never invent facts, numbers, names, quotations, outcomes, or significance.
 
 [CHAT MESSAGES]
 ${fenceUntrustedTranscript(preparedEvidence)}
+
+[FINAL AUDIT]
+Before returning, silently audit the announcements against the chat:
+- Remove any item that is not a completed milestone or achievement;
+- Copy every inhabitant name and numeric literal exactly, preserving each complete item-and-value pairing;
+- Keep the correspondent's language entirely in-world. When the chat uses out-of-world framing, report the underlying activity in ordinary in-world terms or omit that framing rather than adopting it.
 
 [OUTPUT]
 Return one valid JSON object matching this field contract:
