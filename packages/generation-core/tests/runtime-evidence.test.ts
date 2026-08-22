@@ -111,3 +111,31 @@ test("keeps runtime evidence out of model usage while preserving request provena
 test("rejects inconsistent complete speculative token evidence", () => {
 	expect(ModelRuntimeEvidenceSchema.safeParse(runtimeEvidenceCandidate(10)).success).toBe(false);
 });
+
+test("accepts applied inference receipts without invalidating historical evidence that predates them", () => {
+	const historical = runtimeEvidenceCandidate(9);
+	expect(ModelRuntimeEvidenceSchema.safeParse(historical).success).toBe(true);
+	const current = {
+		...historical,
+		execution_context: {
+			...historical.execution_context,
+			applied_inference_configuration: {
+				temperature: { state: "observed" as const, value: 0.7 },
+				top_p: { state: "observed" as const, value: 0.95 },
+				top_k: { state: "observed" as const, value: 20 },
+				thinking_enabled: { state: "observed" as const, value: false },
+			},
+		},
+	};
+	expect(ModelRuntimeEvidenceSchema.safeParse(current).success).toBe(true);
+	expect(ModelRuntimeEvidenceSchema.safeParse({
+		...current,
+		execution_context: {
+			...current.execution_context,
+			applied_inference_configuration: {
+				...current.execution_context.applied_inference_configuration,
+				top_k: { state: "observed", value: 0 },
+			},
+		},
+	}).success).toBe(false);
+});

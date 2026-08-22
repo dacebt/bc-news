@@ -51,6 +51,13 @@ export const ModelRuntimeIdentitySchema = z.strictObject({
 	trained_for_tool_use: RuntimeBooleanObservationSchema,
 });
 
+export const AppliedInferenceConfigurationSchema = z.strictObject({
+	temperature: RuntimeMeasurementObservationSchema,
+	top_p: RuntimeMeasurementObservationSchema,
+	top_k: RuntimePositiveIntegerObservationSchema,
+	thinking_enabled: RuntimeBooleanObservationSchema,
+});
+
 export const ModelExecutionContextSchema = z.strictObject({
 	client_sdk_release: RuntimeStringObservationSchema,
 	provider_runtime_identity: RuntimeStringObservationSchema,
@@ -63,6 +70,7 @@ export const ModelExecutionContextSchema = z.strictObject({
 	requested_reasoning_posture: RuntimeStringObservationSchema,
 	effective_reasoning_setting: RuntimeStringObservationSchema,
 	speculative_draft_model_identity: RuntimeStringObservationSchema,
+	applied_inference_configuration: AppliedInferenceConfigurationSchema.optional(),
 });
 
 export const ModelPredictionObservationSchema = z.strictObject({
@@ -109,6 +117,7 @@ export type RuntimePositiveIntegerObservation = z.infer<typeof RuntimePositiveIn
 export type RuntimeMeasurementObservation = z.infer<typeof RuntimeMeasurementObservationSchema>;
 export type RuntimeBooleanObservation = z.infer<typeof RuntimeBooleanObservationSchema>;
 export type ModelRuntimeIdentity = z.infer<typeof ModelRuntimeIdentitySchema>;
+export type AppliedInferenceConfiguration = z.infer<typeof AppliedInferenceConfigurationSchema>;
 export type ModelExecutionContext = z.infer<typeof ModelExecutionContextSchema>;
 export type ModelPredictionObservation = z.infer<typeof ModelPredictionObservationSchema>;
 export type ModelRuntimeEvidence = z.infer<typeof ModelRuntimeEvidenceSchema>;

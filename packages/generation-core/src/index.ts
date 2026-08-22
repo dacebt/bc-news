@@ -46,6 +46,7 @@ export {
 } from "./editorial-diagnostics";
 export { assembleEdition } from "./assemble-edition";
 export {
+	AppliedInferenceConfigurationSchema,
 	ModelExecutionContextSchema,
 	ModelPredictionObservationSchema,
 	ModelRuntimeEvidenceSchema,
@@ -63,6 +64,7 @@ export {
 	observedString,
 } from "./runtime-evidence";
 export type {
+	AppliedInferenceConfiguration,
 	ModelExecutionContext,
 	ModelPredictionObservation,
 	ModelRuntimeEvidence,

@@ -28,6 +28,12 @@ const LOCAL_INFERENCE: LmStudioInferenceConfig = {
 	topK: 20,
 	enableThinking: false,
 };
+const PREDICTION_CONFIG_KEYS = {
+	temperature: "llm.prediction.temperature",
+	topP: "llm.prediction.topPSampling",
+	topK: "llm.prediction.topKSampling",
+	thinking: "llm.prediction.reasoning.enableThinking",
+} as const;
 const request = {
 	productionStep: "main_story_write" as const,
 	system: "system constraints",
@@ -46,6 +52,17 @@ interface FakeModel {
 	getModelInfo: ReturnType<typeof vi.fn>;
 	getContextLength: ReturnType<typeof vi.fn>;
 	respond: ReturnType<typeof vi.fn>;
+}
+
+function predictionConfig(overrides: Readonly<Record<string, unknown>> = {}) {
+	const values: Readonly<Record<string, unknown>> = {
+		[PREDICTION_CONFIG_KEYS.temperature]: LOCAL_TEMPERATURE,
+		[PREDICTION_CONFIG_KEYS.topP]: { checked: true, value: 0.95 },
+		[PREDICTION_CONFIG_KEYS.topK]: 20,
+		[PREDICTION_CONFIG_KEYS.thinking]: false,
+		...overrides,
+	};
+	return { fields: Object.entries(values).map(([key, value]) => ({ key, value })) };
 }
 
 function result(overrides: Record<string, unknown> = {}) {
@@ -76,6 +93,7 @@ function result(overrides: Record<string, unknown> = {}) {
 			predictedTokensCount: 25,
 			totalTokensCount: 125,
 		},
+		predictionConfig: predictionConfig(),
 		...overrides,
 	};
 }
@@ -260,8 +278,14 @@ it("uses the exact loaded model, native structured prediction, truthful evidence
 			},
 			context_length: { state: "observed", value: 32_768 },
 			requested_reasoning_posture: { state: "observed", value: "thinking_disabled" },
-			effective_reasoning_setting: { state: "externally_controlled", reason: "provider_controlled" },
+			effective_reasoning_setting: { state: "observed", value: "thinking_disabled" },
 			speculative_draft_model_identity: { state: "unknown", reason: "not_reported" },
+			applied_inference_configuration: {
+				temperature: { state: "observed", value: LOCAL_TEMPERATURE },
+				top_p: { state: "observed", value: 0.95 },
+				top_k: { state: "observed", value: 20 },
+				thinking_enabled: { state: "observed", value: false },
+			},
 		},
 		prediction_observation: {
 			provider_response_id: { state: "unknown", reason: "not_applicable" },
@@ -308,6 +332,36 @@ it("uses the exact loaded model, native structured prediction, truthful evidence
 	expect(options).not.toHaveProperty("reasoningEffort");
 	expect(options).not.toHaveProperty("reasoning_effort");
 	expect(client[Symbol.asyncDispose]).toHaveBeenCalledOnce();
+});
+
+it.each([
+	["temperature", PREDICTION_CONFIG_KEYS.temperature, 0.8],
+	["top_p", PREDICTION_CONFIG_KEYS.topP, { checked: true, value: 0.8 }],
+	["top_k", PREDICTION_CONFIG_KEYS.topK, 40],
+	["enable_thinking", PREDICTION_CONFIG_KEYS.thinking, true],
+])("rejects a server-applied %s value that differs from the request", async (_name, key, value) => {
+	const model = loadedModel({
+		respond: vi.fn().mockResolvedValue(result({
+			predictionConfig: predictionConfig({ [key]: value }),
+		})),
+	});
+	const client = queueClient([model]);
+	await expect(provider().complete(request)).rejects.toMatchObject({
+		code: "lmstudio_prediction_config_mismatch",
+	});
+	expect(client[Symbol.asyncDispose]).toHaveBeenCalledOnce();
+});
+
+it("rejects a malformed server prediction-config receipt", async () => {
+	const model = loadedModel({
+		respond: vi.fn().mockResolvedValue(result({
+			predictionConfig: predictionConfig({ [PREDICTION_CONFIG_KEYS.topK]: "20" }),
+		})),
+	});
+	queueClient([model]);
+	await expect(provider().complete(request)).rejects.toMatchObject({
+		code: "lmstudio_response_contract_rejected",
+	});
 });
 
 it.each(["version", "model_info", "context_length"] as const)(

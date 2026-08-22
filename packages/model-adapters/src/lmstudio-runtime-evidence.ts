@@ -4,6 +4,7 @@ import {
 	observedNonnegativeInteger,
 	observedPositiveInteger,
 	observedString,
+	type AppliedInferenceConfiguration,
 	type ModelRuntimeEvidence,
 	type ModelRuntimeIdentity,
 	type RuntimeNonnegativeIntegerObservation,
@@ -142,6 +143,7 @@ export function lmStudioRuntimeEvidence(input: {
 	readonly requestedModel: string;
 	readonly reasoningEffort: LmStudioReasoningEffort;
 	readonly enableThinking: boolean | undefined;
+	readonly appliedInferenceConfiguration: AppliedInferenceConfiguration;
 	readonly version: LmStudioAuxiliaryObservation<{ readonly version: string; readonly build: number }>;
 	readonly modelInfo: LmStudioAuxiliaryObservation<Awaited<ReturnType<LLM["getModelInfo"]>>>;
 	readonly contextLength: LmStudioAuxiliaryObservation<number>;
@@ -166,8 +168,13 @@ export function lmStudioRuntimeEvidence(input: {
 			requested_reasoning_posture: observedString(input.enableThinking === undefined
 				? input.reasoningEffort
 				: input.enableThinking ? "thinking_enabled" : "thinking_disabled"),
-			effective_reasoning_setting: { state: "externally_controlled", reason: "provider_controlled" },
+			effective_reasoning_setting: input.appliedInferenceConfiguration.thinking_enabled.state === "observed"
+				? observedString(input.appliedInferenceConfiguration.thinking_enabled.value
+					? "thinking_enabled"
+					: "thinking_disabled")
+				: { state: "externally_controlled", reason: "provider_controlled" },
 			speculative_draft_model_identity: observedString(input.result.stats.usedDraftModelKey),
+			applied_inference_configuration: input.appliedInferenceConfiguration,
 		},
 		prediction_observation: {
 			provider_response_id: { state: "unknown", reason: "not_applicable" },

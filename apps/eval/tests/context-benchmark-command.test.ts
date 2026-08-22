@@ -132,6 +132,24 @@ function createRuntime() {
 	return { runtime, close, getOnlyLoadedQwen };
 }
 
+function predictionConfig(options: NativeRequest["options"]) {
+	const fields: { key: string; value: unknown }[] = [];
+	if (options.temperature !== undefined) {
+		fields.push({ key: "llm.prediction.temperature", value: options.temperature });
+	}
+	if (options.topPSampling !== undefined) {
+		fields.push({
+			key: "llm.prediction.topPSampling",
+			value: { checked: true, value: options.topPSampling },
+		});
+	}
+	if (options.topKSampling !== undefined) {
+		fields.push({ key: "llm.prediction.topKSampling", value: options.topKSampling });
+	}
+	fields.push(...(options.raw?.fields ?? []));
+	return { fields };
+}
+
 function installNativeCompletions(input?: {
 	readonly omitUsage?: boolean;
 	readonly responseModel?: string;
@@ -152,6 +170,7 @@ function installNativeCompletions(input?: {
 			reasoningContent: "",
 			nonReasoningContent: RESPONSE_TEXT[step],
 			modelInfo: { identifier: input?.responseModel ?? MODEL },
+			predictionConfig: predictionConfig(options),
 			stats: {
 				stopReason: "eosFound",
 				...(input?.omitUsage

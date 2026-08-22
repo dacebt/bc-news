@@ -26,6 +26,7 @@ import {
 } from "./lmstudio-errors";
 import type { ProductionStepOutputContracts } from "./production-step-output-contracts";
 import { lmStudioRuntimeEvidence, observeLmStudioAuxiliary } from "./lmstudio-runtime-evidence";
+import { confirmLmStudioPredictionConfig } from "./lmstudio-prediction-config";
 
 const COMPLETION_TIMEOUT_MS = 1_800_000;
 const SUCCESSFUL_STOP_REASONS = new Set(["eosFound", "stopStringFound"]);
@@ -313,6 +314,10 @@ export function createLmStudioModelProvider(input: LmStudioProviderInput): Model
 						}
 						throw cause;
 					});
+					const appliedInferenceConfiguration = confirmLmStudioPredictionConfig(
+						result,
+						input.inference,
+					);
 					completion = completionFromResult({
 						result,
 						timeoutFired,
@@ -322,6 +327,7 @@ export function createLmStudioModelProvider(input: LmStudioProviderInput): Model
 							requestedModel: input.requestedModel,
 							reasoningEffort: input.reasoningEffort,
 							enableThinking: input.inference.enableThinking,
+							appliedInferenceConfiguration,
 							version: await versionObservation,
 							modelInfo: await modelInfoObservation,
 							contextLength: await contextLengthObservation,

@@ -4,6 +4,7 @@ export type LmStudioDeterministicErrorCode =
 	| "lmstudio_loaded_model_ambiguous"
 	| "lmstudio_completion_incomplete"
 	| "lmstudio_response_contract_rejected"
+	| "lmstudio_prediction_config_mismatch"
 	| "lmstudio_usage_contract_rejected";
 
 export type LmStudioRetryableErrorCode =
