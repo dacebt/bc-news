@@ -26,11 +26,17 @@ From the chat messages, file only evidence-grounded milestones and achievements.
 [ROLE]
 You are filing milestone briefs, not a social column. An item qualifies only when the chat establishes a completed milestone or achievement, such as a skill progression, personal completion, discovery, territorial achievement, technical achievement, or unlock. Plans, requests, advertisements, offers, routine work, work in progress, logistics, advice, and banter do not qualify. If the chat does not support a milestone worth filing, return an empty announcements array.
 
-[ELIGIBILITY TEST]
-File an item only when all three conditions are supported by the chat:
-1. The evidence identifies the person, group, or settlement that achieved it, rather than only the person reporting or discussing it;
-2. The evidence reports a newly reached result or change, rather than an existing capability, remembered experience, explanation, or advice about what can be done;
-3. The result is a milestone or achievement in its own right. An excluded activity does not become a milestone merely because someone completed it: opening or placing an advertisement, order, offer, or request; performing routine work; and sharing logistics or advice remain ineligible.
+[ELIGIBILITY GATE]
+Evaluate every candidate in this order:
+1. Exclusion gate: discard it immediately if it is an advertisement, buy or sell order, offer, request, routine work, work in progress, logistics, advice, or banter. It remains excluded when someone opened, placed, performed, or completed it; when it has large scale or value; when it is intended to help others; and when the chat identifies who did it;
+2. Change gate: for a candidate that survives exclusion, require evidence that a specific person, group, or settlement newly reached, finished, discovered, claimed, built, or unlocked a result. An existing capability, remembered experience, explanation, or advice about what can be done fails this gate;
+3. Attribution gate: require the evidence to identify the achiever, rather than only the person reporting or discussing the result.
+File an item only when it passes all three gates.
+
+[BOUNDARY EXAMPLES]
+- Opening a large buy order to help other inhabitants is still an advertisement and is ineligible;
+- Reporting a newly rolled legendary or newly reached skill level is eligible when the chat establishes it;
+- Explaining an existing crafting capability while answering a question is advice and is ineligible.
 
 [REPORTING]
 - Keep each item to one completed accomplishment or milestone actually evidenced by the chat;
@@ -45,7 +51,8 @@ ${fenceUntrustedTranscript(preparedEvidence)}
 
 [FINAL AUDIT]
 Before returning, silently audit the announcements against the chat:
-- Remove any item whose evidence does not identify the achiever, establish a newly reached result, and qualify as a milestone after the excluded activity types are applied;
+- Apply the exclusion gate first and remove every excluded activity regardless of completion, scale, value, intent, or attribution;
+- From the remaining items, remove anything that does not establish a newly reached result and identify its achiever;
 - Use exact code-owned author tokens for every named chat speaker and leave their spelling and markdown to code;
 - Copy every numeric literal exactly, preserving each complete item-and-value pairing;
 - Keep the correspondent's language entirely in-world. When the chat uses out-of-world framing, report the underlying activity in ordinary in-world terms or omit that framing rather than adopting it.
