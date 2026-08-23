@@ -99,7 +99,10 @@ async function canonicalPreparedEvidence() {
 
 test("the committed main-story writer fixture remains schema-valid and evidence-grounded enough to publish", async () => {
 	const preparedEvidence = await canonicalPreparedEvidence();
-	const draft = parseMainStoryWriterOutput(mainStoryWriteResponseJson.text);
+	const draft = parseMainStoryWriterOutput(
+		mainStoryWriteResponseJson.text,
+		preparedEvidence,
+	);
 
 	expect(mainStoryFinalProductDiagnostics(draft, preparedEvidence)).toEqual([]);
 });

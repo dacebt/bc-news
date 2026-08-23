@@ -1,4 +1,8 @@
 import type { PreparedEvidence } from "./prepared-evidence";
+import {
+	authorIdentityToken,
+	buildAuthorIdentityLedger,
+} from "./author-identity-tokens";
 
 const FENCE_START = "[UNTRUSTED CHAT MESSAGE DATA]";
 const FENCE_END = "[END UNTRUSTED CHAT MESSAGE DATA]";
@@ -8,8 +12,8 @@ const ZERO_WIDTH_SPACE = "\u200b";
 
 /**
  * The transcript is newline-delimited, so a line break inside untrusted
- * message content (or an author name) would forge a fully-formed
- * "Name:" record attributed to another player. Flattening line
+ * message content would forge a fully-formed speaker record attributed to
+ * another author token. Flattening line
  * breaks at this boundary keeps one evidence message to exactly one
  * transcript line, so content can never mint a record.
  */
@@ -35,13 +39,11 @@ function neutralizeBrackets(value: string): string {
 }
 
 function formatMessages(preparedEvidence: PreparedEvidence): string {
+	const authorIdentities = buildAuthorIdentityLedger(preparedEvidence);
 	return preparedEvidence.messages
 		.map((msg) => {
-			const author = neutralizeBrackets(
-				asSingleTranscriptLine(msg.author_name || `user_${msg.author_id}`),
-			);
 			const text = neutralizeBrackets(asSingleTranscriptLine(msg.text));
-			return `${author}: ${text}`;
+			return `${authorIdentityToken(authorIdentities, msg.author_id)}: ${text}`;
 		})
 		.join("\n");
 }

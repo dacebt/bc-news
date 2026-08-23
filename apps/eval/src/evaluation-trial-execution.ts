@@ -91,7 +91,8 @@ export async function executeEvaluationTrial(input: {
 			productionStep: "main_story_write",
 			system: WRITER_SYSTEM_CONSTRAINTS,
 			user: buildMainStoryWriterPrompt(input.preparedEvidence),
-			parse: (completion) => parseMainStoryWriterOutput(completion.text),
+			parse: (completion) =>
+				parseMainStoryWriterOutput(completion.text, input.preparedEvidence),
 			requireRuntimeEvidence,
 		});
 		if (mainStory === undefined) {
@@ -122,7 +123,8 @@ export async function executeEvaluationTrial(input: {
 			productionStep: "announcements_write",
 			system: WRITER_SYSTEM_CONSTRAINTS,
 			user: buildAnnouncementsWriterPrompt(input.preparedEvidence),
-			parse: (completion) => parseAnnouncementsWriterOutput(completion.text),
+			parse: (completion) =>
+				parseAnnouncementsWriterOutput(completion.text, input.preparedEvidence),
 			requireRuntimeEvidence,
 		});
 		if (announcements === undefined) {

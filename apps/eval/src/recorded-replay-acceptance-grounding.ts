@@ -54,9 +54,13 @@ export async function assertRecordedReplayAcceptanceGrounding(run: RunFile, fixt
 		CURRENT_PRODUCTION_MODEL_STEPS.map(async (step) => [step, await readRecordedResponse(step)] as const),
 	)) as Record<(typeof CURRENT_PRODUCTION_MODEL_STEPS)[number], RecordedModelResponse>;
 
-	const mainStory = parseMainStoryWriterOutput(records.main_story_write.text);
+	const mainStory = parseMainStoryWriterOutput(
+		records.main_story_write.text,
+		prepared,
+	);
 	const announcements = parseAnnouncementsWriterOutput(
 		records.announcements_write.text,
+		prepared,
 	);
 	const expectedDiagnostics = [
 		...mainStoryFinalProductDiagnostics(mainStory, prepared),

@@ -107,7 +107,10 @@ export async function executeProductionSteps(
 		user: buildMainStoryWriterPrompt(preparedEvidence),
 		...correlation(1),
 	});
-	const mainStory = parseMainStoryWriterOutput(mainStoryWriter.completion.text);
+	const mainStory = parseMainStoryWriterOutput(
+		mainStoryWriter.completion.text,
+		preparedEvidence,
+	);
 
 	const announcementsWriter = await completeStep({
 		productionStep: "announcements_write",
@@ -118,6 +121,7 @@ export async function executeProductionSteps(
 	});
 	const announcements = parseAnnouncementsWriterOutput(
 		announcementsWriter.completion.text,
+		preparedEvidence,
 	);
 
 	const diagnostics = [

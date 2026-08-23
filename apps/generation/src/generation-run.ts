@@ -174,7 +174,10 @@ export class GenerationRun extends WorkflowEntrypoint<Env, GenerationRunParams> 
 				}),
 			);
 			const mainStoryDraft = {
-				product: parseMainStoryWriterOutput(mainStoryCompletion.text),
+				product: parseMainStoryWriterOutput(
+					mainStoryCompletion.text,
+					preparedEvidence,
+				),
 				completion: mainStoryCompletion,
 			};
 			completedSteps = [...completedSteps, "main_story_write"];
@@ -205,7 +208,10 @@ export class GenerationRun extends WorkflowEntrypoint<Env, GenerationRunParams> 
 				}),
 			);
 			const announcementsDraft = {
-				product: parseAnnouncementsWriterOutput(announcementsCompletion.text),
+				product: parseAnnouncementsWriterOutput(
+					announcementsCompletion.text,
+					preparedEvidence,
+				),
 				completion: announcementsCompletion,
 			};
 			completedSteps = [...completedSteps, "announcements_write"];

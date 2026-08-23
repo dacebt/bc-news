@@ -4,6 +4,10 @@ import { EditorialOutputContractError } from "./main-story";
 import { normalizeDecodedOutputStrings } from "./output-normalization";
 import type { PreparedEvidence } from "./prepared-evidence";
 import { fenceUntrustedTranscript } from "./untrusted-data-fence";
+import {
+	buildAuthorIdentityLedger,
+	resolveAuthorIdentityTokens,
+} from "./author-identity-tokens";
 
 export const AnnouncementsProductSchema = z.strictObject({
 	announcements: z.array(AnnouncementSchema),
@@ -25,7 +29,7 @@ You are filing milestone briefs, not a social column. An item qualifies only whe
 [REPORTING]
 - Keep each item to one completed accomplishment or milestone actually evidenced by the chat;
 - Preserve the evidenced status of the accomplishment and do not turn an intention, attempt, or unresolved claim into a completion;
-- Treat inhabitant names as opaque identifiers: use a name only by copying one exact occurrence from the chat;
+- Attribute chat speakers only with their exact code-owned author tokens. A similar token, person, place, or organization is never an alternate identity;
 - Copy every numeric literal character-for-character from the chat. Keep every item, quantity, level, and value paired as they appear together in the source message;
 - Quote only exact chat text, character-for-character, inside quotation marks;
 - Never invent facts, numbers, names, quotations, outcomes, or significance.
@@ -36,7 +40,8 @@ ${fenceUntrustedTranscript(preparedEvidence)}
 [FINAL AUDIT]
 Before returning, silently audit the announcements against the chat:
 - Remove any item that is not a completed milestone or achievement;
-- Copy every inhabitant name and numeric literal exactly, preserving each complete item-and-value pairing;
+- Use exact code-owned author tokens for every named chat speaker and leave their spelling and markdown to code;
+- Copy every numeric literal exactly, preserving each complete item-and-value pairing;
 - Keep the correspondent's language entirely in-world. When the chat uses out-of-world framing, report the underlying activity in ordinary in-world terms or omit that framing rather than adopting it.
 
 [OUTPUT]
@@ -47,7 +52,10 @@ Return one valid JSON object matching this field contract:
   - summary (string): what was accomplished, with markdown permitted only as defined by the system formatting rules.`;
 }
 
-export function parseAnnouncementsWriterOutput(text: string | null): AnnouncementsDraft {
+export function parseAnnouncementsWriterOutput(
+	text: string | null,
+	preparedEvidence: PreparedEvidence,
+): AnnouncementsDraft {
 	let candidate: unknown = text;
 	if (text !== null) {
 		try {
@@ -69,7 +77,31 @@ export function parseAnnouncementsWriterOutput(text: string | null): Announcemen
 			`announcements_write model output does not match its strict contract: ${result.error.message}`,
 		);
 	}
-	return AnnouncementsProductSchema.parse(
+	const normalized = AnnouncementsDraftSchema.parse(
 		normalizeDecodedOutputStrings(result.data),
 	);
+	const authorIdentities = buildAuthorIdentityLedger(preparedEvidence);
+	try {
+		return AnnouncementsProductSchema.parse({
+			announcements: normalized.announcements.map((announcement) => ({
+				title: resolveAuthorIdentityTokens(
+					announcement.title,
+					authorIdentities,
+					"plain",
+				),
+				summary: resolveAuthorIdentityTokens(
+					announcement.summary,
+					authorIdentities,
+					"bold",
+				),
+			})),
+		});
+	} catch (cause) {
+		throw new EditorialOutputContractError(
+			"announcements_write",
+			"contract_mismatch",
+			"announcements_write model output contains an invalid author identity token",
+			{ cause },
+		);
+	}
 }
