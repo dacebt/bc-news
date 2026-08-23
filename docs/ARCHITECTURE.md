@@ -218,7 +218,9 @@ configuration. Every profiled request sends the production step's strict inline
 JSON Schema and leaves the provider's output-token ceiling unset. Successful
 Gateway provenance retains the exact request format, response-delivery mode,
 and structured-output contract name in addition to the existing transport
-policy.
+policy. The MiniMax M3 profile alone accepts `enable_thinking: false`, maps it
+to `thinking.type=disabled`, and retains `thinking_disabled` as the requested
+reasoning posture; omission leaves provider-default reasoning behavior.
 Current evaluation artifacts are version 9. Historical Benchmark Run versions 7
 and 8 remain readable; version 8 alone retained explicit null completion
 content, while historical non-Gateway version 7 required textual completion

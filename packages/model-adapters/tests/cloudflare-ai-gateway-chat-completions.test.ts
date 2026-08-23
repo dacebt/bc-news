@@ -59,6 +59,17 @@ it("keeps successful hosted models on buffered delivery", async () => {
 	expect(body.stream_options).toBeUndefined();
 });
 
+it("retains the explicitly requested MiniMax thinking-disabled posture", async () => {
+	vi.spyOn(globalThis, "fetch").mockResolvedValue(completionResponse("MiniMax-M3"));
+	await expect(provider("minimax/m3", undefined, false).complete(request())).resolves.toMatchObject({
+		runtime_evidence: {
+			execution_context: {
+				requested_reasoning_posture: { state: "observed", value: "thinking_disabled" },
+			},
+		},
+	});
+});
+
 it.each([
 	["openai/gpt-4o-mini", "gpt-4o-mini", "openai"],
 	["alibaba/qwen3.5-397b-a17b", "qwen3.5-397b-a17b", "alibaba"],

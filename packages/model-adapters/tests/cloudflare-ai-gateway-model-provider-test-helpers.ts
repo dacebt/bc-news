@@ -7,12 +7,14 @@ import {
 export function provider(
 	model: typeof CLOUDFLARE_HOSTED_MODEL_IDS[number] = "openai/gpt-4o-mini",
 	gateway?: { selection: "named"; id: string },
+	enableThinking?: false,
 ) {
 	return createCloudflareAiGatewayModelProvider({
 		accountId: "account-id",
 		apiToken: "cloudflare-api-token",
 		...(gateway === undefined ? {} : { gateway }),
 		requestedModel: model,
+		...(enableThinking === undefined ? {} : { enableThinking }),
 		structuredOutputContracts: PRODUCTION_STEP_OUTPUT_CONTRACTS,
 	});
 }

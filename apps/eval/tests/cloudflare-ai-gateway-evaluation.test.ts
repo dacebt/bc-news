@@ -26,23 +26,29 @@ async function outputs(): Promise<Record<ProductionModelStep, string>> {
 function configuration(
 	model: CloudflareHostedModelId,
 	gateway?: { selection: "named"; id: string },
+	enableThinking?: false,
 ) {
 	return {
 		production_steps: Object.fromEntries(PRODUCTION_MODEL_STEPS.map((step) => [step, {
 			adapter: "cloudflare_ai_gateway",
 			...(gateway === undefined ? {} : { gateway }),
 			model,
+			...(enableThinking === undefined ? {} : { enable_thinking: enableThinking }),
 		}])) as Record<ProductionModelStep, object>,
 	};
 }
 
-test("runs Gemini Chat and Luna Responses through the Gateway contract and retains exact v9 provenance", async () => {
+test("runs profiled Gateway requests and retains exact v9 provenance", async () => {
 	const root = await mkdtemp(join(tmpdir(), "bc-news-cloudflare-ai-gateway-evaluation-"));
 	try {
 		const configPath = join(root, "benchmark.config.json");
 		const resultsDirectory = join(root, "results");
 		await writeFile(configPath, `${JSON.stringify({
-			configurations: [configuration("google/gemini-3.7-flash"), configuration("openai/gpt-5.6-luna")],
+			configurations: [
+				configuration("google/gemini-3.7-flash"),
+				configuration("openai/gpt-5.6-luna"),
+				configuration("minimax/m3", undefined, false),
+			],
 			repetition_count: 1,
 			transport_retry_limit: 0,
 		}, null, 2)}\n`, "utf8");
@@ -85,7 +91,7 @@ test("runs Gemini Chat and Luna Responses through the Gateway contract and retai
 			return Promise.resolve(new Response(JSON.stringify({
 				id: `provider-response-${String(ordinal)}`,
 				object: "chat.completion",
-				model: "gemini-3.7-flash",
+				model: body.model === "minimax/m3" ? "MiniMax-M3" : "gemini-3.7-flash",
 				choices: [{ index: 0, message: { role: "assistant", content: retainedOutputs[step], refusal: null, annotations: [] }, finish_reason: "stop", logprobs: null }],
 				usage: { prompt_tokens: 100, completion_tokens: 25, total_tokens: 125 },
 				gatewayMetadata: { keySource: "Unified" },
@@ -103,14 +109,14 @@ test("runs Gemini Chat and Luna Responses through the Gateway contract and retai
 		expect(result.benchmark.version).toBe(9);
 		if (result.benchmark.version !== 9) throw new Error("Expected V9 Gateway benchmark");
 		expect(V9BenchmarkRunSchema.safeParse(result.benchmark).success).toBe(true);
-		expect(result.benchmark.trials).toHaveLength(2);
+		expect(result.benchmark.trials).toHaveLength(3);
 		expect(result.benchmark.trials.every(({ subject_outcome }) => subject_outcome === "completed")).toBe(true);
 		expect(result.benchmark.trials.map((trial) => [...new Set(trial.invocations
 			.filter((invocation) => invocation.transport === "succeeded")
-			.map((invocation) => invocation.completion.provider))])).toEqual([["google"], ["openai"]]);
+			.map((invocation) => invocation.completion.provider))])).toEqual([["google"], ["openai"], ["minimax"]]);
 		const captured = result.benchmark.gateway_requests.filter((record) => record.state === "captured");
-		expect(captured).toHaveLength(4);
-		expect(new Set(captured.map(({ provenance }) => provenance.gateway_log_id)).size).toBe(4);
+		expect(captured).toHaveLength(6);
+		expect(new Set(captured.map(({ provenance }) => provenance.gateway_log_id)).size).toBe(6);
 		expect(captured.every(({ provenance }) => provenance.policy.max_attempts === 1
 			&& provenance.policy.log_payload === false
 			&& provenance.correlation.run_id === result.benchmark.id)).toBe(true);
@@ -131,6 +137,16 @@ test("runs Gemini Chat and Luna Responses through the Gateway contract and retai
 					&& invocation.completion.token_usage.input_tokens === 100
 					&& invocation.completion.token_usage.output_tokens === 25
 					&& invocation.completion.token_usage.total_tokens === 125))).toBe(true);
+		const miniMaxTrial = result.benchmark.trials[2];
+		if (miniMaxTrial === undefined) throw new Error("Expected MiniMax trial");
+		const miniMaxRuntimeEvidence = result.benchmark.runtime_evidence.filter(
+			({ trial_id }) => trial_id === miniMaxTrial.id,
+		);
+		expect(miniMaxRuntimeEvidence).toHaveLength(2);
+		expect(miniMaxRuntimeEvidence.every((record) =>
+			record.state === "captured"
+			&& record.evidence.execution_context.requested_reasoning_posture.state === "observed"
+			&& record.evidence.execution_context.requested_reasoning_posture.value === "thinking_disabled")).toBe(true);
 		const missingRequestFormat = structuredClone(result.benchmark);
 		const missingCaptured = missingRequestFormat.gateway_requests.find((record) => record.state === "captured");
 		if (missingCaptured?.state !== "captured") throw new Error("Expected captured Gateway provenance");
@@ -142,7 +158,7 @@ test("runs Gemini Chat and Luna Responses through the Gateway contract and retai
 		if (contradictoryCaptured?.state !== "captured") throw new Error("Expected captured Luna provenance");
 		contradictoryCaptured.provenance.policy.structured_output.format = "openai_chat_json_schema";
 		expect(V9BenchmarkRunSchema.safeParse(contradictoryPolicy).success).toBe(false);
-		expect(fetchCall).toHaveBeenCalledTimes(4);
+		expect(fetchCall).toHaveBeenCalledTimes(6);
 		for (const [, init] of fetchCall.mock.calls) {
 			expect(init?.headers).toEqual(expect.objectContaining({
 				"cf-aig-skip-cache": "true",
@@ -150,6 +166,14 @@ test("runs Gemini Chat and Luna Responses through the Gateway contract and retai
 				"cf-aig-max-attempts": "1",
 			}));
 		}
+		const miniMaxBodies = fetchCall.mock.calls.flatMap(([, init]) => {
+			if (typeof init?.body !== "string") return [];
+			const body = JSON.parse(init.body) as { model?: string; thinking?: unknown };
+			return body.model === "minimax/m3" ? [body] : [];
+		});
+		expect(miniMaxBodies).toHaveLength(2);
+		expect(miniMaxBodies.every(({ thinking }) =>
+			JSON.stringify(thinking) === JSON.stringify({ type: "disabled" }))).toBe(true);
 
 		const named = configuration("openai/gpt-4o-mini", { selection: "named", id: "bc-news-evaluation" });
 		const accountDefault = configuration("openai/gpt-4o-mini");

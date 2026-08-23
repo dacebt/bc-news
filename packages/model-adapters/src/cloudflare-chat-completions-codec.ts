@@ -69,6 +69,7 @@ function gatewayModelIdentity(requestedModel: string, responseModel?: string): M
 export function cloudflareChatCompletionsRuntimeEvidence(
 	requestedModel: string,
 	completion: CloudflareChatCompletion,
+	requestedReasoningPosture: "provider_default" | "thinking_disabled" = "provider_default",
 ): ModelRuntimeEvidence {
 	return {
 		execution_context: {
@@ -80,7 +81,7 @@ export function cloudflareChatCompletionsRuntimeEvidence(
 			selected_model: gatewayModelIdentity(requestedModel),
 			response_model: gatewayModelIdentity(requestedModel, completion.model),
 			context_length: { state: "externally_controlled", reason: "provider_controlled" },
-			requested_reasoning_posture: { state: "observed", value: "provider_default" },
+			requested_reasoning_posture: { state: "observed", value: requestedReasoningPosture },
 			effective_reasoning_setting: providerControlledString,
 			speculative_draft_model_identity: unknownString,
 		},

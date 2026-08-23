@@ -953,6 +953,9 @@ export const V9BenchmarkRunSchema = V9BenchmarkRunBaseSchema.superRefine(
 				if (adapter?.adapter === "lmstudio" && adapter.enable_thinking === false) {
 					expectedReasoningPosture = "thinking_disabled";
 				}
+				if (adapter?.adapter === "cloudflare_ai_gateway" && adapter.enable_thinking === false) {
+					expectedReasoningPosture = "thinking_disabled";
+				}
 				const retainedInvocation = run.trials
 					.flatMap(({ invocations }) => invocations)
 					.find(({ id }) => id === gateway.invocation_id);

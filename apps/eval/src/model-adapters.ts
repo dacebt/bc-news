@@ -89,6 +89,7 @@ export function resolveModelProvider(
 				...(config.gateway === undefined ? {} : { gateway: config.gateway }),
 				requestedModel: config.model,
 				...(config.temperature === undefined ? {} : { temperature: config.temperature }),
+				...(config.enable_thinking === undefined ? {} : { enableThinking: config.enable_thinking }),
 				structuredOutputContracts: PRODUCTION_STEP_OUTPUT_CONTRACTS,
 			});
 		}

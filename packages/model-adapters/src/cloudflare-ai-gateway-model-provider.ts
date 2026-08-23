@@ -36,6 +36,7 @@ export interface CloudflareAiGatewayProviderInput {
 	readonly gateway?: CloudflareAiGatewaySelection;
 	readonly requestedModel: string;
 	readonly temperature?: ModelTemperature;
+	readonly enableThinking?: false;
 	readonly structuredOutputContracts: ProductionStepOutputContracts;
 }
 
@@ -108,6 +109,12 @@ export function createCloudflareAiGatewayModelProvider(
 			"Cloudflare Workers AI models require a named AI Gateway",
 		);
 	}
+	if (input.enableThinking === false && requestedModel !== "minimax/m3") {
+		throw new CloudflareAiGatewayDeterministicError(
+			"cloudflare_ai_gateway_invalid_config",
+			"Cloudflare AI Gateway enable_thinking false is supported only for minimax/m3",
+		);
+	}
 	return {
 		async complete(request) {
 			if (request.correlation === undefined) {
@@ -150,6 +157,7 @@ export function createCloudflareAiGatewayModelProvider(
 							system: request.system,
 							user: request.user,
 							...(input.temperature === undefined ? {} : { temperature: input.temperature }),
+							...(input.enableThinking === undefined ? {} : { enableThinking: input.enableThinking }),
 							outputContract,
 						})),
 					signal: AbortSignal.timeout(CLOUDFLARE_AI_GATEWAY_REQUEST_TIMEOUT_MS),
@@ -312,7 +320,11 @@ export function createCloudflareAiGatewayModelProvider(
 						},
 					},
 				},
-				runtime_evidence: cloudflareChatCompletionsRuntimeEvidence(requestedModel, parsed.data),
+				runtime_evidence: cloudflareChatCompletionsRuntimeEvidence(
+					requestedModel,
+					parsed.data,
+					input.enableThinking === false ? "thinking_disabled" : "provider_default",
+				),
 			};
 		},
 	};

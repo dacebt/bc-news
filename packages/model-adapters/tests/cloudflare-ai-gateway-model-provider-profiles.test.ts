@@ -43,6 +43,20 @@ it("accepts only non-secret Gateway configuration and canonical routed model-id 
 		expect(CloudflareAiGatewayAdapterConfigSchema.safeParse({ ...candidate, model: historicalModel }).success).toBe(true);
 	}
 	expect(CloudflareAiGatewayAdapterConfigSchema.safeParse({ ...candidate, gateway: { selection: "named", id: " " } }).success).toBe(false);
+	expect(CloudflareAiGatewayAdapterConfigSchema.safeParse({
+		...candidate,
+		model: "minimax/m3",
+		enable_thinking: false,
+	}).success).toBe(true);
+	expect(CloudflareAiGatewayAdapterConfigSchema.safeParse({
+		...candidate,
+		model: "minimax/m3",
+		enable_thinking: true,
+	}).success).toBe(false);
+	expect(CloudflareAiGatewayAdapterConfigSchema.safeParse({
+		...candidate,
+		enable_thinking: false,
+	}).success).toBe(false);
 });
 
 it("rejects an unprofiled hosted model before transport", () => {
@@ -54,6 +68,33 @@ it("rejects an unprofiled hosted model before transport", () => {
 		structuredOutputContracts: PRODUCTION_STEP_OUTPUT_CONTRACTS,
 	})).toThrowError(expect.objectContaining({ code: "cloudflare_ai_gateway_invalid_config" }));
 	expect(fetchCall).not.toHaveBeenCalled();
+});
+
+it("rejects MiniMax thinking control on other hosted models before transport", () => {
+	const fetchCall = vi.spyOn(globalThis, "fetch");
+	expect(() => createCloudflareAiGatewayModelProvider({
+		accountId: "account-id",
+		apiToken: "cloudflare-api-token",
+		requestedModel: "openai/gpt-4o-mini",
+		enableThinking: false,
+		structuredOutputContracts: PRODUCTION_STEP_OUTPUT_CONTRACTS,
+	})).toThrowError(expect.objectContaining({ code: "cloudflare_ai_gateway_invalid_config" }));
+	expect(fetchCall).not.toHaveBeenCalled();
+});
+
+it("sends MiniMax thinking disabled only when explicitly configured", async () => {
+	const fetchCall = vi.spyOn(globalThis, "fetch").mockImplementation(
+		() => Promise.resolve(completionResponse("MiniMax-M3")),
+	);
+	await provider("minimax/m3", undefined, false).complete(request());
+	const [, disabledInit] = fetchCall.mock.calls[0]!;
+	if (typeof disabledInit?.body !== "string") throw new Error("Expected request body to be JSON text");
+	expect(JSON.parse(disabledInit.body)).toMatchObject({ thinking: { type: "disabled" } });
+
+	await provider("minimax/m3").complete(request());
+	const [, defaultInit] = fetchCall.mock.calls[1]!;
+	if (typeof defaultInit?.body !== "string") throw new Error("Expected request body to be JSON text");
+	expect(JSON.parse(defaultInit.body)).not.toHaveProperty("thinking");
 });
 
 it.each([

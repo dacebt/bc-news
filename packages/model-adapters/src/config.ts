@@ -53,12 +53,20 @@ export const CloudflareAiGatewayAdapterConfigSchema = z.strictObject({
 	gateway: CloudflareAiGatewaySelectionSchema.optional(),
 	model: CloudflareAiGatewayModelSchema,
 	temperature: ModelTemperatureSchema.optional(),
+	enable_thinking: z.literal(false).optional(),
 }).superRefine((config, context) => {
 	if (config.model.startsWith("@cf/") && config.gateway === undefined) {
 		context.addIssue({
 			code: "custom",
 			path: ["gateway"],
 			message: "Cloudflare Workers AI models require a named AI Gateway",
+		});
+	}
+	if (config.enable_thinking === false && config.model !== "minimax/m3") {
+		context.addIssue({
+			code: "custom",
+			path: ["enable_thinking"],
+			message: "enable_thinking false is supported only for minimax/m3",
 		});
 	}
 });
