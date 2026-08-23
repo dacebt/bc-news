@@ -74,7 +74,9 @@ it.each([
 it.each([
 	["google/gemini-2.5-flash-lite", "gemini-2.5-flash-lite"],
 	["google/gemini-3.1-flash-lite", "gemini-3.1-flash-lite"],
+	["google/gemini-3.5-flash-lite", "gemini-3.5-flash-lite"],
 	["google/gemini-3.7-flash", "gemini-3.7-flash"],
+	["minimax/m2.7", "MiniMax-M2.7"],
 	["minimax/m3", "MiniMax-M3"],
 ] as const)("leaves %s canonical optional fields unchanged", async (model, responseModel) => {
 	const fetchCall = vi.spyOn(globalThis, "fetch").mockResolvedValue(completionResponse(responseModel));
@@ -90,13 +92,17 @@ it.each([
 it.each([
 	["openai/gpt-5-nano", "openai"],
 	["openai/gpt-5-mini", "openai"],
+	["openai/gpt-5.4-nano", "openai"],
 	["openai/gpt-5.6-luna", "openai"],
+	["openai/o4-mini", "openai"],
 	["openai/gpt-4o", "openai"],
 	["openai/gpt-4o-mini", "openai"],
 	["alibaba/qwen3.5-397b-a17b", "alibaba"],
 	["google/gemini-2.5-flash-lite", "google"],
 	["google/gemini-3.1-flash-lite", "google"],
+	["google/gemini-3.5-flash-lite", "google"],
 	["google/gemini-3.7-flash", "google"],
+	["minimax/m2.7", "minimax"],
 	["minimax/m3", "minimax"],
 	["@cf/openai/gpt-oss-120b", "workers_ai"],
 	["@cf/google/gemma-4-26b-a4b-it", "workers_ai"],
