@@ -172,7 +172,8 @@ following product decisions remain open; the prototype's observed behavior is
 still the default answer where it applies.
 
 - Whether a later evidence-research capability needs bounded agent autonomy. It is not part of the current two-writer editorial workflow.
-- The first live production model configuration and fallback policy.
+- Production fallback policy beyond the selected Gemini 3.1 Flash Lite
+  configuration for both final writers.
 - Late-data and regeneration policy beyond the settled explicit no-evidence
   failure and authenticated pair-addressed manual launch.
 - Retention durations for Workflow state, evaluation artifacts, and operational

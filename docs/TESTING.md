@@ -313,8 +313,9 @@ or acceptance gate cannot replace its own `WALK PASS`.
 contracts parse-and-reject at every boundary; they do not prove runtime
 behavior. The production-configuration contract semantically parses both real
 Wrangler JSONC files and locks alternate-origin disablement, ingest route
-absence, named-environment absence, the exact required-secret declaration
-without a plain-text secret, and the single shared D1 binding with
+absence, named-environment absence, dashboard-variable preservation, the exact
+required-secret declaration without a plain-text secret, the selected
+production model configuration, and the single shared D1 binding with
 generation-only migration ownership. Together with disabled `workers.dev` and
 preview URLs, the ingest Worker's missing `route`, `routes`, and assets prove
 that its source-level `POST /poll` handler has no checked-in public hostname;

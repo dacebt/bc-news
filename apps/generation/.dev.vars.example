@@ -17,10 +17,10 @@ MODEL_CONFIG='{"main_story_write":{"adapter":"lmstudio","model":"replace-with-lo
 # HOSTED_MODEL_API_KEY="replace-with-local-secret"
 # MODEL_CONFIG='{"main_story_write":{"adapter":"openai_compatible_hosted","provider":"replace-with-provider-id","model":"replace-with-model-id","billing":{"method":"calculated","input_usd_per_million_tokens":0,"output_usd_per_million_tokens":0,"pricing_reference":"replace-with-public-pricing-url-or-version"}},"announcements_write":{"adapter":"openai_compatible_hosted","provider":"replace-with-provider-id","model":"replace-with-model-id","billing":{"method":"calculated","input_usd_per_million_tokens":0,"output_usd_per_million_tokens":0,"pricing_reference":"replace-with-public-pricing-url-or-version"}}}'
 
-# Cloudflare AI Gateway REST alternative: the token needs Account > Workers AI
-# > Read. Unified Billing supplies third-party provider credentials. Keep these
-# values only in the ignored .dev.vars file; deployment secret installation is
-# a separate operator action.
+# Cloudflare AI Gateway REST production selection: the token needs Account >
+# Workers AI > Read. Unified Billing supplies third-party provider credentials.
+# Keep these values only in the ignored .dev.vars file; deployment secret
+# installation is a separate operator action.
 # CLOUDFLARE_ACCOUNT_ID="replace-with-account-id"
 # CLOUDFLARE_API_TOKEN="replace-with-workers-ai-read-token"
-# MODEL_CONFIG='{"main_story_write":{"adapter":"cloudflare_ai_gateway","model":"openai/gpt-5-nano"},"announcements_write":{"adapter":"cloudflare_ai_gateway","model":"openai/gpt-5-nano"}}'
+# MODEL_CONFIG='{"main_story_write":{"adapter":"cloudflare_ai_gateway","model":"google/gemini-3.1-flash-lite"},"announcements_write":{"adapter":"cloudflare_ai_gateway","model":"google/gemini-3.1-flash-lite"}}'

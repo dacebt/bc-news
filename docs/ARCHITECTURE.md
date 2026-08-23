@@ -224,6 +224,12 @@ and 8 remain readable; version 8 alone retained explicit null completion
 content, while historical non-Gateway version 7 required textual completion
 content.
 
+The checked-in production configuration selects
+`google/gemini-3.1-flash-lite` through `cloudflare_ai_gateway` for both
+`main_story_write` and `announcements_write`. It uses the account's `default`
+AI Gateway and Unified Billing; it defines no fallback model. The production
+model choice does not alter the independently replaceable writer boundary.
+
 The production workflow has two editorial products and two model steps. The
 main-story writer receives prepared evidence and owns `title` plus
 `main_story.headline`, `main_story.lede`, and `main_story.body`. The
@@ -607,9 +613,13 @@ no `route`, `routes`, or static assets. Its source-level unauthenticated `POST
 production configuration gives it no public hostname; scheduled invocation is
 the only configured production entrypoint. A future public route would require
 a separate protection boundary. Generation declares exactly
-`OPERATOR_API_TOKEN` under Wrangler's required-secret metadata and never under
-plain-text `vars`. That declaration supports types and local missing-secret
-warnings; it does not install or prove the Cloudflare secret.
+`CLOUDFLARE_API_TOKEN` and `OPERATOR_API_TOKEN` under Wrangler's
+required-secret metadata and never under plain-text `vars`. The non-secret
+`CLOUDFLARE_ACCOUNT_ID` is installed as a dashboard-owned runtime variable,
+and `keep_vars` preserves it across Workers Builds deployments. These
+declarations support types, local missing-secret warnings, and deploy-time
+required-secret validation; they do not install or prove the Cloudflare
+values.
 
 Both checked-in Worker configurations name the same concrete D1 database and
 database id. Repository proof is deliberately limited to one nonblank matching

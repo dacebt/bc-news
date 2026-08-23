@@ -12,7 +12,8 @@ type Config = Record<string, unknown>;
 const GENERATION_CONFIG: Config = {
 	workers_dev: false,
 	preview_urls: false,
-	secrets: { required: ["OPERATOR_API_TOKEN"] },
+	keep_vars: true,
+	secrets: { required: ["CLOUDFLARE_API_TOKEN", "OPERATOR_API_TOKEN"] },
 	d1_databases: [
 		{
 			binding: "DB",
@@ -21,7 +22,18 @@ const GENERATION_CONFIG: Config = {
 			migrations_dir: "migrations",
 		},
 	],
-	vars: {},
+	vars: {
+		MODEL_CONFIG: JSON.stringify({
+			main_story_write: {
+				adapter: "cloudflare_ai_gateway",
+				model: "google/gemini-3.1-flash-lite",
+			},
+			announcements_write: {
+				adapter: "cloudflare_ai_gateway",
+				model: "google/gemini-3.1-flash-lite",
+			},
+		}),
+	},
 };
 
 const INGEST_CONFIG: Config = {
@@ -117,6 +129,15 @@ void test("rejects named environments that could override the frozen boundary", 
 	}
 });
 
+void test("preserves dashboard-owned runtime variables across deployment", () => {
+	const generation = cloneConfig(GENERATION_CONFIG);
+	delete generation["keep_vars"];
+	assert.throws(
+		() => assertPair(generation, cloneConfig(INGEST_CONFIG)),
+		/must set keep_vars to true/,
+	);
+});
+
 void test("rejects an absent, extra, or incorrectly bound D1 database", () => {
 	for (const databases of [
 		[],
@@ -165,22 +186,64 @@ void test("enforces generation-only migration ownership", () => {
 	);
 });
 
-void test("requires the operator token only as the exact generation secret", () => {
-	for (const required of [[], ["OTHER"], ["OPERATOR_API_TOKEN", "OTHER"]]) {
+void test("requires the exact generation runtime secrets", () => {
+	for (const required of [
+		[],
+		["OTHER"],
+		["OPERATOR_API_TOKEN"],
+		["CLOUDFLARE_API_TOKEN", "OPERATOR_API_TOKEN", "OTHER"],
+	]) {
 		const generation = cloneConfig(GENERATION_CONFIG);
 		generation["secrets"] = { required };
 		assert.throws(
 			() => assertPair(generation, cloneConfig(INGEST_CONFIG)),
-			/must require exactly OPERATOR_API_TOKEN/,
+			/must require exactly CLOUDFLARE_API_TOKEN and OPERATOR_API_TOKEN/,
 		);
 	}
 
-	const generation = cloneConfig(GENERATION_CONFIG);
-	generation["vars"] = { OPERATOR_API_TOKEN: "plaintext" };
-	assert.throws(
-		() => assertPair(generation, cloneConfig(INGEST_CONFIG)),
-		/must not define OPERATOR_API_TOKEN in vars/,
-	);
+	for (const secret of ["CLOUDFLARE_API_TOKEN", "OPERATOR_API_TOKEN"]) {
+		const generation = cloneConfig(GENERATION_CONFIG);
+		const vars = generation["vars"];
+		assert.ok(isConfig(vars));
+		vars[secret] = "plaintext";
+		assert.throws(
+			() => assertPair(generation, cloneConfig(INGEST_CONFIG)),
+			new RegExp(`must not define ${secret} in vars`),
+		);
+	}
+});
+
+void test("requires Gemini 3.1 through AI Gateway for both production writers", () => {
+	for (const modelConfig of [
+		"not-json",
+		JSON.stringify({
+			main_story_write: { adapter: "recorded" },
+			announcements_write: { adapter: "recorded" },
+		}),
+		JSON.stringify({
+			main_story_write: {
+				adapter: "cloudflare_ai_gateway",
+				model: "google/gemini-3.1-flash-lite",
+			},
+		}),
+		JSON.stringify({
+			main_story_write: {
+				adapter: "cloudflare_ai_gateway",
+				model: "google/gemini-3.1-flash-lite",
+			},
+			announcements_write: {
+				adapter: "cloudflare_ai_gateway",
+				model: "google/gemini-3.5-flash-lite",
+			},
+		}),
+	]) {
+		const generation = cloneConfig(GENERATION_CONFIG);
+		generation["vars"] = { MODEL_CONFIG: modelConfig };
+		assert.throws(
+			() => assertPair(generation, cloneConfig(INGEST_CONFIG)),
+			/MODEL_CONFIG|must select google\/gemini-3.1-flash-lite/,
+		);
+	}
 });
 
 void test("rejects deployable ingest HTTP surfaces", () => {

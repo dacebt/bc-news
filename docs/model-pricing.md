@@ -25,8 +25,8 @@ This register separates four states that are easy to conflate:
 - **Historical** means a model name survives only in a retired register or a
   Git-addressed historical artifact. Historical names are not current evidence.
 - **Checked-in deployment** is the adapter selection in the generation Worker
-  configuration. It currently selects the committed `recorded` adapter for all
-  two production steps, so no live model below is selected there.
+  configuration. It selects `google/gemini-3.1-flash-lite` through
+  `cloudflare_ai_gateway` for both production writers.
 
 The binding evaluation boundaries live in [test and verification posture](TESTING.md),
 and commands live in [evaluation operations](evaluation-operations.md).
