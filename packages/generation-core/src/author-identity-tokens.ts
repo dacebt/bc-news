@@ -1,9 +1,11 @@
 import type { PreparedEvidence } from "./prepared-evidence";
 
 const AUTHOR_IDENTITY_TOKEN_PATTERN = /\[\[AUTHOR_(\d{3,})\]\]/gu;
-const MARKED_AUTHOR_IDENTITY_TOKEN_PATTERN = /\*+\[\[AUTHOR_\d{3,}\]\]\*+/iu;
+const BOLD_AUTHOR_IDENTITY_TOKEN_PATTERN = /(\*\*)(\[\[AUTHOR_\d{3,}\]\])(\*\*)/gu;
 const UNRESOLVED_AUTHOR_IDENTITY_PATTERN = /\[\[[^\]\r\n]*AUTHOR[^\]\r\n]*\]\]|\bAUTHOR_\d+\b/iu;
 const MARKDOWN_CONTROL_CHARACTER_PATTERN = /[\\`*_[\]<>]/gu;
+const LEADING_ASTERISKS_PATTERN = /^\*+/u;
+const TRAILING_ASTERISKS_PATTERN = /\*+$/u;
 
 interface AuthorIdentityEntry {
 	readonly authorId: string;
@@ -70,11 +72,23 @@ export function resolveAuthorIdentityTokens(
 	ledger: AuthorIdentityLedger,
 	rendering: AuthorIdentityRendering,
 ): string {
-	if (MARKED_AUTHOR_IDENTITY_TOKEN_PATTERN.test(value)) {
-		throw new Error("Author identity tokens must not carry model-authored markdown");
+	for (const match of value.matchAll(AUTHOR_IDENTITY_TOKEN_PATTERN)) {
+		const start = match.index;
+		if (start === undefined) {
+			throw new Error("Author identity token position is unavailable");
+		}
+		const end = start + match[0].length;
+		const leadingAsterisks = value.slice(0, start).match(TRAILING_ASTERISKS_PATTERN)?.[0].length ?? 0;
+		const trailingAsterisks = value.slice(end).match(LEADING_ASTERISKS_PATTERN)?.[0].length ?? 0;
+		const isBare = leadingAsterisks === 0 && trailingAsterisks === 0;
+		const isBalancedBold = leadingAsterisks === 2 && trailingAsterisks === 2;
+		if (!isBare && !isBalancedBold) {
+			throw new Error("Author identity tokens may use only balanced bold markdown");
+		}
 	}
 
-	const resolved = value.replace(
+	const normalized = value.replace(BOLD_AUTHOR_IDENTITY_TOKEN_PATTERN, "$2");
+	const resolved = normalized.replace(
 		AUTHOR_IDENTITY_TOKEN_PATTERN,
 		(_token, ordinal: string) => {
 			const entry = ledger.byOrdinal.get(ordinal);

@@ -33,8 +33,8 @@ const ANNOUNCEMENTS = {
 
 const ANNOUNCEMENTS_WRITER_OUTPUT = {
 	announcements: [{
-		title: "[[AUTHOR_001]] Reaches Level 50",
-		summary: "[[AUTHOR_001]] reached level 50 in *Fishing* and called it \"a long haul\".",
+		title: "**[[AUTHOR_001]]** Reaches Level 50",
+		summary: "**[[AUTHOR_001]]** reached level 50 in *Fishing* and called it \"a long haul\".",
 	}],
 };
 
@@ -108,8 +108,13 @@ test("rejects unknown announcement keys at the writer boundary", () => {
 test("rejects invalid author identity tokens in announcement fields", () => {
 	for (const summary of [
 		"[[AUTHOR_999]] reached level 50.",
+		"**[[AUTHOR_999]]** reached level 50.",
 		"AUTHOR_001 reached level 50.",
-		"**[[AUTHOR_001]]** reached level 50.",
+		"*[[AUTHOR_001]]* reached level 50.",
+		"**[[AUTHOR_001]]* reached level 50.",
+		"**[[AUTHOR_001]] reached level 50.",
+		"[[AUTHOR_001]]** reached level 50.",
+		"***[[AUTHOR_001]]*** reached level 50.",
 	]) {
 		expect(() => parseAnnouncementsWriterOutput(JSON.stringify({
 			announcements: [{ title: "Skill milestone", summary }],

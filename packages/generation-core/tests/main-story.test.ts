@@ -42,11 +42,12 @@ const ORDINARY_WRITER_OUTPUT = {
 test("resolves code-owned author identities with field-appropriate formatting", () => {
 	const writerOutput = {
 		...ORDINARY_WRITER_OUTPUT,
-		title: "Notes from [[AUTHOR_001]]",
+		title: "Notes from **[[AUTHOR_001]]**",
 		main_story: {
 			...ORDINARY_WRITER_OUTPUT.main_story,
 			headline: "[[AUTHOR_001]] Pauses to Compare Notes",
 			lede: "[[AUTHOR_001]] found the forge behaving for once.",
+			body: "**[[AUTHOR_001]]** remarked, \"forge is finally behaving today,\" and the room settled into practical talk about getting work done.",
 		},
 	};
 
@@ -122,11 +123,16 @@ test("rejects legacy-only fields and unknown keys at the writer boundary", () =>
 	}), PREPARED_EVIDENCE)).toThrow(EditorialOutputContractError);
 });
 
-test("rejects unknown, malformed, and model-formatted author identity tokens", () => {
+test("rejects unknown and malformed author identity tokens", () => {
 	for (const body of [
 		"[[AUTHOR_999]] reported from the forge.",
+		"**[[AUTHOR_999]]** reported from the forge.",
 		"AUTHOR_001 reported from the forge.",
-		"**[[AUTHOR_001]]** reported from the forge.",
+		"*[[AUTHOR_001]]* reported from the forge.",
+		"**[[AUTHOR_001]]* reported from the forge.",
+		"**[[AUTHOR_001]] reported from the forge.",
+		"[[AUTHOR_001]]** reported from the forge.",
+		"***[[AUTHOR_001]]*** reported from the forge.",
 	]) {
 		expect(() => parseMainStoryWriterOutput(JSON.stringify({
 			...ORDINARY_WRITER_OUTPUT,
