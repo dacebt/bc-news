@@ -201,14 +201,12 @@ export function cloudflareHostedModelRequestBody(input: {
 	readonly system: string;
 	readonly user: string;
 	readonly temperature?: number;
-	readonly enableThinking?: false;
 	readonly outputContract: ProductionStepOutputContract;
 }): Readonly<Record<string, unknown>> {
 	const profile = CLOUDFLARE_HOSTED_MODEL_REQUEST_PROFILES[input.model];
 	return {
 		model: input.model,
 		...(input.temperature === undefined ? {} : { temperature: input.temperature }),
-		...(input.enableThinking === false ? { thinking: { type: "disabled" } } : {}),
 		...(profile.responseDelivery === "streaming"
 			? { stream: true, stream_options: { include_usage: true } }
 			: {}),

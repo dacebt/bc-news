@@ -119,10 +119,7 @@ settings. For LM Studio, `temperature`, `top_p`, `top_k`, and
 `enable_thinking` are independently optional; omission includes that field's
 provider default as a candidate. LM Studio and profiled Gateway models
 receive the same strict production-step JSON Schema, while each Gateway model
-profile owns its provider request encoding. MiniMax M3 Gateway configurations
-may additionally declare `enable_thinking: false`; the exact request and
-retained runtime evidence must then carry the disabled-thinking posture, while
-omission remains provider-default. Model evaluation compares these
+profile owns its provider request encoding. Model evaluation compares these
 candidate configurations to select production settings; it is not a
 deterministic test or a provider-default quality gate.
 Current version 9, historical version 8, and historical version 7 preserve the
