@@ -31,7 +31,7 @@
 		{
 			"binding": "DB",
 			"database_name": "bc-news-editions",
-			// Shared with the ingest Worker so both services use the same D1 database.
+			// Ingest writes chat evidence here; generation publishes editions to the same database.
 			"database_id": "5192d247-216a-4ee1-a4db-0d6394a916c7",
 			"migrations_dir": "migrations"
 		}
