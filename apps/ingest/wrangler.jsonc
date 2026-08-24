@@ -1,6 +1,6 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "bc-news-v2-ingest",
+	"name": "bc-news-ingestion-worker",
 	"main": "src/index.ts",
 	"compatibility_date": "2026-08-03",
 	"workers_dev": false,
