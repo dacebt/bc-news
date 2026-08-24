@@ -7,6 +7,12 @@
 	"workers_dev": false,
 	"preview_urls": false,
 	"keep_vars": true,
+	"observability": {
+		"logs": {
+			"enabled": true,
+			"invocation_logs": true
+		}
+	},
 	"secrets": {
 		"required": ["CF_AI_GATEWAY_API_TOKEN", "OPERATOR_API_TOKEN"]
 	},
