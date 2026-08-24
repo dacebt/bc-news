@@ -7,7 +7,7 @@ type WranglerConfigSource = {
 };
 
 const REQUIRED_GENERATION_SECRETS = [
-	"CLOUDFLARE_API_TOKEN",
+	"CF_AI_GATEWAY_API_TOKEN",
 	"OPERATOR_API_TOKEN",
 ] as const;
 
@@ -153,7 +153,7 @@ export function assertProductionWranglerConfigs(
 		|| requiredSecrets.some((secret, index) => secret !== REQUIRED_GENERATION_SECRETS[index])
 	) {
 		throw new Error(
-			`Wrangler config ${generationInput.path} must require exactly CLOUDFLARE_API_TOKEN and OPERATOR_API_TOKEN`,
+			`Wrangler config ${generationInput.path} must require exactly CF_AI_GATEWAY_API_TOKEN and OPERATOR_API_TOKEN`,
 		);
 	}
 	const generationVars = generation["vars"];

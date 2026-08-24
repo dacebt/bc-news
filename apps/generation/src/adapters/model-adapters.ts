@@ -83,11 +83,11 @@ export function resolveModelProvider(
 			}));
 		}
 		case "cloudflare_ai_gateway": {
-			const accountId = readEnv("CLOUDFLARE_ACCOUNT_ID");
-			const apiToken = readEnv("CLOUDFLARE_API_TOKEN");
+			const accountId = readEnv("CF_ACCOUNT_ID");
+			const apiToken = readEnv("CF_AI_GATEWAY_API_TOKEN");
 			if (accountId === undefined || apiToken === undefined) {
 				throw new GenerationConfigError(
-					`CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN are required for ${productionStep} when adapter is cloudflare_ai_gateway`,
+					`CF_ACCOUNT_ID and CF_AI_GATEWAY_API_TOKEN are required for ${productionStep} when adapter is cloudflare_ai_gateway`,
 				);
 			}
 			return construct(() => createCloudflareAiGatewayModelProvider({

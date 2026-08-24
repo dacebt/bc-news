@@ -8,7 +8,7 @@
 	"preview_urls": false,
 	"keep_vars": true,
 	"secrets": {
-		"required": ["CLOUDFLARE_API_TOKEN", "OPERATOR_API_TOKEN"]
+		"required": ["CF_AI_GATEWAY_API_TOKEN", "OPERATOR_API_TOKEN"]
 	},
 	"triggers": {
 		"crons": ["0 0 * * *"]

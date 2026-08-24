@@ -48,7 +48,7 @@ supported.
 ## Live provider setup
 
 For Cloudflare AI Gateway, copy the ignored developer-variable example and set
-`CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` in
+`CF_ACCOUNT_ID` and `CF_AI_GATEWAY_API_TOKEN` in
 `apps/generation/.dev.vars`. The token must be able to call the account AI REST
 endpoint; an AI Gateway-only token is insufficient. Unified Billing requires
 loaded credits and a payment method, but no provider API key. Review the model

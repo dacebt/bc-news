@@ -27,8 +27,8 @@ export interface ModelProviderEnvironment {
 	readonly LMSTUDIO_BASE_URL?: string;
 	readonly HOSTED_MODEL_BASE_URL?: string;
 	readonly HOSTED_MODEL_API_KEY?: string;
-	readonly CLOUDFLARE_ACCOUNT_ID?: string;
-	readonly CLOUDFLARE_API_TOKEN?: string;
+	readonly CF_ACCOUNT_ID?: string;
+	readonly CF_AI_GATEWAY_API_TOKEN?: string;
 }
 
 export function resolveModelProvider(
@@ -75,12 +75,12 @@ export function resolveModelProvider(
 			});
 		}
 		case "cloudflare_ai_gateway": {
-			const accountId = environment.CLOUDFLARE_ACCOUNT_ID;
-			const apiToken = environment.CLOUDFLARE_API_TOKEN;
+			const accountId = environment.CF_ACCOUNT_ID;
+			const apiToken = environment.CF_AI_GATEWAY_API_TOKEN;
 			if (accountId === undefined || accountId === "" || apiToken === undefined || apiToken === "") {
 				throw new CloudflareAiGatewayDeterministicError(
 					"cloudflare_ai_gateway_invalid_config",
-					`CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN are required for ${productionStep}`,
+					`CF_ACCOUNT_ID and CF_AI_GATEWAY_API_TOKEN are required for ${productionStep}`,
 				);
 			}
 			return createCloudflareAiGatewayModelProvider({

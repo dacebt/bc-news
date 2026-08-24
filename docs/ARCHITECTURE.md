@@ -165,8 +165,8 @@ production code traverse package internals.
 configuration per production agent: non-secret adapter identity, requested
 model, optional adapter-specific inference settings, and reasoning or billing
 declarations. `LMSTUDIO_BASE_URL`,
-`HOSTED_MODEL_BASE_URL`, `HOSTED_MODEL_API_KEY`, `CLOUDFLARE_ACCOUNT_ID`, and
-`CLOUDFLARE_API_TOKEN` are environment-only, and a
+`HOSTED_MODEL_BASE_URL`, `HOSTED_MODEL_API_KEY`, `CF_ACCOUNT_ID`, and
+`CF_AI_GATEWAY_API_TOKEN` are environment-only, and a
 base URL containing credentials rejects. Native LM Studio timeout, model
 availability, SDK, and transport failures are retryable by default. Hosted
 timeout, network/body-read failure, and HTTP 408/409/425/429/5xx are retryable
@@ -613,9 +613,9 @@ no `route`, `routes`, or static assets. Its source-level unauthenticated `POST
 production configuration gives it no public hostname; scheduled invocation is
 the only configured production entrypoint. A future public route would require
 a separate protection boundary. Generation declares exactly
-`CLOUDFLARE_API_TOKEN` and `OPERATOR_API_TOKEN` under Wrangler's
+`CF_AI_GATEWAY_API_TOKEN` and `OPERATOR_API_TOKEN` under Wrangler's
 required-secret metadata and never under plain-text `vars`. The non-secret
-`CLOUDFLARE_ACCOUNT_ID` is installed as a dashboard-owned runtime variable,
+`CF_ACCOUNT_ID` is installed as a dashboard-owned runtime variable,
 and `keep_vars` preserves it across Workers Builds deployments. These
 declarations support types, local missing-secret warnings, and deploy-time
 required-secret validation; they do not install or prove the Cloudflare

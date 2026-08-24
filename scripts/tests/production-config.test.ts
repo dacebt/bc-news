@@ -13,7 +13,7 @@ const GENERATION_CONFIG: Config = {
 	workers_dev: false,
 	preview_urls: false,
 	keep_vars: true,
-	secrets: { required: ["CLOUDFLARE_API_TOKEN", "OPERATOR_API_TOKEN"] },
+	secrets: { required: ["CF_AI_GATEWAY_API_TOKEN", "OPERATOR_API_TOKEN"] },
 	d1_databases: [
 		{
 			binding: "DB",
@@ -191,17 +191,17 @@ void test("requires the exact generation runtime secrets", () => {
 		[],
 		["OTHER"],
 		["OPERATOR_API_TOKEN"],
-		["CLOUDFLARE_API_TOKEN", "OPERATOR_API_TOKEN", "OTHER"],
+		["CF_AI_GATEWAY_API_TOKEN", "OPERATOR_API_TOKEN", "OTHER"],
 	]) {
 		const generation = cloneConfig(GENERATION_CONFIG);
 		generation["secrets"] = { required };
 		assert.throws(
 			() => assertPair(generation, cloneConfig(INGEST_CONFIG)),
-			/must require exactly CLOUDFLARE_API_TOKEN and OPERATOR_API_TOKEN/,
+			/must require exactly CF_AI_GATEWAY_API_TOKEN and OPERATOR_API_TOKEN/,
 		);
 	}
 
-	for (const secret of ["CLOUDFLARE_API_TOKEN", "OPERATOR_API_TOKEN"]) {
+	for (const secret of ["CF_AI_GATEWAY_API_TOKEN", "OPERATOR_API_TOKEN"]) {
 		const generation = cloneConfig(GENERATION_CONFIG);
 		const vars = generation["vars"];
 		assert.ok(isConfig(vars));

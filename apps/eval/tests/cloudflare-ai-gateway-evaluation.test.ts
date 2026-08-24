@@ -96,7 +96,7 @@ test("runs Gemini Chat and Luna Responses through the Gateway contract and retai
 			fixturePath: REPRESENTATIVE_FIXTURE_PATH,
 			configPath,
 			resultsDirectory,
-			environment: { CLOUDFLARE_ACCOUNT_ID: "account-id", CLOUDFLARE_API_TOKEN: "sentinel" },
+			environment: { CF_ACCOUNT_ID: "account-id", CF_AI_GATEWAY_API_TOKEN: "sentinel" },
 			sourceProvenance: TEST_PROVENANCE,
 		});
 
@@ -198,7 +198,7 @@ test("retains and reports sanitized Gateway response-contract failure locations"
 			fixturePath: REPRESENTATIVE_FIXTURE_PATH,
 			configPath,
 			resultsDirectory,
-			environment: { CLOUDFLARE_ACCOUNT_ID: "account-id", CLOUDFLARE_API_TOKEN: "sentinel" },
+			environment: { CF_ACCOUNT_ID: "account-id", CF_AI_GATEWAY_API_TOKEN: "sentinel" },
 			sourceProvenance: TEST_PROVENANCE,
 		});
 		const retained = V9BenchmarkRunSchema.parse(JSON.parse(await readFile(result.path, "utf8")) as unknown);
@@ -249,7 +249,7 @@ test("retains and reports the structured provider reason for a Gateway HTTP reje
 			fixturePath: REPRESENTATIVE_FIXTURE_PATH,
 			configPath,
 			resultsDirectory,
-			environment: { CLOUDFLARE_ACCOUNT_ID: "account-id", CLOUDFLARE_API_TOKEN: "sentinel" },
+			environment: { CF_ACCOUNT_ID: "account-id", CF_AI_GATEWAY_API_TOKEN: "sentinel" },
 			sourceProvenance: TEST_PROVENANCE,
 		});
 		const retained = V9BenchmarkRunSchema.parse(JSON.parse(await readFile(result.path, "utf8")) as unknown);
@@ -311,7 +311,7 @@ test("rejects null hosted content before retaining a current V9 artifact", async
 			fixturePath: REPRESENTATIVE_FIXTURE_PATH,
 			configPath,
 			resultsDirectory,
-			environment: { CLOUDFLARE_ACCOUNT_ID: "account-id", CLOUDFLARE_API_TOKEN: "sentinel" },
+			environment: { CF_ACCOUNT_ID: "account-id", CF_AI_GATEWAY_API_TOKEN: "sentinel" },
 			sourceProvenance: TEST_PROVENANCE,
 		})).rejects.toThrow("Both evaluation tracks failed");
 	} finally {

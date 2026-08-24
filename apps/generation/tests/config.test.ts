@@ -20,8 +20,8 @@ function recordedConfig(): Record<string, { adapter: "recorded" }> {
 }
 
 it("does not expose operator credentials to the test runtime", () => {
-	expect(Reflect.has(env, "CLOUDFLARE_ACCOUNT_ID")).toBe(false);
-	expect(Reflect.has(env, "CLOUDFLARE_API_TOKEN")).toBe(false);
+	expect(Reflect.has(env, "CF_ACCOUNT_ID")).toBe(false);
+	expect(Reflect.has(env, "CF_AI_GATEWAY_API_TOKEN")).toBe(false);
 });
 
 it("resolves exactly two independently configured writer providers", () => {
@@ -92,14 +92,14 @@ it("resolves Cloudflare AI Gateway only with account and token bindings", () => 
 	};
 	const modelConfig = { ...recordedConfig(), main_story_write: gateway };
 	const gatewayEnv = envWith({
-		CLOUDFLARE_ACCOUNT_ID: "account-id",
-		CLOUDFLARE_API_TOKEN: "sentinel",
+		CF_ACCOUNT_ID: "account-id",
+		CF_AI_GATEWAY_API_TOKEN: "sentinel",
 		MODEL_CONFIG: JSON.stringify(modelConfig),
 	});
 	expect(resolveGenerationPorts(gatewayEnv).modelProviders.main_story_write).toBeDefined();
 	expect(() => resolveGenerationPorts(envWith({
-		CLOUDFLARE_ACCOUNT_ID: "account-id",
-		CLOUDFLARE_API_TOKEN: "",
+		CF_ACCOUNT_ID: "account-id",
+		CF_AI_GATEWAY_API_TOKEN: "",
 		MODEL_CONFIG: gatewayEnv.MODEL_CONFIG,
 	}))).toThrow(GenerationConfigError);
 });

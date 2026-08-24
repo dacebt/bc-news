@@ -21,6 +21,6 @@ MODEL_CONFIG='{"main_story_write":{"adapter":"lmstudio","model":"replace-with-lo
 # Workers AI > Read. Unified Billing supplies third-party provider credentials.
 # Keep these values only in the ignored .dev.vars file; deployment secret
 # installation is a separate operator action.
-# CLOUDFLARE_ACCOUNT_ID="replace-with-account-id"
-# CLOUDFLARE_API_TOKEN="replace-with-workers-ai-read-token"
+# CF_ACCOUNT_ID="replace-with-account-id"
+# CF_AI_GATEWAY_API_TOKEN="replace-with-workers-ai-read-token"
 # MODEL_CONFIG='{"main_story_write":{"adapter":"cloudflare_ai_gateway","model":"google/gemini-3.1-flash-lite"},"announcements_write":{"adapter":"cloudflare_ai_gateway","model":"google/gemini-3.1-flash-lite"}}'

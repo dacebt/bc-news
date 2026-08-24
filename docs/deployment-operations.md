@@ -35,8 +35,8 @@ distinguishes build-only values from runtime variables and secrets.
 
    | Name | Type | Value |
    |---|---|---|
-   | `CLOUDFLARE_ACCOUNT_ID` | Text | The Cloudflare account ID that owns the Worker, shared D1 database, AI Gateway, and billing account. |
-   | `CLOUDFLARE_API_TOKEN` | Secret | A dedicated token scoped to this account with **Account > Workers AI > Read**. |
+   | `CF_ACCOUNT_ID` | Text | The Cloudflare account ID that owns the Worker, shared D1 database, AI Gateway, and billing account. |
+   | `CF_AI_GATEWAY_API_TOKEN` | Secret | A dedicated token scoped to this account with **Account > Workers AI > Read**. |
    | `OPERATOR_API_TOKEN` | Secret | A dedicated random bearer token used only for authenticated generation launch and status requests. |
 
    These are runtime values, not **Settings > Build > Build Variables and
@@ -51,10 +51,9 @@ distinguishes build-only values from runtime variables and secrets.
    used by ingest. Do not create a second database for generation. Generation
    remains the migration owner.
 
-The runtime API token is not the Workers Builds deployment token. Workers
-Builds creates or selects its own deployment token when the Git integration is
-connected; `CLOUDFLARE_API_TOKEN` is available only to the running Worker for
-AI Gateway inference.
+The runtime `CF_AI_GATEWAY_API_TOKEN` is not the Workers Builds deployment token.
+Workers Builds reserves `CLOUDFLARE_API_TOKEN` for deployment authentication;
+the running Worker reads only `CF_AI_GATEWAY_API_TOKEN` for AI Gateway inference.
 
 ## Workers Builds settings
 
@@ -80,7 +79,7 @@ The checked-in configuration owns `EVIDENCE_INPUT`, `MODEL_CONFIG`, the D1 and
 Workflow bindings, the rate limiter, the daily cron, and the static-assets
 directory. Do not duplicate or override `EVIDENCE_INPUT` or `MODEL_CONFIG` in
 the dashboard. `keep_vars` exists only to preserve the dashboard-owned
-`CLOUDFLARE_ACCOUNT_ID`; Wrangler deployments preserve encrypted secrets
+`CF_ACCOUNT_ID`; Wrangler deployments preserve encrypted secrets
 independently.
 
 ## First deployment checks

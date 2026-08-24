@@ -181,7 +181,7 @@ async function buildControlledLocalRuns(
 				fixturePath: join(localDataRoot, entry.evidencePath),
 				configPath,
 				resultsDirectory,
-				environment: { CLOUDFLARE_ACCOUNT_ID: "controlled-account", CLOUDFLARE_API_TOKEN: "controlled-token" },
+				environment: { CF_ACCOUNT_ID: "controlled-account", CF_AI_GATEWAY_API_TOKEN: "controlled-token" },
 				sourceProvenance: controlledSourceProvenance(options.codeCommit),
 			});
 			assertProof(result.benchmark.version === 9, "Controlled current scorecard benchmark must be V9");
