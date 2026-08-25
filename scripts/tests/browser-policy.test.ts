@@ -17,30 +17,30 @@ void test("rejects external requests before navigation", () => {
 
 void test("permits only the two pair-addressed 404 responses", () => {
 	assert.deepEqual(
-		responseViolation(`${ORIGIN}/api/edition?active_region_id=8&publication_date=2026-01-25`, 404, ORIGIN),
+		responseViolation(`${ORIGIN}/api/edition?active_region_id=8&publication_date=2026-08-25`, 404, ORIGIN),
 		{
 			violation: null,
-			allowedNotFoundPair: "8/2026-01-25",
-			allowedNotFoundUrl: `${ORIGIN}/api/edition?active_region_id=8&publication_date=2026-01-25`,
+			allowedNotFoundPair: "8/2026-08-25",
+			allowedNotFoundUrl: `${ORIGIN}/api/edition?active_region_id=8&publication_date=2026-08-25`,
 		},
 	);
 	assert.deepEqual(
-		responseViolation(`${ORIGIN}/api/edition?active_region_id=7&publication_date=2026-01-24`, 404, ORIGIN),
+		responseViolation(`${ORIGIN}/api/edition?active_region_id=7&publication_date=2026-08-26`, 404, ORIGIN),
 		{
 			violation: null,
-			allowedNotFoundPair: "7/2026-01-24",
-			allowedNotFoundUrl: `${ORIGIN}/api/edition?active_region_id=7&publication_date=2026-01-24`,
+			allowedNotFoundPair: "7/2026-08-26",
+			allowedNotFoundUrl: `${ORIGIN}/api/edition?active_region_id=7&publication_date=2026-08-26`,
 		},
 	);
 	assert.match(
-		responseViolation(`${ORIGIN}/api/edition?active_region_id=9&publication_date=2026-01-25`, 404, ORIGIN).violation ?? "",
+		responseViolation(`${ORIGIN}/api/edition?active_region_id=9&publication_date=2026-08-25`, 404, ORIGIN).violation ?? "",
 		/HTTP 404/,
 	);
 	assert.match(responseViolation(`${ORIGIN}/assets/index.js`, 500, ORIGIN).violation ?? "", /HTTP 500/);
 });
 
 void test("suppresses only derivative failures from an observed exact allowed 404 URL", () => {
-	const allowedUrl = `${ORIGIN}/api/edition?active_region_id=8&publication_date=2026-01-25`;
+	const allowedUrl = `${ORIGIN}/api/edition?active_region_id=8&publication_date=2026-08-25`;
 	const observed = new Set([allowedUrl]);
 	assert.equal(requestFailureViolation(allowedUrl, "net::ERR_ABORTED", observed), null);
 	assert.equal(consoleErrorViolation(ALLOWED_NOT_FOUND_CONSOLE_ERROR, allowedUrl, observed), null);
@@ -54,15 +54,15 @@ void test("suppresses only derivative failures from an observed exact allowed 40
 
 void test("rejects extra and duplicate query parameters on allowed 404 pairs", () => {
 	assert.match(
-		responseViolation(`${ORIGIN}/api/edition?active_region_id=8&publication_date=2026-01-25&extra=1`, 404, ORIGIN).violation ?? "",
+		responseViolation(`${ORIGIN}/api/edition?active_region_id=8&publication_date=2026-08-25&extra=1`, 404, ORIGIN).violation ?? "",
 		/HTTP 404/,
 	);
 	assert.match(
-		responseViolation(`${ORIGIN}/api/edition?active_region_id=8&active_region_id=8&publication_date=2026-01-25`, 404, ORIGIN).violation ?? "",
+		responseViolation(`${ORIGIN}/api/edition?active_region_id=8&active_region_id=8&publication_date=2026-08-25`, 404, ORIGIN).violation ?? "",
 		/HTTP 404/,
 	);
 	assert.match(
-		responseViolation(`${ORIGIN}/api/edition?active_region_id=8&publication_date=2026-01-25&publication_date=2026-01-25`, 404, ORIGIN).violation ?? "",
+		responseViolation(`${ORIGIN}/api/edition?active_region_id=8&publication_date=2026-08-25&publication_date=2026-08-25`, 404, ORIGIN).violation ?? "",
 		/HTTP 404/,
 	);
 });

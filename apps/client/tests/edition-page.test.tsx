@@ -44,24 +44,24 @@ describe("EditionPage url-driven fetching", () => {
 	});
 
 	it("fetches the pair named in the url on mount", async () => {
-		setUrl("?active_region_id=8&publication_date=2026-02-10");
+		setUrl("?active_region_id=8&publication_date=2026-08-25");
 
 		render(<EditionPage />);
 
 		await waitFor(() => expect(editionApi.getEdition).toHaveBeenCalledTimes(1));
 		const request = requestedEdition();
 		expect(request.activeRegionId).toBe("8");
-		expect(request.publicationDate).toBe("2026-02-10");
+		expect(request.publicationDate).toBe("2026-08-25");
 		expect(request.signal).toBeInstanceOf(AbortSignal);
 	});
 
 	it("restores and re-normalizes the fetched pair on popstate", async () => {
-		setUrl("?active_region_id=8&publication_date=2026-02-10");
+		setUrl("?active_region_id=8&publication_date=2026-08-25");
 		render(<EditionPage />);
 		await waitFor(() => expect(editionApi.getEdition).toHaveBeenCalledTimes(1));
 
 		act(() => {
-			setUrl("?active_region_id=99&publication_date=2026-03-15");
+			setUrl("?active_region_id=99&publication_date=2026-08-25");
 			window.dispatchEvent(new PopStateEvent("popstate"));
 		});
 
@@ -71,39 +71,39 @@ describe("EditionPage url-driven fetching", () => {
 		await waitFor(() => expect(editionApi.getEdition).toHaveBeenCalledTimes(2));
 		const request = requestedEdition(1);
 		expect(request.activeRegionId).toBe("7");
-		expect(request.publicationDate).toBe("2026-03-15");
+		expect(request.publicationDate).toBe("2026-08-25");
 		expect(request.signal).toBeInstanceOf(AbortSignal);
 	});
 
 	it("shows today's absent edition as waiting before the expected availability target", async () => {
-		const alert = await renderAbsentEditionAt("2026-03-15T09:59:00.000Z", "2026-03-15");
+		const alert = await renderAbsentEditionAt("2026-08-25T09:59:00.000Z", "2026-08-25");
 
 		expect(alert.getAttribute("data-status")).toBe("info");
 		expect(alert.textContent).toContain("expected by 10:00 AM UTC");
 	});
 
 	it("keeps today's absent edition waiting during the availability grace period", async () => {
-		const alert = await renderAbsentEditionAt("2026-03-15T10:29:59.000Z", "2026-03-15");
+		const alert = await renderAbsentEditionAt("2026-08-25T10:29:59.000Z", "2026-08-25");
 
 		expect(alert.getAttribute("data-status")).toBe("info");
 		expect(alert.textContent).toContain("expected by 10:00 AM UTC");
 	});
 
 	it("shows today's absent edition as a failure at the waiting cutoff", async () => {
-		const alert = await renderAbsentEditionAt("2026-03-15T10:30:00.000Z", "2026-03-15");
+		const alert = await renderAbsentEditionAt("2026-08-25T10:30:00.000Z", "2026-08-25");
 
 		expect(alert.getAttribute("data-status")).toBe("error");
 		expect(alert.textContent).toContain("No published edition for this region/date.");
 	});
 
 	it("shows a non-today absent edition as a failure before today's cutoff", async () => {
-		const alert = await renderAbsentEditionAt("2026-03-15T10:00:00.000Z", "2026-03-14");
+		const alert = await renderAbsentEditionAt("2026-08-26T10:00:00.000Z", "2026-08-25");
 
 		expect(alert.getAttribute("data-status")).toBe("error");
 	});
 
 	it("regrades a waiting edition as a failure when the cutoff passes", async () => {
-		const alert = await renderAbsentEditionAt("2026-03-15T10:29:59.000Z", "2026-03-15");
+		const alert = await renderAbsentEditionAt("2026-08-25T10:29:59.000Z", "2026-08-25");
 		expect(alert.getAttribute("data-status")).toBe("info");
 
 		act(() => {

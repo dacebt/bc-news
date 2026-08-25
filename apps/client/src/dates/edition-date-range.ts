@@ -13,7 +13,7 @@ export interface EditionDateRange {
 
 // Earliest published edition -- the v1 MIN_DATE concept. Named so call sites
 // never carry the date as a magic string.
-export const EARLIEST_PUBLICATION_DATE = "2026-01-15";
+export const EARLIEST_PUBLICATION_DATE = "2026-08-25";
 
 const CALENDAR_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 

@@ -75,7 +75,9 @@ async function assertPublishedEdition(page: Page, edition: Edition): Promise<voi
 	assertEqual(await page.getByText("Region:", { exact: true }).innerText(), "Region:", "region control label");
 	assertEqual(await page.getByText("Date:", { exact: true }).innerText(), "Date:", "date control label");
 	assertEqual(await page.locator("select").inputValue(), edition.active_region_id, "region control value");
-	assertEqual(await page.locator('input[type="date"]').inputValue(), edition.publication_date, "date control value");
+	const dateInput = page.locator('input[type="date"]');
+	assertEqual(await dateInput.inputValue(), edition.publication_date, "date control value");
+	assertEqual(await dateInput.getAttribute("min"), edition.publication_date, "date control minimum");
 	const titles = await page.locator("h4").allInnerTexts();
 	assertEqual(JSON.stringify(titles), JSON.stringify(edition.announcements.map((item) => item.title)), "announcement titles");
 	for (let index = 0; index < edition.announcements.length; index++) {
@@ -107,6 +109,7 @@ async function run(ctx: WalkContext): Promise<void> {
 		await route.continue();
 	});
 	const page = await context.newPage();
+	await page.clock.setFixedTime(new Date("2026-08-26T12:00:00.000Z"));
 	page.on("response", (response) => {
 		const classification = responseViolation(response.url(), response.status(), expectedOrigin);
 		if (classification.violation !== null) failures.push(classification.violation);
@@ -153,7 +156,7 @@ async function run(ctx: WalkContext): Promise<void> {
 
 	const unavailableDate = ALLOWED_NOT_FOUND_PAIRS[1]!;
 	await waitForPairResponse(page, unavailableDate, async () => {
-		await page.getByRole("button", { name: "Previous day", exact: true }).click();
+		await page.getByRole("button", { name: "Next day", exact: true }).click();
 	});
 	await page.getByText(ABSENT_COPY, { exact: true }).waitFor();
 	assertQuery(page, unavailableDate);

@@ -1,8 +1,8 @@
 import type { GenerationRunParams } from "@bc-news/contracts";
 
 export const ALLOWED_NOT_FOUND_PAIRS: readonly GenerationRunParams[] = [
-	{ active_region_id: "8", publication_date: "2026-01-25" },
-	{ active_region_id: "7", publication_date: "2026-01-24" },
+	{ active_region_id: "8", publication_date: "2026-08-25" },
+	{ active_region_id: "7", publication_date: "2026-08-26" },
 ];
 
 export const ALLOWED_NOT_FOUND_CONSOLE_ERROR =

@@ -1,7 +1,7 @@
 # @bc-news/fixtures
 
 The skeleton walk feeds the committed BitJita wire corpus at
-`bitjita/active-region-7_2026-01-24.json` through the stub, ingest worker, and
+`bitjita/active-region-7_2026-08-24.json` through the stub, ingest worker, and
 D1-backed generation path. The evidence corpus at
 `evidence/active-region-7_2026-01-24.json` feeds the explicitly selected
 `fixtureEvidenceInput` adapter for tests and evaluation. The recorded model

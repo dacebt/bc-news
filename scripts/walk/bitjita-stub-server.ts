@@ -27,7 +27,7 @@ export const fixturePath = join(
 	"packages",
 	"fixtures",
 	"bitjita",
-	"active-region-7_2026-01-24.json",
+	"active-region-7_2026-08-24.json",
 );
 
 export interface BitJitaStubServer {
