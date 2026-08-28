@@ -7,13 +7,6 @@ import {
 } from "./prepared-evidence";
 
 const BURST_WINDOW_MS = 30 * 1000;
-const MAX_MESSAGES = 300;
-const PER_BUCKET_CAP = Math.ceil(MAX_MESSAGES / 24);
-
-interface ScoredMessage {
-	message: PreparedMessage;
-	score: number;
-}
 
 type EvidenceContractErrorCode = "evidence_out_of_window" | "duplicate_evidence_id";
 
@@ -82,15 +75,6 @@ function projectMessage(message: PreparedMessage): PreparedMessage {
 	};
 }
 
-function fnv1a32(value: string): number {
-	let hash = 0x811c9dc5;
-	for (let index = 0; index < value.length; index += 1) {
-		hash ^= value.charCodeAt(index);
-		hash = Math.imul(hash, 0x01000193);
-	}
-	return hash >>> 0;
-}
-
 export function prepareEvidence(input: {
 	activeRegionId: string;
 	publicationDate: string;
@@ -122,7 +106,6 @@ export function prepareEvidence(input: {
 		empty_after_trim: 0,
 		too_short: 0,
 		burst_merged: 0,
-		sampling_dropped: 0,
 	};
 
 	const normalized = parsedMessages
@@ -164,25 +147,7 @@ export function prepareEvidence(input: {
 		afterBurst.push(previous);
 	}
 
-	const bucketCounts = new Map<number, number>();
-	const scored = afterBurst
-		.map<ScoredMessage>((message) => ({
-			message,
-			score: fnv1a32(`${activeRegionId}|${publicationDate}|${message.id}`),
-		}))
-		.sort((left, right) => left.score - right.score || compareMessages(left.message, right.message));
-	const sampled = scored.filter(({ message }) => {
-		const bucket = new Date(message.ts).getUTCHours();
-		const count = bucketCounts.get(bucket) ?? 0;
-		if (count >= PER_BUCKET_CAP) return false;
-		bucketCounts.set(bucket, count + 1);
-		return true;
-	});
-	const finalMessages = sampled
-		.slice(0, MAX_MESSAGES)
-		.map(({ message }) => message)
-		.sort(compareMessages);
-	dropStats.sampling_dropped = afterBurst.length - finalMessages.length;
+	const finalMessages = afterBurst;
 
 	return PreparedEvidenceSchema.parse({
 		active_region_id: activeRegionId,

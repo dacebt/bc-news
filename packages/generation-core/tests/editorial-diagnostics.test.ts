@@ -13,7 +13,7 @@ const PREPARED_EVIDENCE: PreparedEvidence = {
 	after_filter_count: 1,
 	after_burst_count: 1,
 	final_count: 1,
-	drop_stats: { empty_after_trim: 0, too_short: 0, burst_merged: 0, sampling_dropped: 0 },
+	drop_stats: { empty_after_trim: 0, too_short: 0, burst_merged: 0 },
 	messages: [{
 		id: "message-1",
 		ts: 1_769_212_800_000,

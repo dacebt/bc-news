@@ -2,13 +2,16 @@ import { expect, test } from "vitest";
 import { PRODUCTION_MODEL_STEPS } from "@bc-news/generation-core";
 import {
 	CONTEXT_BENCHMARK_LOADS,
+	LEGACY_CONTEXT_BENCHMARK_LOADS,
 	ContextBenchmarkFileSchema,
 	ContextBenchmarkFileV2Schema,
 	ContextBenchmarkFileV3Schema,
+	ContextBenchmarkFileV4Schema,
 	LegacyContextBenchmarkFileSchema,
 	type ContextBenchmarkFile,
 	type ContextBenchmarkFileV2,
 	type ContextBenchmarkFileV3,
+	type ContextBenchmarkFileV4,
 } from "../src/context-benchmark-file";
 import { formatContextBenchmarkReport } from "../src/context-benchmark-report";
 
@@ -22,7 +25,7 @@ function validReport(): ContextBenchmarkFile {
 			fixture_sha256: HASH,
 			prepared_message_ceiling: 208,
 		},
-		loads: CONTEXT_BENCHMARK_LOADS,
+		loads: LEGACY_CONTEXT_BENCHMARK_LOADS,
 		model: {
 			identifier: "qwen3-local",
 			model_key: "qwen3-local-key",
@@ -31,7 +34,7 @@ function validReport(): ContextBenchmarkFile {
 			context_length: 1_000,
 			measurement_runtime: "lmstudio_sdk_1.5",
 		},
-		rows: CONTEXT_BENCHMARK_LOADS.flatMap((messageLoad) =>
+		rows: LEGACY_CONTEXT_BENCHMARK_LOADS.flatMap((messageLoad) =>
 			PRODUCTION_MODEL_STEPS.map((productionStep) => ({
 				message_load: messageLoad,
 				production_step: productionStep,
@@ -98,6 +101,23 @@ function validV3Report(): ContextBenchmarkFileV3 {
 	});
 }
 
+function validV4Report(): ContextBenchmarkFileV4 {
+	const historical = validV3Report();
+	return ContextBenchmarkFileV4Schema.parse({
+		...historical,
+		version: 4,
+		fixture: { ...historical.fixture, prepared_message_ceiling: 553 },
+		loads: CONTEXT_BENCHMARK_LOADS,
+		rows: CONTEXT_BENCHMARK_LOADS.flatMap((messageLoad) =>
+			PRODUCTION_MODEL_STEPS.map((productionStep) => ({
+				...historical.rows[0]!,
+				message_load: messageLoad,
+				production_step: productionStep,
+			})),
+		),
+	});
+}
+
 test("parses an unchanged absent-version context result as strict legacy evidence", () => {
 	const report = validReport();
 
@@ -147,6 +167,15 @@ test("parses strict version 3 independent agent inference settings", () => {
 			agent_configurations: { ...report.agent_configurations, main_story_write: configuration },
 		}).success).toBe(false);
 	}
+});
+
+test("parses strict version 4 full-evidence context measurements", () => {
+	const report = validV4Report();
+
+	expect(report.version).toBe(4);
+	expect(report.fixture.prepared_message_ceiling).toBe(553);
+	expect(report.loads).toEqual([1, 50, 100, 150, 553]);
+	expect(ContextBenchmarkFileSchema.parse(report)).toEqual(report);
 });
 
 test("rejects version 3 agent models that do not identify one retained loaded model", () => {

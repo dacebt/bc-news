@@ -528,18 +528,16 @@ proves, tests of glue and framework wiring, tests to satisfy coverage.
   never invoke LM Studio. The accepted representative run requires exactly one
   already-loaded local Qwen model, rejects any hosted or mixed-model config,
   and never loads, unloads, or switches model state.
-- Current context-result version 3 tests require every production-step model and
+- Current context-result version 4 tests require every production-step model and
   optional `temperature`, `top_p`, `top_k`, and `enable_thinking` value to
-  survive write and reparse independently. Version 2 and absent-version context
-  results continue through their frozen parsers.
-- The representative corpus prepares to 208 messages under the unchanged
-  evidence-message sampler, so the truthful representative matrix is 1, 50,
-  100, 150, and 208.
-  The benchmark records the corpus hash and ceiling; it does not pad or duplicate
-  messages to manufacture a 300-message row. The production baseline remains at
-  most 300 messages, at most 13 from each UTC hour, stable FNV selection from
-  `activeRegionId|publicationDate|message.id`, and truthful `sampling_dropped`
-  accounting. No filtering, retrieval, or chunking policy changes here.
+  survive write and reparse independently. Version 3, version 2, and
+  absent-version context results continue through their frozen parsers.
+- The representative corpus prepares to 553 messages after hygiene, so the
+  truthful representative matrix is 1, 50, 100, 150, and 553.
+  The benchmark records the corpus hash and ceiling; it does not pad, duplicate,
+  or sample messages to manufacture a measurement row. Production preparation
+  carries every message surviving hygiene to both writers. No filtering,
+  retrieval, or chunking policy is introduced here.
 - Each benchmark row retains the exact production request hash, structured-output
   schema hash, loaded model context length, fixed templated input, evidence or
   draft marginal, any nonnegative provider/runtime delta, provider-reported

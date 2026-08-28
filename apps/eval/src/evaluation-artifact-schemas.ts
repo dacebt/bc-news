@@ -1,8 +1,9 @@
 import { createHash } from "node:crypto";
 import { z } from "zod";
+import { ActiveRegionIdSchema, PublicationDateSchema } from "@bc-news/contracts";
 import {
 	ExternalBillingSchema,
-	PreparedEvidenceSchema,
+	PreparedMessageSchema,
 	TokenUsageSchema,
 } from "@bc-news/generation-core";
 import { EvalConfigSchema } from "./config";
@@ -14,6 +15,46 @@ import {
 export const EvaluationTimestampSchema = z.iso.datetime({ offset: true });
 export const EvaluationIdSchema = z.string().regex(/^[A-Za-z0-9][A-Za-z0-9_-]{0,199}$/u);
 export const Sha256HashSchema = z.string().regex(/^[0-9a-f]{64}$/u);
+
+export const HistoricalSampledPreparedEvidenceSchema = z.strictObject({
+	active_region_id: ActiveRegionIdSchema,
+	publication_date: PublicationDateSchema,
+	raw_count: z.int().nonnegative(),
+	after_filter_count: z.int().nonnegative(),
+	after_burst_count: z.int().nonnegative(),
+	final_count: z.int().nonnegative(),
+	drop_stats: z.strictObject({
+		empty_after_trim: z.int().nonnegative(),
+		too_short: z.int().nonnegative(),
+		burst_merged: z.int().nonnegative(),
+		sampling_dropped: z.int().nonnegative(),
+	}),
+	messages: z.array(PreparedMessageSchema),
+}).superRefine((output, context) => {
+	if (output.after_filter_count > output.raw_count) {
+		context.addIssue({ code: "custom", path: ["after_filter_count"], message: "after_filter_count cannot exceed raw_count" });
+	}
+	if (output.after_burst_count > output.after_filter_count) {
+		context.addIssue({ code: "custom", path: ["after_burst_count"], message: "after_burst_count cannot exceed after_filter_count" });
+	}
+	if (output.final_count > output.after_burst_count) {
+		context.addIssue({ code: "custom", path: ["final_count"], message: "final_count cannot exceed after_burst_count" });
+	}
+	if (output.final_count !== output.messages.length) {
+		context.addIssue({ code: "custom", path: ["messages"], message: "messages length must equal final_count" });
+	}
+	if (output.raw_count - output.after_filter_count !== output.drop_stats.empty_after_trim + output.drop_stats.too_short) {
+		context.addIssue({ code: "custom", path: ["drop_stats"], message: "filter drop statistics must equal raw_count minus after_filter_count" });
+	}
+	if (output.after_filter_count - output.after_burst_count !== output.drop_stats.burst_merged) {
+		context.addIssue({ code: "custom", path: ["drop_stats", "burst_merged"], message: "burst_merged must equal after_filter_count minus after_burst_count" });
+	}
+	if (output.after_burst_count - output.final_count !== output.drop_stats.sampling_dropped) {
+		context.addIssue({ code: "custom", path: ["drop_stats", "sampling_dropped"], message: "sampling_dropped must equal after_burst_count minus final_count" });
+	}
+});
+
+export type HistoricalSampledPreparedEvidence = z.infer<typeof HistoricalSampledPreparedEvidenceSchema>;
 
 export function sha256Json(value: unknown): string {
 	return createHash("sha256").update(JSON.stringify(value)).digest("hex");
@@ -173,7 +214,7 @@ export const BenchmarkRunBaseSchema = z.strictObject({
 		publication_date: z.iso.date(),
 		original_count: z.number().int().nonnegative(),
 		final_count: z.number().int().nonnegative(),
-		snapshot: PreparedEvidenceSchema,
+		snapshot: HistoricalSampledPreparedEvidenceSchema,
 	}),
 	provenance: z.strictObject({ code: EvaluationCodeProvenanceSchema, output_contracts: z.tuple([OutputContractProvenanceSchema, OutputContractProvenanceSchema]) }),
 	trial_roster: z.tuple([z.strictObject({ trial_id: EvaluationIdSchema, config_identity: EvaluationIdSchema, repetition: z.literal(1) })]),

@@ -86,15 +86,14 @@ day), end-exclusive. Adapters parse every row against the shared schema and
 reject before returning; ordering is unspecified at the port, and the pure
 core sorts deterministically.
 
-Prepared evidence retains the inherited pre-rewrite deterministic sampler
-unchanged. After the established hygiene and burst stages, it keeps at most
-`MAX_MESSAGES = 300`, caps each UTC hour at 13 messages, and chooses within
-those bounds by the stable FNV hash of
-`activeRegionId|publicationDate|message.id`. `sampling_dropped` reports
-the messages removed by that sampling stage. These are restored baseline
-values, not newly tuned quality thresholds. The eval-owned context benchmark
-measures exact representative requests before any later selection rule or
-numeric limit is adjusted.
+Prepared evidence performs contract enforcement and hygiene only. After the
+established normalization, filtering, and burst stages, every surviving
+message reaches both editorial writers in chronological order. There is no
+global cap, per-hour quota, hash selection, or sampling drop count.
+`PreparedEvidenceSchema` requires `final_count === after_burst_count`, so a
+later preparation stage cannot silently shrink the evidence roster. The
+eval-owned context benchmark measures exact representative requests against
+the full canonical prepared corpus.
 
 Settled — one D1 database, four tables, one migration owner: alongside
 `edition` (publish target, primary key `(active_region_id,
@@ -714,22 +713,22 @@ its configured context length. The live command requires exactly one loaded
 Qwen model and the same model id across both production-step configs; it
 never loads, switches, unloads, or contacts a hosted model.
 
-Current context-result version 3 artifacts retain the exact two independent LM
+Current context-result version 4 artifacts retain the exact two independent LM
 Studio production-step configurations, including optional `temperature`,
-`top_p`, `top_k`, and `enable_thinking`. Version 2 and absent-version context
+`top_p`, `top_k`, and `enable_thinking`, and measure the full no-sampling
+prepared-evidence ceiling. Version 3, version 2, and absent-version context
 results retain their historical meanings. The command requires one loaded model
 because it measures one runtime context, but each role still retains and uses
 its own inference choices.
 
-The representative evidence corpus produces 208 prepared messages under the
-unchanged evidence-message sampler, so its fixed measurement matrix is 1, 50,
-100, 150, and 208.
+The representative evidence corpus produces 553 prepared messages after
+hygiene, so its fixed measurement matrix is 1, 50, 100, 150, and 553.
 Each load preserves the retained message order and builds both writer requests
 from the prepared evidence. Provider-reported usage is reconciled
 against model-native template/token counts and written as strict JSON. Schema
 constraints are recorded by name and digest rather than assigned a fictional
-token cost. This architecture still introduces no filtering, retrieval, or
-chunking policy; the production 300-message and 13-per-hour limits remain intact.
+token cost. This architecture introduces no filtering, retrieval, or chunking
+policy.
 
 The final reader check launches installed Google Chrome through
 `playwright-core`, blocks service workers, and installs a request-aborting

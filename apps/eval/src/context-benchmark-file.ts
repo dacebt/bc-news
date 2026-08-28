@@ -8,7 +8,8 @@ import {
 } from "./current-production-steps";
 import { RunIdSchema, Sha256HashSchema, generateRunId } from "./run-file";
 
-export const CONTEXT_BENCHMARK_LOADS = [1, 50, 100, 150, 208] as const;
+export const LEGACY_CONTEXT_BENCHMARK_LOADS = [1, 50, 100, 150, 208] as const;
+export const CONTEXT_BENCHMARK_LOADS = [1, 50, 100, 150, 553] as const;
 
 const ContextBenchmarkRowSchema = z.strictObject({
 	message_load: z.int().positive(),
@@ -61,7 +62,7 @@ const ContextBenchmarkSamplingByStepSchema = z.strictObject({
 	announcements_write: ContextBenchmarkSamplingEvidenceSchema,
 });
 
-const ContextBenchmarkFileShape = {
+const HistoricalContextBenchmarkFileShape = {
 	id: RunIdSchema,
 	fixture: z.strictObject({
 		path: z.string().min(1),
@@ -84,17 +85,40 @@ const ContextBenchmarkFileShape = {
 		measurement_runtime: z.literal("lmstudio_sdk_1.5"),
 	}),
 	rows: z.array(ContextBenchmarkRowSchema).length(
-		CONTEXT_BENCHMARK_LOADS.length * CURRENT_PRODUCTION_MODEL_STEPS.length,
+		LEGACY_CONTEXT_BENCHMARK_LOADS.length * CURRENT_PRODUCTION_MODEL_STEPS.length,
 	),
 	started_at: z.iso.datetime({ offset: true }),
 	completed_at: z.iso.datetime({ offset: true }),
 } as const;
 
+const CurrentContextBenchmarkFileShape = {
+	id: RunIdSchema,
+	fixture: z.strictObject({
+		path: z.string().min(1),
+		fixture_sha256: Sha256HashSchema,
+		prepared_message_ceiling: z.literal(553),
+	}),
+	loads: z.tuple([
+		z.literal(1),
+		z.literal(50),
+		z.literal(100),
+		z.literal(150),
+		z.literal(553),
+	]),
+	model: HistoricalContextBenchmarkFileShape.model,
+	rows: z.array(ContextBenchmarkRowSchema).length(
+		CONTEXT_BENCHMARK_LOADS.length * CURRENT_PRODUCTION_MODEL_STEPS.length,
+	),
+	started_at: HistoricalContextBenchmarkFileShape.started_at,
+	completed_at: HistoricalContextBenchmarkFileShape.completed_at,
+} as const;
+
 function validateContextBenchmarkRows(
 	report: { readonly rows: readonly ContextBenchmarkRow[]; readonly model: { readonly context_length: number } },
 	context: z.core.$RefinementCtx,
+	loads: readonly number[],
 ): void {
-	const expected = CONTEXT_BENCHMARK_LOADS.flatMap((messageLoad) =>
+	const expected = loads.flatMap((messageLoad) =>
 		CURRENT_PRODUCTION_MODEL_STEPS.map(
 			(productionStep) => `${messageLoad}:${productionStep}`,
 		)
@@ -129,15 +153,17 @@ function validateContextBenchmarkSamplingPosture(
 }
 
 export const LegacyContextBenchmarkFileSchema = z.strictObject(
-	ContextBenchmarkFileShape,
-).superRefine(validateContextBenchmarkRows);
+	HistoricalContextBenchmarkFileShape,
+).superRefine((report, context) => {
+	validateContextBenchmarkRows(report, context, LEGACY_CONTEXT_BENCHMARK_LOADS);
+});
 
 export const ContextBenchmarkFileV2Schema = z.strictObject({
 	version: z.literal(2),
-	...ContextBenchmarkFileShape,
+	...HistoricalContextBenchmarkFileShape,
 	sampling: ContextBenchmarkSamplingByStepSchema,
 }).superRefine((report, context) => {
-	validateContextBenchmarkRows(report, context);
+	validateContextBenchmarkRows(report, context, LEGACY_CONTEXT_BENCHMARK_LOADS);
 	validateContextBenchmarkSamplingPosture(report, context);
 });
 
@@ -198,14 +224,24 @@ function validateContextBenchmarkAgentModels(
 
 export const ContextBenchmarkFileV3Schema = z.strictObject({
 	version: z.literal(3),
-	...ContextBenchmarkFileShape,
+	...HistoricalContextBenchmarkFileShape,
 	agent_configurations: ContextBenchmarkConfigurationsByStepSchema,
 }).superRefine((report, context) => {
-	validateContextBenchmarkRows(report, context);
+	validateContextBenchmarkRows(report, context, LEGACY_CONTEXT_BENCHMARK_LOADS);
+	validateContextBenchmarkAgentModels(report, context);
+});
+
+export const ContextBenchmarkFileV4Schema = z.strictObject({
+	version: z.literal(4),
+	...CurrentContextBenchmarkFileShape,
+	agent_configurations: ContextBenchmarkConfigurationsByStepSchema,
+}).superRefine((report, context) => {
+	validateContextBenchmarkRows(report, context, CONTEXT_BENCHMARK_LOADS);
 	validateContextBenchmarkAgentModels(report, context);
 });
 
 export const ContextBenchmarkFileSchema = z.union([
+	ContextBenchmarkFileV4Schema,
 	ContextBenchmarkFileV3Schema,
 	ContextBenchmarkFileV2Schema,
 	LegacyContextBenchmarkFileSchema,
@@ -214,6 +250,7 @@ export const ContextBenchmarkFileSchema = z.union([
 export type ContextBenchmarkFile = z.infer<typeof ContextBenchmarkFileSchema>;
 export type ContextBenchmarkFileV2 = z.infer<typeof ContextBenchmarkFileV2Schema>;
 export type ContextBenchmarkFileV3 = z.infer<typeof ContextBenchmarkFileV3Schema>;
+export type ContextBenchmarkFileV4 = z.infer<typeof ContextBenchmarkFileV4Schema>;
 export type ContextBenchmarkRow = z.infer<typeof ContextBenchmarkRowSchema>;
 export type ContextBenchmarkStep = CurrentProductionModelStep;
 

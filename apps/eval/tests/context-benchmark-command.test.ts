@@ -241,7 +241,7 @@ test("benchmarks the exact dependent two-step roster at every canonical message 
 		expect(request.options.structured.jsonSchema).toEqual(expect.objectContaining({ type: "object" }));
 	}
 
-	expect(report.version).toBe(3);
+	expect(report.version).toBe(4);
 	expect(report.loads).toEqual(CONTEXT_BENCHMARK_LOADS);
 	expect(report.model).toEqual({
 		identifier: MODEL_METADATA.identifier,

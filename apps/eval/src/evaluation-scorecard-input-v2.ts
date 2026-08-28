@@ -1,12 +1,12 @@
 import { createHash } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
 import { EvidenceFixtureSchema } from "@bc-news/contracts";
-import { prepareEvidence } from "@bc-news/generation-core";
 import { z } from "zod";
 import { BenchmarkRunSchema } from "./evaluation-artifact";
 import { EvaluationIdSchema, canonical, evaluationConfigIdentity, sha256Json } from "./evaluation-artifact-schemas";
 import { V7BenchmarkRunBaseSchema, V7BenchmarkRunSchema, type V7BenchmarkRun } from "./evaluation-artifact-v7";
 import { V8BenchmarkRunBaseSchema, V8BenchmarkRunSchema, type V8BenchmarkRun } from "./evaluation-artifact-v8";
+import { prepareHistoricalSampledEvidence } from "./evaluation-historical-prepared-evidence";
 import { evaluationOutputContractProvenance } from "./evaluation-output-contract-provenance";
 import { EvaluationReferenceCorpusError, loadEvaluationReferenceCorpusAtReference, type LoadedEvaluationReferenceCorpus, type LoadedEvaluationReferenceCorpusEntry } from "./evaluation-reference-corpus";
 import { readRepositorySource, sourceReferenceAtHead, type RepositorySourceReference } from "./evaluation-repository-reference";
@@ -84,7 +84,7 @@ function auditRetainedSources(input: Omit<LoadedEvaluationScorecardInput, "selec
 		if (loaded === undefined || corpusEntry === undefined || manifestEntry === undefined || !isDeepStrictEqual(loaded.declaration, declared) || !isDeepStrictEqual(loaded.corpusEntry, corpusEntry) || !isDeepStrictEqual(corpusEntry.manifestEntry, manifestEntry) || declared.corpus_fixture_id !== manifestEntry.id) fail("evidence_set_mismatch", input.declarationPath, `Loaded evidence at ordinal ${String(index + 1)} is reordered or substituted`);
 		const fixture = parsed(rawJson(corpusEntry.evidenceBytes, corpusEntry.evidencePath, "corpus_binding_mismatch"), EvidenceFixtureSchema, corpusEntry.evidencePath, "corpus_binding_mismatch");
 		if (!isDeepStrictEqual(fixture, corpusEntry.fixture) || !isDeepStrictEqual(rawJson(corpusEntry.referenceBytes, corpusEntry.referencePath, "corpus_binding_mismatch"), corpusEntry.reference)) fail("corpus_binding_mismatch", corpusEntry.referencePath, `Parsed corpus entry ${manifestEntry.id} is detached from retained bytes`);
-		const prepared = prepareEvidence({ activeRegionId: fixture.active_region_id, publicationDate: corpusEntry.publicationDate, messages: fixture.messages });
+		const prepared = prepareHistoricalSampledEvidence({ activeRegionId: fixture.active_region_id, publicationDate: corpusEntry.publicationDate, messages: fixture.messages });
 		if (!isDeepStrictEqual(prepared, corpusEntry.preparedEvidence)) fail("corpus_binding_mismatch", corpusEntry.evidencePath, `Prepared corpus entry ${manifestEntry.id} is detached from retained evidence`);
 		const runFromBytes = parseRetainedV2EvaluationScorecardBenchmark(rawJson(loaded.bytes, declared.benchmark_run_id, "benchmark_artifact_malformed"), declared.benchmark_run_id, input.declaration.configuration_identity, declared.benchmark_run_id, repetitionCount);
 		repetitionCount ??= runFromBytes.declaration.repetition_count;
@@ -402,9 +402,20 @@ export async function loadEvaluationScorecardInputAtReference(repositoryRoot: st
 	try { declarationBytes = await readRepositorySource(repositoryRoot, sourceReference); }
 	catch (cause) { return fail("source_unreadable", sourceReference.path, "Cannot read scorecard declaration", cause); }
 	const declaration = parsed(json(declarationBytes, sourceReference.path, "invalid_declaration_json"), EvaluationScorecardDeclarationSchema, sourceReference.path, "declaration_rejected");
-	let corpus: LoadedEvaluationReferenceCorpus;
-	try { corpus = await loadEvaluationReferenceCorpusAtReference(repositoryRoot, { ...sourceReference, path: declaration.corpus.manifest_path }); }
+	let loadedCorpus: LoadedEvaluationReferenceCorpus;
+	try { loadedCorpus = await loadEvaluationReferenceCorpusAtReference(repositoryRoot, { ...sourceReference, path: declaration.corpus.manifest_path }); }
 	catch (cause) { return mapCorpusError(cause, declaration.corpus.manifest_path); }
+	const corpus: LoadedEvaluationReferenceCorpus = {
+		...loadedCorpus,
+		entries: loadedCorpus.entries.map((entry) => ({
+			...entry,
+			preparedEvidence: prepareHistoricalSampledEvidence({
+				activeRegionId: entry.fixture.active_region_id,
+				publicationDate: entry.publicationDate,
+				messages: entry.fixture.messages,
+			}),
+		})),
+	};
 	const runs: LoadedScorecardRun[] = []; let expectedRepetitionCount: number | undefined;
 	for (const [index, declared] of declaration.runs.entries()) {
 		let runBytes: Uint8Array;

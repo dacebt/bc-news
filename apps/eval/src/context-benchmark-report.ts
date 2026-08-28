@@ -16,7 +16,7 @@ export function formatContextBenchmarkReport(report: ContextBenchmarkFile, outpu
 		`Context length: ${report.model.context_length}`,
 		`Canonical prepared ceiling: ${report.fixture.prepared_message_ceiling}`,
 	];
-	if ("version" in report && report.version === 3) {
+	if ("version" in report && (report.version === 3 || report.version === 4)) {
 		lines.push("Agent configurations:");
 		for (const step of PRODUCTION_MODEL_STEPS) {
 			const configuration = report.agent_configurations[step];

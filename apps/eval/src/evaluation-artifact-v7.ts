@@ -1,10 +1,11 @@
 import { z } from "zod";
-import { ModelRuntimeEvidenceSchema, PreparedEvidenceSchema } from "@bc-news/generation-core";
+import { ModelRuntimeEvidenceSchema } from "@bc-news/generation-core";
 import { HostedModelAdapterConfigSchema, LmStudioAdapterConfigSchema } from "@bc-news/model-adapters";
 import {
 	EvaluationCodeProvenanceSchema,
 	EvaluationIdSchema,
 	EvaluationTimestampSchema,
+	HistoricalSampledPreparedEvidenceSchema,
 	Sha256HashSchema,
 	canonicallyEqual,
 	evaluationConfigIdentity,
@@ -134,7 +135,7 @@ export const V7BenchmarkRunBaseSchema = z.strictObject({
 		publication_date: z.iso.date(),
 		original_count: z.number().int().nonnegative(),
 		final_count: z.number().int().nonnegative(),
-		snapshot: PreparedEvidenceSchema,
+		snapshot: HistoricalSampledPreparedEvidenceSchema,
 	}),
 	provenance: z.strictObject({
 		code: EvaluationCodeProvenanceSchema,

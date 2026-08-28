@@ -19,10 +19,10 @@ import {
 } from "@bc-news/model-adapters";
 import {
 	CONTEXT_BENCHMARK_LOADS,
-	ContextBenchmarkFileV3Schema,
+	ContextBenchmarkFileV4Schema,
 	generateContextBenchmarkId,
 	saveContextBenchmarkFile,
-	type ContextBenchmarkFileV3,
+	type ContextBenchmarkFileV4,
 	type ContextBenchmarkRow,
 } from "./context-benchmark-file";
 import {
@@ -137,14 +137,16 @@ function assertConfiguredModel(configuredModel: string, model: ContextBenchmarkM
 }
 
 function projectedEvidence(canonical: PreparedEvidence, messageLoad: number): PreparedEvidence {
+	if (messageLoad === canonical.final_count) return canonical;
 	return PreparedEvidenceSchema.parse({
-		...canonical,
+		active_region_id: canonical.active_region_id,
+		publication_date: canonical.publication_date,
+		raw_count: messageLoad,
+		after_filter_count: messageLoad,
+		after_burst_count: messageLoad,
 		final_count: messageLoad,
 		messages: canonical.messages.slice(0, messageLoad),
-		drop_stats: {
-			...canonical.drop_stats,
-			sampling_dropped: canonical.after_burst_count - messageLoad,
-		},
+		drop_stats: { empty_after_trim: 0, too_short: 0, burst_merged: 0 },
 	});
 }
 
@@ -156,7 +158,7 @@ function emptyEvidence(canonical: PreparedEvidence): PreparedEvidence {
 		after_filter_count: 0,
 		after_burst_count: 0,
 		final_count: 0,
-		drop_stats: { empty_after_trim: 0, too_short: 0, burst_merged: 0, sampling_dropped: 0 },
+		drop_stats: { empty_after_trim: 0, too_short: 0, burst_merged: 0 },
 		messages: [],
 	});
 }
@@ -179,7 +181,7 @@ function sha256Json(value: unknown): string {
 
 function retainedAgentConfiguration(
 	config: LmStudioAdapterConfig,
-): ContextBenchmarkFileV3["agent_configurations"][CurrentProductionModelStep] {
+): ContextBenchmarkFileV4["agent_configurations"][CurrentProductionModelStep] {
 	return structuredClone(config);
 }
 
@@ -314,7 +316,7 @@ async function benchmarkLoad(input: {
 
 export async function runContextBenchmark(
 	options: ContextBenchmarkCommandOptions,
-): Promise<{ readonly path: string; readonly report: ContextBenchmarkFileV3 }> {
+): Promise<{ readonly path: string; readonly report: ContextBenchmarkFileV4 }> {
 	const environment = options.environment ?? process.env;
 	const config = parseLmStudioConfig(environment);
 	lmStudioSdkBaseUrl(config.baseUrl);
@@ -325,10 +327,10 @@ export async function runContextBenchmark(
 		publicationDate: loadedFixture.publicationDate,
 		messages: loadedFixture.fixture.messages,
 	});
-	if (canonical.final_count !== 208) {
+	if (canonical.final_count !== 553) {
 		throw new ContextBenchmarkCommandError(
 			"prepared_ceiling_mismatch",
-			`Canonical prepared evidence ceiling must be 208, got ${canonical.final_count}`,
+			`Canonical prepared evidence ceiling must be 553, got ${canonical.final_count}`,
 		);
 	}
 	const runtime = options.runtime ?? createLmStudioContextBenchmarkRuntime(config.baseUrl);
@@ -363,13 +365,13 @@ export async function runContextBenchmark(
 	} finally {
 		await runtime.close();
 	}
-	const report = ContextBenchmarkFileV3Schema.parse({
-		version: 3,
+	const report = ContextBenchmarkFileV4Schema.parse({
+		version: 4,
 		id: generateContextBenchmarkId(),
 		fixture: {
 			path: relative(WORKSPACE_ROOT, loadedFixture.path),
 			fixture_sha256: loadedFixture.fixtureSha256,
-			prepared_message_ceiling: 208,
+			prepared_message_ceiling: 553,
 		},
 		loads: CONTEXT_BENCHMARK_LOADS,
 		model: {
