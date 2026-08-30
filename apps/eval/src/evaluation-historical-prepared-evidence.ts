@@ -49,7 +49,11 @@ export function prepareHistoricalSampledEvidence(input: {
 		.sort(compareMessages);
 
 	return HistoricalSampledPreparedEvidenceSchema.parse({
-		...hygienic,
+		active_region_id: hygienic.active_region_id,
+		publication_date: hygienic.publication_date,
+		raw_count: hygienic.raw_count,
+		after_filter_count: hygienic.after_filter_count,
+		after_burst_count: hygienic.after_burst_count,
 		final_count: sampled.length,
 		drop_stats: {
 			...hygienic.drop_stats,

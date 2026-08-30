@@ -16,7 +16,10 @@ import {
 	resolveCurrentLocalDataSourcePath,
 } from "../src/evaluation-local-artifact-cli";
 import { RECORDED_REPLAY_CONFIG_PATH } from "../src/recorded-replay-acceptance-verifier";
-import { REPRESENTATIVE_FIXTURE_PATH } from "../src/representative-fixture";
+import {
+	RECORDED_OUTPUT_FIXTURE_PATH,
+	REPRESENTATIVE_FIXTURE_PATH,
+} from "../src/representative-fixture";
 import { runCommand } from "../src/run-command";
 
 const cliMocks = vi.hoisted(() => ({
@@ -95,7 +98,7 @@ async function invokeCli(argv: readonly string[], currentDirectory: string, appD
 
 async function seedAcceptanceRun(resultsDirectory: string): Promise<string> {
 	const { run } = await runCommand({
-		fixturePath: REPRESENTATIVE_FIXTURE_PATH,
+		fixturePath: RECORDED_OUTPUT_FIXTURE_PATH,
 		configPath: RECORDED_REPLAY_CONFIG_PATH,
 		resultsDirectory,
 		environment: {},

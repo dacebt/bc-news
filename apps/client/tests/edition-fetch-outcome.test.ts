@@ -1,10 +1,26 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Edition } from "@bc-news/contracts";
-import { getEdition, type EditionFetchOutcome } from "../src/api/edition";
+import {
+	getEdition,
+	type EditionFetchOutcome,
+	type EditionGameReference,
+	type PublishedEdition,
+} from "../src/api/edition";
 
 const ABORTED_OUTCOME = { outcome: "aborted" } satisfies EditionFetchOutcome;
+const BARE_COORDINATE_REFERENCE: EditionGameReference = {
+	token: "[[GAME_REF_001]]",
+	kind: "coord",
+	northing: 3745,
+	easting: 3857,
+	display_text: "N 3745, E 3857",
+	destination_url: "https://bitcraftmap.com/?center=3745,3857&zoom=3.0",
+};
 
-function validEdition(): Edition {
+type HistoricalEditionResponse = Omit<PublishedEdition, "version" | "game_references"> & {
+	version: 2;
+};
+
+function validEdition(): HistoricalEditionResponse {
 	return {
 		version: 2,
 		active_region_id: "7",
@@ -20,6 +36,14 @@ function validEdition(): Edition {
 			},
 			counts: { raw_count: 1, after_filter_count: 1, after_burst_count: 1, final_count: 1 },
 		},
+	};
+}
+
+function validEditionWithGameReferences(): PublishedEdition {
+	return {
+		...validEdition(),
+		version: 3,
+		game_references: [BARE_COORDINATE_REFERENCE],
 	};
 }
 
@@ -45,6 +69,16 @@ afterEach(() => {
 describe("getEdition outcome mapping", () => {
 	it("reports published with the parsed edition on 200 valid json", async () => {
 		const edition = validEdition();
+		vi.mocked(fetch).mockResolvedValue(jsonResponse(200, edition));
+
+		await expect(request()).resolves.toEqual({
+			outcome: "published",
+			edition: { ...edition, game_references: [] },
+		});
+	});
+
+	it("preserves retained game references on a v3 edition response", async () => {
+		const edition = validEditionWithGameReferences();
 		vi.mocked(fetch).mockResolvedValue(jsonResponse(200, edition));
 
 		await expect(request()).resolves.toEqual({ outcome: "published", edition });
@@ -92,6 +126,22 @@ describe("getEdition outcome mapping", () => {
 
 	it("reports invalid_response on json that fails the edition schema", async () => {
 		vi.mocked(fetch).mockResolvedValue(jsonResponse(200, { not: "an edition" }));
+
+		await expect(request()).resolves.toEqual({ outcome: "invalid_response" });
+	});
+
+	it("rejects duplicate retained game-reference tokens in a v3 response", async () => {
+		const edition = validEditionWithGameReferences();
+		vi.mocked(fetch).mockResolvedValue(jsonResponse(200, {
+			...edition,
+			game_references: [
+				edition.game_references[0],
+				{
+					...edition.game_references[0],
+					display_text: "Blacksmith Square",
+				},
+			],
+		}));
 
 		await expect(request()).resolves.toEqual({ outcome: "invalid_response" });
 	});

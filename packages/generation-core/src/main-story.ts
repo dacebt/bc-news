@@ -8,6 +8,11 @@ import {
 	buildAuthorIdentityLedger,
 	resolveAuthorIdentityTokens,
 } from "./author-identity-tokens";
+import {
+	buildGameReferenceLedger,
+	formatGameReferencePromptRoster,
+	transformGameReferenceTokens,
+} from "./game-reference-tokens";
 
 export const WRITER_SYSTEM_CONSTRAINTS = `
 [POINT OF VIEW]
@@ -30,6 +35,11 @@ The chat grounds what happened today. World knowledge helps you understand it; i
 - Chat speakers are identified by code-owned tokens such as [[AUTHOR_001]];
 - Whenever naming or attributing something to a chat speaker, copy that speaker's exact token instead of inventing or spelling a display name;
 - Never alter an author token or put markdown around it. Code resolves valid tokens to the exact display name and applies the required formatting after your response;
+
+[GAME REFERENCES]
+- Chat-mentioned locations may be identified by code-owned tokens such as [[GAME_REF_001]];
+- Whenever naming one of those locations, copy its exact token instead of inventing, altering, or reformatting it;
+- Never wrap a game reference token in markdown or rewrite it as raw coordinate syntax. Code resolves valid tokens to display text in plain fields and to links in rich prose;
 
 [EDITORIAL VOICE]
 - In-world perspective, treating regional events as genuine news;
@@ -105,6 +115,7 @@ You are the regional correspondent. In any nonempty prepared chat, the story is 
 - Do not mechanically restate every source line or inventory every unknown;
 - Prefer inhabitants' names and concrete world terms over bureaucratic phrases such as "local residents," "both parties," "confirmed participation," or "straightforward coordination";
 - Prefer concrete, natural newspaper prose over formal filler, analysis language, or a generalized moral about why the small event matters.
+${formatGameReferencePromptRoster(preparedEvidence)}
 
 [CHAT MESSAGES]
 ${fenceUntrustedTranscript(preparedEvidence)}
@@ -113,6 +124,7 @@ ${fenceUntrustedTranscript(preparedEvidence)}
 Before returning, silently audit the dispatch against the chat:
 - Include every materially reportable development established by the chat;
 - Use exact code-owned author tokens for every named chat speaker and leave their spelling and markdown to code;
+- Whenever any output field mentions a location from [GAME REFERENCES], use its exact [[GAME_REF_NNN]] token at that mention. Never substitute its name, N <northing>, E <easting>, or any other coordinate spelling; if the reference is not worth including, omit the location;
 - Copy every numeric literal exactly and keep each item, quantity, and price paired as they appear together in the chat;
 - Preserve whether each development was completed, planned, requested, disputed, or otherwise unresolved;
 - Keep the correspondent's language entirely in-world. When the chat uses out-of-world framing, report the underlying activity in ordinary in-world terms or omit that framing rather than adopting it.
@@ -155,24 +167,41 @@ export function parseMainStoryWriterOutput(
 		normalizeDecodedOutputStrings(result.data),
 	);
 	const authorIdentities = buildAuthorIdentityLedger(preparedEvidence);
+	const gameReferences = buildGameReferenceLedger(preparedEvidence);
 	try {
 		return MainStoryProductSchema.parse({
-			title: resolveAuthorIdentityTokens(normalized.title, authorIdentities, "plain"),
+			title: transformGameReferenceTokens(
+				resolveAuthorIdentityTokens(normalized.title, authorIdentities, "plain"),
+				gameReferences,
+				"plain",
+			),
 			main_story: {
-				headline: resolveAuthorIdentityTokens(
-					normalized.main_story.headline,
-					authorIdentities,
+				headline: transformGameReferenceTokens(
+					resolveAuthorIdentityTokens(
+						normalized.main_story.headline,
+						authorIdentities,
+						"plain",
+					),
+					gameReferences,
 					"plain",
 				),
-				lede: resolveAuthorIdentityTokens(
-					normalized.main_story.lede,
-					authorIdentities,
+				lede: transformGameReferenceTokens(
+					resolveAuthorIdentityTokens(
+						normalized.main_story.lede,
+						authorIdentities,
+						"plain",
+					),
+					gameReferences,
 					"plain",
 				),
-				body: resolveAuthorIdentityTokens(
-					normalized.main_story.body,
-					authorIdentities,
-					"bold",
+				body: transformGameReferenceTokens(
+					resolveAuthorIdentityTokens(
+						normalized.main_story.body,
+						authorIdentities,
+						"bold",
+					),
+					gameReferences,
+					"rich",
 				),
 			},
 		});
@@ -180,7 +209,7 @@ export function parseMainStoryWriterOutput(
 		throw new EditorialOutputContractError(
 			"main_story_write",
 			"contract_mismatch",
-			"main_story_write model output contains an invalid author identity token",
+			"main_story_write model output contains an invalid author identity or game reference token",
 			{ cause },
 		);
 	}

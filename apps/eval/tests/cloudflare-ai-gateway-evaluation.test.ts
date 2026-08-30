@@ -9,7 +9,7 @@ import { evaluateBenchmarkCommand } from "../src/evaluation-benchmark-command";
 import { V9BenchmarkRunSchema, evaluationConfigIdentity } from "../src/evaluation-artifact";
 import { TransportFailureDetailsSchema } from "../src/evaluation-artifact-schemas";
 import { formatBenchmarkRunReport } from "../src/benchmark-run-report";
-import { REPRESENTATIVE_FIXTURE_PATH } from "../src/representative-fixture";
+import { RECORDED_OUTPUT_FIXTURE_PATH } from "../src/representative-fixture";
 
 const RESPONSE_DIRECTORY = new URL("../../../packages/fixtures/model-responses/", import.meta.url).pathname;
 const TEST_PROVENANCE = { repository: "bc-news" as const, commit_sha: "8".repeat(40), dirty: false as const };
@@ -93,7 +93,7 @@ test("runs Gemini Chat and Luna Responses through the Gateway contract and retai
 		});
 
 		const result = await evaluateBenchmarkCommand({
-			fixturePath: REPRESENTATIVE_FIXTURE_PATH,
+			fixturePath: RECORDED_OUTPUT_FIXTURE_PATH,
 			configPath,
 			resultsDirectory,
 			environment: { CF_ACCOUNT_ID: "account-id", CF_AI_GATEWAY_API_TOKEN: "sentinel" },
@@ -195,7 +195,7 @@ test("retains and reports sanitized Gateway response-contract failure locations"
 		})));
 
 		const result = await evaluateBenchmarkCommand({
-			fixturePath: REPRESENTATIVE_FIXTURE_PATH,
+			fixturePath: RECORDED_OUTPUT_FIXTURE_PATH,
 			configPath,
 			resultsDirectory,
 			environment: { CF_ACCOUNT_ID: "account-id", CF_AI_GATEWAY_API_TOKEN: "sentinel" },
@@ -246,7 +246,7 @@ test("retains and reports the structured provider reason for a Gateway HTTP reje
 		}, { status: 400 })));
 
 		const result = await evaluateBenchmarkCommand({
-			fixturePath: REPRESENTATIVE_FIXTURE_PATH,
+			fixturePath: RECORDED_OUTPUT_FIXTURE_PATH,
 			configPath,
 			resultsDirectory,
 			environment: { CF_ACCOUNT_ID: "account-id", CF_AI_GATEWAY_API_TOKEN: "sentinel" },
@@ -308,7 +308,7 @@ test("rejects null hosted content before retaining a current V9 artifact", async
 		});
 
 		await expect(evaluateBenchmarkCommand({
-			fixturePath: REPRESENTATIVE_FIXTURE_PATH,
+			fixturePath: RECORDED_OUTPUT_FIXTURE_PATH,
 			configPath,
 			resultsDirectory,
 			environment: { CF_ACCOUNT_ID: "account-id", CF_AI_GATEWAY_API_TOKEN: "sentinel" },

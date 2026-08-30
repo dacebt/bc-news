@@ -11,7 +11,7 @@ import {
 	assertRecordedReplayConfig,
 } from "./recorded-replay-acceptance-semantics";
 import { loadConfig } from "./config";
-import { REPRESENTATIVE_FIXTURE_PATH } from "./representative-fixture";
+import { RECORDED_OUTPUT_FIXTURE_PATH } from "./representative-fixture";
 import { runCommand } from "./run-command";
 import { RunFileSchema, type RunFile } from "./run-file";
 
@@ -34,7 +34,7 @@ function parseStrictRun(bytes: Uint8Array, source: string): RunFile {
 
 async function executeRecordedReplayAcceptance(resultsDirectory: string): Promise<{ path: string; run: RunFile }> {
 	const saved = await runCommand({
-		fixturePath: REPRESENTATIVE_FIXTURE_PATH,
+		fixturePath: RECORDED_OUTPUT_FIXTURE_PATH,
 		configPath: RECORDED_REPLAY_CONFIG_PATH,
 		resultsDirectory,
 		environment: {},
@@ -67,7 +67,7 @@ async function verifyRecordedReplayAcceptanceAt(
 	const candidate = await executeRecordedReplayAcceptance(resultsDirectory);
 	const repeat = await executeRecordedReplayAcceptance(resultsDirectory);
 	assertRecordedReplayAcceptanceSemantics(candidate.run);
-	await assertRecordedReplayAcceptanceGrounding(candidate.run, REPRESENTATIVE_FIXTURE_PATH);
+	await assertRecordedReplayAcceptanceGrounding(candidate.run, RECORDED_OUTPUT_FIXTURE_PATH);
 	assertRecordedReplayAcceptanceDeterminism(candidate.run, repeat.run);
 	return { edition: candidate.run.edition, diagnostics: candidate.run.diagnostics };
 }

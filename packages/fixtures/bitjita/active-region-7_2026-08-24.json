@@ -5039,7 +5039,23 @@
 			"regionId": "7",
 			"channelId": "1",
 			"text": "R u an old man? Fax? no one use this"
+		},
+		{
+			"entityId": "504403158437463140",
+			"username": "en/MapScoutA",
+			"timestamp": "2026-08-24T23:59:55.000Z",
+			"regionId": "7",
+			"channelId": "1",
+			"text": "[Fire Nation](coord=7968,9659)"
+		},
+		{
+			"entityId": "504403158437463141",
+			"username": "en/MapScoutB",
+			"timestamp": "2026-08-24T23:59:56.000Z",
+			"regionId": "7",
+			"channelId": "1",
+			"text": "(coord=7968,9659)"
 		}
 	],
-	"total": 630
+	"total": 632
 }

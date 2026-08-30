@@ -1,5 +1,6 @@
 import { EvidenceMessageSchema, type EvidenceMessage } from "@bc-news/contracts";
 import { evidenceWindowForPublicationDate } from "./evidence-date";
+import { buildPreparedGameReferences } from "./game-reference-tokens";
 import {
 	PreparedEvidenceSchema,
 	type PreparedEvidence,
@@ -157,6 +158,7 @@ export function prepareEvidence(input: {
 		after_burst_count: afterBurst.length,
 		final_count: finalMessages.length,
 		drop_stats: dropStats,
+		game_references: buildPreparedGameReferences(finalMessages),
 		messages: finalMessages.map(projectMessage),
 	});
 }

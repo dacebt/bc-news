@@ -5,10 +5,10 @@ title: >-
 description: >-
   Tight-cadence session boundary for two final editorial writers, proportionate in-world storytelling, and deterministic edition assembly.
 tags: [wsd, direction, shape, generation, prompts]
-status: stable
+status: deprecated
 generated:
   by: ebt-wsd/okf-v0.2
-  at: "2026-08-20T03:00:46Z"
+  at: "2026-08-30T14:37:52Z"
 ---
 # Shape: editorial generation ownership
 

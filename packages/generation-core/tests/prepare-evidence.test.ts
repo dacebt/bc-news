@@ -96,6 +96,109 @@ test("same evidence yields identical prepared evidence", () => {
 	expect(first.drop_stats.burst_merged).toBe(1);
 });
 
+test("builds deterministic coordinate references with distinct presentation tokens", () => {
+	const prepared = prepareEvidence({
+		activeRegionId: "7",
+		publicationDate: "2026-01-25",
+		messages: [
+			{
+				id: "coord-bare-1",
+				ts: WINDOW_START + 1,
+				author_id: "en/Scout",
+				author_name: "Scout",
+				text: "Meet at (coord=3745,3857).",
+			},
+			{
+				id: "coord-labeled",
+				ts: WINDOW_START + 2,
+				author_id: "en/Scout",
+				author_name: "Scout",
+				text: "Meet at [South Gate](coord=3745,3857).",
+			},
+			{
+				id: "coord-bare-2",
+				ts: WINDOW_START + 3,
+				author_id: "en/Scout",
+				author_name: "Scout",
+				text: "Meet again at (coord=3745,3857).",
+			},
+			{
+				id: "coord-attached-bare",
+				ts: WINDOW_START + 4,
+				author_id: "en/Scout",
+				author_name: "Scout",
+				text: "boss(coord=4012,4024)",
+			},
+		],
+	});
+
+	expect(prepared.game_references).toEqual([
+		{
+			token: "[[GAME_REF_001]]",
+			kind: "coord",
+			northing: 3745,
+			easting: 3857,
+			display_text: "N 3745, E 3857",
+			destination_url: "https://bitcraftmap.com/?center=3745,3857&zoom=3.0",
+		},
+		{
+			token: "[[GAME_REF_002]]",
+			kind: "coord",
+			northing: 3745,
+			easting: 3857,
+			display_text: "South Gate",
+			destination_url: "https://bitcraftmap.com/?center=3745,3857&zoom=3.0",
+		},
+		{
+			token: "[[GAME_REF_003]]",
+			kind: "coord",
+			northing: 4012,
+			easting: 4024,
+			display_text: "N 4012, E 4024",
+			destination_url: "https://bitcraftmap.com/?center=4012,4024&zoom=3.0",
+		},
+	]);
+});
+
+for (const { name, text } of [
+	{
+		name: "a bracket label separated from the coordinate by a space",
+		text: "Ignore [South Gate] (coord=3745,3857).",
+	},
+	{
+		name: "a bracket label separated from the coordinate by a newline",
+		text: "Ignore [South Gate]\n(coord=3745,3857).",
+	},
+	{
+		name: "an empty bracket label",
+		text: "Ignore [](coord=3745,3857).",
+	},
+	{
+		name: "a URL query token",
+		text: "Ignore https://example.test/?spot=(coord=3745,3857).",
+	},
+	{
+		name: "a markdown destination token",
+		text: "Ignore [map](https://example.test/?spot=(coord=3745,3857)).",
+	},
+]) {
+	test(`does not extract a coordinate reference from ${name}`, () => {
+		const prepared = prepareEvidence({
+			activeRegionId: "7",
+			publicationDate: "2026-01-25",
+			messages: [{
+				id: `coord-invalid-${name}`,
+				ts: WINDOW_START + 10,
+				author_id: "en/Scout",
+				author_name: "Scout",
+				text,
+			}],
+		});
+
+		expect(prepared.game_references).toEqual([]);
+	});
+}
+
 test("every message surviving hygiene reaches the editorial capabilities", () => {
 	const prepared = prepareEvidence({
 		activeRegionId: "7",
@@ -119,6 +222,7 @@ test("PreparedEvidenceSchema rejects prepared evidence that dropped messages aft
 		after_burst_count: 10,
 		final_count: 9,
 		drop_stats: { empty_after_trim: 0, too_short: 0, burst_merged: 0 },
+		game_references: [],
 		messages: Array.from({ length: 9 }, (_, index) => ({
 			id: `m${String(index)}`,
 			ts: WINDOW_START + index,
@@ -305,6 +409,7 @@ test("PreparedEvidenceSchema rejects a region id carrying a newline and fence ma
 		after_burst_count: 0,
 		final_count: 0,
 		drop_stats: { empty_after_trim: 0, too_short: 0, burst_merged: 0 },
+		game_references: [],
 		messages: [],
 	});
 
@@ -320,6 +425,7 @@ test("PreparedEvidenceSchema rejects a region id containing a bracket", () => {
 		after_burst_count: 0,
 		final_count: 0,
 		drop_stats: { empty_after_trim: 0, too_short: 0, burst_merged: 0 },
+		game_references: [],
 		messages: [],
 	});
 

@@ -72,6 +72,15 @@ function rawJson(raw: Uint8Array, path: string, code: EvaluationScorecardError["
 	try { return JSON.parse(Buffer.from(raw).toString("utf8")) as unknown; }
 	catch (cause) { return fail(code, path, `Retained JSON is malformed at ${path}`, cause); }
 }
+function withExplicitEmptyGameReferences<T extends ReturnType<typeof prepareHistoricalSampledEvidence>>(preparedEvidence: T) {
+	return {
+		...preparedEvidence,
+		game_references: [],
+	};
+}
+function normalizeHistoricalPreparedEvidenceForCurrentConsumers(input: Parameters<typeof prepareHistoricalSampledEvidence>[0]) {
+	return withExplicitEmptyGameReferences(prepareHistoricalSampledEvidence(input));
+}
 function auditRetainedSources(input: Omit<LoadedEvaluationScorecardInput, "selectedOutputs">): void {
 	const declarationFromBytes = parsed(rawJson(input.declarationBytes, input.declarationPath, "invalid_declaration_json"), EvaluationScorecardDeclarationSchema, input.declarationPath, "declaration_rejected");
 	if (!isDeepStrictEqual(declarationFromBytes, input.declaration)) fail("declaration_rejected", input.declarationPath, "Parsed declaration is detached from its retained bytes");
@@ -84,7 +93,11 @@ function auditRetainedSources(input: Omit<LoadedEvaluationScorecardInput, "selec
 		if (loaded === undefined || corpusEntry === undefined || manifestEntry === undefined || !isDeepStrictEqual(loaded.declaration, declared) || !isDeepStrictEqual(loaded.corpusEntry, corpusEntry) || !isDeepStrictEqual(corpusEntry.manifestEntry, manifestEntry) || declared.corpus_fixture_id !== manifestEntry.id) fail("evidence_set_mismatch", input.declarationPath, `Loaded evidence at ordinal ${String(index + 1)} is reordered or substituted`);
 		const fixture = parsed(rawJson(corpusEntry.evidenceBytes, corpusEntry.evidencePath, "corpus_binding_mismatch"), EvidenceFixtureSchema, corpusEntry.evidencePath, "corpus_binding_mismatch");
 		if (!isDeepStrictEqual(fixture, corpusEntry.fixture) || !isDeepStrictEqual(rawJson(corpusEntry.referenceBytes, corpusEntry.referencePath, "corpus_binding_mismatch"), corpusEntry.reference)) fail("corpus_binding_mismatch", corpusEntry.referencePath, `Parsed corpus entry ${manifestEntry.id} is detached from retained bytes`);
-		const prepared = prepareHistoricalSampledEvidence({ activeRegionId: fixture.active_region_id, publicationDate: corpusEntry.publicationDate, messages: fixture.messages });
+		const prepared = normalizeHistoricalPreparedEvidenceForCurrentConsumers({
+			activeRegionId: fixture.active_region_id,
+			publicationDate: corpusEntry.publicationDate,
+			messages: fixture.messages,
+		});
 		if (!isDeepStrictEqual(prepared, corpusEntry.preparedEvidence)) fail("corpus_binding_mismatch", corpusEntry.evidencePath, `Prepared corpus entry ${manifestEntry.id} is detached from retained evidence`);
 		const runFromBytes = parseRetainedV2EvaluationScorecardBenchmark(rawJson(loaded.bytes, declared.benchmark_run_id, "benchmark_artifact_malformed"), declared.benchmark_run_id, input.declaration.configuration_identity, declared.benchmark_run_id, repetitionCount);
 		repetitionCount ??= runFromBytes.declaration.repetition_count;
@@ -352,7 +365,8 @@ export function validateLoadedEvaluationScorecardInput(input: Omit<LoadedEvaluat
 		else if (benchmarkVersion !== run.version) fail("unsupported_benchmark_version", declared.benchmark_run_id, "Scorecard evidence cannot mix Benchmark Run versions");
 		if (run.lifecycle !== "complete") fail("benchmark_not_complete", run.id, "Benchmark Run must be complete");
 		if (run.harness_outcome !== "retained") fail("benchmark_not_retained", run.id, "Benchmark Run must be retained");
-		if (run.prepared_evidence.identity_sha256 !== sha256Json(corpusEntry.preparedEvidence) || !isDeepStrictEqual(run.prepared_evidence.snapshot, corpusEntry.preparedEvidence)) fail("corpus_binding_mismatch", run.id, "Benchmark prepared evidence does not match corpus entry");
+		if (run.prepared_evidence.identity_sha256 !== sha256Json(run.prepared_evidence.snapshot)
+			|| !isDeepStrictEqual(withExplicitEmptyGameReferences(run.prepared_evidence.snapshot), corpusEntry.preparedEvidence)) fail("corpus_binding_mismatch", run.id, "Benchmark prepared evidence does not match corpus entry");
 		const declarations = run.declaration.configurations.filter(({ identity }) => identity === declaration.configuration_identity);
 		if (declarations.length !== 1) fail("configuration_mismatch", run.id, "Selected configuration must occur exactly once");
 		if (exactConfig === undefined) exactConfig = declarations[0]!.config; else if (!isDeepStrictEqual(exactConfig, declarations[0]!.config)) fail("configuration_mismatch", run.id, "Selected configuration changed between runs");
@@ -409,7 +423,7 @@ export async function loadEvaluationScorecardInputAtReference(repositoryRoot: st
 		...loadedCorpus,
 		entries: loadedCorpus.entries.map((entry) => ({
 			...entry,
-			preparedEvidence: prepareHistoricalSampledEvidence({
+			preparedEvidence: normalizeHistoricalPreparedEvidenceForCurrentConsumers({
 				activeRegionId: entry.fixture.active_region_id,
 				publicationDate: entry.publicationDate,
 				messages: entry.fixture.messages,

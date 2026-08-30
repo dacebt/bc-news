@@ -1,11 +1,18 @@
 import { Box, Flex, Heading, Text } from "@chakra-ui/react";
 import type { MainStory as MainStoryContent } from "@bc-news/contracts";
+import type { EditionGameReference } from "../api/edition";
 import { NewspaperText } from "./NewspaperText";
 import { PAPER_SERIF_NARROW } from "./typography";
 
 const TWO_COLUMN_MIN_BODY_LENGTH = 1200;
 
-export function MainStory({ mainStory }: { mainStory: MainStoryContent }) {
+export function MainStory({
+	mainStory,
+	gameReferences,
+}: {
+	mainStory: MainStoryContent;
+	gameReferences: readonly EditionGameReference[];
+}) {
 	return (
 		<Flex direction="column" gap={4}>
 			<Heading
@@ -54,7 +61,7 @@ export function MainStory({ mainStory }: { mainStory: MainStoryContent }) {
 					},
 				}}
 			>
-				<NewspaperText text={mainStory.body} />
+				<NewspaperText text={mainStory.body} gameReferences={gameReferences} />
 			</Box>
 		</Flex>
 	);

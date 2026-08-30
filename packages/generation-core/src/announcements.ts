@@ -8,6 +8,11 @@ import {
 	buildAuthorIdentityLedger,
 	resolveAuthorIdentityTokens,
 } from "./author-identity-tokens";
+import {
+	buildGameReferenceLedger,
+	formatGameReferencePromptRoster,
+	transformGameReferenceTokens,
+} from "./game-reference-tokens";
 
 export const AnnouncementsProductSchema = z.strictObject({
 	announcements: z.array(AnnouncementSchema),
@@ -33,6 +38,7 @@ You are filing milestone briefs, not a social column. An item qualifies only whe
 - Copy every numeric literal character-for-character from the chat. Keep every item, quantity, level, and value paired as they appear together in the source message;
 - Quote only exact chat text, character-for-character, inside quotation marks;
 - Never invent facts, numbers, names, quotations, outcomes, or significance.
+${formatGameReferencePromptRoster(preparedEvidence)}
 
 [CHAT MESSAGES]
 ${fenceUntrustedTranscript(preparedEvidence)}
@@ -81,18 +87,27 @@ export function parseAnnouncementsWriterOutput(
 		normalizeDecodedOutputStrings(result.data),
 	);
 	const authorIdentities = buildAuthorIdentityLedger(preparedEvidence);
+	const gameReferences = buildGameReferenceLedger(preparedEvidence);
 	try {
 		return AnnouncementsProductSchema.parse({
 			announcements: normalized.announcements.map((announcement) => ({
-				title: resolveAuthorIdentityTokens(
-					announcement.title,
-					authorIdentities,
+				title: transformGameReferenceTokens(
+					resolveAuthorIdentityTokens(
+						announcement.title,
+						authorIdentities,
+						"plain",
+					),
+					gameReferences,
 					"plain",
 				),
-				summary: resolveAuthorIdentityTokens(
-					announcement.summary,
-					authorIdentities,
-					"bold",
+				summary: transformGameReferenceTokens(
+					resolveAuthorIdentityTokens(
+						announcement.summary,
+						authorIdentities,
+						"bold",
+					),
+					gameReferences,
+					"rich",
 				),
 			})),
 		});
@@ -100,7 +115,7 @@ export function parseAnnouncementsWriterOutput(
 		throw new EditorialOutputContractError(
 			"announcements_write",
 			"contract_mismatch",
-			"announcements_write model output contains an invalid author identity token",
+			"announcements_write model output contains an invalid author identity or game reference token",
 			{ cause },
 		);
 	}

@@ -11,7 +11,7 @@ import {
 } from "./evaluation-artifact";
 import { loadBenchmarkRun } from "./evaluation-artifact-reader";
 import { summarizeBenchmarkRun } from "./evaluation-browse-report";
-import { REPRESENTATIVE_FIXTURE_PATH } from "./representative-fixture";
+import { RECORDED_OUTPUT_FIXTURE_PATH } from "./representative-fixture";
 import { evaluateTrialCommand } from "./evaluation-trial-command";
 import { startRecordLoopbackServer } from "./record-loopback-server";
 
@@ -202,7 +202,7 @@ export async function verifyEvaluationTrialRetention(): Promise<void> {
 
 		const completeStates: BenchmarkRun[] = [];
 		const completeTrial = evaluateTrialCommand({
-			fixturePath: REPRESENTATIVE_FIXTURE_PATH,
+			fixturePath: RECORDED_OUTPUT_FIXTURE_PATH,
 			configPath: completeConfigPath,
 			resultsDirectory: completeResults,
 			environment,
@@ -234,7 +234,7 @@ export async function verifyEvaluationTrialRetention(): Promise<void> {
 		let markHarnessObserverRejected = (): void => undefined;
 		const harnessObserverRejected = new Promise<void>((resolve) => { markHarnessObserverRejected = resolve; });
 		const harnessFailureTrial = evaluateTrialCommand({
-			fixturePath: REPRESENTATIVE_FIXTURE_PATH,
+			fixturePath: RECORDED_OUTPUT_FIXTURE_PATH,
 			configPath: harnessFailureConfigPath,
 			resultsDirectory: harnessFailureResults,
 			environment,
@@ -282,7 +282,7 @@ export async function verifyEvaluationTrialRetention(): Promise<void> {
 
 		const diagnosticStates: BenchmarkRun[] = [];
 		const diagnostic = await evaluateTrialCommand({
-			fixturePath: REPRESENTATIVE_FIXTURE_PATH,
+			fixturePath: RECORDED_OUTPUT_FIXTURE_PATH,
 			configPath: diagnosticConfigPath,
 			resultsDirectory: diagnosticResults,
 			environment,
@@ -292,7 +292,7 @@ export async function verifyEvaluationTrialRetention(): Promise<void> {
 		const failureStates: BenchmarkRun[] = [];
 		const contractStates: BenchmarkRun[] = [];
 		const contractRejected = await evaluateTrialCommand({
-			fixturePath: REPRESENTATIVE_FIXTURE_PATH,
+			fixturePath: RECORDED_OUTPUT_FIXTURE_PATH,
 			configPath: contractConfigPath,
 			resultsDirectory: contractResults,
 			environment,
@@ -300,7 +300,7 @@ export async function verifyEvaluationTrialRetention(): Promise<void> {
 			sourceProvenance: VERIFIER_SOURCE_PROVENANCE,
 		});
 		const failed = await evaluateTrialCommand({
-			fixturePath: REPRESENTATIVE_FIXTURE_PATH,
+			fixturePath: RECORDED_OUTPUT_FIXTURE_PATH,
 			configPath: failureConfigPath,
 			resultsDirectory: failureResults,
 			environment,
@@ -309,7 +309,7 @@ export async function verifyEvaluationTrialRetention(): Promise<void> {
 		});
 		const mixedStates: BenchmarkRun[] = [];
 		const mixed = await evaluateTrialCommand({
-			fixturePath: REPRESENTATIVE_FIXTURE_PATH,
+			fixturePath: RECORDED_OUTPUT_FIXTURE_PATH,
 			configPath: mixedConfigPath,
 			resultsDirectory: mixedResults,
 			environment,

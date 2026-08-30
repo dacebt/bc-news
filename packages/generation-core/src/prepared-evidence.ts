@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
 	ActiveRegionIdSchema,
+	GameReferenceRosterSchema,
 	PublicationDateSchema,
 	TimestampMillisecondsSchema,
 } from "@bc-news/contracts";
@@ -27,6 +28,7 @@ export const PreparedEvidenceSchema = z.strictObject({
 		too_short: z.int().nonnegative(),
 		burst_merged: z.int().nonnegative(),
 	}),
+	game_references: GameReferenceRosterSchema,
 	messages: z.array(PreparedMessageSchema),
 }).superRefine((output, context) => {
 	if (output.after_filter_count > output.raw_count) {

@@ -3,6 +3,7 @@ import {
 	EditionRecordSchema,
 	EditionSchema,
 	LegacyEditionSchema,
+	VersionedEditionV2Schema,
 	type Edition,
 	type EditionRecord,
 } from "@bc-news/contracts";
@@ -21,7 +22,20 @@ export class EditionUnreadableError extends Error {
 
 function toCurrentEdition(record: EditionRecord): Edition {
 	if ("version" in record) {
-		return EditionSchema.parse(record);
+		if (record.version === CURRENT_EDITION_VERSION) {
+			return EditionSchema.parse(record);
+		}
+		const prior = VersionedEditionV2Schema.parse(record);
+		return EditionSchema.parse({
+			version: CURRENT_EDITION_VERSION,
+			active_region_id: prior.active_region_id,
+			publication_date: prior.publication_date,
+			title: prior.title,
+			game_references: [],
+			announcements: prior.announcements,
+			main_story: prior.main_story,
+			meta: prior.meta,
+		});
 	}
 	const legacy = LegacyEditionSchema.parse(record);
 	return EditionSchema.parse({
@@ -29,6 +43,7 @@ function toCurrentEdition(record: EditionRecord): Edition {
 		active_region_id: legacy.active_region_id,
 		publication_date: legacy.publication_date,
 		title: legacy.title,
+		game_references: [],
 		announcements: legacy.announcements,
 		main_story: {
 			headline: legacy.main_story.headline,

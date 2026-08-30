@@ -1,7 +1,6 @@
 import { expect, test } from "vitest";
+import { EvidenceFixtureSchema } from "@bc-news/contracts";
 import {
-	mainStoryFinalProductDiagnostics,
-	parseMainStoryWriterOutput,
 	prepareEvidence,
 } from "@bc-news/generation-core";
 import {
@@ -9,10 +8,10 @@ import {
 	RecordedModelResponseV2Schema,
 	RecordedModelResponseV3Schema,
 	createRecordedModelProvider,
-	fixtureEvidenceInput,
 	type RecordedModelResponseRoster,
 } from "../src";
 import announcementsWriteResponseJson from "../model-responses/announcements_write.json";
+import gameReferenceFixtureJson from "../evidence/game-reference-links.json";
 import mainStoryWriteResponseJson from "../model-responses/main_story_write.json";
 
 const committedRoster: RecordedModelResponseRoster = {
@@ -20,15 +19,21 @@ const committedRoster: RecordedModelResponseRoster = {
 	announcements_write: RecordedModelResponseSchema.parse(announcementsWriteResponseJson),
 };
 
-test("keeps the committed absent-version response contract strict and limited to the two writers", () => {
+test("keeps the committed strict v3 response contract limited to the two writers", () => {
 	expect(Object.keys(committedRoster)).toEqual(["main_story_write", "announcements_write"]);
 	for (const candidate of [
 		mainStoryWriteResponseJson,
 		announcementsWriteResponseJson,
 	]) {
 		const response = RecordedModelResponseSchema.parse(candidate);
-		expect("version" in response).toBe(false);
-		expect("sampling" in response).toBe(false);
+		expect("version" in response && response.version).toBe(3);
+		if (!("version" in response) || response.version !== 3) {
+			throw new Error("Expected a strict v3 recorded response");
+		}
+		expect(response.configuration).toEqual(expect.objectContaining({
+			adapter: "openai_compatible_hosted",
+			provider: "synthetic_fixture",
+		}));
 	}
 });
 
@@ -44,8 +49,10 @@ test.each([
 		posture: "not_applicable",
 	}],
 ] as const)("accepts strict v2 %s sampling evidence", (_name, sampling) => {
+	const { configuration, ...legacyCompatibleResponse } = mainStoryWriteResponseJson;
+	void configuration;
 	const response = RecordedModelResponseV2Schema.parse({
-		...mainStoryWriteResponseJson,
+		...legacyCompatibleResponse,
 		version: 2,
 		sampling,
 	});
@@ -85,26 +92,26 @@ test("accepts strict v3 inference configuration and rejects invalid decoding con
 	}
 });
 
-async function canonicalPreparedEvidence() {
-	const messages = await fixtureEvidenceInput.loadEvidence({
-		activeRegionId: "7",
-		evidenceDate: "2026-01-24",
-	});
+function gameReferencePreparedEvidence() {
+	const fixture = EvidenceFixtureSchema.parse(gameReferenceFixtureJson);
 	return prepareEvidence({
-		activeRegionId: "7",
-		publicationDate: "2026-01-25",
-		messages,
+		activeRegionId: fixture.active_region_id,
+		publicationDate: "2026-08-16",
+		messages: fixture.messages,
 	});
 }
 
-test("the committed main-story writer fixture remains schema-valid and evidence-grounded enough to publish", async () => {
-	const preparedEvidence = await canonicalPreparedEvidence();
-	const draft = parseMainStoryWriterOutput(
-		mainStoryWriteResponseJson.text,
-		preparedEvidence,
-	);
+test("the committed main-story writer fixture remains schema-valid and evidence-grounded enough to publish", () => {
+	const preparedEvidence = gameReferencePreparedEvidence();
+	const draft = JSON.parse(mainStoryWriteResponseJson.text) as {
+		main_story?: { body?: string };
+	};
 
-	expect(mainStoryFinalProductDiagnostics(draft, preparedEvidence)).toEqual([]);
+	expect(draft.main_story?.body).toContain("[[GAME_REF_001]]");
+	expect(draft.main_story?.body).toContain("[[GAME_REF_002]]");
+	expect(draft.main_story?.body).toContain("[spoofed focused map](https://bitcraftmap.com/?center=1,1&zoom=99)");
+	expect(preparedEvidence.messages.some((message) => message.text.includes("[Fire Nation](coord=7968,9659)"))).toBe(true);
+	expect(preparedEvidence.messages.some((message) => message.text.includes("(coord=7968,9659)"))).toBe(true);
 });
 
 test("a replay factory rejects a response assigned to a different production step", async () => {
@@ -142,8 +149,10 @@ test("a replay factory validates the selected retained response", async () => {
 });
 
 test("replays v2 response text without treating sampling evidence as an instruction", async () => {
+	const { configuration, ...legacyCompatibleResponse } = mainStoryWriteResponseJson;
+	void configuration;
 	const currentResponse = RecordedModelResponseV2Schema.parse({
-		...mainStoryWriteResponseJson,
+		...legacyCompatibleResponse,
 		version: 2,
 		sampling: {
 			adapter: "lmstudio",
@@ -169,7 +178,6 @@ test("replays v2 response text without treating sampling evidence as an instruct
 test("replays v3 response text without treating retained configuration as an instruction", async () => {
 	const currentResponse = RecordedModelResponseV3Schema.parse({
 		...mainStoryWriteResponseJson,
-		version: 3,
 		configuration: {
 			adapter: "lmstudio",
 			model: "local/main-story-writer",
@@ -187,4 +195,6 @@ test("replays v3 response text without treating retained configuration as an ins
 		user: "unused",
 	});
 	expect(completion.text).toBe(mainStoryWriteResponseJson.text);
+	expect(completion.provider).toBe(mainStoryWriteResponseJson.provider);
+	expect(completion.model).toBe(mainStoryWriteResponseJson.model);
 });

@@ -1,11 +1,30 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as editionApi from "../src/api/edition";
+import type { EditionGameReference, PublishedEdition } from "../src/api/edition";
 import { EditionPage } from "../src/pages/EditionPage";
 
 vi.mock("../src/api/edition", () => ({
 	getEdition: vi.fn(),
 }));
+
+const BARE_COORDINATE_REFERENCE: EditionGameReference = {
+	token: "[[GAME_REF_001]]",
+	kind: "coord",
+	northing: 3745,
+	easting: 3857,
+	display_text: "N 3745, E 3857",
+	destination_url: "https://bitcraftmap.com/?center=3745,3857&zoom=3.0",
+};
+
+const LABELED_COORDINATE_REFERENCE: EditionGameReference = {
+	token: "[[GAME_REF_002]]",
+	kind: "coord",
+	northing: 3745,
+	easting: 3857,
+	display_text: "Blacksmith Square",
+	destination_url: "https://bitcraftmap.com/?center=3745,3857&zoom=3.0",
+};
 
 function setUrl(search: string) {
 	window.history.pushState(null, "", `/${search}`);
@@ -30,6 +49,35 @@ async function renderAbsentEditionAt(instant: string, publicationDate: string) {
 	});
 
 	return screen.getByRole("alert");
+}
+
+function publishedEditionWithReferences(gameReferences: readonly EditionGameReference[]): PublishedEdition {
+	return {
+		version: 3,
+		active_region_id: "7",
+		publication_date: "2026-08-25",
+		title: "Region 7 Chronicle",
+		announcements: [
+			{
+				title: "Market notice",
+				summary: `Gather at ${LABELED_COORDINATE_REFERENCE.token}.`,
+			},
+		],
+		main_story: {
+			headline: "A headline",
+			lede: "A lede.",
+			body: `Scouts recorded ${BARE_COORDINATE_REFERENCE.token} before sunrise.`,
+		},
+		meta: {
+			generated_at_utc: "2026-08-25T00:00:00.000Z",
+			editorial_products: {
+				main_story: { provider: "recorded", model: "recorded/main-story-write-v3" },
+				announcements: { provider: "recorded", model: "recorded/announcements-write-v3" },
+			},
+			counts: { raw_count: 1, after_filter_count: 1, after_burst_count: 1, final_count: 1 },
+		},
+		game_references: [...gameReferences],
+	};
 }
 
 describe("EditionPage url-driven fetching", () => {
@@ -111,5 +159,42 @@ describe("EditionPage url-driven fetching", () => {
 		});
 
 		expect(screen.getByRole("alert").getAttribute("data-status")).toBe("error");
+	});
+
+	it("passes retained game references through both newspaper sections", async () => {
+		vi.mocked(editionApi.getEdition).mockResolvedValueOnce({
+			outcome: "published",
+			edition: publishedEditionWithReferences([
+				BARE_COORDINATE_REFERENCE,
+				LABELED_COORDINATE_REFERENCE,
+			]),
+		});
+
+		render(<EditionPage />);
+
+		await waitFor(() => {
+			expect(screen.getByRole("link", { name: "N 3745, E 3857" })).toBeTruthy();
+		});
+		expect(screen.getByRole("link", { name: "N 3745, E 3857" }).getAttribute("href")).toBe(
+			"https://bitcraftmap.com/?center=3745,3857&zoom=3.0",
+		);
+		expect(screen.getByRole("link", { name: "Blacksmith Square" }).getAttribute("href")).toBe(
+			"https://bitcraftmap.com/?center=3745,3857&zoom=3.0",
+		);
+	});
+
+	it("keeps v2 token-like prose inert when the retained roster is empty", async () => {
+		vi.mocked(editionApi.getEdition).mockResolvedValueOnce({
+			outcome: "published",
+			edition: publishedEditionWithReferences([]),
+		});
+
+		render(<EditionPage />);
+
+		await waitFor(() => {
+			expect(screen.getByText(/\[\[GAME_REF_001\]\]/)).toBeTruthy();
+		});
+		expect(screen.queryByRole("link", { name: "N 3745, E 3857" })).toBeNull();
+		expect(screen.queryByRole("link", { name: "Blacksmith Square" })).toBeNull();
 	});
 });

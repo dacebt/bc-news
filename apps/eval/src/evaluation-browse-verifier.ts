@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, readFile, rm, unlink, writeFile } from "node:fs/promise
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { RecordedModelResponseSchema } from "@bc-news/fixtures";
-import { REPRESENTATIVE_FIXTURE_PATH } from "./representative-fixture";
+import { RECORDED_OUTPUT_FIXTURE_PATH } from "./representative-fixture";
 import { runEvalCliApplication } from "./cli";
 import { BenchmarkRunSchema, type BenchmarkRun } from "./evaluation-artifact";
 import { BenchmarkRunReadError } from "./evaluation-artifact-reader";
@@ -146,7 +146,7 @@ export async function verifyEvaluationBenchmarkBrowsing(temporaryRoot?: string):
 	const server = await startRecordLoopbackServer(await retainedOutputs());
 	try {
 		const result = await evaluateBenchmarkCommand({
-			fixturePath: REPRESENTATIVE_FIXTURE_PATH,
+			fixturePath: RECORDED_OUTPUT_FIXTURE_PATH,
 			configPath,
 			resultsDirectory: defaultDirectory,
 			environment: {

@@ -1,5 +1,7 @@
 # Direction
 
+- [Shape: game-reference links in newspaper editions](2026-08-30-game-reference-links.shape.md) — Loose-cadence session boundary for resolving BitCraft chat references into safe, retained newspaper links.
+- [Capability map: game-reference links](2026-08-30-game-reference-links.map.md) — Risk-ordered vertical capabilities and feature conventions for safe game-reference links in newspaper editions.
 - [Shape: editorial generation ownership](2026-08-19-editorial-generation-ownership.shape.md) — Tight-cadence session boundary for two final editorial writers, proportionate in-world storytelling, and deterministic edition assembly.
 - [Shape: hosted model scorecard authoring](2026-08-19-hosted-model-scorecard-authoring.shape.md) — Redeclared session boundary for four local scorecards with one-off ignored mechanical authoring helpers.
 - [Shape: hosted model scorecards](2026-08-19-hosted-model-scorecards.shape.md) — Superseded artifact-only boundary that omitted the mechanical authoring path needed for the review evidence.

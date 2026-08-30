@@ -14,6 +14,7 @@ const PREPARED_EVIDENCE: PreparedEvidence = {
 	after_burst_count: 1,
 	final_count: 1,
 	drop_stats: { empty_after_trim: 0, too_short: 0, burst_merged: 0 },
+	game_references: [],
 	messages: [{
 		id: "message-1",
 		ts: 1_769_212_800_000,

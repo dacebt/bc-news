@@ -2,6 +2,7 @@ import { EditionSchema } from "@bc-news/contracts";
 import type { WalkContext, WalkPhase } from "../phase";
 import { editionUrl } from "../edition-api";
 import { requestGenerationRunStatus } from "../generation-run-status";
+import { assertPublishedGameReferences } from "../game-reference-assertions";
 import {
 	assertCacheControl,
 	assertSecurityResponseHeaders,
@@ -33,10 +34,12 @@ async function run(ctx: WalkContext): Promise<void> {
 			assertSecurityResponseHeaders(response, "published edition");
 			assertCacheControl(response, PUBLIC_EDITION_CACHE_CONTROL, "published edition");
 			const body = await response.text();
-			EditionSchema.parse(JSON.parse(body));
+			const parsed = JSON.parse(body) as unknown;
+			EditionSchema.parse(parsed);
+			assertPublishedGameReferences(parsed);
 			ctx.state.firstServedEditionBody = body;
 			console.log(
-				"walk: published edition served with exact security/cache headers and parsed against EditionSchema",
+				"walk: published edition served with exact security/cache headers, parsed against EditionSchema, and retained the exact game-reference roster",
 			);
 			return;
 		}

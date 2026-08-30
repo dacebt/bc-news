@@ -15,7 +15,7 @@ import { EvaluationArtifactStore } from "./evaluation-artifact-store";
 import { summarizeBenchmarkRun } from "./evaluation-browse-report";
 import { compareBenchmarkRuns } from "./evaluation-comparison";
 import { projectBenchmarkBehavior, projectBenchmarkContext } from "./evaluation-observation";
-import { REPRESENTATIVE_FIXTURE_PATH } from "./representative-fixture";
+import { RECORDED_OUTPUT_FIXTURE_PATH } from "./representative-fixture";
 import { startRecordLoopbackServer } from "./record-loopback-server";
 
 const RESPONSE_DIRECTORY = new URL("../../../packages/fixtures/model-responses/", import.meta.url).pathname;
@@ -154,7 +154,7 @@ export async function verifyBenchmarkRuntimeEvidence(temporaryRoot?: string): Pr
 	const snapshots: BenchmarkRun[] = [];
 	try {
 		const result = await evaluateTrialCommand({
-			fixturePath: REPRESENTATIVE_FIXTURE_PATH,
+			fixturePath: RECORDED_OUTPUT_FIXTURE_PATH,
 			configPath,
 			resultsDirectory,
 			environment: { HOSTED_MODEL_BASE_URL: server.baseUrl, HOSTED_MODEL_API_KEY: "record-loopback-proof" },

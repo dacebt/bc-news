@@ -1,8 +1,15 @@
 import { Box, Divider, Flex, Heading, Text } from "@chakra-ui/react";
 import type { Announcement } from "@bc-news/contracts";
+import type { EditionGameReference } from "../api/edition";
 import { NewspaperText } from "./NewspaperText";
 
-export function Announcements({ announcements }: { announcements: Announcement[] }) {
+export function Announcements({
+	announcements,
+	gameReferences,
+}: {
+	announcements: Announcement[];
+	gameReferences: readonly EditionGameReference[];
+}) {
 	return (
 		<Box>
 			<Heading
@@ -27,7 +34,7 @@ export function Announcements({ announcements }: { announcements: Announcement[]
 									{announcement.title}
 								</Heading>
 								<Box fontSize="sm" color="paper.ink" lineHeight="1.5">
-									<NewspaperText text={announcement.summary} />
+									<NewspaperText text={announcement.summary} gameReferences={gameReferences} />
 								</Box>
 							</Box>
 							{index < announcements.length - 1 && <Divider borderColor="paper.rule" />}

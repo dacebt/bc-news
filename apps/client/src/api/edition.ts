@@ -1,4 +1,38 @@
-import { EditionSchema, type Edition } from "@bc-news/contracts";
+import {
+	EditionSchema,
+	VersionedEditionV2Schema,
+	type Edition as ContractEdition,
+	type GameReference,
+	type VersionedEditionV2,
+} from "@bc-news/contracts";
+
+export type EditionGameReference = GameReference;
+
+type HistoricalPublishedEdition = VersionedEditionV2 & { game_references: [] };
+export type PublishedEdition = ContractEdition | HistoricalPublishedEdition;
+
+function safeParsePublishedEdition(
+	body: unknown,
+): { success: true; data: PublishedEdition } | { success: false; issues: unknown } {
+	const current = EditionSchema.safeParse(body);
+	if (current.success) {
+		return { success: true, data: current.data };
+	}
+	const historical = VersionedEditionV2Schema.safeParse(body);
+	if (historical.success) {
+		return {
+			success: true,
+			data: {
+				...historical.data,
+				game_references: [],
+			},
+		};
+	}
+	return {
+		success: false,
+		issues: [...current.error.issues, ...historical.error.issues],
+	};
+}
 
 // Typed, exhaustive outcomes for a single edition fetch. The caller
 // distinguishes each case by `outcome` rather than by parsing a thrown
@@ -17,7 +51,7 @@ import { EditionSchema, type Edition } from "@bc-news/contracts";
 // `network_error` would blame the wrong side for the failure. Reported as a
 // deviation in the hand report rather than dropped silently.
 export type EditionFetchOutcome =
-	| { outcome: "published"; edition: Edition }
+	| { outcome: "published"; edition: PublishedEdition }
 	| { outcome: "absent" }
 	| { outcome: "invalid_request" }
 	| { outcome: "service_error"; httpStatus: number }
@@ -110,9 +144,9 @@ export async function getEdition({
 		return { outcome: "misrouted_response" };
 	}
 
-	const parsed = EditionSchema.safeParse(body);
+	const parsed = safeParsePublishedEdition(body);
 	if (!parsed.success) {
-		console.error("getEdition: response failed EditionSchema validation", parsed.error.issues);
+		console.error("getEdition: response failed published-edition validation", parsed.issues);
 		return { outcome: "invalid_response" };
 	}
 

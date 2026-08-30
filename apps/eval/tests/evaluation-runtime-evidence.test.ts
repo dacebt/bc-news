@@ -13,7 +13,7 @@ import { loadBenchmarkRun } from "../src/evaluation-artifact-reader";
 import { summarizeBenchmarkRun } from "../src/evaluation-browse-report";
 import { evaluateTrialCommand } from "../src/evaluation-trial-command";
 import { requireRuntimeEvidence } from "../src/evaluation-trial-execution";
-import { REPRESENTATIVE_FIXTURE_PATH } from "../src/representative-fixture";
+import { RECORDED_OUTPUT_FIXTURE_PATH } from "../src/representative-fixture";
 import { TEST_SOURCE_PROVENANCE, temporaryRoot } from "./evaluation-artifact-test-support";
 
 const providerOverride = vi.hoisted(() => ({
@@ -143,7 +143,7 @@ test("keeps a provider success without runtime evidence pending and leaves the b
 	await writeFile(configPath, `${JSON.stringify(configuration)}\n`, "utf8");
 	const snapshots: unknown[] = [];
 	await expect(evaluateTrialCommand({
-		fixturePath: REPRESENTATIVE_FIXTURE_PATH,
+		fixturePath: RECORDED_OUTPUT_FIXTURE_PATH,
 		configPath,
 		resultsDirectory,
 		sourceProvenance: TEST_SOURCE_PROVENANCE,

@@ -3,6 +3,10 @@ import {
 	authorIdentityToken,
 	buildAuthorIdentityLedger,
 } from "./author-identity-tokens";
+import {
+	buildGameReferenceLedger,
+	replaceGameReferenceSyntaxWithTokens,
+} from "./game-reference-tokens";
 
 const FENCE_START = "[UNTRUSTED CHAT MESSAGE DATA]";
 const FENCE_END = "[END UNTRUSTED CHAT MESSAGE DATA]";
@@ -38,11 +42,28 @@ function neutralizeBrackets(value: string): string {
 	return value.replace(OPEN_BRACKET, `[${ZERO_WIDTH_SPACE}`);
 }
 
+function neutralizeBracketsPreservingReferenceTokens(value: string): string {
+	const placeholders = new Map<string, string>();
+	const withPlaceholders = value.replace(/\[\[GAME_REF_\d{3,}\]\]/gu, (token) => {
+		const placeholder = `__GAME_REFERENCE_TOKEN_${placeholders.size}__`;
+		placeholders.set(placeholder, token);
+		return placeholder;
+	});
+	let restored = neutralizeBrackets(withPlaceholders);
+	for (const [placeholder, token] of placeholders) {
+		restored = restored.replaceAll(placeholder, token);
+	}
+	return restored;
+}
+
 function formatMessages(preparedEvidence: PreparedEvidence): string {
 	const authorIdentities = buildAuthorIdentityLedger(preparedEvidence);
+	const gameReferences = buildGameReferenceLedger(preparedEvidence);
 	return preparedEvidence.messages
 		.map((msg) => {
-			const text = neutralizeBrackets(asSingleTranscriptLine(msg.text));
+			const text = neutralizeBracketsPreservingReferenceTokens(asSingleTranscriptLine(
+				replaceGameReferenceSyntaxWithTokens(msg.text, gameReferences),
+			));
 			return `${authorIdentityToken(authorIdentities, msg.author_id)}: ${text}`;
 		})
 		.join("\n");

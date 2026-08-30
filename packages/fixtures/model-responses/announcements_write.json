@@ -1,7 +1,19 @@
 {
+	"version": 3,
 	"production_step": "announcements_write",
 	"provider": "synthetic_fixture",
-	"model": "announcements-writer-v2",
-	"prompt_sha256": "cd89f3e1330b2aa4de8c420ba138a12e53fd97b6a285ac6a300ef0cfb56c4dd8",
-	"text": "{\"announcements\":[{\"title\":\"Aryn Ramps Up Scholar Codex Production\",\"summary\":\"**Aryn** has been making codexes at the bungalow, working through 45k of tier 1 scholar output and preparing to move on to tier 2. The invitation went out to anyone chasing scholar xp: come help speed up OFG's upgrade for everyone's benefit.\"},{\"title\":\"KeyserSoze Hits Sailing Level 75\",\"summary\":\"**KeyserSoze** logged sailing at level 75, another quiet marker in the region's ongoing skill climb.\"},{\"title\":\"Sorata Uncovers the Secret World Formula\",\"summary\":\"**Sorata** returned from having travelled the world far and wide claiming to have discovered the secret world formula to life. The number, delivered without ceremony: 67.\"},{\"title\":\"Sinklar Rounds Out a Full Epic Toolset\",\"summary\":\"Asked how many Epic-tier tools regulars had on hand, **Sinklar** reported a full set with one legendary piece on top, a rare-gear benchmark for anyone still filling out their own kit.\"}]}"
+	"model": "game-reference-announcements-v3",
+	"prompt_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+	"text": "{\"announcements\":[{\"title\":\"Fire Nation Marker Shared\",\"summary\":\"A late marker kept [[GAME_REF_001]] as the named landmark for readers who want the authored label.\"},{\"title\":\"Bare Pin Matches the Same Ground\",\"summary\":\"A second note kept the same location as [[GAME_REF_002]], preserving the plain coordinate display instead of relabeling it.\"},{\"title\":\"Spoofed URL Stayed Plain\",\"summary\":\"The phrase [spoofed focused map](https://bitcraftmap.com/?center=1,1&zoom=99) is ordinary markdown and should stay inert.\"}]}",
+	"configuration": {
+		"adapter": "openai_compatible_hosted",
+		"provider": "synthetic_fixture",
+		"model": "game-reference-announcements-v3",
+		"billing": {
+			"method": "calculated",
+			"input_usd_per_million_tokens": 0,
+			"output_usd_per_million_tokens": 0,
+			"pricing_reference": "curated replay fixture"
+		}
+	}
 }

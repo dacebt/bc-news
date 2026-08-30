@@ -381,8 +381,11 @@ evidence. Dense/sparse thresholds,
 event-time relationships, contradiction roles, unresolved records, grounded
 names/numbers, announcement candidates, and explicit irrelevant-message ids
 make variation tags auditable rather than decorative. Existing valid
-single-fixture commands, artifacts, and outputs remain unchanged; no existing
-namespace silently selects a corpus entry.
+single-fixture commands, artifacts, and outputs remain unchanged. The
+`packages/fixtures` package-root shorthand stays pinned to the representative
+full-evidence fixture; additional committed evidence such as
+`packages/fixtures/evidence/game-reference-links.json` must be named by exact
+path, so no existing namespace silently selects a different corpus entry.
 
 Evaluation scorecards are a separate eval-owned evidence boundary selected only
 through `scorecard build --input <declaration-path> [--results-dir <path>]` and
@@ -685,8 +688,10 @@ model usage, and proves region 7 reaches complete with all five ordered
 generation steps and exactly one recorded-replay usage record for each of the
 two production model steps, each with unavailable token measurement and zero
 external billing. It strictly observes writer-only diagnostics on the
-representative schema-valid output, then proves deterministic assembly serves
-those writer products. Repeated
+schema-valid recorded output, then proves deterministic assembly serves those
+writer products with the exact retained `game_references` roster and focused
+BitCraft Map destinations for both the named and bare displays of the same
+coordinate while generic Markdown destinations stay inert. Repeated
 scheduled delivery must leave edition bytes, retained usage, and retained
 diagnostics unchanged. The walk does not invoke evaluation, fixture-authoring,
 context, or recorded-replay acceptance verifiers. It owns only its composed
@@ -700,7 +705,9 @@ comparing current behavior with a stored expected Run File, and it remains
 separate from live model evaluation and its ignored local evidence. Current Run
 Files retain diagnostics; historical readers preserve the older unknown state
 when that field is absent. This acceptance boundary has no model judge, quality
-threshold, byte pin, or source-digest gate. The [test and verification
+threshold, byte pin, or source-digest gate. The current committed
+game-reference replay uses the dedicated focused fixture, not the package-root
+representative shorthand. The [test and verification
 posture](TESTING.md) owns its exact assertions, commands, and terminal
 observation.
 

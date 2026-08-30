@@ -13,7 +13,7 @@ export function assertRecordedReplayConfig(config: EvalConfig): void {
 export function assertRecordedReplayAcceptanceSemantics(run: RunFile): void {
 	assertRecordedReplayConfig(run.config);
 	if (run.steps.some((step, index) => step.production_step !== PRODUCTION_MODEL_STEPS[index])) {
-		throw new Error("recorded-replay acceptance does not contain the exact ordered four-step roster");
+		throw new Error("recorded-replay acceptance does not contain the exact ordered two-step roster");
 	}
 	for (const step of run.steps) {
 		const usage = step.model_usage;

@@ -1,7 +1,19 @@
 {
+	"version": 3,
 	"production_step": "main_story_write",
 	"provider": "synthetic_fixture",
-	"model": "main-story-writer-v2",
-	"prompt_sha256": "5dade4edaf76749d910938ead45227e51cf17d9e568005f99bcd235aae7bdd94",
-	"text": "{\"title\":\"The Widmoria Muster\",\"main_story\":{\"headline\":\"Dungeon Muster at Widmoria as Tier 1 Work Looms Large\",\"lede\":\"An evening expedition assembled itself in open chat while a parallel discussion returned to the scale of Tier 1 work.\",\"body\":\"The evening's main event assembled itself over open chat. **Aryn** placed the Widmoria dungeon southeast of Grand Exchange. **Archaelic** confessed, \\\"Would love to join, just dont have any plate.\\\" **TinyHouseGamer** asked which Tier 7 target it would be, with the jungle dungeon still an open question.\\n\\nThe region was watching its neighbors too. **TinyHouseGamer** noted that \\\"damn R9 is doing T7 dungeons atm\\\". **KeyserSoze** answered the scheduling problem with a jab at Aryn for overlapping unknown plans in other regions.\\n\\nThe day's other seminar was economics. **HereticalSage** did the arithmetic, \\\"so in the end game you need thousands of t1s\\\".\"}}"
+	"model": "game-reference-main-story-v3",
+	"prompt_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+	"text": "{\"title\":\"Focused Map Markers Reach the Late Edition\",\"main_story\":{\"headline\":\"Late Coordinate Markers Give Region 7 Two Truthful Ways to Reach the Same Ground\",\"lede\":\"Two late markers let the edition keep one named landmark and one bare coordinate for the same destination without inventing a new map target.\",\"body\":\"Late chat markers gave the paper a named landmark at [[GAME_REF_001]] and a bare pin at [[GAME_REF_002]].\\n\\nBoth references point to the same ground, and the edition keeps the named landmark while normalizing the bare pin to a plain coordinate display.\\n\\nA draft mention of [spoofed focused map](https://bitcraftmap.com/?center=1,1&zoom=99) should remain ordinary markdown, not a live newspaper link.\"}}",
+	"configuration": {
+		"adapter": "openai_compatible_hosted",
+		"provider": "synthetic_fixture",
+		"model": "game-reference-main-story-v3",
+		"billing": {
+			"method": "calculated",
+			"input_usd_per_million_tokens": 0,
+			"output_usd_per_million_tokens": 0,
+			"pricing_reference": "curated replay fixture"
+		}
+	}
 }

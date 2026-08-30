@@ -3,6 +3,7 @@ import { readFile, readdir, stat } from "node:fs/promises";
 import { join } from "node:path";
 import { EvidenceFixtureSchema, type EvidenceFixture } from "@bc-news/contracts";
 import { evidenceDateForPublicationDate } from "@bc-news/generation-core";
+import { REPRESENTATIVE_FIXTURE_FILENAME } from "./representative-fixture";
 
 export class EvalFixtureError extends Error {
 	readonly code:
@@ -62,12 +63,11 @@ function publicationDateForEvidenceDate(evidenceDate: string): string {
 }
 
 /**
- * `--fixture` names the fixture corpus package (e.g. `packages/fixtures`),
- * not a specific evidence file inside it -- the corpus is the retained-evidence
- * unit, and the CLI usage in the observable delta passes the package
- * directory. A single evidence file under `evidence/` is the only shape this
- * corpus has today; more than one is ambiguous and rejected rather than
- * guessed at.
+ * `--fixture` may name either a specific evidence file or the fixture corpus
+ * package root (`packages/fixtures`). The package-root shorthand continues to
+ * mean the historical representative fixture used by existing replay and
+ * context proofs; any additional committed fixtures must be addressed by their
+ * explicit file paths so the caller cannot silently consume the wrong evidence.
  */
 async function resolveFixtureFile(path: string): Promise<string> {
 	const info = await stat(path);
@@ -75,14 +75,24 @@ async function resolveFixtureFile(path: string): Promise<string> {
 	const evidenceDirectory = join(path, "evidence");
 	const entries = (await readdir(evidenceDirectory)).filter((name) => name.endsWith(".json"));
 	const [only] = entries;
-	if (only === undefined || entries.length > 1) {
+	if (only !== undefined && entries.length === 1) {
+		return join(evidenceDirectory, only);
+	}
+	if (entries.includes(REPRESENTATIVE_FIXTURE_FILENAME)) {
+		return join(evidenceDirectory, REPRESENTATIVE_FIXTURE_FILENAME);
+	}
+	if (only === undefined) {
 		throw new EvalFixtureError(
 			"fixture_directory_ambiguous",
 			path,
-			`Expected exactly one evidence JSON file under ${evidenceDirectory}, found ${entries.length}`,
+			`Expected at least one evidence JSON file under ${evidenceDirectory}, found ${entries.length}`,
 		);
 	}
-	return join(evidenceDirectory, only);
+	throw new EvalFixtureError(
+		"fixture_directory_ambiguous",
+		path,
+		`Explicit fixture path required when ${evidenceDirectory} contains ${entries.length} evidence files without ${REPRESENTATIVE_FIXTURE_FILENAME}`,
+	);
 }
 
 export async function loadFixture(path: string): Promise<LoadedFixture> {

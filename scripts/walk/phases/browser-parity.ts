@@ -8,6 +8,15 @@ import {
 	requestOriginViolation,
 	responseViolation,
 } from "../browser-policy";
+import {
+	assertPublishedGameReferences,
+	EXPECTED_GAME_REFERENCES,
+	EXPECTED_REFERENCE_OCCURRENCES_PER_DISPLAY,
+	EXPECTED_TRUSTED_FOCUSED_MAP_LINK_COUNT,
+	FOCUSED_MAP_DESTINATION,
+	renderedMarkdownText,
+	SPOOFED_FOCUSED_MAP_DESTINATION,
+} from "../game-reference-assertions";
 import type { WalkContext, WalkPhase } from "../phase";
 
 const ABSENT_COPY = "No published edition for this region/date.";
@@ -16,10 +25,6 @@ function assertEqual(actual: unknown, expected: unknown, label: string): void {
 	if (actual !== expected) {
 		throw new Error(`${label}: expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
 	}
-}
-
-function normalizedMarkdownText(value: string): string {
-	return value.replaceAll("**", "");
 }
 
 function expectedDateline(edition: Edition): string {
@@ -63,7 +68,24 @@ async function waitForPairResponse(
 	await responsePromise;
 }
 
-async function assertPublishedEdition(page: Page, edition: Edition): Promise<void> {
+async function assertFocusedMapLinks(
+	page: Page,
+	text: string,
+	label: string,
+	expectedCount: number,
+): Promise<void> {
+	const links = page.getByRole("link", { name: text, exact: true });
+	await links.first().waitFor();
+	assertEqual(await links.count(), expectedCount, `${label} count`);
+	for (let index = 0; index < expectedCount; index += 1) {
+		const link = links.nth(index);
+		assertEqual(await link.getAttribute("href"), FOCUSED_MAP_DESTINATION, `${label} href ${String(index + 1)}`);
+		assertEqual(await link.getAttribute("target"), "_blank", `${label} target ${String(index + 1)}`);
+		assertEqual(await link.getAttribute("rel"), "noopener noreferrer", `${label} rel ${String(index + 1)}`);
+	}
+}
+
+async function assertPublishedEdition(page: Page, edition: Edition, rawEdition: unknown): Promise<void> {
 	await page.getByRole("heading", { level: 1, name: edition.title, exact: true }).waitFor();
 	assertEqual(
 		await page.title(),
@@ -82,15 +104,39 @@ async function assertPublishedEdition(page: Page, edition: Edition): Promise<voi
 	assertEqual(JSON.stringify(titles), JSON.stringify(edition.announcements.map((item) => item.title)), "announcement titles");
 	for (let index = 0; index < edition.announcements.length; index++) {
 		const summary = await page.locator("h4").nth(index).locator("xpath=following-sibling::div").innerText();
-		assertEqual(summary, normalizedMarkdownText(edition.announcements[index]!.summary), `announcement ${String(index)} summary`);
+		assertEqual(
+			summary,
+			renderedMarkdownText(edition.announcements[index]!.summary, rawEdition),
+			`announcement ${String(index)} summary`,
+		);
 	}
+	await assertFocusedMapLinks(
+		page,
+		EXPECTED_GAME_REFERENCES[0]!.display_text,
+		"named focused map link",
+		EXPECTED_REFERENCE_OCCURRENCES_PER_DISPLAY,
+	);
+	await assertFocusedMapLinks(
+		page,
+		EXPECTED_GAME_REFERENCES[1]!.display_text,
+		"bare focused map link",
+		EXPECTED_REFERENCE_OCCURRENCES_PER_DISPLAY,
+	);
+	assertEqual(
+		await page.locator(`a[href="${FOCUSED_MAP_DESTINATION}"]`).count(),
+		EXPECTED_TRUSTED_FOCUSED_MAP_LINK_COUNT,
+		"focused map link count",
+	);
+	assertEqual(await page.locator(`a[href="${SPOOFED_FOCUSED_MAP_DESTINATION}"]`).count(), 0, "spoofed markdown link count");
 }
 
 async function run(ctx: WalkContext): Promise<void> {
 	if (ctx.state.firstServedEditionBody === undefined) {
 		throw new Error("browser parity requires the strict served edition captured by publish-poll");
 	}
-	const edition = EditionSchema.parse(JSON.parse(ctx.state.firstServedEditionBody));
+	const rawEdition = JSON.parse(ctx.state.firstServedEditionBody) as unknown;
+	const edition = EditionSchema.parse(rawEdition);
+	assertPublishedGameReferences(rawEdition);
 	const expectedOrigin = new URL(ctx.baseUrl).origin;
 	const failures: string[] = [];
 	const allowedNotFoundPairs: string[] = [];
@@ -140,7 +186,7 @@ async function run(ctx: WalkContext): Promise<void> {
 	await waitForPairResponse(page, ctx.pair, async () => {
 		await page.goto(readerUrl(ctx.baseUrl, ctx.pair), { waitUntil: "domcontentloaded" });
 	});
-	await assertPublishedEdition(page, edition);
+	await assertPublishedEdition(page, edition, rawEdition);
 	assertQuery(page, ctx.pair);
 
 	const unavailableRegion = ALLOWED_NOT_FOUND_PAIRS[0]!;
@@ -151,7 +197,7 @@ async function run(ctx: WalkContext): Promise<void> {
 	assertQuery(page, unavailableRegion);
 
 	await waitForPairResponse(page, ctx.pair, async () => page.goBack().then(() => {}));
-	await assertPublishedEdition(page, edition);
+	await assertPublishedEdition(page, edition, rawEdition);
 	assertQuery(page, ctx.pair);
 
 	const unavailableDate = ALLOWED_NOT_FOUND_PAIRS[1]!;
@@ -162,7 +208,7 @@ async function run(ctx: WalkContext): Promise<void> {
 	assertQuery(page, unavailableDate);
 
 	await waitForPairResponse(page, ctx.pair, async () => page.goBack().then(() => {}));
-	await assertPublishedEdition(page, edition);
+	await assertPublishedEdition(page, edition, rawEdition);
 	assertQuery(page, ctx.pair);
 
 	const expectedNotFound = ALLOWED_NOT_FOUND_PAIRS.map(pairKey).sort();

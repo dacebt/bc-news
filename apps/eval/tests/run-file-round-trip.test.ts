@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, test, vi } from "vitest";
 import { RECORDED_REPLAY_CONFIG_PATH } from "../src/recorded-replay-acceptance-verifier";
-import { REPRESENTATIVE_FIXTURE_PATH } from "../src/representative-fixture";
+import { RECORDED_OUTPUT_FIXTURE_PATH } from "../src/representative-fixture";
 import { runCommand } from "../src/run-command";
 import { RunFileSchema, listRunFiles, loadRunFile, saveRunFile } from "../src/run-file";
 import { formatRunDetail, formatRunListing, formatRunSummary } from "../src/report";
@@ -11,7 +11,7 @@ import { formatRunDetail, formatRunListing, formatRunSummary } from "../src/repo
 test("round-trips a current strict two-step run", async () => {
 	const directory = await mkdtemp(join(tmpdir(), "bc-news-eval-roundtrip-"));
 	const { run } = await runCommand({
-		fixturePath: REPRESENTATIVE_FIXTURE_PATH,
+		fixturePath: RECORDED_OUTPUT_FIXTURE_PATH,
 		configPath: RECORDED_REPLAY_CONFIG_PATH,
 		resultsDirectory: directory,
 		environment: {},
@@ -70,7 +70,7 @@ test("keeps absent historical diagnostics unknown instead of defaulting them to 
 
 test("recorded replay reports no token measurement and no external billing", async () => {
 	const { run } = await runCommand({
-		fixturePath: REPRESENTATIVE_FIXTURE_PATH,
+		fixturePath: RECORDED_OUTPUT_FIXTURE_PATH,
 		configPath: RECORDED_REPLAY_CONFIG_PATH,
 		resultsDirectory: await mkdtemp(join(tmpdir(), "bc-news-eval-replay-usage-")),
 		environment: {},
@@ -89,7 +89,7 @@ test("recorded replay reports no token measurement and no external billing", asy
 test("listing reports a rejected run and preserves valid listings", async () => {
 	const directory = await mkdtemp(join(tmpdir(), "bc-news-eval-listing-"));
 	const { run } = await runCommand({
-		fixturePath: REPRESENTATIVE_FIXTURE_PATH,
+		fixturePath: RECORDED_OUTPUT_FIXTURE_PATH,
 		configPath: RECORDED_REPLAY_CONFIG_PATH,
 		resultsDirectory: directory,
 		environment: {},

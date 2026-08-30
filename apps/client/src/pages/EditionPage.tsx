@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Box, Flex, Grid, Spinner, Text } from "@chakra-ui/react";
-import type { Edition } from "@bc-news/contracts";
-import { getEdition } from "../api/edition";
+import { getEdition, type PublishedEdition } from "../api/edition";
 import { Announcements } from "../components/Announcements";
 import { ControlsBar } from "../components/ControlsBar";
 import { Dateline } from "../components/Dateline";
@@ -17,7 +16,7 @@ import {
 import type { EditionSelection } from "../selection/edition-selection";
 import { useEditionSelection } from "../selection/use-edition-selection";
 
-function PublishedPaper({ edition }: { edition: Edition }) {
+function PublishedPaper({ edition }: { edition: PublishedEdition }) {
 	return (
 		<Flex justify="center" p={{ base: 4, md: 8 }}>
 			<PaperWrapper>
@@ -31,8 +30,11 @@ function PublishedPaper({ edition }: { edition: Edition }) {
 						/>
 					</Box>
 					<Grid templateColumns={{ base: "1fr", lg: "2fr 1fr" }} gap={8}>
-						<MainStory mainStory={edition.main_story} />
-						<Announcements announcements={edition.announcements} />
+						<MainStory mainStory={edition.main_story} gameReferences={edition.game_references} />
+						<Announcements
+							announcements={edition.announcements}
+							gameReferences={edition.game_references}
+						/>
 					</Grid>
 				</PaperContent>
 			</PaperWrapper>
@@ -93,7 +95,7 @@ interface EditionAlert {
 export function EditionPage() {
 	const dateRange = useEditionDateRange();
 	const { selection, setSelection } = useEditionSelection(dateRange);
-	const [edition, setEdition] = useState<Edition | null>(null);
+	const [edition, setEdition] = useState<PublishedEdition | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [alert, setAlert] = useState<EditionAlert | null>(null);
 	// Exists only to force a re-render when the waiting cutoff

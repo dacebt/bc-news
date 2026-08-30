@@ -5,6 +5,7 @@ import {
 	PreparedEvidenceSchema,
 	WRITER_SYSTEM_CONSTRAINTS,
 	buildAnnouncementsWriterPrompt,
+	buildPreparedGameReferences,
 	buildMainStoryWriterPrompt,
 	prepareEvidence,
 	type ModelCompletion,
@@ -138,6 +139,7 @@ function assertConfiguredModel(configuredModel: string, model: ContextBenchmarkM
 
 function projectedEvidence(canonical: PreparedEvidence, messageLoad: number): PreparedEvidence {
 	if (messageLoad === canonical.final_count) return canonical;
+	const messages = canonical.messages.slice(0, messageLoad);
 	return PreparedEvidenceSchema.parse({
 		active_region_id: canonical.active_region_id,
 		publication_date: canonical.publication_date,
@@ -145,7 +147,8 @@ function projectedEvidence(canonical: PreparedEvidence, messageLoad: number): Pr
 		after_filter_count: messageLoad,
 		after_burst_count: messageLoad,
 		final_count: messageLoad,
-		messages: canonical.messages.slice(0, messageLoad),
+		game_references: buildPreparedGameReferences(messages),
+		messages,
 		drop_stats: { empty_after_trim: 0, too_short: 0, burst_merged: 0 },
 	});
 }
@@ -159,6 +162,7 @@ function emptyEvidence(canonical: PreparedEvidence): PreparedEvidence {
 		after_burst_count: 0,
 		final_count: 0,
 		drop_stats: { empty_after_trim: 0, too_short: 0, burst_merged: 0 },
+		game_references: [],
 		messages: [],
 	});
 }

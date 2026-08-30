@@ -32,6 +32,7 @@ export function assembleEdition(input: {
 		active_region_id: input.preparedEvidence.active_region_id,
 		publication_date: input.preparedEvidence.publication_date,
 		title: input.mainStory.title,
+		game_references: input.preparedEvidence.game_references,
 		announcements: input.announcements.announcements,
 		main_story: input.mainStory.main_story,
 		meta: {

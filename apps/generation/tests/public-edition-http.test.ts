@@ -1,6 +1,9 @@
 import { env } from "cloudflare:workers";
 import { expect, it, vi, type Mock } from "vitest";
-import type { Edition } from "@bc-news/contracts";
+import {
+	CURRENT_EDITION_VERSION,
+	type Edition,
+} from "@bc-news/contracts";
 import { publishEdition } from "../src/edition-store";
 import { CONTENT_SECURITY_POLICY, PERMISSIONS_POLICY } from "../src/http-security";
 import { dispatchGenerationRequest } from "../src/index";
@@ -57,10 +60,11 @@ function generationEnv(
 
 function edition(publicationDate: string): Edition {
 	return {
-		version: 2,
+		version: CURRENT_EDITION_VERSION,
 		active_region_id: "7",
 		publication_date: publicationDate,
 		title: "The Widmoria Muster",
+		game_references: [],
 		announcements: [],
 		main_story: { headline: "Boundary held", lede: "A lede.", body: "A body." },
 		meta: {

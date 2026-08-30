@@ -46,7 +46,10 @@ Benchmark Runs, scorecards, and longitudinal series stay under the ignored
 `apps/eval/local-data/` root. Only the content-free selection declaration and
 whitelist-only aggregate summaries are commit-eligible current evaluation
 records. Historical readers keep prior committed formats readable without
-turning them into current evidence.
+turning them into current evidence. The `packages/fixtures` package-root
+shorthand stays pinned to the representative full-evidence fixture; replay work
+that depends on the focused coordinate-token corpus must pass the explicit
+`packages/fixtures/evidence/game-reference-links.json` path instead.
 
 **Deterministic tests** protect warranted invariants, reproduced defects, and
 high-risk state transitions. A failing test is a hard failed test; it is not a
@@ -276,7 +279,10 @@ the two production model steps twice. Results must be identical apart from
 run identity and timestamps, carry the exact ordered roster and usage, match
 parsed recorded responses, recompute request relations from the requests
 actually built, and assemble the final edition from the two writer
-products. This is an explicit acceptance gate over controlled evidence, not a
+products. When the committed replay responses carry focused game-reference
+tokens, acceptance must use the dedicated focused fixture that grounds those
+tokens rather than the representative package-root shorthand. This is an
+explicit acceptance gate over controlled evidence, not a
 live model evaluation. Its artifact is a distinct Run File, not a Benchmark
 Run. Current Run Files require exact ordered diagnostics; historical files
 without the field report diagnostics as unknown, never as observed empty.
@@ -296,7 +302,10 @@ created run, authenticated launch and pair status must succeed, and opaque
 Workflow-id paths must remain generic 404s with or without credentials. The
 served edition must equal the two writer products,
 derive writer-only provenance from those two usages, and contain
-no internal announcement ids. Duplicate delivery must preserve edition bytes
+no internal announcement ids. The same walk must also prove the exact retained
+`game_references` roster, two truthful focused-map links for the named and bare
+displays of the same coordinate, and no active anchor for an arbitrary
+Markdown URL. Duplicate delivery must preserve edition bytes
 and usage, and an unknown pair must remain absent. The main document and both
 successful and absent edition responses must carry the declared CSP, framing,
 content-type, referrer, and permissions policy; successful editions additionally

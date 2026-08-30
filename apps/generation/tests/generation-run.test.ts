@@ -1,7 +1,10 @@
 import { introspectWorkflowInstance } from "cloudflare:test";
 import { env } from "cloudflare:workers";
 import { afterEach, expect, it, vi } from "vitest";
-import { GenerationRunParamsSchema } from "@bc-news/contracts";
+import {
+	CURRENT_EDITION_VERSION,
+	GenerationRunParamsSchema,
+} from "@bc-news/contracts";
 import { recordedModelProvider } from "@bc-news/fixtures";
 import type { ModelCompletion } from "@bc-news/generation-core";
 import { readEdition } from "../src/edition-store";
@@ -130,8 +133,9 @@ it("interrupted run does not repeat either writer model call", async () => {
 	]);
 	const served = await readEdition(env.DB, "7", "2026-01-25");
 	expect(served).toMatchObject({
-		version: 2,
+		version: CURRENT_EDITION_VERSION,
 		active_region_id: "7",
+		game_references: [],
 		meta: {
 			editorial_products: {
 				main_story: { provider: TEST_COMPLETION_PROVIDER, model: TEST_COMPLETION_MODEL },
@@ -258,6 +262,64 @@ it.each([
 		completed_steps: ["prepare-evidence"],
 		diagnostics: [],
 		failure: { step: "main_story_write", code },
+	});
+});
+
+it("publishes retained coordinate references while leaving rich prose tokens intact", async () => {
+	const params = { active_region_id: "7", publication_date: "2026-01-30" } as const;
+	await seedChatMessage({
+		id: "generation-run-test-msg-5",
+		regionId: 7,
+		text: "Meet me at [South Gate](coord=3745,3857).",
+		timestampUtc: "2026-01-29T12:00:00Z",
+	});
+	await queueGenerationRunStatus(env.DB, params, "2026-08-04T23:00:00.000Z");
+	const modelCalls = mockDeterministicModelCompletions((outputs) => {
+		outputs.main_story_write = JSON.stringify({
+			title: "Word from [[GAME_REF_001]]",
+			main_story: {
+				headline: "Watch Holds at [[GAME_REF_001]]",
+				lede: "[[AUTHOR_001]] checked in from [[GAME_REF_001]].",
+				body: "**[[AUTHOR_001]]** checked in from [[GAME_REF_001]].",
+			},
+		});
+		outputs.announcements_write = JSON.stringify({
+			announcements: [{
+				title: "Scouts Gather at [[GAME_REF_001]]",
+				summary: "**[[AUTHOR_001]]** checked in from [[GAME_REF_001]].",
+			}],
+		});
+	});
+	await using instance = await introspectWorkflowInstance(
+		env.GENERATION_RUN,
+		"generation-run-7-2026-01-30",
+	);
+	await instance.modify(async (m) => {
+		await m.disableRetryDelays();
+	});
+	await env.GENERATION_RUN.create({ id: "generation-run-7-2026-01-30", params });
+	await instance.waitForStatus("complete");
+	expect(modelCalls).toHaveBeenCalledTimes(2);
+	await expect(readEdition(env.DB, "7", "2026-01-30")).resolves.toMatchObject({
+		version: CURRENT_EDITION_VERSION,
+		title: "Word from South Gate",
+		game_references: [{
+			token: "[[GAME_REF_001]]",
+			kind: "coord",
+			northing: 3745,
+			easting: 3857,
+			display_text: "South Gate",
+			destination_url: "https://bitcraftmap.com/?center=3745,3857&zoom=3.0",
+		}],
+		main_story: {
+			headline: "Watch Holds at South Gate",
+			lede: "Someone checked in from South Gate.",
+			body: "**Someone** checked in from [[GAME_REF_001]].",
+		},
+		announcements: [{
+			title: "Scouts Gather at South Gate",
+			summary: "**Someone** checked in from [[GAME_REF_001]].",
+		}],
 	});
 });
 

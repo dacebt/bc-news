@@ -4,6 +4,7 @@ import {
 	EditionRecordSchema,
 	EditionSchema,
 	LegacyEditionSchema,
+	VersionedEditionV2Schema,
 } from "@bc-news/contracts";
 
 const counts = {
@@ -18,6 +19,14 @@ const currentEdition = {
 	active_region_id: "7",
 	publication_date: "2026-01-25",
 	title: "The Region Seven Gazette",
+	game_references: [{
+		token: "[[GAME_REF_001]]",
+		kind: "coord",
+		northing: 3745,
+		easting: 3857,
+		display_text: "South Gate",
+		destination_url: "https://bitcraftmap.com/?center=3745,3857&zoom=3.0",
+	}],
 	announcements: [],
 	main_story: {
 		headline: "Bridge Work Completed",
@@ -26,6 +35,27 @@ const currentEdition = {
 	},
 	meta: {
 		generated_at_utc: "2026-01-25T09:00:00.000Z",
+		editorial_products: {
+			main_story: { provider: "recorded", model: "writer-a" },
+			announcements: { provider: "recorded", model: "writer-b" },
+		},
+		counts,
+	},
+};
+
+const versionedEditionV2 = {
+	version: 2,
+	active_region_id: "7",
+	publication_date: "2026-01-24",
+	title: "The Region Seven Gazette",
+	announcements: [],
+	main_story: {
+		headline: "Bridge Work Completed",
+		lede: "The crossing opened again.",
+		body: "**Reporter** said it plainly.",
+	},
+	meta: {
+		generated_at_utc: "2026-01-24T09:00:00.000Z",
 		editorial_products: {
 			main_story: { provider: "recorded", model: "writer-a" },
 			announcements: { provider: "recorded", model: "writer-b" },
@@ -64,12 +94,33 @@ const legacyEdition = {
 
 test("parses current and legacy editions through the unambiguous record boundary", () => {
 	expect(EditionSchema.parse(currentEdition)).toEqual(currentEdition);
+	expect(VersionedEditionV2Schema.parse(versionedEditionV2)).toEqual(versionedEditionV2);
 	expect(LegacyEditionSchema.parse(legacyEdition)).toEqual(legacyEdition);
 	expect(EditionRecordSchema.parse(currentEdition)).toEqual(currentEdition);
+	expect(EditionRecordSchema.parse(versionedEditionV2)).toEqual(versionedEditionV2);
 	expect(EditionRecordSchema.parse(legacyEdition)).toEqual(legacyEdition);
 });
 
 test("does not let untagged legacy editions masquerade as current", () => {
 	expect(EditionSchema.safeParse(legacyEdition).success).toBe(false);
+	expect(EditionSchema.safeParse(versionedEditionV2).success).toBe(false);
+	expect(VersionedEditionV2Schema.safeParse(currentEdition).success).toBe(false);
+	expect(VersionedEditionV2Schema.safeParse(legacyEdition).success).toBe(false);
 	expect(LegacyEditionSchema.safeParse(currentEdition).success).toBe(false);
+});
+
+test("rejects duplicate retained game-reference tokens at the edition boundary", () => {
+	const duplicateTokenEdition = {
+		...currentEdition,
+		game_references: [
+			currentEdition.game_references[0],
+			{
+				...currentEdition.game_references[0],
+				display_text: "North Gate",
+			},
+		],
+	};
+
+	expect(EditionSchema.safeParse(duplicateTokenEdition).success).toBe(false);
+	expect(EditionRecordSchema.safeParse(duplicateTokenEdition).success).toBe(false);
 });

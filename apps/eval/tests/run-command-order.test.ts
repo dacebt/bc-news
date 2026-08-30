@@ -2,7 +2,7 @@ import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, test, vi } from "vitest";
-import { fixtureEvidenceInput, recordedModelProvider } from "@bc-news/fixtures";
+import { recordedModelProvider } from "@bc-news/fixtures";
 import {
 	prepareEvidence,
 	type ModelCompletion,
@@ -13,8 +13,9 @@ import {
 	CURRENT_PRODUCTION_MODEL_STEPS,
 	type CurrentProductionModelStep,
 } from "../src/current-production-steps";
+import { loadFixture } from "../src/evidence-fixture";
 import { RECORDED_REPLAY_CONFIG_PATH } from "../src/recorded-replay-acceptance-verifier";
-import { REPRESENTATIVE_FIXTURE_PATH } from "../src/representative-fixture";
+import { RECORDED_OUTPUT_FIXTURE_PATH } from "../src/representative-fixture";
 import { executeProductionSteps } from "../src/production-step-runners";
 import { runCommand } from "../src/run-command";
 
@@ -52,15 +53,12 @@ function completion(text: string): ModelCompletion {
 	};
 }
 
-async function representativePreparedEvidence() {
-	const messages = await fixtureEvidenceInput.loadEvidence({
-		activeRegionId: "7",
-		evidenceDate: "2026-01-24",
-	});
+async function recordedOutputPreparedEvidence() {
+	const loaded = await loadFixture(RECORDED_OUTPUT_FIXTURE_PATH);
 	return prepareEvidence({
-		activeRegionId: "7",
-		publicationDate: "2026-01-25",
-		messages,
+		activeRegionId: loaded.fixture.active_region_id,
+		publicationDate: loaded.publicationDate,
+		messages: loaded.fixture.messages,
 	});
 }
 
@@ -73,7 +71,7 @@ test("executes the exact two-step production roster serially", async () => {
 	});
 
 	await runCommand({
-		fixturePath: REPRESENTATIVE_FIXTURE_PATH,
+		fixturePath: RECORDED_OUTPUT_FIXTURE_PATH,
 		configPath: RECORDED_REPLAY_CONFIG_PATH,
 		resultsDirectory: await mkdtemp(join(tmpdir(), "bc-news-eval-order-")),
 		environment: {},
@@ -90,7 +88,7 @@ test("correlates every scratch provider request to its run and invocation", asyn
 	});
 
 	const { run } = await runCommand({
-		fixturePath: REPRESENTATIVE_FIXTURE_PATH,
+		fixturePath: RECORDED_OUTPUT_FIXTURE_PATH,
 		configPath: RECORDED_REPLAY_CONFIG_PATH,
 		resultsDirectory: await mkdtemp(join(tmpdir(), "bc-news-eval-correlation-")),
 		environment: {},
@@ -106,7 +104,7 @@ test("correlates every scratch provider request to its run and invocation", asyn
 });
 
 test("retains exact requests and completions in production order", async () => {
-	const preparedEvidence = await representativePreparedEvidence();
+	const preparedEvidence = await recordedOutputPreparedEvidence();
 	const requests: ModelProviderRequest[] = [];
 	const completions: ModelCompletion[] = [];
 	const provider: ModelProviderPort = {
@@ -145,7 +143,7 @@ test("assembles and saves schema-valid products with ordered diagnostics and two
 	});
 
 	const { run } = await runCommand({
-		fixturePath: REPRESENTATIVE_FIXTURE_PATH,
+		fixturePath: RECORDED_OUTPUT_FIXTURE_PATH,
 		configPath: RECORDED_REPLAY_CONFIG_PATH,
 		resultsDirectory: await mkdtemp(join(tmpdir(), "bc-news-eval-diagnostics-")),
 		environment: {},
@@ -166,7 +164,7 @@ test.each([
 	["malformed JSON", "not json", "invalid_json"],
 	["schema-invalid JSON", JSON.stringify({ title: "incomplete" }), "contract_mismatch"],
 ] as const)("keeps %s terminal at the writer boundary", async (_name, invalidOutput, code) => {
-	const preparedEvidence = await representativePreparedEvidence();
+	const preparedEvidence = await recordedOutputPreparedEvidence();
 	const calls: CurrentProductionModelStep[] = [];
 	const provider: ModelProviderPort = {
 		complete(request) {

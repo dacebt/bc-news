@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { RecordedModelResponseSchema } from "@bc-news/fixtures";
-import { REPRESENTATIVE_FIXTURE_PATH } from "./representative-fixture";
+import { RECORDED_OUTPUT_FIXTURE_PATH } from "./representative-fixture";
 import { evaluateBenchmarkCommand } from "./evaluation-benchmark-command";
 import { BenchmarkRunSchema, type BenchmarkRun, type V9BenchmarkRun } from "./evaluation-artifact";
 import {
@@ -101,7 +101,7 @@ export async function verifyEvaluationBenchmarkContinuation(temporaryRoot?: stri
 	const snapshots: BenchmarkRun[] = [];
 	try {
 		const result = await evaluateBenchmarkCommand({
-			fixturePath: REPRESENTATIVE_FIXTURE_PATH,
+			fixturePath: RECORDED_OUTPUT_FIXTURE_PATH,
 			configPath,
 			resultsDirectory,
 			environment: { HOSTED_MODEL_BASE_URL: server.baseUrl, HOSTED_MODEL_API_KEY: "record-loopback-proof" },

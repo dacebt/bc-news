@@ -5,6 +5,16 @@ export {
 	evidenceWindowForPublicationDate,
 } from "./evidence-date";
 export {
+	buildGameReferenceLedger,
+	buildPreparedGameReferences,
+	formatGameReferencePromptRoster,
+	hasPreparedGameReferences,
+	replaceGameReferenceSyntaxWithTokens,
+	transformGameReferenceTokens,
+	type GameReferenceLedger,
+	type GameReferenceRendering,
+} from "./game-reference-tokens";
+export {
 	PreparedEvidenceSchema,
 	PreparedMessageSchema,
 	type PreparedEvidence,

@@ -3,10 +3,17 @@
 The skeleton walk feeds the committed BitJita wire corpus at
 `bitjita/active-region-7_2026-08-24.json` through the stub, ingest worker, and
 D1-backed generation path. The evidence corpus at
-`evidence/active-region-7_2026-01-24.json` feeds the explicitly selected
-`fixtureEvidenceInput` adapter for tests and evaluation. The recorded model
-provider remains deterministic. See [evaluation operations](../../docs/evaluation-operations.md)
-for the commands that consume or replace these fixtures.
+`evidence/active-region-7_2026-01-24.json` remains the representative
+package-root fixture shorthand for full-evidence tests and context measurement.
+`evidence/game-reference-links.json` is the explicit focused-coordinate fixture
+for replay and local-model work that needs exact `[[GAME_REF_NNN]]` coverage.
+`evidence/game-reference-announcement-links.json` is the matching one-day public
+slice for exercising an explicit completed milestone with a coordinate through
+the announcements writer.
+`fixtureEvidenceInput` still serves only the representative full-evidence
+fixture. The recorded model provider remains deterministic. See
+[evaluation operations](../../docs/evaluation-operations.md) for the commands
+that consume or replace these fixtures.
 
 ## Evidence fixture provenance
 
@@ -40,24 +47,65 @@ The v1 `prep_output_*.json` files were deliberately not reused (dead
 Python-era mapping); deterministic preparation recomputes everything
 downstream of this corpus.
 
+`evidence/game-reference-links.json` — a focused-coordinate fixture for
+publication date `2026-08-16`.
+
+- **Source snapshot**: `apps/eval/local-data/corpus-workspaces/production-grounded-2026-08-16/snapshot.sqlite`.
+- **Public rows retained verbatim**: exact `text`, `entity_id`, `timestamp_ts`,
+  `username_raw`, and `username` values from public snapshot rows on
+  `2026-08-15`, including `[Fire Nation](coord=7968,9659)`,
+  `[Fire Nation T2 cave](coord=8014,9076)`, `[Fire nation T2 feeshery](coord=8058,9964)`,
+  `Twaffles your trader stand over at this quarry needs more berserker pots :) (coord=3574,8848)`,
+  `(coord=4786,9467)`, `I usually go north of Puerto Libre (coord=4692,9127)`,
+  and the in-window boss exchange beginning with
+  `anyone wanna help were almost at the boss(coord=7097,4729)` and ending with
+  the exact public follow-up messages `damn just too late`, `thank you`, and
+  `thanks :)`.
+- **Synthetic composition**: the fixture deliberately combines exact public
+  rows under one evidence date so one small committed corpus can cover labeled
+  and bare coordinate forms without relying on production data.
+- **Explicit synthetic rows**:
+  `synthetic-game-reference-links-001` with `(coord=7968,9659)` is not a
+  retained public message; it exists only to ground the
+  same-coordinate/different-display token split that the replay and walk
+  assert, with the bare form rendered as normalized coordinate text.
+  `synthetic-game-reference-links-002` (`[Fire Nation] (coord=9001,9002)`),
+  `synthetic-game-reference-links-003` (`[](coord=9003,9004)`),
+  `synthetic-game-reference-links-004`
+  (`https://example.test/?focus=(coord=9005,9006)`), and
+  `synthetic-game-reference-links-005`
+  (`[Map](https://example.test/?focus=(coord=9007,9008))`) are synthetic
+  malformed and URL-smuggling counterexamples. They are committed only to prove
+  those values stay out of the prepared game-reference roster and must never be
+  described as retained public messages.
+- **Selection rule**: callers must address this fixture by its explicit file
+  path. The package-root shorthand stays pinned to
+  `evidence/active-region-7_2026-01-24.json`.
+
+`evidence/game-reference-announcement-links.json` retains five exact consecutive
+public rows from region `7` on `2026-08-16`, including Dyrac's completed FIHS
+Vulcano-light addition at `(coord=3862,4480)` and the immediate correction. It
+contains no synthetic message and exists so local-model inspection can exercise
+the announcements writer without turning a location request or plan into a
+completed achievement.
+
 ## Recorded model response provenance
 
 The directory is one strict two-file unit, keyed by production step:
 `main_story_write.json` and `announcements_write.json`. There is no copyedit
 response, packaging response, or judge directory.
 
-The current writer records are curated schema-valid replay artifacts for the
-two-writer topology. They preserve the retained editorial content that still
-fits the current contract and make their non-live provenance explicit through
-their provider and model labels rather than implying a fresh model recording.
-
-Committed absent-version records remain the strict legacy response contract
-and replay unchanged. Version 2 remains a frozen historical contract with its
-former provider-default or complete `temperature`/`top_p`/`top_k` sampling
-evidence. The current recorder writes strict response version 3. Every v3
-response retains the exact adapter configuration accepted for that production
-step: provider, model, optional inference settings, reasoning declaration, and
-hosted billing evidence where applicable.
+The current writer records are curated strict version 3 replay artifacts for
+the two-writer topology. They preserve the retained editorial content that
+still fits the current contract, are grounded against
+`evidence/game-reference-links.json`, and make their non-live provenance
+explicit through their provider and model labels rather than implying a fresh
+model recording. Historical absent-version records and version 2 responses
+remain readable through the shared schema and tests, but they are no longer the
+committed current replay shape. Every v3 response retains the exact adapter
+configuration accepted for that production step: provider, model, optional
+inference settings, reasoning declaration, and hosted billing evidence where
+applicable.
 
 For LM Studio, omission of `temperature`, `top_p`, `top_k`, or
 `enable_thinking` means that exact field used its provider default for that run;
@@ -94,7 +142,13 @@ Committed files in `model-responses/` are overwritten only when a developer
 explicitly runs `fixture record-responses` with that directory as the target.
 The canonical walk reads the committed responses through the recorded adapter,
 uses an isolated temporary D1 database, and never changes the committed
-fixtures or contacts a configured external model endpoint.
+fixtures or contacts a configured external model endpoint. The walk-owned
+BitJita corpus also carries two explicit synthetic terminal messages,
+`[Fire Nation](coord=7968,9659)` and `(coord=7968,9659)`, so the composed path
+can prove same-coordinate/different-display links without claiming that pair
+was observed in the retained public corpus for region `7` on `2026-08-24`; the
+named form renders as `Fire Nation` and the bare form renders as
+`N 7968, E 9659`.
 
 Historical eval Run Files remain inert provenance only when reopened through a
 historical reader from an explicit external path or prior Git commit; this repo

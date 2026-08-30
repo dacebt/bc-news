@@ -6,7 +6,7 @@ import { assertRecordedReplayAcceptanceDeterminism } from "../src/recorded-repla
 import { assertRecordedReplayAcceptanceGrounding } from "../src/recorded-replay-acceptance-grounding";
 import { assertRecordedReplayAcceptanceSemantics } from "../src/recorded-replay-acceptance-semantics";
 import { RECORDED_REPLAY_CONFIG_PATH } from "../src/recorded-replay-acceptance-verifier";
-import { REPRESENTATIVE_FIXTURE_PATH } from "../src/representative-fixture";
+import { RECORDED_OUTPUT_FIXTURE_PATH } from "../src/representative-fixture";
 import { compareRuns } from "../src/compare";
 import { CURRENT_PRODUCTION_MODEL_STEPS } from "../src/current-production-steps";
 import { runCommand } from "../src/run-command";
@@ -14,7 +14,7 @@ import { allDifferences } from "../src/run-difference";
 
 test("recorded replay retains the two outputs and current product relations", async () => {
 	const { run } = await runCommand({
-		fixturePath: REPRESENTATIVE_FIXTURE_PATH,
+		fixturePath: RECORDED_OUTPUT_FIXTURE_PATH,
 		configPath: RECORDED_REPLAY_CONFIG_PATH,
 		resultsDirectory: await mkdtemp(join(tmpdir(), "bc-news-recorded-replay-")),
 		environment: {},
@@ -23,7 +23,7 @@ test("recorded replay retains the two outputs and current product relations", as
 	expect(run.steps.map((step) => step.production_step)).toEqual(CURRENT_PRODUCTION_MODEL_STEPS);
 	expect(Array.isArray(run.diagnostics)).toBe(true);
 	expect(() => assertRecordedReplayAcceptanceSemantics(run)).not.toThrow();
-	await expect(assertRecordedReplayAcceptanceGrounding(run, REPRESENTATIVE_FIXTURE_PATH)).resolves.toBeUndefined();
+	await expect(assertRecordedReplayAcceptanceGrounding(run, RECORDED_OUTPUT_FIXTURE_PATH)).resolves.toBeUndefined();
 	await expect(assertRecordedReplayAcceptanceGrounding({
 		...run,
 		diagnostics: [...run.diagnostics, {
@@ -32,7 +32,7 @@ test("recorded replay retains the two outputs and current product relations", as
 			code: "forbidden_marker",
 			message: "invented retained diagnostic",
 		}],
-	}, REPRESENTATIVE_FIXTURE_PATH)).rejects.toThrow("diagnostics were not retained exactly");
+	}, RECORDED_OUTPUT_FIXTURE_PATH)).rejects.toThrow("diagnostics were not retained exactly");
 	expect(() => assertRecordedReplayAcceptanceDeterminism(run, {
 		...run,
 		diagnostics: [...run.diagnostics, {
@@ -56,9 +56,10 @@ test("run comparison ignores retained evidence metadata and names final editoria
 		id: "left",
 		steps: [{ production_step: "main_story_write", output: { title: "Draft A" } }],
 		edition: {
-			version: 2,
+			version: 3,
 			active_region_id: "7",
 			publication_date: "2026-08-05",
+			game_references: [],
 			title: "Morning Dispatch",
 			announcements: [{ title: "First milestone", summary: "Built the first hall." }],
 			main_story: {
@@ -86,9 +87,10 @@ test("run comparison ignores retained evidence metadata and names final editoria
 		id: "right",
 		steps: [{ production_step: "announcements_write", output: { announcements: [] } }],
 		edition: {
-			version: 2,
+			version: 3,
 			active_region_id: "8",
 			publication_date: "2026-08-06",
+			game_references: [],
 			title: "Evening Dispatch",
 			announcements: [{ title: "Second milestone", summary: "Built the second hall." }],
 			main_story: {

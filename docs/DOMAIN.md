@@ -41,6 +41,11 @@ verbatim in code, schema, tests, and APIs — no synonyms.
 - **edition** — the newspaper product: one complete, publishable daily paper
   for one active region and one publication date, built from that region's
   validated chat activity.
+- **game reference** — a code-owned retained reference carried inside an
+  edition so reader-visible prose can link to game entities without trusting
+  model-authored URLs. The current roster carries coordinate references with a
+  display-preserving `[[GAME_REF_NNN]]` token plus the fixed focused-map
+  destination the client reconstructs at render time.
 - **generation run** — the work that produces one edition: one instance of
   the single Cloudflare Workflow definition, invoked for one active region
   and one publication date.
@@ -125,8 +130,11 @@ Inherited defaults until deliberately changed:
   explicit contract discriminators and stored untagged records are legacy-only
   readers; `meta.editorial_products` records writer provenance under each
   editorial product; provider is an open string so local and recorded models
-  are representable; `meta` is required at publish and read; identity,
-  provenance, counts, and generation time are never model-authored.
+  are representable; current editions retain a code-owned `game_references`
+  roster whose coordinate entries are identified by coordinate plus authored
+  display form, not by display text alone; `meta` is required at publish and
+  read; identity, provenance, counts, generation time, and game-reference
+  destinations are never model-authored.
 - The main-story writer authors the edition title and main story. The
   announcements writer authors the announcement list. Code deterministically
   assembles all remaining edition fields. There is no packaging, judging, or

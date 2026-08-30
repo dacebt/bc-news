@@ -4,7 +4,7 @@ okf_version: "0.2"
 
 # bc-news documentation
 
-- [Active thickening](thickenings/active.md) — Active WSD thickening for publishing one complete edition through two final evidence-reading writers.
+- [Active thickening](thickenings/active.md) — Active WSD thickening for carrying chat-mentioned coordinates into generated newspaper links that open the exact focused BitCraft Map view.
 - [Product requirements](PRD.md) — Binding high-level product direction for rebuilding the regional BitCraft newspaper on Cloudflare with durable generation, replaceable models, and evaluation-led development.
 - [Structural discipline](ARCHITECTURE.md) — The binding architecture posture for bc-news v2 — TypeScript application code throughout, exactly two ports (model provider, evidence input), functional core with zod-validated rejecting boundaries, and deliberate Cloudflare coupling everywhere else.
 - [Domain model](DOMAIN.md) — The binding domain vocabulary and identity rules for bc-news v2, including the two editorial products and four production model steps.
