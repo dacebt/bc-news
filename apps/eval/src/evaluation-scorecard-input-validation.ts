@@ -1,10 +1,10 @@
 import { createHash } from "node:crypto";
 import { isDeepStrictEqual } from "node:util";
 import { EvidenceFixtureSchema } from "@bc-news/contracts";
-import { prepareEvidence } from "@bc-news/generation-core";
 import { z } from "zod";
 import { canonical, sha256Json } from "./evaluation-artifact-schemas";
 import { type V9BenchmarkRun, V9BenchmarkRunSchema } from "./evaluation-artifact";
+import { prepareFixtureEvidenceWithGameReferenceResolutions } from "./fixture-prepared-evidence";
 import { type EvaluationLocalSourceReference } from "./evaluation-local-source-reference";
 import {
 	type LoadedLocalEvaluationReferenceCorpus,
@@ -164,7 +164,11 @@ function auditRetainedSources(input: Omit<LoadedEvaluationScorecardInput, "selec
 		if (loaded === undefined || corpusEntry === undefined || manifestEntry === undefined || !isDeepStrictEqual(loaded.declaration, declared) || !isDeepStrictEqual(loaded.sourceReference, declared.source_reference) || !isDeepStrictEqual(loaded.corpusEntry, corpusEntry) || !isDeepStrictEqual(corpusEntry.manifestEntry, manifestEntry) || declared.corpus_fixture_id !== manifestEntry.id) fail("evidence_set_mismatch", input.declarationPath, `Loaded evidence at ordinal ${String(index + 1)} is reordered or substituted`);
 		const fixture = parsed(rawJson(corpusEntry.evidenceBytes, corpusEntry.evidencePath, "corpus_binding_mismatch"), EvidenceFixtureSchema, corpusEntry.evidencePath, "corpus_binding_mismatch");
 		if (!isDeepStrictEqual(fixture, corpusEntry.fixture) || !isDeepStrictEqual(rawJson(corpusEntry.referenceBytes, corpusEntry.referencePath, "corpus_binding_mismatch"), corpusEntry.reference)) fail("corpus_binding_mismatch", corpusEntry.referencePath, `Parsed corpus entry ${manifestEntry.id} is detached from retained bytes`);
-		const prepared = prepareEvidence({ activeRegionId: fixture.active_region_id, publicationDate: corpusEntry.publicationDate, messages: fixture.messages });
+		const prepared = prepareFixtureEvidenceWithGameReferenceResolutions({
+			activeRegionId: fixture.active_region_id,
+			publicationDate: corpusEntry.publicationDate,
+			messages: fixture.messages,
+		});
 		if (!isDeepStrictEqual(prepared, corpusEntry.preparedEvidence)) fail("corpus_binding_mismatch", corpusEntry.evidencePath, `Prepared corpus entry ${manifestEntry.id} is detached from retained evidence`);
 		const runPath = sourcePath(declared.source_reference);
 		const runFromBytes = parseEvaluationScorecardBenchmark(rawJson(loaded.bytes, runPath, "benchmark_artifact_malformed"), declared.benchmark_run_id, input.declaration.configuration_identity, runPath, repetitionCount);

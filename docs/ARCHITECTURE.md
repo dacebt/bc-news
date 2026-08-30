@@ -3,7 +3,7 @@ type: doc
 title: >-
   bc-news structural discipline
 description: >-
-  The binding architecture posture for bc-news v2 — TypeScript application code throughout, exactly two ports (model provider, evidence input), functional core with zod-validated rejecting boundaries, and deliberate Cloudflare coupling everywhere else.
+  The binding architecture posture for bc-news v2 — TypeScript application code throughout, exactly three ports (model provider, evidence input, game reference resolver), functional core with zod-validated rejecting boundaries, and deliberate Cloudflare coupling everywhere else.
 tags: [documentation, architecture, ports, typescript]
 status: stable
 generated:
@@ -36,7 +36,7 @@ Full ports-and-adapters is rejected. The
 [product requirements](PRD.md) accept Cloudflare lock-in, so the platform
 is **not** abstracted: no repository pattern over D1, no wrapper over
 Queues or the Workflow runtime, no dependency-injection framework.
-Exactly two ports exist, because the PRD demands substitution at exactly
+Exactly three ports exist, because the product requires substitution at exactly
 these seams:
 
 1. **Model provider port** — each *production model step* (see the
@@ -47,9 +47,11 @@ these seams:
    through a single seam, so repository fixtures and production storage
    feed the identical pipeline. This is what makes "a fixed local
    conversation produces a complete edition without production data" hold.
-
-Adding a third port requires amending this document with the requirement
-that forces it.
+3. **Game reference resolver port** — prepared evidence resolves supported
+   BitJita entity identities through one boundary that returns only
+   validated identity-plus-name outcomes. This is what makes deterministic
+   fixture, evaluation, and walk runs substitute the resolver cleanly while
+   keeping BitJita URL construction and editorial prose in the core.
 
 ## Functional core, imperative shell
 
@@ -88,8 +90,12 @@ core sorts deterministically.
 
 Prepared evidence performs contract enforcement and hygiene only. After the
 established normalization, filtering, and burst stages, every surviving
-message reaches both editorial writers in chronological order. There is no
-global cap, per-hour quota, hash selection, or sampling drop count.
+message reaches both editorial writers in chronological order. Supported
+BitJita entity identities resolve once during preparation through the game
+reference resolver port; the adapter returns only validated
+identity-plus-name outcomes, while the core owns destination construction,
+token preservation, and final prose substitution. There is no global cap,
+per-hour quota, hash selection, or sampling drop count.
 `PreparedEvidenceSchema` requires `final_count === after_burst_count`, so a
 later preparation stage cannot silently shrink the evidence roster. The
 eval-owned context benchmark measures exact representative requests against
@@ -160,7 +166,7 @@ release constant are pinned exactly to `@lmstudio/sdk` 1.5.0; a test-only
 metadata-resolution proof verifies the installed package without making
 production code traverse package internals.
 
-`MODEL_CONFIG` and eval configuration contain one complete independent
+`BITJITA_API_BASE`, `MODEL_CONFIG`, and eval configuration contain one complete independent
 configuration per production agent: non-secret adapter identity, requested
 model, optional adapter-specific inference settings, and reasoning or billing
 declarations. `LMSTUDIO_BASE_URL`,
@@ -218,6 +224,20 @@ JSON Schema and leaves the provider's output-token ceiling unset. Successful
 Gateway provenance retains the exact request format, response-delivery mode,
 and structured-output contract name in addition to the existing transport
 policy.
+
+The production BitJita resolver adapter is credential-free and bounded. It
+normalizes `BITJITA_API_BASE` as an absolute HTTP(S) base URL with no
+embedded credentials, preserves any configured base subpath, sends
+`Accept: application/json`, `User-Agent: bc-news`, and
+`x-app-identifier: bc-news`, and applies a ten-second timeout with no
+adapter retry. One resolution call performs at most 18 BitJita requests and
+keeps ordered flattened outcomes; identities beyond that bound return
+`request_budget_exhausted` without a network attempt. A 404 returns
+`unknown`; fetch/network aborts and HTTP 408/409/425/429/5xx return
+`unavailable`; every other non-2xx response, invalid JSON, invalid envelope,
+invalid or mismatched ids, unsafe numeric ids, and blank names reject
+deterministically. The adapter never returns upstream URLs or editorial
+prose; the core owns canonical destinations and presentation.
 Current evaluation artifacts are version 9. Historical Benchmark Run versions 7
 and 8 remain readable; version 8 alone retained explicit null completion
 content, while historical non-Gateway version 7 required textual completion

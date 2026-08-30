@@ -7,7 +7,6 @@ import {
 	type RecordedModelResponseV3,
 } from "@bc-news/fixtures";
 import {
-	prepareEvidence,
 	type EditorialDiagnostic,
 	type ModelProviderPort,
 } from "@bc-news/generation-core";
@@ -17,6 +16,7 @@ import {
 	type CurrentProductionModelStep,
 } from "./current-production-steps";
 import { loadFixture } from "./evidence-fixture";
+import { prepareFixtureEvidenceWithGameReferences } from "./fixture-prepared-evidence";
 import {
 	compareFinalEditorialProducts,
 	type FinalProductComparison,
@@ -163,7 +163,7 @@ export async function recordCommand(options: RecordCommandOptions): Promise<Reco
 	const environment = options.environment ?? process.env;
 	const liveProviders = resolveRecorderProviders(config, environment);
 	const loadedFixture = await loadFixture(options.fixturePath);
-	const preparedEvidence = prepareEvidence({
+	const preparedEvidence = await prepareFixtureEvidenceWithGameReferences({
 		activeRegionId: loadedFixture.fixture.active_region_id,
 		publicationDate: loadedFixture.publicationDate,
 		messages: loadedFixture.fixture.messages,

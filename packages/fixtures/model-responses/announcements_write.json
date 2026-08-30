@@ -2,13 +2,13 @@
 	"version": 3,
 	"production_step": "announcements_write",
 	"provider": "synthetic_fixture",
-	"model": "game-reference-announcements-v3",
+	"model": "entity-reference-announcements-v3",
 	"prompt_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
-	"text": "{\"announcements\":[{\"title\":\"Fire Nation Marker Shared\",\"summary\":\"A late marker kept [[GAME_REF_001]] as the named landmark for readers who want the authored label.\"},{\"title\":\"Bare Pin Matches the Same Ground\",\"summary\":\"A second note kept the same location as [[GAME_REF_002]], preserving the plain coordinate display instead of relabeling it.\"},{\"title\":\"Spoofed URL Stayed Plain\",\"summary\":\"The phrase [spoofed focused map](https://bitcraftmap.com/?center=1,1&zoom=99) is ordinary markdown and should stay inert.\"}]}",
+	"text": "{\"announcements\":[{\"title\":\"Gear Example Shared\",\"summary\":\"Lintha pointed region 9 players to [[GAME_REF_001]] while explaining how different armor types change profession bonuses.\"},{\"title\":\"Buff Question Answered\",\"summary\":\"Katlin asked whether the gear lines had different buffs, and the reply confirmed that combat, gathering, and crafting clothes each lean different ways.\"}]}",
 	"configuration": {
 		"adapter": "openai_compatible_hosted",
 		"provider": "synthetic_fixture",
-		"model": "game-reference-announcements-v3",
+		"model": "entity-reference-announcements-v3",
 		"billing": {
 			"method": "calculated",
 			"input_usd_per_million_tokens": 0,

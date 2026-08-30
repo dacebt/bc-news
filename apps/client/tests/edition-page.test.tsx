@@ -26,6 +26,14 @@ const LABELED_COORDINATE_REFERENCE: EditionGameReference = {
 	destination_url: "https://bitcraftmap.com/?center=3745,3857&zoom=3.0",
 };
 
+const ITEM_REFERENCE: EditionGameReference = {
+	token: "[[GAME_REF_003]]",
+	kind: "item",
+	id: "163977632",
+	display_text: "Ornate Leather Shirt",
+	destination_url: "https://bitjita.com/items/163977632",
+};
+
 function setUrl(search: string) {
 	window.history.pushState(null, "", `/${search}`);
 }
@@ -60,7 +68,7 @@ function publishedEditionWithReferences(gameReferences: readonly EditionGameRefe
 		announcements: [
 			{
 				title: "Market notice",
-				summary: `Gather at ${LABELED_COORDINATE_REFERENCE.token}.`,
+				summary: `Trade example: ${ITEM_REFERENCE.token}.`,
 			},
 		],
 		main_story: {
@@ -167,6 +175,7 @@ describe("EditionPage url-driven fetching", () => {
 			edition: publishedEditionWithReferences([
 				BARE_COORDINATE_REFERENCE,
 				LABELED_COORDINATE_REFERENCE,
+				ITEM_REFERENCE,
 			]),
 		});
 
@@ -178,8 +187,8 @@ describe("EditionPage url-driven fetching", () => {
 		expect(screen.getByRole("link", { name: "N 3745, E 3857" }).getAttribute("href")).toBe(
 			"https://bitcraftmap.com/?center=3745,3857&zoom=3.0",
 		);
-		expect(screen.getByRole("link", { name: "Blacksmith Square" }).getAttribute("href")).toBe(
-			"https://bitcraftmap.com/?center=3745,3857&zoom=3.0",
+		expect(screen.getByRole("link", { name: "Ornate Leather Shirt" }).getAttribute("href")).toBe(
+			"https://bitjita.com/items/163977632",
 		);
 	});
 

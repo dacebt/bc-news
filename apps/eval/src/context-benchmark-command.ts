@@ -5,9 +5,7 @@ import {
 	PreparedEvidenceSchema,
 	WRITER_SYSTEM_CONSTRAINTS,
 	buildAnnouncementsWriterPrompt,
-	buildPreparedGameReferences,
 	buildMainStoryWriterPrompt,
-	prepareEvidence,
 	type ModelCompletion,
 	type ModelProviderPort,
 	type PreparedEvidence,
@@ -39,6 +37,7 @@ import {
 } from "./current-production-steps";
 import { ProductionStepsConfigSchema } from "./config";
 import { loadFixture } from "./evidence-fixture";
+import { prepareFixtureEvidenceWithGameReferences } from "./fixture-prepared-evidence";
 import { resolveModelProvider, type ModelProviderEnvironment } from "./model-adapters";
 
 const WORKSPACE_ROOT = new URL("../../../", import.meta.url).pathname;
@@ -137,19 +136,12 @@ function assertConfiguredModel(configuredModel: string, model: ContextBenchmarkM
 	}
 }
 
-function projectedEvidence(canonical: PreparedEvidence, messageLoad: number): PreparedEvidence {
+async function projectedEvidence(canonical: PreparedEvidence, messageLoad: number): Promise<PreparedEvidence> {
 	if (messageLoad === canonical.final_count) return canonical;
-	const messages = canonical.messages.slice(0, messageLoad);
-	return PreparedEvidenceSchema.parse({
-		active_region_id: canonical.active_region_id,
-		publication_date: canonical.publication_date,
-		raw_count: messageLoad,
-		after_filter_count: messageLoad,
-		after_burst_count: messageLoad,
-		final_count: messageLoad,
-		game_references: buildPreparedGameReferences(messages),
-		messages,
-		drop_stats: { empty_after_trim: 0, too_short: 0, burst_merged: 0 },
+	return prepareFixtureEvidenceWithGameReferences({
+		activeRegionId: canonical.active_region_id,
+		publicationDate: canonical.publication_date,
+		messages: canonical.messages.slice(0, messageLoad),
 	});
 }
 
@@ -326,7 +318,7 @@ export async function runContextBenchmark(
 	lmStudioSdkBaseUrl(config.baseUrl);
 	const now = options.now ?? (() => new Date());
 	const loadedFixture = await loadFixture(options.fixturePath);
-	const canonical = prepareEvidence({
+	const canonical = await prepareFixtureEvidenceWithGameReferences({
 		activeRegionId: loadedFixture.fixture.active_region_id,
 		publicationDate: loadedFixture.publicationDate,
 		messages: loadedFixture.fixture.messages,
@@ -359,7 +351,7 @@ export async function runContextBenchmark(
 		for (const messageLoad of CONTEXT_BENCHMARK_LOADS) {
 			rows = rows.concat(await benchmarkLoad({
 				messageLoad,
-				evidence: projectedEvidence(canonical, messageLoad),
+				evidence: await projectedEvidence(canonical, messageLoad),
 				canonical,
 				configs: config.steps,
 				providers,

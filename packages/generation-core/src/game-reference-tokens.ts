@@ -1,10 +1,20 @@
 import {
+	CoordinateGameReferenceSchema,
+	EntityGameReferenceSchema,
 	GameReferenceRosterSchema,
-	GameReferenceSchema,
+	type CoordinateGameReference,
+	type EntityGameReference,
 	type GameReference,
 	coordGameReferenceDestination,
+	entityGameReferenceDestination,
 } from "@bc-news/contracts";
 import type { PreparedEvidence } from "./prepared-evidence";
+import {
+	entityReferenceMatches,
+	gameReferenceEntityLookupKey,
+	type EntityReferenceMatch,
+} from "./game-reference-entities";
+import type { GameReferenceEntityIdentity } from "./ports";
 
 const COORDINATE_REFERENCE_CANDIDATE_PATTERN =
 	/\[([^\]\r\n]+)\]\(coord=(\d+),(\d+)\)|\(coord=(\d+),(\d+)\)/gu;
@@ -13,12 +23,13 @@ const MARKDOWN_WRAPPED_REFERENCE_TOKEN_PATTERN = /(?:\*\*|\*|__|_|~~|`)\[\[GAME_
 const UNRESOLVED_GAME_REFERENCE_PATTERN = /\[\[[^\]\r\n]*GAME_REF[^\]\r\n]*\]\]|\[\[GAME_REF_[^\r\n]*|\bGAME_REF_\d+\b/iu;
 const RAW_COORDINATE_REFERENCE_PATTERN =
 	/\[[^\]\r\n]+\]\(coord=\d+,\d+\)|\(coord=\d+,\d+\)/u;
+const RAW_ENTITY_REFERENCE_PATTERN = /\((item|cargo|claim|coll|res)=[1-9][0-9]*\)/u;
 const BRACKET_LABEL_PREFIX_PATTERN = /\[[^\]\r\n]*\][ \t\r\n]*$/u;
 const URLISH_TOKEN_PREFIX_PATTERN = /:\/\/|\]\(|[/?&#=]/u;
 
 export interface GameReferenceLedger {
 	readonly entries: readonly GameReference[];
-	readonly byPresentation: ReadonlyMap<string, GameReference>;
+	readonly byMatchKey: ReadonlyMap<string, GameReference>;
 	readonly byToken: ReadonlyMap<string, GameReference>;
 }
 
@@ -32,16 +43,37 @@ interface CoordinateReferenceMatch {
 	readonly displayText: string;
 }
 
+type ParsedGameReferenceMatch =
+	| ({ readonly kind: "coord" } & CoordinateReferenceMatch)
+	| ({ readonly kind: "entity" } & EntityReferenceMatch);
+
 function coordDisplayText(northing: number, easting: number): string {
 	return `N ${northing}, E ${easting}`;
 }
 
-function presentationKey(
+function coordinatePresentationKey(
 	northing: number,
 	easting: number,
 	displayText: string,
 ): string {
 	return `coord:${northing}:${easting}:${displayText}`;
+}
+
+function gameReferenceMatchKey(reference: GameReference): string {
+	switch (reference.kind) {
+		case "coord":
+			return coordinatePresentationKey(
+				reference.northing,
+				reference.easting,
+				reference.display_text,
+			);
+		case "item":
+		case "cargo":
+		case "claim":
+		case "coll":
+		case "res":
+			return gameReferenceEntityLookupKey(reference);
+	}
 }
 
 function findTokenStart(value: string, index: number): number {
@@ -87,50 +119,136 @@ function coordinateReferenceMatches(value: string): CoordinateReferenceMatch[] {
 	return matches;
 }
 
-export function buildPreparedGameReferences(
+function gameReferenceMatches(value: string): ParsedGameReferenceMatch[] {
+	return [
+		...coordinateReferenceMatches(value).map((match) => ({ kind: "coord" as const, ...match })),
+		...entityReferenceMatches(value).map((match) => ({ kind: "entity" as const, ...match })),
+	].sort((left, right) => left.index - right.index || left.length - right.length);
+}
+
+function nextGameReferenceToken(ordinal: number): string {
+	return `[[GAME_REF_${String(ordinal).padStart(3, "0")}]]`;
+}
+
+function buildCoordinateReference(
+	ordinal: number,
+	match: CoordinateReferenceMatch,
+): CoordinateGameReference {
+	return CoordinateGameReferenceSchema.parse({
+		token: nextGameReferenceToken(ordinal),
+		kind: "coord",
+		northing: match.northing,
+		easting: match.easting,
+		display_text: match.displayText,
+		destination_url: coordGameReferenceDestination(match.northing, match.easting),
+	});
+}
+
+function buildEntityReference(
+	ordinal: number,
+	identity: GameReferenceEntityIdentity,
+	displayText: string,
+): EntityGameReference {
+	return EntityGameReferenceSchema.parse({
+		token: nextGameReferenceToken(ordinal),
+		kind: identity.kind,
+		id: identity.id,
+		display_text: displayText,
+		destination_url: entityGameReferenceDestination(identity.kind, identity.id),
+	});
+}
+
+function buildPreparedGameReferencesInternal(
 	messages: readonly Pick<{ readonly text: string }, "text">[],
+	entityDisplayNames: ReadonlyMap<string, string>,
 ): GameReference[] {
 	const entries: GameReference[] = [];
-	const byPresentation = new Map<string, GameReference>();
+	const seenCoordinatePresentations = new Set<string>();
+	const seenEntityIdentities = new Set<string>();
 
 	for (const message of messages) {
-		for (const match of coordinateReferenceMatches(message.text)) {
-			const { northing, easting, displayText } = match;
-			const key = presentationKey(northing, easting, displayText);
-			if (byPresentation.has(key)) continue;
+		for (const match of gameReferenceMatches(message.text)) {
+			if (match.kind === "coord") {
+				const key = coordinatePresentationKey(
+					match.northing,
+					match.easting,
+					match.displayText,
+				);
+				if (seenCoordinatePresentations.has(key)) {
+					continue;
+				}
+				seenCoordinatePresentations.add(key);
+				entries.push(buildCoordinateReference(entries.length + 1, match));
+				continue;
+			}
 
-			const entry = GameReferenceSchema.parse({
-				token: `[[GAME_REF_${String(entries.length + 1).padStart(3, "0")}]]`,
-				kind: "coord",
-				northing,
-				easting,
-				display_text: displayText,
-				destination_url: coordGameReferenceDestination(northing, easting),
-			});
-			entries.push(entry);
-			byPresentation.set(key, entry);
+			const key = gameReferenceEntityLookupKey(match.identity);
+			if (seenEntityIdentities.has(key)) {
+				continue;
+			}
+			seenEntityIdentities.add(key);
+
+			const displayText = entityDisplayNames.get(key);
+			if (displayText === undefined) {
+				continue;
+			}
+
+			entries.push(buildEntityReference(entries.length + 1, match.identity, displayText));
 		}
 	}
 
 	return entries;
 }
 
+export function buildGameReferenceEntityIdentities(
+	messages: readonly Pick<{ readonly text: string }, "text">[],
+): GameReferenceEntityIdentity[] {
+	const identities: GameReferenceEntityIdentity[] = [];
+	const seenKeys = new Set<string>();
+
+	for (const message of messages) {
+		for (const match of gameReferenceMatches(message.text)) {
+			if (match.kind !== "entity") {
+				continue;
+			}
+			const key = gameReferenceEntityLookupKey(match.identity);
+			if (seenKeys.has(key)) {
+				continue;
+			}
+			seenKeys.add(key);
+			identities.push(match.identity);
+		}
+	}
+
+	return identities;
+}
+
+export function buildPreparedGameReferences(
+	messages: readonly Pick<{ readonly text: string }, "text">[],
+): GameReference[] {
+	return buildPreparedGameReferencesInternal(messages, new Map());
+}
+
+export function buildPreparedGameReferencesWithResolvedEntities(
+	messages: readonly Pick<{ readonly text: string }, "text">[],
+	entityDisplayNames: ReadonlyMap<string, string>,
+): GameReference[] {
+	return buildPreparedGameReferencesInternal(messages, entityDisplayNames);
+}
+
 export function buildGameReferenceLedger(
 	preparedEvidence: PreparedEvidence,
 ): GameReferenceLedger {
 	const entries = GameReferenceRosterSchema.parse(preparedEvidence.game_references);
-	const byPresentation = new Map<string, GameReference>();
+	const byMatchKey = new Map<string, GameReference>();
 	const byToken = new Map<string, GameReference>();
 
 	for (const entry of entries) {
-		byPresentation.set(
-			presentationKey(entry.northing, entry.easting, entry.display_text),
-			entry,
-		);
+		byMatchKey.set(gameReferenceMatchKey(entry), entry);
 		byToken.set(entry.token, entry);
 	}
 
-	return { entries, byPresentation, byToken };
+	return { entries, byMatchKey, byToken };
 }
 
 export function replaceGameReferenceSyntaxWithTokens(
@@ -140,38 +258,43 @@ export function replaceGameReferenceSyntaxWithTokens(
 	let rewritten = "";
 	let nextIndex = 0;
 
-	for (const match of coordinateReferenceMatches(value)) {
-		const key = presentationKey(
-			match.northing,
-			match.easting,
-			match.displayText,
-		);
-		const entry = ledger.byPresentation.get(key);
-		if (entry === undefined) {
+	for (const match of gameReferenceMatches(value)) {
+		const replacement =
+			match.kind === "coord"
+				? ledger.byMatchKey.get(
+						coordinatePresentationKey(
+							match.northing,
+							match.easting,
+							match.displayText,
+						),
+					)?.token
+				: ledger.byMatchKey.get(gameReferenceEntityLookupKey(match.identity))?.token ?? "";
+
+		if (match.kind === "coord" && replacement === undefined) {
+			const key = coordinatePresentationKey(
+				match.northing,
+				match.easting,
+				match.displayText,
+			);
 			throw new Error(`Prepared game reference is missing from its ledger: ${key}`);
 		}
+
 		rewritten += value.slice(nextIndex, match.index);
-		rewritten += entry.token;
+		rewritten += replacement ?? value.slice(match.index, match.index + match.length);
 		nextIndex = match.index + match.length;
 	}
 
 	return `${rewritten}${value.slice(nextIndex)}`;
 }
 
-export function formatGameReferencePromptRoster(
-	preparedEvidence: PreparedEvidence,
-): string {
-	if (preparedEvidence.game_references.length === 0) return "";
-	const roster = preparedEvidence.game_references
-		.map((reference) => `- ${reference.token}: coord=${reference.northing},${reference.easting}`)
-		.join("\n");
-	return `
-[GAME REFERENCES]
-Code identified location references in the chat and assigned exact tokens.
-- Whenever you mention one of these locations, copy its exact token with no edits and no markdown;
-- This applies to every output field, including plain-text titles, headlines, and ledes. Code will resolve tokens appropriately for each field;
-- Do not rewrite a token as raw coordinate syntax or as a Markdown link. Code resolves valid tokens to display text in plain fields and to links in rich prose;
-${roster}`;
+function containsCodeDerivedDisplayText(
+	value: string,
+	entries: readonly GameReference[],
+): boolean {
+	return entries.some((entry) => (
+		value.includes(entry.display_text) ||
+		(entry.kind === "coord" && value.includes(coordDisplayText(entry.northing, entry.easting)))
+	));
 }
 
 export function transformGameReferenceTokens(
@@ -185,8 +308,11 @@ export function transformGameReferenceTokens(
 	if (RAW_COORDINATE_REFERENCE_PATTERN.test(value)) {
 		throw new Error("Raw coordinate syntax is not allowed in writer output");
 	}
-	if (ledger.entries.some((entry) => value.includes(coordDisplayText(entry.northing, entry.easting)))) {
-		throw new Error("Code-derived coordinate display text is not allowed in writer output");
+	if (RAW_ENTITY_REFERENCE_PATTERN.test(value)) {
+		throw new Error("Raw entity syntax is not allowed in writer output");
+	}
+	if (containsCodeDerivedDisplayText(value, ledger.entries)) {
+		throw new Error("Code-derived game reference display text is not allowed in writer output");
 	}
 
 	const resolved = value.replace(GAME_REFERENCE_TOKEN_PATTERN, (token) => {

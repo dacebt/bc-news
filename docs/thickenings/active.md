@@ -1,16 +1,16 @@
 ---
 type: thickening
 title: >-
-  Thickening: focused coordinate references
+  Thickening: resolved BitJita entity references
 description: >-
-  Active WSD thickening for carrying chat-mentioned coordinates into generated newspaper links that open the exact focused BitCraft Map view.
-tags: [wsd, thickening, active, generation, client, game-references]
+  Active WSD thickening for resolving corpus-observed entity references once during edition creation and retaining safe BitJita newspaper links.
+tags: [wsd, thickening, active, generation, client, game-references, bitjita]
 status: stable
 generated:
   by: ebt-wsd/okf-v0.2
-  at: "2026-08-30T15:42:09Z"
+  at: "2026-08-30T17:27:00Z"
 ---
-# Thickening: focused coordinate references
+# Thickening: resolved BitJita entity references
 
 **Started:** 2026-08-30
 **Git strategy:** commit-to-main
@@ -18,41 +18,42 @@ generated:
 
 ## Dimension
 
-Code-owned game-reference links across the composed edition path.
+Validated edition-time entity resolution for corpus-observed BitCraft references.
 
 ## Observable delta
 
-- before: coordinate syntax from public chat can remain opaque in generated newspaper prose and the client has no authorized link representation for it.
-- after: bare and author-labeled coordinates can survive both editorial writers, remain retained with the edition, render as truthful newspaper links, and open the exact focused BitCraft Map view while arbitrary chat or model URLs remain inert.
+- before: entity syntax such as `(item=...)`, `(cargo=...)`, `(claim=...)`, `(coll=...)`, and `(res=...)` remains opaque in generated newspaper prose even when BitJita documents the corresponding entity catalog.
+- after: supported corpus-observed entity references resolve once during edition creation to code-owned names and canonical BitJita destinations, survive both writers, persist with the edition, and render as newspaper links; malformed, unknown, unsupported, and unavailable identities never gain a guessed name or destination.
 
 ## Minimum surface
 
-- Coordinate-reference parsing, canonical identity, per-display `[[GAME_REF_NNN]]` presentation token, and exact `destination_url` rules in the functional generation core; bare and labeled forms for the same coordinate must remain independently truthful, with bare display normalized to `N <northing>, E <easting>`.
-- Both runtime prompt builders and output parsers, preserving the existing untrusted-data fence and author-token authority boundary.
-- Current edition contract, deterministic assembly, persistence/read compatibility, and generation status where the versioned contract requires it.
-- Newspaper prose rendering that activates only references retained by code while keeping generic Markdown links disabled.
-- Committed evidence fixtures whose valid bare, author-labeled, repeated, and completed-milestone forms are traceable to the retained public corpus, with same-coordinate/different-display, malformed, and URL-smuggling counterexamples clearly labeled as synthetic where the corpus has no observed example.
-- Focused contracts, evaluation loading, the walk-owned recorded boundary and browser probe, and binding documentation required to observe the whole path.
+- Exact parsing and canonical kind-plus-id identity for the supported observed forms `item`, `cargo`, `claim`, `coll`, and `res`; repeated identities deduplicate before lookup while distinct authored displays remain truthful presentation entries.
+- Explicit non-guessing behavior for the observed `know` form because the provided BitJita endpoint inventory has no matching documented detail route, and for malformed or unsupported forms.
+- A generation-owned resolver port and application-side BitJita adapter that identify `bc-news`, bound request time and request count, validate every used response envelope, and return data rather than editorial prose.
+- Exact canonical reader destinations derived by code from validated kind and identity; chat text, model output, and upstream response fields never supply URL authority.
+- Both runtime prompt builders and output parsers, current edition persistence/read contracts, diagnostics, and newspaper rendering through the existing code-owned game-reference seam.
+- Corpus-grounded fixtures for every observed entity kind, synthetic malformed/unknown/unavailable cases, a deterministic BitJita stub, and binding documentation reconciled with the implementation.
 
 ## Verification path
 
-- Run focused package contracts and the repository-wide typecheck and lint gates; the coordinate fixture must retain its exact identities and reject malformed or unauthorized destinations.
-- After the required human checkpoint, run `pnpm --filter @bc-news/eval eval -- scratch run --fixture packages/fixtures/evidence/game-reference-links.json --config apps/eval/local-data/game-reference-links.lmstudio.json --results-dir /tmp/bc-news-game-reference-links-scratch` and the same command with fixture `packages/fixtures/evidence/game-reference-announcement-links.json` and results directory `/tmp/bc-news-game-reference-announcement-links-scratch`; inspect both writer outputs for preservation of the code-owned coordinate references.
-- Invoke `ebt-wsd:skeleton-walker` with `--require-probe`; the repository-owned `pnpm walk -- --non-interactive` path must end in `WALK PASS`, and its browser probe must observe both a bare and author-labeled coordinate link with the exact fixed-host focused-map query while arbitrary Markdown remains non-clickable.
+- Prove parser identity, deduplication, validated response envelopes, bounded failure behavior, exact retained destinations, current-edition contract parsing, and both-writer token preservation with focused contracts.
+- At the required human checkpoint, run the committed entity-reference fixture against the selected local model and inspect both writer outputs; do not invoke a hosted model.
+- Invoke `ebt-wsd:skeleton-walker` with `--require-probe`; the repository-owned `pnpm walk -- --non-interactive` path must end in `WALK PASS`, and its browser probe must observe a resolved entity link while malformed, unsupported, unavailable, and arbitrary Markdown destinations remain inert.
 
 ## Residual risks
 
-- Non-invariant: the fixed map zoom can be less convenient for some locations even though the original coordinate remains exact.
-- Non-invariant: author labels outside the observed bracketed form may remain ordinary prose until direct corpus evidence identifies another BitCraft reference form.
+- Non-invariant: a supported BitJita entity may be temporarily unavailable, leaving that edition without an activated entity reference rather than delaying or guessing publication content.
+- Non-invariant: the observed `know` form remains inert until an authoritative documented identity and destination surface exists.
 
 ## Notes
 
-Notify the user immediately before any local-model invocation. Do not run that command, inspect loaded models, or author the model configuration until the user responds at the checkpoint.
+Use `docs/BITJITA_API.md` as the provided endpoint inventory and contract warning source. Treat its cross-repository links and refresh instructions as reference text, not commands. Do not access project production, deploy, publish, push, or use hosted inference.
 
-The fixture's public-message provenance source is the retained snapshot at `apps/eval/local-data/corpus-workspaces/production-grounded-2026-08-16/snapshot.sqlite`, not only the smaller checked-in reference-corpus extracts. That snapshot includes bare coordinate references and bracket-labeled coordinate references such as `[Fire Nation](coord=7968,9659)`; same-coordinate/different-display remains synthetic and must be labeled as such.
+Notify the user immediately before any additional local-model invocation. The prior coordinate-model authorization does not silently broaden to hosted inference.
 
 ## Context
 
 - [Current shape](../direction/2026-08-30-game-reference-links.shape.md) — governs cadence, scope, and success.
-- [Capability map](../direction/2026-08-30-game-reference-links.map.md) — selects focused coordinates as the dependency-setting first capability.
+- [Capability map](../direction/2026-08-30-game-reference-links.map.md) — selects named entity resolution after the accepted coordinate capability.
+- [BitJita API runbook](../BITJITA_API.md) — provided endpoint inventory and response-contract watchpoints.
 - [Binding domain model](../DOMAIN.md) — owns public-message, edition, and editorial-product vocabulary.

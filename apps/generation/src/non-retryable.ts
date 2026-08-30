@@ -6,6 +6,7 @@ import {
 	EvidenceContractError,
 } from "@bc-news/generation-core";
 import { FixtureEvidenceMismatchError, RecordedModelProviderError } from "@bc-news/fixtures";
+import { BitJitaGameReferenceDeterministicError } from "./adapters/bitjita-game-reference-resolver";
 import { D1ChatEvidenceError } from "./adapters/d1-chat-evidence";
 import {
 	CloudflareAiGatewayDeterministicError,
@@ -25,6 +26,7 @@ const DETERMINISTIC_FAILURES = [
 	CloudflareAiGatewayDeterministicError,
 	LmStudioDeterministicError,
 	GenerationConfigError,
+	BitJitaGameReferenceDeterministicError,
 	D1ChatEvidenceError,
 ] as const;
 

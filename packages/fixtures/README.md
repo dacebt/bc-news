@@ -5,11 +5,19 @@ The skeleton walk feeds the committed BitJita wire corpus at
 D1-backed generation path. The evidence corpus at
 `evidence/active-region-7_2026-01-24.json` remains the representative
 package-root fixture shorthand for full-evidence tests and context measurement.
+`evidence/entity-reference-links.json` is the selected local-model entity
+fixture and the current recorded-replay fixture for exact `[[GAME_REF_NNN]]`
+coverage through the two writer prompts.
 `evidence/game-reference-links.json` is the explicit focused-coordinate fixture
-for replay and local-model work that needs exact `[[GAME_REF_NNN]]` coverage.
+for coordinate-only replay and parser work that needs exact `[[GAME_REF_NNN]]`
+coverage without BitJita entity resolution.
 `evidence/game-reference-announcement-links.json` is the matching one-day public
 slice for exercising an explicit completed milestone with a coordinate through
 the announcements writer.
+`bitjita/game-reference-resolutions.json` is the committed strict lookup roster
+for the established item, cargo, claim, collectible, and resource names used by
+fixture-backed eval and replay. Missing canonical identities deliberately
+default to unknown rather than guessed names.
 `fixtureEvidenceInput` still serves only the representative full-evidence
 fixture. The recorded model provider remains deterministic. See
 [evaluation operations](../../docs/evaluation-operations.md) for the commands
@@ -89,6 +97,38 @@ contains no synthetic message and exists so local-model inspection can exercise
 the announcements writer without turning a location request or plan into a
 completed achievement.
 
+`evidence/entity-reference-resource-region-9_2026-08-15.json` retains the exact
+region `9` public resource exchange beginning with Beuwolf asking where to find
+level 2 minerals and PussInBoots replying with `(res=1045808810)` at
+`2026-08-15T22:28:07Z`. It keeps the adjacent exact public follow-up rows that
+close the exchange and intentionally leaves `(res=1619369727)` unresolved in the
+fixture-backed resolver roster.
+
+`evidence/entity-reference-links.json` retains the exact region `9` public gear
+discussion around Lintha's `(item=163977632)(item=264387410)(item=1122421091)`
+row at `2026-08-16T10:46:47Z`. This is the selected local-model entity fixture:
+it stays truthfully public, focused enough for a later manual checkpoint, and
+contains one established resolved item plus neighboring unresolved item ids that
+must remain inert.
+
+`evidence/entity-reference-claim-region-12_2026-08-16.json` retains the exact
+region `12` public invitation
+`Everyone is welcome to come check out (claim=864691128594607212) its a work in progress still`
+from ShadowTrip at `2026-08-16T13:01:37Z`. It is intentionally a one-row
+focused fixture because the exact public claim row is the behavior under test.
+
+`evidence/entity-reference-cargo-and-collectibles-region-18_2026-08-16.json`
+retains the exact region `18` public cargo and collectible rows
+`oiii :D (cargo=833769059)` from RoyalSailor at `2026-08-16T11:01:07Z` and
+`(coll=381044074) + (coll=693157662) + (coll=1289105478)` from Geniewiz at
+`2026-08-16T15:26:14Z`, along with the exact public explanatory lines that make
+the collectible shorthand readable as a crafting-logistics exchange.
+
+`evidence/entity-reference-synthetic.json` is synthetic only. It exists to keep
+`know`, malformed numeric ids, and repeated canonical identities under test
+without mislabeling them as public corpus evidence. Every row uses a
+`synthetic/*` author id on purpose.
+
 ## Recorded model response provenance
 
 The directory is one strict two-file unit, keyed by production step:
@@ -98,7 +138,7 @@ response, packaging response, or judge directory.
 The current writer records are curated strict version 3 replay artifacts for
 the two-writer topology. They preserve the retained editorial content that
 still fits the current contract, are grounded against
-`evidence/game-reference-links.json`, and make their non-live provenance
+`evidence/entity-reference-links.json`, and make their non-live provenance
 explicit through their provider and model labels rather than implying a fresh
 model recording. Historical absent-version records and version 2 responses
 remain readable through the shared schema and tests, but they are no longer the
@@ -142,13 +182,11 @@ Committed files in `model-responses/` are overwritten only when a developer
 explicitly runs `fixture record-responses` with that directory as the target.
 The canonical walk reads the committed responses through the recorded adapter,
 uses an isolated temporary D1 database, and never changes the committed
-fixtures or contacts a configured external model endpoint. The walk-owned
-BitJita corpus also carries two explicit synthetic terminal messages,
-`[Fire Nation](coord=7968,9659)` and `(coord=7968,9659)`, so the composed path
-can prove same-coordinate/different-display links without claiming that pair
-was observed in the retained public corpus for region `7` on `2026-08-24`; the
-named form renders as `Fire Nation` and the bare form renders as
-`N 7968, E 9659`.
+fixtures or contacts a configured external model endpoint. The coordinate-only
+fixture still carries its explicit synthetic terminals for the
+same-coordinate/different-display proof, while the entity replay fixture stays
+entirely on exact public region `9` item rows plus the committed BitJita name
+roster.
 
 Historical eval Run Files remain inert provenance only when reopened through a
 historical reader from an explicit external path or prior Git commit; this repo

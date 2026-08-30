@@ -10,9 +10,9 @@ import {
 	mainStoryFinalProductDiagnostics,
 	parseAnnouncementsWriterOutput,
 	parseMainStoryWriterOutput,
-	prepareEvidence,
 } from "@bc-news/generation-core";
 import { CURRENT_PRODUCTION_MODEL_STEPS } from "./current-production-steps";
+import { prepareFixtureEvidenceWithGameReferences } from "./fixture-prepared-evidence";
 import { allDifferences } from "./run-difference";
 import { loadFixture } from "./evidence-fixture";
 import type { RunFile } from "./run-file";
@@ -45,7 +45,7 @@ export async function assertRecordedReplayAcceptanceGrounding(run: RunFile, fixt
 	if (run.fixture.fixture_sha256 !== loaded.fixtureSha256) {
 		throw new Error("recorded-replay acceptance fixture digest does not name the consumed evidence bytes");
 	}
-	const prepared = prepareEvidence({
+	const prepared = await prepareFixtureEvidenceWithGameReferences({
 		activeRegionId: loaded.fixture.active_region_id,
 		publicationDate: loaded.publicationDate,
 		messages: loaded.fixture.messages,

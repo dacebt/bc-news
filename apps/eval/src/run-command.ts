@@ -1,8 +1,9 @@
 import { relative } from "node:path";
-import { assembleEdition, prepareEvidence } from "@bc-news/generation-core";
+import { assembleEdition } from "@bc-news/generation-core";
 import { loadConfig, loadLiveEvaluationConfig, type EvalConfig } from "./config";
 import { type CurrentProductionModelStep } from "./current-production-steps";
 import { loadFixture } from "./evidence-fixture";
+import { prepareFixtureEvidenceWithGameReferences } from "./fixture-prepared-evidence";
 import { resolveModelProvider, type ModelProviderEnvironment } from "./model-adapters";
 import { executeProductionSteps } from "./production-step-runners";
 import { generateRunId, saveRunFile, type RunFile } from "./run-file";
@@ -23,7 +24,7 @@ async function executeRunCommand(
 ): Promise<{ path: string; run: RunFile }> {
 	const environment = options.environment ?? process.env;
 	const loadedFixture = await loadFixture(options.fixturePath);
-	const preparedEvidence = prepareEvidence({
+	const preparedEvidence = await prepareFixtureEvidenceWithGameReferences({
 		activeRegionId: loadedFixture.fixture.active_region_id,
 		publicationDate: loadedFixture.publicationDate,
 		messages: loadedFixture.fixture.messages,

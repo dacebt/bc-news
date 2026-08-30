@@ -2,6 +2,15 @@ export {
 	FixtureEvidenceMismatchError,
 	fixtureEvidenceInput,
 } from "./fixture-evidence-input";
+export {
+	createFixtureGameReferenceResolver,
+	fixtureGameReferenceResolutionEntries,
+	fixtureGameReferenceResolver,
+	parseFixtureGameReferenceResolutionEntries,
+	resolveFixtureGameReferenceIdentities,
+	FixtureGameReferenceResolutionEntrySchema,
+	type FixtureGameReferenceResolutionEntry,
+} from "./game-reference-resolver";
 export { modelRequestSha256 } from "./model-request-sha256";
 export {
 	createRecordedModelProvider,

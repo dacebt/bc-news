@@ -19,14 +19,23 @@ const currentEdition = {
 	active_region_id: "7",
 	publication_date: "2026-01-25",
 	title: "The Region Seven Gazette",
-	game_references: [{
-		token: "[[GAME_REF_001]]",
-		kind: "coord",
-		northing: 3745,
-		easting: 3857,
-		display_text: "South Gate",
-		destination_url: "https://bitcraftmap.com/?center=3745,3857&zoom=3.0",
-	}],
+	game_references: [
+		{
+			token: "[[GAME_REF_001]]",
+			kind: "coord",
+			northing: 3745,
+			easting: 3857,
+			display_text: "South Gate",
+			destination_url: "https://bitcraftmap.com/?center=3745,3857&zoom=3.0",
+		},
+		{
+			token: "[[GAME_REF_002]]",
+			kind: "item",
+			id: "42",
+			display_text: "Iron Sword",
+			destination_url: "https://bitjita.com/items/42",
+		},
+	],
 	announcements: [],
 	main_story: {
 		headline: "Bridge Work Completed",
@@ -123,4 +132,20 @@ test("rejects duplicate retained game-reference tokens at the edition boundary",
 
 	expect(EditionSchema.safeParse(duplicateTokenEdition).success).toBe(false);
 	expect(EditionRecordSchema.safeParse(duplicateTokenEdition).success).toBe(false);
+});
+
+test("rejects a current entity reference whose destination does not match its exact BitJita path", () => {
+	const invalidDestinationEdition = {
+		...currentEdition,
+		game_references: [
+			currentEdition.game_references[0]!,
+			{
+				...currentEdition.game_references[1]!,
+				destination_url: "https://bitjita.com/items/0042",
+			},
+		],
+	};
+
+	expect(EditionSchema.safeParse(invalidDestinationEdition).success).toBe(false);
+	expect(EditionRecordSchema.safeParse(invalidDestinationEdition).success).toBe(false);
 });

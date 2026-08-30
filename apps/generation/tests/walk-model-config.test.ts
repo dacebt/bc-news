@@ -13,6 +13,7 @@ it("forces recorded generation adapters ahead of live developer configuration", 
 	const args = walkGenerationWranglerDevArguments({
 		port: 8787,
 		persistDir: "/tmp/walk-proof",
+		bitjitaApiBase: "https://example.test/bitjita",
 	});
 
 	expect(JSON.parse(WALK_RECORDED_MODEL_CONFIG)).toEqual({

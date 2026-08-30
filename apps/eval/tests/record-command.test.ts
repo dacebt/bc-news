@@ -13,6 +13,7 @@ import {
 import { afterEach, expect, test, vi } from "vitest";
 import { recordCommand } from "../src/record-command";
 import { validateRecordedResponseDirectory } from "../src/recorded-response-directory";
+import { RECORDED_OUTPUT_FIXTURE_PATH } from "../src/representative-fixture";
 import { formatRecordSummary } from "../src/report";
 
 interface ProviderState {
@@ -69,7 +70,7 @@ vi.mock("../src/model-adapters", async (importOriginal) => {
 	};
 });
 
-const FIXTURE_PATH = new URL("../../../packages/fixtures", import.meta.url).pathname;
+const FIXTURE_PATH = RECORDED_OUTPUT_FIXTURE_PATH;
 
 function localAdapterConfig(temperature?: number) {
 	const config = {
@@ -234,7 +235,26 @@ test("retains every response from the live production-step roster", async () => 
 	expect(result.comparison.differences).toEqual([]);
 	expect(result.replayProducts).toEqual(result.liveProducts);
 	expect(result.liveDiagnostics).toEqual(result.replayDiagnostics);
-	expect(result.liveDiagnostics).toEqual([]);
+	expect(result.liveDiagnostics).toEqual([
+		{
+			kind: "final_product",
+			production_step: "main_story_write",
+			code: "ungrounded_marked_name",
+			message: "Ungrounded marked name: Aryn",
+		},
+		{
+			kind: "final_product",
+			production_step: "main_story_write",
+			code: "ungrounded_marked_name",
+			message: "Ungrounded marked name: Archaelic",
+		},
+		{
+			kind: "final_product",
+			production_step: "announcements_write",
+			code: "ungrounded_marked_name",
+			message: "Ungrounded marked name: KeyserSoze",
+		},
+	]);
 	const summary = formatRecordSummary(result);
 	expect(summary).toContain("Artifact version: 3");
 	expect(reportedConfiguration(summary, "main_story_write"))

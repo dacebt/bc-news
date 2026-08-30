@@ -12,7 +12,7 @@ import {
 	modelUsageRecord,
 	parseAnnouncementsWriterOutput,
 	parseMainStoryWriterOutput,
-	prepareEvidence,
+	prepareEvidenceWithGameReferences,
 	type ModelUsageRecord,
 	type PreparedEvidence,
 	type ProductionModelStep,
@@ -139,11 +139,14 @@ export class GenerationRun extends WorkflowEntrypoint<Env, GenerationRunParams> 
 							"no_evidence_for_publication_date",
 						);
 					}
-					const prepared = prepareEvidence({
-						activeRegionId: params.active_region_id,
-						publicationDate: params.publication_date,
-						messages,
-					});
+					const prepared = await prepareEvidenceWithGameReferences(
+						{
+							activeRegionId: params.active_region_id,
+							publicationDate: params.publication_date,
+							messages,
+						},
+						ports.gameReferenceResolver,
+					);
 					assertWithinStepResultCap(prepared);
 					return prepared;
 				}),

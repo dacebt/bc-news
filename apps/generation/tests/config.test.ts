@@ -24,9 +24,10 @@ it("does not expose operator credentials to the test runtime", () => {
 	expect(Reflect.has(env, "CF_AI_GATEWAY_API_TOKEN")).toBe(false);
 });
 
-it("resolves exactly two independently configured writer providers", () => {
+it("resolves evidence input, game-reference resolver, and exactly two independently configured writer providers", () => {
 	const ports = resolveGenerationPorts(envWith({ EVIDENCE_INPUT: "fixture" }));
 	expect(ports.evidenceInput).toBe(fixtureEvidenceInput);
+	expect(ports.gameReferenceResolver).toBeDefined();
 	expect(Object.keys(ports.modelProviders)).toEqual([...GENERATION_WRITER_STEPS]);
 	for (const step of GENERATION_WRITER_STEPS) {
 		expect(ports.modelProviders[step]).toBe(recordedModelProvider);
@@ -41,21 +42,29 @@ it("committed default resolves D1 evidence", () => {
 
 it.each([
 	["invalid json", "{not json"],
+	["missing BitJita base", undefined],
 	["missing writer", JSON.stringify({ main_story_write: { adapter: "recorded" } })],
 	["obsolete copyedit key", JSON.stringify({ ...recordedConfig(), main_story_copyedit: { adapter: "recorded" } })],
 	["obsolete announcements copyedit key", JSON.stringify({ ...recordedConfig(), announcements_copyedit: { adapter: "recorded" } })],
 	["obsolete packaging key", JSON.stringify({ ...recordedConfig(), packaging: { adapter: "recorded" } })],
 	["judge key", JSON.stringify({ ...recordedConfig(), judge: { adapter: "recorded" } })],
 ])("rejects %s before evidence or model work", (_label, modelConfig) => {
-	expect(() => resolveGenerationPorts(envWith({ MODEL_CONFIG: modelConfig }))).toThrow(
-		GenerationConfigError,
-	);
+	const overrides = modelConfig === undefined
+		? { BITJITA_API_BASE: undefined }
+		: { MODEL_CONFIG: modelConfig };
+	expect(() => resolveGenerationPorts(envWith(overrides))).toThrow(GenerationConfigError);
 });
 
 it("rejects unknown evidence adapter id", () => {
 	expect(() => resolveGenerationPorts(envWith({ EVIDENCE_INPUT: "d1" }))).toThrow(
 		GenerationConfigError,
 	);
+});
+
+it("rejects a credentialed BitJita API base URL", () => {
+	expect(() => resolveGenerationPorts(envWith({
+		BITJITA_API_BASE: "https://user:secret@example.test/api",
+	}))).toThrow(GenerationConfigError);
 });
 
 it("resolves a hosted provider only with endpoint and API key bindings", () => {

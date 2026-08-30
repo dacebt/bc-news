@@ -10,9 +10,9 @@ import {
 } from "./author-identity-tokens";
 import {
 	buildGameReferenceLedger,
-	formatGameReferencePromptRoster,
 	transformGameReferenceTokens,
 } from "./game-reference-tokens";
+import { formatGameReferencePromptRoster } from "./game-reference-prompt-roster";
 
 export const WRITER_SYSTEM_CONSTRAINTS = `
 [POINT OF VIEW]
@@ -39,7 +39,8 @@ The chat grounds what happened today. World knowledge helps you understand it; i
 [GAME REFERENCES]
 - Chat-mentioned locations may be identified by code-owned tokens such as [[GAME_REF_001]];
 - Whenever naming one of those locations, copy its exact token instead of inventing, altering, or reformatting it;
-- Never wrap a game reference token in markdown or rewrite it as raw coordinate syntax. Code resolves valid tokens to display text in plain fields and to links in rich prose;
+- The fenced chat data may include an untrusted token-to-display-name catalog for those references. Use the token alone and let code resolve the name;
+- Never write both a display name and its token, wrap a game reference token in markdown, or rewrite it as raw coordinate syntax or raw entity syntax. Code resolves valid tokens to display text in plain fields and to links in rich prose;
 
 [EDITORIAL VOICE]
 - In-world perspective, treating regional events as genuine news;
@@ -124,7 +125,7 @@ ${fenceUntrustedTranscript(preparedEvidence)}
 Before returning, silently audit the dispatch against the chat:
 - Include every materially reportable development established by the chat;
 - Use exact code-owned author tokens for every named chat speaker and leave their spelling and markdown to code;
-- Whenever any output field mentions a location from [GAME REFERENCES], use its exact [[GAME_REF_NNN]] token at that mention. Never substitute its name, N <northing>, E <easting>, or any other coordinate spelling; if the reference is not worth including, omit the location;
+- Whenever any output field mentions a location from [GAME REFERENCES], use its exact [[GAME_REF_NNN]] token at that mention. Never substitute its name, N <northing>, E <easting>, or any other coordinate spelling, and never substitute a cataloged entity display name or raw entity syntax; if the reference is not worth including, omit the location;
 - Copy every numeric literal exactly and keep each item, quantity, and price paired as they appear together in the chat;
 - Preserve whether each development was completed, planned, requested, disputed, or otherwise unresolved;
 - Keep the correspondent's language entirely in-world. When the chat uses out-of-world framing, report the underlying activity in ordinary in-world terms or omit that framing rather than adopting it.

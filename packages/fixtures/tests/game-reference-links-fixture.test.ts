@@ -90,10 +90,10 @@ test("the game-reference fixture still prepares as one evidence-day corpus with 
 			display_text: "N 7968, E 9659",
 		}),
 	]);
-	expect(prepared.game_references.some((reference) => reference.northing === 9001 && reference.easting === 9002)).toBe(false);
-	expect(prepared.game_references.some((reference) => reference.northing === 9003 && reference.easting === 9004)).toBe(false);
-	expect(prepared.game_references.some((reference) => reference.northing === 9005 && reference.easting === 9006)).toBe(false);
-	expect(prepared.game_references.some((reference) => reference.northing === 9007 && reference.easting === 9008)).toBe(false);
+	expect(prepared.game_references.some((reference) => reference.kind === "coord" && reference.northing === 9001 && reference.easting === 9002)).toBe(false);
+	expect(prepared.game_references.some((reference) => reference.kind === "coord" && reference.northing === 9003 && reference.easting === 9004)).toBe(false);
+	expect(prepared.game_references.some((reference) => reference.kind === "coord" && reference.northing === 9005 && reference.easting === 9006)).toBe(false);
+	expect(prepared.game_references.some((reference) => reference.kind === "coord" && reference.northing === 9007 && reference.easting === 9008)).toBe(false);
 	expect(prepared.game_references[7]).toEqual(expect.objectContaining({
 		token: "[[GAME_REF_008]]",
 		northing: 7097,

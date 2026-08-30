@@ -3,6 +3,8 @@ import type { WalkModelUsageRecord } from "../generation-run-status";
 import type { WalkContext, WalkPhase } from "../phase";
 import { readRecordedResponse } from "../recorded-response-reader";
 
+const GAME_REFERENCE_TOKEN_PATTERN = /\[\[GAME_REF_\d{3,}\]\]/gu;
+
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -61,6 +63,68 @@ function parseRecordedAnnouncements(text: string): readonly RecordedAnnouncement
 interface WriterProvenance {
 	provider: string;
 	model: string;
+}
+
+function gameReferenceDisplayTextByToken(
+	gameReferences: readonly { token: string; display_text: string }[],
+): ReadonlyMap<string, string> {
+	return new Map(
+		gameReferences.map((reference) => [reference.token, reference.display_text] as const),
+	);
+}
+
+function replacePlainFieldGameReferenceTokens(
+	value: string,
+	gameReferenceDisplayByToken: ReadonlyMap<string, string>,
+	fieldName: string,
+): string {
+	return value.replace(GAME_REFERENCE_TOKEN_PATTERN, (token) => {
+		const displayText = gameReferenceDisplayByToken.get(token);
+		if (displayText === undefined) {
+			throw new Error(`${fieldName} contains unknown game reference token: ${token}`);
+		}
+		return displayText;
+	});
+}
+
+function normalizeExpectedMainStoryProduct(
+	product: RecordedMainStoryProduct,
+	gameReferenceDisplayByToken: ReadonlyMap<string, string>,
+): RecordedMainStoryProduct {
+	return {
+		title: replacePlainFieldGameReferenceTokens(
+			product.title,
+			gameReferenceDisplayByToken,
+			"main story title",
+		),
+		main_story: {
+			headline: replacePlainFieldGameReferenceTokens(
+				product.main_story.headline,
+				gameReferenceDisplayByToken,
+				"main story headline",
+			),
+			lede: replacePlainFieldGameReferenceTokens(
+				product.main_story.lede,
+				gameReferenceDisplayByToken,
+				"main story lede",
+			),
+			body: product.main_story.body,
+		},
+	};
+}
+
+function normalizeExpectedAnnouncements(
+	announcements: readonly RecordedAnnouncement[],
+	gameReferenceDisplayByToken: ReadonlyMap<string, string>,
+): readonly RecordedAnnouncement[] {
+	return announcements.map((announcement) => ({
+		title: replacePlainFieldGameReferenceTokens(
+			announcement.title,
+			gameReferenceDisplayByToken,
+			"announcement title",
+		),
+		summary: announcement.summary,
+	}));
 }
 
 function parseWriterProvenance(value: unknown): WriterProvenance {
@@ -139,11 +203,20 @@ async function run(ctx: WalkContext): Promise<void> {
 	const identifiedAnnouncements = parseRecordedAnnouncements(
 		(await readRecordedResponse("announcements_write")).text,
 	);
+	const gameReferenceDisplayByToken = gameReferenceDisplayTextByToken(edition.game_references);
+	const normalizedMainStory = normalizeExpectedMainStoryProduct(
+		mainStory,
+		gameReferenceDisplayByToken,
+	);
+	const normalizedAnnouncements = normalizeExpectedAnnouncements(
+		identifiedAnnouncements,
+		gameReferenceDisplayByToken,
+	);
 
 	if (
-		edition.title !== mainStory.title ||
-		JSON.stringify(edition.main_story) !== JSON.stringify(mainStory.main_story) ||
-		JSON.stringify(edition.announcements) !== JSON.stringify(identifiedAnnouncements)
+		edition.title !== normalizedMainStory.title ||
+		JSON.stringify(edition.main_story) !== JSON.stringify(normalizedMainStory.main_story) ||
+		JSON.stringify(edition.announcements) !== JSON.stringify(normalizedAnnouncements)
 	) {
 		throw new Error(
 			"published edition does not match the two recorded writer editorial products",

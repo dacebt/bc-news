@@ -1,6 +1,5 @@
 import { mkdir } from "node:fs/promises";
 import { basename, join, relative } from "node:path";
-import { prepareEvidence } from "@bc-news/generation-core";
 import { EvalConfigSchema, loadLiveBenchmarkConfig } from "./config";
 import {
 	EvaluationCodeProvenanceSchema,
@@ -12,6 +11,7 @@ import {
 import { V9BenchmarkRunSchema } from "./evaluation-artifact-v9";
 import { EvaluationArtifactStore, type EvaluationArtifactObserver } from "./evaluation-artifact-store";
 import { loadFixture } from "./evidence-fixture";
+import { prepareFixtureEvidenceWithGameReferences } from "./fixture-prepared-evidence";
 import { codeProvenance } from "./evaluation-provenance";
 import { executeEvaluationTrial } from "./evaluation-trial-execution";
 import { emptyOutcomeCounts, emptyTrack, providersFor, safeEvaluationId, sha256Json } from "./evaluation-trial-support";
@@ -40,7 +40,7 @@ export async function evaluateBenchmarkCommand(options: EvaluateBenchmarkCommand
 		output_contracts: evaluationOutputContractProvenance(),
 	};
 	const loadedFixture = await loadFixture(options.fixturePath);
-	const preparedEvidence = prepareEvidence({
+	const preparedEvidence = await prepareFixtureEvidenceWithGameReferences({
 		activeRegionId: loadedFixture.fixture.active_region_id,
 		publicationDate: loadedFixture.publicationDate,
 		messages: loadedFixture.fixture.messages,

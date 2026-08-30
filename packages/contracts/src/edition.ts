@@ -53,9 +53,41 @@ export function coordGameReferenceDestination(northing: number, easting: number)
 	return `https://bitcraftmap.com/?center=${northing},${easting}&zoom=3.0`;
 }
 
+export const GameReferenceEntityKindSchema = z.enum([
+	"item",
+	"cargo",
+	"claim",
+	"coll",
+	"res",
+]);
+
+export type GameReferenceEntityKind = z.infer<typeof GameReferenceEntityKindSchema>;
+
+export const GameReferenceEntityIdSchema = z.string().regex(/^[1-9][0-9]*$/u);
+
+export type GameReferenceEntityId = z.infer<typeof GameReferenceEntityIdSchema>;
+
+export function entityGameReferenceDestination(
+	kind: GameReferenceEntityKind,
+	id: GameReferenceEntityId,
+): string {
+	switch (kind) {
+		case "item":
+			return `https://bitjita.com/items/${id}`;
+		case "cargo":
+			return `https://bitjita.com/cargo/${id}`;
+		case "claim":
+			return `https://bitjita.com/claims/${id}`;
+		case "coll":
+			return `https://bitjita.com/collectibles/${id}`;
+		case "res":
+			return `https://bitjita.com/resources/${id}`;
+	}
+}
+
 export const GameReferenceTokenSchema = z.string().regex(/^\[\[GAME_REF_\d{3,}\]\]$/u);
 
-export const GameReferenceSchema = z.strictObject({
+export const CoordinateGameReferenceSchema = z.strictObject({
 	token: GameReferenceTokenSchema,
 	kind: z.literal("coord"),
 	northing: z.int().nonnegative(),
@@ -75,7 +107,48 @@ export const GameReferenceSchema = z.strictObject({
 	}
 });
 
+export type CoordinateGameReference = z.infer<typeof CoordinateGameReferenceSchema>;
+
+export const EntityGameReferenceSchema = z.strictObject({
+	token: GameReferenceTokenSchema,
+	kind: GameReferenceEntityKindSchema,
+	id: GameReferenceEntityIdSchema,
+	display_text: z.string().min(1),
+	destination_url: z.url(),
+}).superRefine((reference, context) => {
+	if (
+		reference.destination_url !==
+		entityGameReferenceDestination(reference.kind, reference.id)
+	) {
+		context.addIssue({
+			code: "custom",
+			path: ["destination_url"],
+			message: "entity game reference destination must match the exact BitJita URL for its kind and id",
+		});
+	}
+});
+
+export type EntityGameReference = z.infer<typeof EntityGameReferenceSchema>;
+
+export const GameReferenceSchema = z.union([
+	CoordinateGameReferenceSchema,
+	EntityGameReferenceSchema,
+]);
+
 export type GameReference = z.infer<typeof GameReferenceSchema>;
+
+export function gameReferenceDestination(reference: GameReference): string {
+	switch (reference.kind) {
+		case "coord":
+			return coordGameReferenceDestination(reference.northing, reference.easting);
+		case "item":
+		case "cargo":
+		case "claim":
+		case "coll":
+		case "res":
+			return entityGameReferenceDestination(reference.kind, reference.id);
+	}
+}
 
 export const GameReferenceRosterSchema = z.array(GameReferenceSchema).superRefine(
 	(references, context) => {
@@ -95,27 +168,35 @@ export const GameReferenceRosterSchema = z.array(GameReferenceSchema).superRefin
 	},
 );
 
-export const EditionSchema = z.strictObject({
-	version: z.literal(CURRENT_EDITION_VERSION),
+const EditionCountsSchema = z.strictObject({
+	raw_count: z.int().nonnegative(),
+	after_filter_count: z.int().nonnegative(),
+	after_burst_count: z.int().nonnegative(),
+	final_count: z.int().nonnegative(),
+});
+
+const CurrentEditorialProductsSchema = z.strictObject({
+	main_story: ModelProvenanceSchema,
+	announcements: ModelProvenanceSchema,
+});
+
+const CurrentEditionFields = {
 	active_region_id: ActiveRegionIdSchema,
 	publication_date: PublicationDateSchema,
 	title: z.string().min(1),
-	game_references: GameReferenceRosterSchema,
 	announcements: z.array(AnnouncementSchema),
 	main_story: MainStorySchema,
 	meta: z.strictObject({
 		generated_at_utc: z.iso.datetime({ offset: true }),
-		editorial_products: z.strictObject({
-			main_story: ModelProvenanceSchema,
-			announcements: ModelProvenanceSchema,
-		}),
-		counts: z.strictObject({
-			raw_count: z.int().nonnegative(),
-			after_filter_count: z.int().nonnegative(),
-			after_burst_count: z.int().nonnegative(),
-			final_count: z.int().nonnegative(),
-		}),
+		editorial_products: CurrentEditorialProductsSchema,
+		counts: EditionCountsSchema,
 	}),
+} as const;
+
+export const EditionSchema = z.strictObject({
+	version: z.literal(CURRENT_EDITION_VERSION),
+	game_references: GameReferenceRosterSchema,
+	...CurrentEditionFields,
 });
 
 export type Edition = z.infer<typeof EditionSchema>;
@@ -129,16 +210,8 @@ export const VersionedEditionV2Schema = z.strictObject({
 	main_story: MainStorySchema,
 	meta: z.strictObject({
 		generated_at_utc: z.iso.datetime({ offset: true }),
-		editorial_products: z.strictObject({
-			main_story: ModelProvenanceSchema,
-			announcements: ModelProvenanceSchema,
-		}),
-		counts: z.strictObject({
-			raw_count: z.int().nonnegative(),
-			after_filter_count: z.int().nonnegative(),
-			after_burst_count: z.int().nonnegative(),
-			final_count: z.int().nonnegative(),
-		}),
+		editorial_products: CurrentEditorialProductsSchema,
+		counts: EditionCountsSchema,
 	}),
 });
 
@@ -157,12 +230,7 @@ export const LegacyEditionSchema = z.strictObject({
 			main_story: LegacyEditorialProductProvenanceSchema,
 			announcements: LegacyEditorialProductProvenanceSchema,
 		}),
-		counts: z.strictObject({
-			raw_count: z.int().nonnegative(),
-			after_filter_count: z.int().nonnegative(),
-			after_burst_count: z.int().nonnegative(),
-			final_count: z.int().nonnegative(),
-		}),
+		counts: EditionCountsSchema,
 	}),
 });
 

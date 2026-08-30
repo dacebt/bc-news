@@ -1,0 +1,41 @@
+{
+  "active_region_id": "7",
+  "evidence_date": "2026-08-16",
+  "messages": [
+    {
+      "id": "synthetic-entity-reference-001",
+      "ts": 1786881000000,
+      "author_id": "synthetic/FixtureScout",
+      "author_name": "FixtureScout",
+      "text": "(item=163977632)"
+    },
+    {
+      "id": "synthetic-entity-reference-002",
+      "ts": 1786881001000,
+      "author_id": "synthetic/FixtureScout",
+      "author_name": "FixtureScout",
+      "text": "repeat that one too (item=163977632)"
+    },
+    {
+      "id": "synthetic-entity-reference-003",
+      "ts": 1786881002000,
+      "author_id": "synthetic/FixtureScoutKnow",
+      "author_name": "FixtureScoutKnow",
+      "text": "(know=864691128594607212)"
+    },
+    {
+      "id": "synthetic-entity-reference-004",
+      "ts": 1786881003000,
+      "author_id": "synthetic/FixtureScoutMalformed",
+      "author_name": "FixtureScoutMalformed",
+      "text": "(item=not-a-number)"
+    },
+    {
+      "id": "synthetic-entity-reference-005",
+      "ts": 1786881004000,
+      "author_id": "synthetic/FixtureScoutDedupe",
+      "author_name": "FixtureScoutDedupe",
+      "text": "(res=1045808810) and again (res=1045808810)"
+    }
+  ]
+}

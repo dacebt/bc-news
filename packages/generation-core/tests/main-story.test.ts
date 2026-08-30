@@ -123,6 +123,42 @@ test("teaches exact location-token reuse and resolves plain fields while retaini
 	});
 });
 
+test("omits unavailable supported entity syntax from the prompt so echoed transcript text remains parseable", () => {
+	const preparedEvidence: PreparedEvidence = {
+		...PREPARED_EVIDENCE,
+		game_references: [],
+		messages: [{
+			...PREPARED_EVIDENCE.messages[0]!,
+			text: "sold (item=42) for 3k",
+		}],
+	};
+
+	const prompt = buildMainStoryWriterPrompt(preparedEvidence);
+	expect(prompt).toContain("[[AUTHOR_001]]: sold  for 3k");
+	expect(prompt).not.toContain("(item=42)");
+
+	expect(
+		parseMainStoryWriterOutput(
+			JSON.stringify({
+				title: "Market brief",
+				main_story: {
+					headline: "Sale noted",
+					lede: "[[AUTHOR_001]] sold  for 3k.",
+					body: "**[[AUTHOR_001]]** sold  for 3k.",
+				},
+			}),
+			preparedEvidence,
+		),
+	).toEqual({
+		title: "Market brief",
+		main_story: {
+			headline: "Sale noted",
+			lede: "Mira sold  for 3k.",
+			body: "**Mira** sold  for 3k.",
+		},
+	});
+});
+
 test("the trusted game-reference roster excludes author-provided labels", () => {
 	const prompt = buildMainStoryWriterPrompt({
 		...PREPARED_EVIDENCE,

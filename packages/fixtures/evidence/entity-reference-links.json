@@ -1,0 +1,118 @@
+{
+  "active_region_id": "9",
+  "evidence_date": "2026-08-16",
+  "messages": [
+    {
+      "id": "648518348451039150",
+      "ts": 1786876925000,
+      "author_id": "fr/Lintha",
+      "author_name": "Lintha",
+      "text": "And all feralith tool for the profession you want to focus on. Even better if you are motivated enough to try a bit of each profession to see what you like or not ^^"
+    },
+    {
+      "id": "648518348451061553",
+      "ts": 1786876947000,
+      "author_id": "en/Prairiegon",
+      "author_name": "Prairiegon",
+      "text": "Metal armor for combat, leather clothes for gathering, and cloth clothes for crafting."
+    },
+    {
+      "id": "648518348451234677",
+      "ts": 1786877116000,
+      "author_id": "en/Katlin",
+      "author_name": "Katlin",
+      "text": "ah they have like different buffs or something?"
+    },
+    {
+      "id": "648518348451249432",
+      "ts": 1786877131000,
+      "author_id": "en/Prairiegon",
+      "author_name": "Prairiegon",
+      "text": "Yup, that's right!"
+    },
+    {
+      "id": "648518348451309793",
+      "ts": 1786877190000,
+      "author_id": "fr/Lintha",
+      "author_name": "Lintha",
+      "text": "As an example with the same type of gear :"
+    },
+    {
+      "id": "648518348451327843",
+      "ts": 1786877207000,
+      "author_id": "fr/Lintha",
+      "author_name": "Lintha",
+      "text": "(item=163977632)(item=264387410)(item=1122421091)"
+    },
+    {
+      "id": "648518348451340711",
+      "ts": 1786877220000,
+      "author_id": "fr/Lintha",
+      "author_name": "Lintha",
+      "text": "(Duelist is one type of combat armor)"
+    },
+    {
+      "id": "648518348451377948",
+      "ts": 1786877257000,
+      "author_id": "fr/Lintha",
+      "author_name": "Lintha",
+      "text": "You can see that leather give gathering speed and cloth give crafting speed"
+    },
+    {
+      "id": "648518348451395047",
+      "ts": 1786877274000,
+      "author_id": "en/Katlin",
+      "author_name": "Katlin",
+      "text": "i would like the stuff that lets me stab harder >:3"
+    },
+    {
+      "id": "648518348451426280",
+      "ts": 1786877304000,
+      "author_id": "fr/Lintha",
+      "author_name": "Lintha",
+      "text": "For combat, it's this : (item=422440070)"
+    },
+    {
+      "id": "648518348451464348",
+      "ts": 1786877342000,
+      "author_id": "en/Katlin",
+      "author_name": "Katlin",
+      "text": "+15 bonk powa"
+    },
+    {
+      "id": "648518348451487719",
+      "ts": 1786877365000,
+      "author_id": "en/Prairiegon",
+      "author_name": "Prairiegon",
+      "text": "Note that the strength stat is specifically for dealing extra damage in this game."
+    },
+    {
+      "id": "648518348451518803",
+      "ts": 1786877395000,
+      "author_id": "fr/Lintha",
+      "author_name": "Lintha",
+      "text": "It doesn't work for the hunting profession tho, for this, it's called \"hunting strength\""
+    },
+    {
+      "id": "648518348451558585",
+      "ts": 1786877434000,
+      "author_id": "fr/Lintha",
+      "author_name": "Lintha",
+      "text": "Like this : (item=1938388553)"
+    },
+    {
+      "id": "648518348451592235",
+      "ts": 1786877467000,
+      "author_id": "en/Katlin",
+      "author_name": "Katlin",
+      "text": "hmmmm"
+    },
+    {
+      "id": "648518348451601244",
+      "ts": 1786877476000,
+      "author_id": "en/Katlin",
+      "author_name": "Katlin",
+      "text": "damn you smart coders!"
+    }
+  ]
+}

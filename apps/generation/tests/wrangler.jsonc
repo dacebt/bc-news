@@ -30,6 +30,7 @@
 		"directory": "../../client/dist"
 	},
 	"vars": {
+		"BITJITA_API_BASE": "https://bitjita.com",
 		"EVIDENCE_INPUT": "d1_chat",
 		"MODEL_CONFIG": "{\"main_story_write\":{\"adapter\":\"recorded\"},\"announcements_write\":{\"adapter\":\"recorded\"}}"
 	}

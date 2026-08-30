@@ -1,6 +1,7 @@
 # Required for local calls to the generation launch and operator status routes.
 # Generate a dedicated random value and never commit the populated .dev.vars file.
 OPERATOR_API_TOKEN="replace-with-random-operator-token"
+BITJITA_API_BASE="https://bitjita.com"
 
 # Copy to apps/generation/.dev.vars and replace each local model id with one
 # installed in LM Studio. Each writer is configured independently; they may

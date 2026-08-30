@@ -1,5 +1,5 @@
 import { EvidenceFixtureSchema, type EvidenceFixture } from "@bc-news/contracts";
-import { prepareEvidence, type PreparedEvidence } from "@bc-news/generation-core";
+import type { PreparedEvidence } from "@bc-news/generation-core";
 import { resolve } from "node:path";
 import { z } from "zod";
 import { type EvaluationLocalSourceReference, readEvaluationLocalSource } from "./evaluation-local-source-reference";
@@ -13,6 +13,7 @@ import {
 } from "./evaluation-reference-corpus-local";
 import { validateReferenceRules } from "./evaluation-reference-corpus-rules";
 import { closedRoster, publicationDateForEvidenceDate, verifyFixtureRoster } from "./evaluation-reference-corpus-utils";
+import { prepareFixtureEvidenceWithGameReferenceResolutions } from "./fixture-prepared-evidence";
 export {
 	EvaluationReferenceManifestV3Schema,
 } from "./evaluation-reference-corpus-local";
@@ -262,7 +263,11 @@ async function loadEntry<TManifestEntry extends { id: string; variation_tags: re
 	const reference = parseJson(referenceBytes, referencePath, EvaluationReferenceSchema);
 	if (reference.fixture_id !== manifestEntry.id) fail("identity_mismatch", referencePath, `Reference identity mismatch for ${manifestEntry.id}`);
 	const publicationDate = publicationDateForEvidenceDate(fixture.evidence_date, fail);
-	const preparedEvidence = prepareEvidence({ activeRegionId: fixture.active_region_id, publicationDate, messages: fixture.messages });
+	const preparedEvidence = prepareFixtureEvidenceWithGameReferenceResolutions({
+		activeRegionId: fixture.active_region_id,
+		publicationDate,
+		messages: fixture.messages,
+	});
 	const loaded = { manifestEntry, evidencePath, evidenceBytes, fixture, publicationDate, preparedEvidence, referencePath, referenceBytes, reference };
 	validateReferenceCollections(reference, referencePath);
 	validateGrounding(loaded);

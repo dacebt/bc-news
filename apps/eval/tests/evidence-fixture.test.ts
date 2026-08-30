@@ -3,6 +3,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadFixture } from "../src/evidence-fixture";
 import {
+	LOCAL_MODEL_ENTITY_FIXTURE_PATH,
 	RECORDED_OUTPUT_FIXTURE_PATH,
 	REPRESENTATIVE_FIXTURE_PATH,
 } from "../src/representative-fixture";
@@ -19,18 +20,19 @@ test("package-root fixture loading stays pinned to the historical representative
 	expect(loaded.publicationDate).toBe("2026-01-25");
 });
 
-test("explicit fixture paths can load the dedicated game-reference corpus", async () => {
+test("explicit fixture paths can load the selected local-model entity corpus", async () => {
 	const loaded = await loadFixture(RECORDED_OUTPUT_FIXTURE_PATH);
 
 	expect(loaded.path).toBe(RECORDED_OUTPUT_FIXTURE_PATH);
-	expect(loaded.fixture.active_region_id).toBe("19");
-	expect(loaded.fixture.evidence_date).toBe("2026-08-15");
-	expect(loaded.publicationDate).toBe("2026-08-16");
-	expect(loaded.fixture.messages.find((message) => message.id === "synthetic-game-reference-links-001"))
-		.toEqual(expect.objectContaining({ text: "(coord=7968,9659)" }));
+	expect(loaded.fixture.active_region_id).toBe("9");
+	expect(loaded.fixture.evidence_date).toBe("2026-08-16");
+	expect(loaded.publicationDate).toBe("2026-08-17");
+	expect(loaded.fixture.messages.find((message) => message.id === "648518348451327843"))
+		.toEqual(expect.objectContaining({ text: "(item=163977632)(item=264387410)(item=1122421091)" }));
 });
 
-test("representative and dedicated fixtures remain distinct files", () => {
+test("representative and selected local-model fixtures remain distinct files", () => {
 	expect(RECORDED_OUTPUT_FIXTURE_PATH).not.toBe(REPRESENTATIVE_FIXTURE_PATH);
-	expect(join(RECORDED_OUTPUT_FIXTURE_PATH)).toContain("game-reference-links.json");
+	expect(RECORDED_OUTPUT_FIXTURE_PATH).toBe(LOCAL_MODEL_ENTITY_FIXTURE_PATH);
+	expect(join(RECORDED_OUTPUT_FIXTURE_PATH)).toContain("entity-reference-links.json");
 });

@@ -1,9 +1,10 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { ACTIVE_REGION_IDS, EvidenceFixtureSchema, type EvidenceFixture } from "@bc-news/contracts";
-import { prepareEvidence, type PreparedEvidence } from "@bc-news/generation-core";
+import type { PreparedEvidence } from "@bc-news/generation-core";
 import { EvaluationReferenceManifestV3Schema } from "./evaluation-reference-corpus";
 import { controlledReferenceCorpusFixtures } from "./evaluation-reference-corpus-controlled";
+import { prepareFixtureEvidenceWithGameReferenceResolutions } from "./fixture-prepared-evidence";
 import { sourceReferenceForLocalFile } from "./evaluation-local-source-reference";
 
 const LOCAL_SELECTION_REGION_IDS = ACTIVE_REGION_IDS.slice(0, 12);
@@ -45,7 +46,7 @@ function publicationDate(evidenceDate: string): string {
 }
 
 function preparedEvidenceForFixture(fixture: EvidenceFixture): PreparedEvidence {
-	return prepareEvidence({
+	return prepareFixtureEvidenceWithGameReferenceResolutions({
 		activeRegionId: fixture.active_region_id,
 		publicationDate: publicationDate(fixture.evidence_date),
 		messages: fixture.messages,

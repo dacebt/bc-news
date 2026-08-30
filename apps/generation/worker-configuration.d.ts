@@ -4,6 +4,7 @@
 interface __BaseEnv_Env {
 	DB: D1Database;
 	EDITION_API_RATE_LIMITER: RateLimit;
+	BITJITA_API_BASE: "https://bitjita.com";
 	EVIDENCE_INPUT: "d1_chat";
 	MODEL_CONFIG: "{\"main_story_write\":{\"adapter\":\"cloudflare_ai_gateway\",\"model\":\"google/gemini-3.1-flash-lite\"},\"announcements_write\":{\"adapter\":\"cloudflare_ai_gateway\",\"model\":\"google/gemini-3.1-flash-lite\"}}";
 	CF_AI_GATEWAY_API_TOKEN: string;
@@ -21,7 +22,7 @@ type StringifyValues<EnvType extends Record<string, unknown>> = {
 	[Binding in keyof EnvType]: EnvType[Binding] extends string ? EnvType[Binding] : string;
 };
 declare namespace NodeJS {
-	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "EVIDENCE_INPUT" | "MODEL_CONFIG" | "CF_AI_GATEWAY_API_TOKEN" | "OPERATOR_API_TOKEN">> {}
+	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "BITJITA_API_BASE" | "EVIDENCE_INPUT" | "MODEL_CONFIG" | "CF_AI_GATEWAY_API_TOKEN" | "OPERATOR_API_TOKEN">> {}
 }
 
 // Begin runtime types

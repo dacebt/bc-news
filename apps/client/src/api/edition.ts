@@ -18,19 +18,19 @@ function safeParsePublishedEdition(
 	if (current.success) {
 		return { success: true, data: current.data };
 	}
-	const historical = VersionedEditionV2Schema.safeParse(body);
-	if (historical.success) {
+	const version2 = VersionedEditionV2Schema.safeParse(body);
+	if (version2.success) {
 		return {
 			success: true,
 			data: {
-				...historical.data,
+				...version2.data,
 				game_references: [],
 			},
 		};
 	}
 	return {
 		success: false,
-		issues: [...current.error.issues, ...historical.error.issues],
+		issues: [...current.error.issues, ...version2.error.issues],
 	};
 }
 

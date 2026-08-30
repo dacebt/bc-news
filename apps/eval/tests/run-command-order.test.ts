@@ -4,7 +4,6 @@ import { join } from "node:path";
 import { afterEach, expect, test, vi } from "vitest";
 import { recordedModelProvider } from "@bc-news/fixtures";
 import {
-	prepareEvidence,
 	type ModelCompletion,
 	type ModelProviderPort,
 	type ModelProviderRequest,
@@ -14,6 +13,7 @@ import {
 	type CurrentProductionModelStep,
 } from "../src/current-production-steps";
 import { loadFixture } from "../src/evidence-fixture";
+import { prepareFixtureEvidenceWithGameReferences } from "../src/fixture-prepared-evidence";
 import { RECORDED_REPLAY_CONFIG_PATH } from "../src/recorded-replay-acceptance-verifier";
 import { RECORDED_OUTPUT_FIXTURE_PATH } from "../src/representative-fixture";
 import { executeProductionSteps } from "../src/production-step-runners";
@@ -55,7 +55,7 @@ function completion(text: string): ModelCompletion {
 
 async function recordedOutputPreparedEvidence() {
 	const loaded = await loadFixture(RECORDED_OUTPUT_FIXTURE_PATH);
-	return prepareEvidence({
+	return prepareFixtureEvidenceWithGameReferences({
 		activeRegionId: loaded.fixture.active_region_id,
 		publicationDate: loaded.publicationDate,
 		messages: loaded.fixture.messages,

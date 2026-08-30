@@ -1,4 +1,8 @@
-import type { EvidenceMessage } from "@bc-news/contracts";
+import type {
+	EvidenceMessage,
+	GameReferenceEntityId,
+	GameReferenceEntityKind,
+} from "@bc-news/contracts";
 import type { ModelRuntimeEvidence } from "./runtime-evidence";
 
 export type EditorialProduct = "main_story" | "announcements";
@@ -88,6 +92,26 @@ export interface EvidenceInputPort {
 		activeRegionId: string;
 		evidenceDate: string;
 	}): Promise<EvidenceMessage[]>;
+}
+
+export interface GameReferenceEntityIdentity {
+	readonly kind: GameReferenceEntityKind;
+	readonly id: GameReferenceEntityId;
+}
+
+export type GameReferenceEntityResolution =
+	| (GameReferenceEntityIdentity & {
+			readonly outcome: "resolved";
+			readonly display_name: string;
+	  })
+	| (GameReferenceEntityIdentity & {
+			readonly outcome: "unknown" | "unavailable" | "request_budget_exhausted";
+	  });
+
+export interface GameReferenceResolverPort {
+	resolve(
+		identities: readonly GameReferenceEntityIdentity[],
+	): Promise<readonly GameReferenceEntityResolution[]>;
 }
 
 export interface ModelProviderPort {

@@ -339,7 +339,11 @@ async function main(): Promise<void> {
 		const wranglerDev = startWranglerDev(
 			generationDir,
 			port,
-			walkGenerationWranglerDevArguments({ port, persistDir }),
+			walkGenerationWranglerDevArguments({
+				port,
+				persistDir,
+				bitjitaApiBase: stubServer.baseUrl,
+			}),
 		);
 		const ingestWranglerDev = startWranglerDev(
 			ingestDir,

@@ -1,4 +1,4 @@
-import { coordGameReferenceDestination } from "@bc-news/contracts";
+import { gameReferenceDestination } from "@bc-news/contracts";
 import { Box } from "@chakra-ui/react";
 import type { ComponentPropsWithoutRef } from "react";
 import Markdown from "react-markdown";
@@ -134,7 +134,7 @@ function renderGameReferenceAnchor(
 		}
 		return (
 			<a
-				href={coordGameReferenceDestination(reference.northing, reference.easting)}
+				href={gameReferenceDestination(reference)}
 				target="_blank"
 				rel="noopener noreferrer"
 			>

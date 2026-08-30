@@ -2,12 +2,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	getEdition,
 	type EditionFetchOutcome,
-	type EditionGameReference,
 	type PublishedEdition,
 } from "../src/api/edition";
+import type {
+	Announcement,
+	CoordinateGameReference,
+	EntityGameReference,
+	MainStory,
+} from "@bc-news/contracts";
 
 const ABORTED_OUTCOME = { outcome: "aborted" } satisfies EditionFetchOutcome;
-const BARE_COORDINATE_REFERENCE: EditionGameReference = {
+const COORDINATE_REFERENCE: CoordinateGameReference = {
 	token: "[[GAME_REF_001]]",
 	kind: "coord",
 	northing: 3745,
@@ -15,10 +20,23 @@ const BARE_COORDINATE_REFERENCE: EditionGameReference = {
 	display_text: "N 3745, E 3857",
 	destination_url: "https://bitcraftmap.com/?center=3745,3857&zoom=3.0",
 };
-
-type HistoricalEditionResponse = Omit<PublishedEdition, "version" | "game_references"> & {
-	version: 2;
+const ITEM_REFERENCE: EntityGameReference = {
+	token: "[[GAME_REF_002]]",
+	kind: "item",
+	id: "163977632",
+	display_text: "Ornate Leather Shirt",
+	destination_url: "https://bitjita.com/items/163977632",
 };
+
+interface HistoricalEditionResponse {
+	version: 2;
+	active_region_id: string;
+	publication_date: string;
+	title: string;
+	announcements: Announcement[];
+	main_story: MainStory;
+	meta: PublishedEdition["meta"];
+}
 
 function validEdition(): HistoricalEditionResponse {
 	return {
@@ -39,11 +57,11 @@ function validEdition(): HistoricalEditionResponse {
 	};
 }
 
-function validEditionWithGameReferences(): PublishedEdition {
+function validVersion3EditionWithGameReferences(): PublishedEdition {
 	return {
 		...validEdition(),
 		version: 3,
-		game_references: [BARE_COORDINATE_REFERENCE],
+		game_references: [COORDINATE_REFERENCE, ITEM_REFERENCE],
 	};
 }
 
@@ -77,8 +95,8 @@ describe("getEdition outcome mapping", () => {
 		});
 	});
 
-	it("preserves retained game references on a v3 edition response", async () => {
-		const edition = validEditionWithGameReferences();
+	it("preserves retained game references on the current edition response", async () => {
+		const edition = validVersion3EditionWithGameReferences();
 		vi.mocked(fetch).mockResolvedValue(jsonResponse(200, edition));
 
 		await expect(request()).resolves.toEqual({ outcome: "published", edition });
@@ -130,15 +148,30 @@ describe("getEdition outcome mapping", () => {
 		await expect(request()).resolves.toEqual({ outcome: "invalid_response" });
 	});
 
-	it("rejects duplicate retained game-reference tokens in a v3 response", async () => {
-		const edition = validEditionWithGameReferences();
+	it("rejects duplicate retained game-reference tokens in a retained-roster response", async () => {
+		const edition = validVersion3EditionWithGameReferences();
 		vi.mocked(fetch).mockResolvedValue(jsonResponse(200, {
 			...edition,
 			game_references: [
 				edition.game_references[0],
 				{
 					...edition.game_references[0],
-					display_text: "Blacksmith Square",
+					display_text: "Different display",
+				},
+			],
+		}));
+
+		await expect(request()).resolves.toEqual({ outcome: "invalid_response" });
+	});
+
+	it("rejects a retained roster whose stored destination is not canonical", async () => {
+		const edition = validVersion3EditionWithGameReferences();
+		vi.mocked(fetch).mockResolvedValue(jsonResponse(200, {
+			...edition,
+			game_references: [
+				{
+					...ITEM_REFERENCE,
+					destination_url: "https://bitjita.com/items/999999999",
 				},
 			],
 		}));

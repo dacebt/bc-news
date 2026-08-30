@@ -1,6 +1,15 @@
 import { EvidenceMessageSchema, type EvidenceMessage } from "@bc-news/contracts";
 import { evidenceWindowForPublicationDate } from "./evidence-date";
-import { buildPreparedGameReferences } from "./game-reference-tokens";
+import { resolveGameReferenceEntityDisplayNames } from "./game-reference-entities";
+import {
+	buildGameReferenceEntityIdentities,
+	buildPreparedGameReferences,
+	buildPreparedGameReferencesWithResolvedEntities,
+} from "./game-reference-tokens";
+import type {
+	GameReferenceEntityResolution,
+	GameReferenceResolverPort,
+} from "./ports";
 import {
 	PreparedEvidenceSchema,
 	type PreparedEvidence,
@@ -10,6 +19,12 @@ import {
 const BURST_WINDOW_MS = 30 * 1000;
 
 type EvidenceContractErrorCode = "evidence_out_of_window" | "duplicate_evidence_id";
+
+interface PrepareEvidenceInput {
+	readonly activeRegionId: string;
+	readonly publicationDate: string;
+	readonly messages: readonly EvidenceMessage[];
+}
 
 export abstract class EvidenceContractError extends Error {
 	abstract readonly code: EvidenceContractErrorCode;
@@ -76,11 +91,21 @@ function projectMessage(message: PreparedMessage): PreparedMessage {
 	};
 }
 
-export function prepareEvidence(input: {
-	activeRegionId: string;
-	publicationDate: string;
-	messages: readonly EvidenceMessage[];
-}): PreparedEvidence {
+interface EvidencePreparationBase {
+	readonly activeRegionId: string;
+	readonly publicationDate: string;
+	readonly parsedMessages: readonly EvidenceMessage[];
+	readonly afterFilter: readonly PreparedMessage[];
+	readonly afterBurst: readonly PreparedMessage[];
+	readonly finalMessages: readonly PreparedMessage[];
+	readonly dropStats: {
+		readonly empty_after_trim: number;
+		readonly too_short: number;
+		readonly burst_merged: number;
+	};
+}
+
+function prepareEvidenceBase(input: PrepareEvidenceInput): EvidencePreparationBase {
 	const { activeRegionId, publicationDate } = input;
 	const parsedMessages = EvidenceMessageSchema.array().parse(input.messages);
 
@@ -150,15 +175,68 @@ export function prepareEvidence(input: {
 
 	const finalMessages = afterBurst;
 
+	return {
+		activeRegionId,
+		publicationDate,
+		parsedMessages,
+		afterFilter,
+		afterBurst,
+		finalMessages,
+		dropStats,
+	};
+}
+
+function finalizePreparedEvidence(
+	base: EvidencePreparationBase,
+	gameReferences = buildPreparedGameReferences(base.finalMessages),
+): PreparedEvidence {
 	return PreparedEvidenceSchema.parse({
-		active_region_id: activeRegionId,
-		publication_date: publicationDate,
-		raw_count: parsedMessages.length,
-		after_filter_count: afterFilter.length,
-		after_burst_count: afterBurst.length,
-		final_count: finalMessages.length,
-		drop_stats: dropStats,
-		game_references: buildPreparedGameReferences(finalMessages),
-		messages: finalMessages.map(projectMessage),
+		active_region_id: base.activeRegionId,
+		publication_date: base.publicationDate,
+		raw_count: base.parsedMessages.length,
+		after_filter_count: base.afterFilter.length,
+		after_burst_count: base.afterBurst.length,
+		final_count: base.finalMessages.length,
+		drop_stats: base.dropStats,
+		game_references: gameReferences,
+		messages: base.finalMessages.map(projectMessage),
 	});
+}
+
+function finalizePreparedEvidenceWithGameReferenceResolutions(
+	base: EvidencePreparationBase,
+	identities: ReturnType<typeof buildGameReferenceEntityIdentities>,
+	outcomes: readonly GameReferenceEntityResolution[],
+): PreparedEvidence {
+	const entityDisplayNames = resolveGameReferenceEntityDisplayNames(identities, outcomes);
+	return finalizePreparedEvidence(
+		base,
+		buildPreparedGameReferencesWithResolvedEntities(
+			base.finalMessages,
+			entityDisplayNames,
+		),
+	);
+}
+
+export function prepareEvidence(input: PrepareEvidenceInput): PreparedEvidence {
+	return finalizePreparedEvidence(prepareEvidenceBase(input));
+}
+
+export function prepareEvidenceWithGameReferenceResolutions(
+	input: PrepareEvidenceInput,
+	outcomes: readonly GameReferenceEntityResolution[],
+): PreparedEvidence {
+	const base = prepareEvidenceBase(input);
+	const identities = buildGameReferenceEntityIdentities(base.finalMessages);
+	return finalizePreparedEvidenceWithGameReferenceResolutions(base, identities, outcomes);
+}
+
+export async function prepareEvidenceWithGameReferences(
+	input: PrepareEvidenceInput,
+	resolver: GameReferenceResolverPort,
+): Promise<PreparedEvidence> {
+	const base = prepareEvidenceBase(input);
+	const identities = buildGameReferenceEntityIdentities(base.finalMessages);
+	const outcomes = await resolver.resolve(identities);
+	return finalizePreparedEvidenceWithGameReferenceResolutions(base, identities, outcomes);
 }

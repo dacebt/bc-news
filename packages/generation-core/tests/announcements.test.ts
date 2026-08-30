@@ -106,6 +106,38 @@ test("teaches exact location-token reuse and resolves plain fields while retaini
 	});
 });
 
+test("omits unavailable supported entity syntax from the prompt so echoed transcript text remains parseable", () => {
+	const preparedEvidence: PreparedEvidence = {
+		...PREPARED_EVIDENCE,
+		game_references: [],
+		messages: [{
+			...PREPARED_EVIDENCE.messages[0]!,
+			text: "sold (item=42) for 3k",
+		}],
+	};
+
+	const prompt = buildAnnouncementsWriterPrompt(preparedEvidence);
+	expect(prompt).toContain("[[AUTHOR_001]]: sold  for 3k");
+	expect(prompt).not.toContain("(item=42)");
+
+	expect(
+		parseAnnouncementsWriterOutput(
+			JSON.stringify({
+				announcements: [{
+					title: "Market note",
+					summary: "**[[AUTHOR_001]]** sold  for 3k.",
+				}],
+			}),
+			preparedEvidence,
+		),
+	).toEqual({
+		announcements: [{
+			title: "Market note",
+			summary: "**KitServal** sold  for 3k.",
+		}],
+	});
+});
+
 test("treats malformed JSON and null content as terminal contract failures", () => {
 	expect(() => parseAnnouncementsWriterOutput("not json", PREPARED_EVIDENCE)).toThrow(
 		EditorialOutputContractError,

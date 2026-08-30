@@ -30,10 +30,12 @@ export function wranglerDevArguments(input: {
 export function walkGenerationWranglerDevArguments(input: {
 	readonly port: number;
 	readonly persistDir: string;
+	readonly bitjitaApiBase: string;
 }): string[] {
 	return wranglerDevArguments({
 		...input,
 		vars: {
+			BITJITA_API_BASE: input.bitjitaApiBase,
 			MODEL_CONFIG: WALK_RECORDED_MODEL_CONFIG,
 			OPERATOR_API_TOKEN: WALK_OPERATOR_API_TOKEN,
 		},

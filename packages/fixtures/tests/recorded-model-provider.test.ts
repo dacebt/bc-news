@@ -1,17 +1,18 @@
 import { expect, test } from "vitest";
 import { EvidenceFixtureSchema } from "@bc-news/contracts";
 import {
-	prepareEvidence,
+	prepareEvidenceWithGameReferences,
 } from "@bc-news/generation-core";
 import {
 	RecordedModelResponseSchema,
 	RecordedModelResponseV2Schema,
 	RecordedModelResponseV3Schema,
 	createRecordedModelProvider,
+	fixtureGameReferenceResolver,
 	type RecordedModelResponseRoster,
 } from "../src";
 import announcementsWriteResponseJson from "../model-responses/announcements_write.json";
-import gameReferenceFixtureJson from "../evidence/game-reference-links.json";
+import entityReferenceFixtureJson from "../evidence/entity-reference-links.json";
 import mainStoryWriteResponseJson from "../model-responses/main_story_write.json";
 
 const committedRoster: RecordedModelResponseRoster = {
@@ -93,25 +94,31 @@ test("accepts strict v3 inference configuration and rejects invalid decoding con
 });
 
 function gameReferencePreparedEvidence() {
-	const fixture = EvidenceFixtureSchema.parse(gameReferenceFixtureJson);
-	return prepareEvidence({
+	const fixture = EvidenceFixtureSchema.parse(entityReferenceFixtureJson);
+	return prepareEvidenceWithGameReferences({
 		activeRegionId: fixture.active_region_id,
-		publicationDate: "2026-08-16",
+		publicationDate: "2026-08-17",
 		messages: fixture.messages,
-	});
+	}, fixtureGameReferenceResolver);
 }
 
-test("the committed main-story writer fixture remains schema-valid and evidence-grounded enough to publish", () => {
-	const preparedEvidence = gameReferencePreparedEvidence();
+test("the committed main-story writer fixture remains schema-valid and evidence-grounded enough to publish", async () => {
+	const preparedEvidence = await gameReferencePreparedEvidence();
 	const draft = JSON.parse(mainStoryWriteResponseJson.text) as {
 		main_story?: { body?: string };
 	};
 
 	expect(draft.main_story?.body).toContain("[[GAME_REF_001]]");
-	expect(draft.main_story?.body).toContain("[[GAME_REF_002]]");
-	expect(draft.main_story?.body).toContain("[spoofed focused map](https://bitcraftmap.com/?center=1,1&zoom=99)");
-	expect(preparedEvidence.messages.some((message) => message.text.includes("[Fire Nation](coord=7968,9659)"))).toBe(true);
-	expect(preparedEvidence.messages.some((message) => message.text.includes("(coord=7968,9659)"))).toBe(true);
+	expect(draft.main_story?.body).toContain("Katlin asked whether the gear carried different buffs");
+	expect(preparedEvidence.game_references).toEqual([
+		expect.objectContaining({
+			token: "[[GAME_REF_001]]",
+			kind: "item",
+			id: "163977632",
+			display_text: "Ornate Leather Shirt",
+		}),
+	]);
+	expect(preparedEvidence.messages.some((message) => message.text.includes("(item=264387410)"))).toBe(true);
 });
 
 test("a replay factory rejects a response assigned to a different production step", async () => {

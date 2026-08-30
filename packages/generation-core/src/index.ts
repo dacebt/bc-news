@@ -5,15 +5,21 @@ export {
 	evidenceWindowForPublicationDate,
 } from "./evidence-date";
 export {
+	resolveGameReferenceEntityDisplayNames,
+	type EntityReferenceMatch,
+} from "./game-reference-entities";
+export {
 	buildGameReferenceLedger,
+	buildGameReferenceEntityIdentities,
 	buildPreparedGameReferences,
-	formatGameReferencePromptRoster,
+	buildPreparedGameReferencesWithResolvedEntities,
 	hasPreparedGameReferences,
 	replaceGameReferenceSyntaxWithTokens,
 	transformGameReferenceTokens,
 	type GameReferenceLedger,
 	type GameReferenceRendering,
 } from "./game-reference-tokens";
+export { formatGameReferencePromptRoster } from "./game-reference-prompt-roster";
 export {
 	PreparedEvidenceSchema,
 	PreparedMessageSchema,
@@ -25,6 +31,8 @@ export {
 	EvidenceContractError,
 	EvidenceOutOfWindowError,
 	prepareEvidence,
+	prepareEvidenceWithGameReferenceResolutions,
+	prepareEvidenceWithGameReferences,
 } from "./prepare-evidence";
 export {
 	EditorialOutputContractError,
@@ -103,6 +111,9 @@ export {
 export type {
 	EditorialProduct,
 	EvidenceInputPort,
+	GameReferenceEntityIdentity,
+	GameReferenceEntityResolution,
+	GameReferenceResolverPort,
 	ExternalBilling,
 	CloudflareAiGatewayRequestProvenance,
 	ModelCompletion,

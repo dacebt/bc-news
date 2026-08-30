@@ -36,7 +36,7 @@ generated:
 
 - Reference tokens cross an untrusted-chat and model-output boundary; the implementation must not transfer URL authority to either source.
 - BitJita rate limiting, response-envelope drift, or transient failure could otherwise produce partial or misleading editions.
-- A current edition-contract change must preserve truthful parsing and inert rendering of historical editions.
+- A current edition-contract change must preserve truthful parsing and inert rendering of the retained game-reference roster.
 - Local writers may omit, alter, or invent reference tokens even when deterministic contracts are correct.
 
 ## Success signal

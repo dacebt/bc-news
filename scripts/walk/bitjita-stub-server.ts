@@ -17,6 +17,14 @@ interface BitJitaFixture {
 	total: number;
 }
 
+type BitJitaEntityKind = "item" | "cargo" | "claim" | "coll" | "res";
+
+interface BitJitaResolutionEntry {
+	kind: BitJitaEntityKind;
+	id: string;
+	name: string;
+}
+
 // Exported so every walk module that needs the fixture corpus (this server
 // and the ingest-poll phase's own expected-row-count check) resolves the
 // same path — a fixture rename now only requires one edit.
@@ -30,6 +38,16 @@ export const fixturePath = join(
 	"active-region-7_2026-08-24.json",
 );
 
+const resolutionPath = join(
+	dirname(fileURLToPath(import.meta.url)),
+	"..",
+	"..",
+	"packages",
+	"fixtures",
+	"bitjita",
+	"game-reference-resolutions.json",
+);
+
 export interface BitJitaStubServer {
 	baseUrl: string;
 	close: () => Promise<void>;
@@ -38,6 +56,85 @@ export interface BitJitaStubServer {
 function respondJson(res: ServerResponse, status: number, body: unknown): void {
 	res.writeHead(status, { "Content-Type": "application/json" });
 	res.end(JSON.stringify(body));
+}
+
+function parseResolutionEntries(candidate: unknown): readonly BitJitaResolutionEntry[] {
+	if (!Array.isArray(candidate)) {
+		throw new Error("bitjita resolution fixture must be an array");
+	}
+	return candidate.map((entry, index) => {
+		if (
+			typeof entry !== "object" ||
+			entry === null ||
+			!["item", "cargo", "claim", "coll", "res"].includes(String((entry as { kind?: unknown }).kind)) ||
+			typeof (entry as { id?: unknown }).id !== "string" ||
+			typeof (entry as { name?: unknown }).name !== "string"
+		) {
+			throw new Error(`bitjita resolution fixture entry ${String(index + 1)} is invalid`);
+		}
+		return entry as BitJitaResolutionEntry;
+	});
+}
+
+const ENTITY_ROUTE_BY_KIND: Record<
+	BitJitaEntityKind,
+	{
+		readonly apiPath: string;
+		readonly envelopeKey: "item" | "cargo" | "claim" | "collectible" | "resource";
+		readonly idField: "id" | "entityId";
+	}
+> = {
+	item: { apiPath: "/api/items", envelopeKey: "item", idField: "id" },
+	cargo: { apiPath: "/api/cargo", envelopeKey: "cargo", idField: "id" },
+	claim: { apiPath: "/api/claims", envelopeKey: "claim", idField: "entityId" },
+	coll: { apiPath: "/api/collectibles", envelopeKey: "collectible", idField: "id" },
+	res: { apiPath: "/api/resources", envelopeKey: "resource", idField: "id" },
+};
+
+function headerValue(value: string | string[] | undefined): string | null {
+	if (Array.isArray(value)) {
+		return value[0] ?? null;
+	}
+	return value ?? null;
+}
+
+function entityHeaderViolation(headers: Readonly<Record<string, string | string[] | undefined>>): string | null {
+	const appIdentifier = headerValue(headers["x-app-identifier"]);
+	if (appIdentifier !== "bc-news") {
+		return `expected x-app-identifier bc-news, got ${JSON.stringify(appIdentifier)}`;
+	}
+	const userAgent = headerValue(headers["user-agent"]);
+	if (userAgent !== "bc-news") {
+		return `expected User-Agent bc-news, got ${JSON.stringify(userAgent)}`;
+	}
+	return null;
+}
+
+function matchedEntityIdentity(pathname: string): { kind: BitJitaEntityKind; id: string } | null {
+	for (const kind of Object.keys(ENTITY_ROUTE_BY_KIND) as BitJitaEntityKind[]) {
+		const prefix = `${ENTITY_ROUTE_BY_KIND[kind].apiPath}/`;
+		if (!pathname.startsWith(prefix)) {
+			continue;
+		}
+		const id = pathname.slice(prefix.length);
+		if (id.length === 0 || id.includes("/")) {
+			return null;
+		}
+		return { kind, id };
+	}
+	return null;
+}
+
+function entityResponseBody(
+	entry: BitJitaResolutionEntry,
+): Record<string, { id?: string; entityId?: string; name: string }> {
+	const route = ENTITY_ROUTE_BY_KIND[entry.kind];
+	return {
+		[route.envelopeKey]: {
+			[route.idField]: entry.id,
+			name: entry.name,
+		},
+	};
 }
 
 // BitJita's own observed ceiling, not this stub's policy: limit=200 against
@@ -78,6 +175,10 @@ const REVEAL_BATCH_SIZE = 90;
  */
 export function startBitJitaStubServer(): Promise<BitJitaStubServer> {
 	const fixture: BitJitaFixture = JSON.parse(readFileSync(fixturePath, "utf8")) as BitJitaFixture;
+	const resolutions = new Map(
+		parseResolutionEntries(JSON.parse(readFileSync(resolutionPath, "utf8")) as unknown)
+			.map((entry) => [`${entry.kind}:${entry.id}`, entry] as const),
+	);
 	// How much of the fixture corpus is currently "live". Advances
 	// deterministically on every accepted /api/chat call rather than through a
 	// separate control channel: the walk's ingest-poll phase already calls
@@ -90,7 +191,32 @@ export function startBitJitaStubServer(): Promise<BitJitaStubServer> {
 	return new Promise((resolve, reject) => {
 		const server: Server = createServer((req, res) => {
 			const url = new URL(req.url ?? "/", "http://127.0.0.1");
-			if (req.method !== "GET" || url.pathname !== "/api/chat") {
+			if (req.method !== "GET") {
+				respondJson(res, 404, { error: "not_found" });
+				return;
+			}
+
+			const entityIdentity = matchedEntityIdentity(url.pathname);
+			if (entityIdentity !== null) {
+				const headerViolation = entityHeaderViolation(req.headers);
+				if (headerViolation !== null) {
+					respondJson(res, 400, { error: "unexpected_headers", detail: headerViolation });
+					return;
+				}
+				if (entityIdentity.kind === "res" && entityIdentity.id === "999999999") {
+					respondJson(res, 503, { error: "temporarily_unavailable" });
+					return;
+				}
+				const resolution = resolutions.get(`${entityIdentity.kind}:${entityIdentity.id}`);
+				if (resolution === undefined) {
+					respondJson(res, 404, { error: "not_found" });
+					return;
+				}
+				respondJson(res, 200, entityResponseBody(resolution));
+				return;
+			}
+
+			if (url.pathname !== "/api/chat") {
 				respondJson(res, 404, { error: "not_found" });
 				return;
 			}

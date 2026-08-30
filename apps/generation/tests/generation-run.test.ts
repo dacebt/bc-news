@@ -9,6 +9,7 @@ import { recordedModelProvider } from "@bc-news/fixtures";
 import type { ModelCompletion } from "@bc-news/generation-core";
 import { readEdition } from "../src/edition-store";
 import { queueGenerationRunStatus, readGenerationRunStatus } from "../src/generation-run-status";
+import * as configModule from "../src/config";
 
 afterEach(() => {
 	vi.restoreAllMocks();
@@ -319,6 +320,79 @@ it("publishes retained coordinate references while leaving rich prose tokens int
 		announcements: [{
 			title: "Scouts Gather at South Gate",
 			summary: "**Someone** checked in from [[GAME_REF_001]].",
+		}],
+	});
+});
+
+it("resolves BitJita entity references during prepare-evidence with one resolver lookup", async () => {
+	const params = { active_region_id: "7", publication_date: "2026-01-31" } as const;
+	await seedChatMessage({
+		id: "generation-run-test-msg-6",
+		regionId: 7,
+		text: "Bring extra stock for [timber](item=321).",
+		timestampUtc: "2026-01-30T12:00:00Z",
+	});
+	await queueGenerationRunStatus(env.DB, params, "2026-08-04T23:00:00.000Z");
+	const actualResolveGenerationPorts = configModule.resolveGenerationPorts;
+	const resolverCalls: unknown[] = [];
+	vi.spyOn(configModule, "resolveGenerationPorts").mockImplementation((currentEnv) => {
+		const ports = actualResolveGenerationPorts(currentEnv);
+		return {
+			...ports,
+			gameReferenceResolver: {
+				resolve: (identities) => {
+					resolverCalls.push(identities);
+					return Promise.resolve([
+						{ kind: "item", id: "321", outcome: "resolved", display_name: "Timber Bundle" },
+					]);
+				},
+			},
+		};
+	});
+	const modelCalls = mockDeterministicModelCompletions((outputs) => {
+		outputs.main_story_write = JSON.stringify({
+			title: "Supplies for [[GAME_REF_001]]",
+			main_story: {
+				headline: "Merchants Request [[GAME_REF_001]]",
+				lede: "[[AUTHOR_001]] asked for [[GAME_REF_001]].",
+				body: "[[AUTHOR_001]] asked for [[GAME_REF_001]].",
+			},
+		});
+		outputs.announcements_write = JSON.stringify({
+			announcements: [{
+				title: "[[GAME_REF_001]] Requested",
+				summary: "[[AUTHOR_001]] asked for [[GAME_REF_001]].",
+			}],
+		});
+	});
+	await using instance = await introspectWorkflowInstance(
+		env.GENERATION_RUN,
+		"generation-run-7-2026-01-31",
+	);
+	await instance.modify(async (m) => {
+		await m.disableRetryDelays();
+	});
+	await env.GENERATION_RUN.create({ id: "generation-run-7-2026-01-31", params });
+	await instance.waitForStatus("complete");
+
+	expect(modelCalls).toHaveBeenCalledTimes(2);
+	expect(resolverCalls).toEqual([[{ kind: "item", id: "321" }]]);
+	await expect(readEdition(env.DB, "7", "2026-01-31")).resolves.toMatchObject({
+		title: "Supplies for Timber Bundle",
+		game_references: [{
+			token: "[[GAME_REF_001]]",
+			kind: "item",
+			id: "321",
+			display_text: "Timber Bundle",
+		}],
+		main_story: {
+			headline: "Merchants Request Timber Bundle",
+			lede: "Someone asked for Timber Bundle.",
+			body: "**Someone** asked for [[GAME_REF_001]].",
+		},
+		announcements: [{
+			title: "Timber Bundle Requested",
+			summary: "**Someone** asked for [[GAME_REF_001]].",
 		}],
 	});
 });

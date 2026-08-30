@@ -5041,6 +5041,14 @@
 			"text": "R u an old man? Fax? no one use this"
 		},
 		{
+			"entityId": "5044031584374631391",
+			"username": "synthetic/ResolverFixture",
+			"timestamp": "2026-08-24T23:59:54.500Z",
+			"regionId": "7",
+			"channelId": "1",
+			"text": "synthetic resolver probe (item=163977632)"
+		},
+		{
 			"entityId": "504403158437463140",
 			"username": "en/MapScoutA",
 			"timestamp": "2026-08-24T23:59:55.000Z",
@@ -5055,7 +5063,31 @@
 			"regionId": "7",
 			"channelId": "1",
 			"text": "(coord=7968,9659)"
+		},
+		{
+			"entityId": "504403158437463142",
+			"username": "synthetic/ResolverFixture",
+			"timestamp": "2026-08-24T23:59:57.000Z",
+			"regionId": "7",
+			"channelId": "1",
+			"text": "synthetic unsupported probe (know=1424420442)"
+		},
+		{
+			"entityId": "504403158437463143",
+			"username": "synthetic/ResolverFixture",
+			"timestamp": "2026-08-24T23:59:58.000Z",
+			"regionId": "7",
+			"channelId": "1",
+			"text": "synthetic malformed probe (item=abc)"
+		},
+		{
+			"entityId": "504403158437463144",
+			"username": "synthetic/ResolverFixture",
+			"timestamp": "2026-08-24T23:59:59.000Z",
+			"regionId": "7",
+			"channelId": "1",
+			"text": "synthetic unavailable probe (res=999999999)"
 		}
 	],
-	"total": 632
+	"total": 636
 }

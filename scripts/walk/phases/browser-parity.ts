@@ -11,11 +11,11 @@ import {
 import {
 	assertPublishedGameReferences,
 	EXPECTED_GAME_REFERENCES,
-	EXPECTED_REFERENCE_OCCURRENCES_PER_DISPLAY,
-	EXPECTED_TRUSTED_FOCUSED_MAP_LINK_COUNT,
 	FOCUSED_MAP_DESTINATION,
+	renderedGameReferenceOccurrences,
 	renderedMarkdownText,
 	SPOOFED_FOCUSED_MAP_DESTINATION,
+	TRUSTED_ITEM_DESTINATION,
 } from "../game-reference-assertions";
 import type { WalkContext, WalkPhase } from "../phase";
 
@@ -68,18 +68,22 @@ async function waitForPairResponse(
 	await responsePromise;
 }
 
-async function assertFocusedMapLinks(
+async function assertReferenceLinks(
 	page: Page,
 	text: string,
 	label: string,
 	expectedCount: number,
+	expectedHref: string,
 ): Promise<void> {
+	if (expectedCount <= 0) {
+		throw new Error(`${label} expected at least one rendered occurrence`);
+	}
 	const links = page.getByRole("link", { name: text, exact: true });
 	await links.first().waitFor();
 	assertEqual(await links.count(), expectedCount, `${label} count`);
 	for (let index = 0; index < expectedCount; index += 1) {
 		const link = links.nth(index);
-		assertEqual(await link.getAttribute("href"), FOCUSED_MAP_DESTINATION, `${label} href ${String(index + 1)}`);
+		assertEqual(await link.getAttribute("href"), expectedHref, `${label} href ${String(index + 1)}`);
 		assertEqual(await link.getAttribute("target"), "_blank", `${label} target ${String(index + 1)}`);
 		assertEqual(await link.getAttribute("rel"), "noopener noreferrer", `${label} rel ${String(index + 1)}`);
 	}
@@ -110,23 +114,19 @@ async function assertPublishedEdition(page: Page, edition: Edition, rawEdition: 
 			`announcement ${String(index)} summary`,
 		);
 	}
-	await assertFocusedMapLinks(
+	await assertReferenceLinks(
 		page,
 		EXPECTED_GAME_REFERENCES[0]!.display_text,
-		"named focused map link",
-		EXPECTED_REFERENCE_OCCURRENCES_PER_DISPLAY,
-	);
-	await assertFocusedMapLinks(
-		page,
-		EXPECTED_GAME_REFERENCES[1]!.display_text,
-		"bare focused map link",
-		EXPECTED_REFERENCE_OCCURRENCES_PER_DISPLAY,
+		"trusted item link",
+		renderedGameReferenceOccurrences(edition, EXPECTED_GAME_REFERENCES[0]!.token),
+		TRUSTED_ITEM_DESTINATION,
 	);
 	assertEqual(
-		await page.locator(`a[href="${FOCUSED_MAP_DESTINATION}"]`).count(),
-		EXPECTED_TRUSTED_FOCUSED_MAP_LINK_COUNT,
-		"focused map link count",
+		await page.locator(`a[href="${TRUSTED_ITEM_DESTINATION}"]`).count(),
+		renderedGameReferenceOccurrences(edition, EXPECTED_GAME_REFERENCES[0]!.token),
+		"trusted item href count",
 	);
+	assertEqual(await page.locator(`a[href="${FOCUSED_MAP_DESTINATION}"]`).count(), 0, "trusted focused map link count");
 	assertEqual(await page.locator(`a[href="${SPOOFED_FOCUSED_MAP_DESTINATION}"]`).count(), 0, "spoofed markdown link count");
 }
 

@@ -1,0 +1,27 @@
+[
+  {
+    "kind": "item",
+    "id": "163977632",
+    "name": "Ornate Leather Shirt"
+  },
+  {
+    "kind": "cargo",
+    "id": "833769059",
+    "name": "Settlement Foundation Kit"
+  },
+  {
+    "kind": "claim",
+    "id": "864691128594607212",
+    "name": "Serpents Hold"
+  },
+  {
+    "kind": "coll",
+    "id": "381044074",
+    "name": "Wagon (III)"
+  },
+  {
+    "kind": "res",
+    "id": "1045808810",
+    "name": "Pyrelite Outcrop Interior"
+  }
+]

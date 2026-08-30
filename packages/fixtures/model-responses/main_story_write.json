@@ -2,13 +2,13 @@
 	"version": 3,
 	"production_step": "main_story_write",
 	"provider": "synthetic_fixture",
-	"model": "game-reference-main-story-v3",
+	"model": "entity-reference-main-story-v3",
 	"prompt_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
-	"text": "{\"title\":\"Focused Map Markers Reach the Late Edition\",\"main_story\":{\"headline\":\"Late Coordinate Markers Give Region 7 Two Truthful Ways to Reach the Same Ground\",\"lede\":\"Two late markers let the edition keep one named landmark and one bare coordinate for the same destination without inventing a new map target.\",\"body\":\"Late chat markers gave the paper a named landmark at [[GAME_REF_001]] and a bare pin at [[GAME_REF_002]].\\n\\nBoth references point to the same ground, and the edition keeps the named landmark while normalizing the bare pin to a plain coordinate display.\\n\\nA draft mention of [spoofed focused map](https://bitcraftmap.com/?center=1,1&zoom=99) should remain ordinary markdown, not a live newspaper link.\"}}",
+	"text": "{\"title\":\"Region 9 Chat Turns Gear Advice Concrete\",\"main_story\":{\"headline\":\"Lintha Uses [[GAME_REF_001]] to Explain Early Gear Tradeoffs\",\"lede\":\"A region 9 gear discussion moved from general advice to a concrete example when Lintha dropped linked equipment into chat.\",\"body\":\"Players in region 9 spent the morning explaining why combat, gathering, and crafting gear each lean on different bonuses.\\n\\nLintha turned that explanation concrete with [[GAME_REF_001]], using the linked item as one example in a broader comparison of armor types.\\n\\nThe exchange stayed practical: Katlin asked whether the gear carried different buffs, Prairiegon confirmed it, and the chat kept circling back to what helps a player hit harder or gather faster.\"}}",
 	"configuration": {
 		"adapter": "openai_compatible_hosted",
 		"provider": "synthetic_fixture",
-		"model": "game-reference-main-story-v3",
+		"model": "entity-reference-main-story-v3",
 		"billing": {
 			"method": "calculated",
 			"input_usd_per_million_tokens": 0,

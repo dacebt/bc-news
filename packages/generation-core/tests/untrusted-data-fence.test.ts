@@ -124,6 +124,21 @@ test("code-owned game reference tokens survive while raw coordinate syntax does 
 	expect(fenceBody(prompt)).not.toContain("[South Gate](coord=3745,3857)");
 });
 
+test("supported unresolved entity syntax is removed from the transcript while surrounding text survives", () => {
+	const prompt = fenceUntrustedTranscript(
+		preparedEvidenceFor([{
+			id: "m1",
+			ts: Date.UTC(2026, 0, 24, 12, 0, 0),
+			author_id: "en/Trader",
+			author_name: "Trader",
+			text: "sold (item=42) for 3k",
+		}]),
+	);
+
+	expect(fenceBody(prompt)).toContain("[[AUTHOR_001]]: sold  for 3k");
+	expect(fenceBody(prompt)).not.toContain("(item=42)");
+});
+
 test("only code-owned author tokens retain un-neutralized brackets inside the fence", () => {
 	const prompt = fenceUntrustedTranscript(
 		preparedEvidenceFor([
