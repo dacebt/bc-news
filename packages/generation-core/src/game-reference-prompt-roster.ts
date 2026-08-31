@@ -14,7 +14,7 @@ export function formatGameReferencePromptRoster(
 	const roster = preparedEvidence.game_references.map(trustedPromptLine).join("\n");
 	return `
 [GAME REFERENCES]
-Code identified location references in the chat and assigned exact tokens.
+Code identified game references in the chat and assigned exact tokens.
 - Whenever you mention one of these references, copy its exact token with no edits and no markdown;
 - This applies to every output field, including plain-text titles, headlines, and ledes. Code will resolve tokens appropriately for each field;
 - The fenced chat data may include an untrusted token-to-display-name catalog. When you use one of those names, emit the token alone and let code resolve it;
