@@ -4,9 +4,10 @@ okf_version: "0.2"
 
 # bc-news documentation
 
-- [Active thickening](thickenings/active.md) — Active WSD thickening for carrying chat-mentioned coordinates into generated newspaper links that open the exact focused BitCraft Map view.
+- [Active thickening](thickenings/active.md) — Active WSD thickening for resolving corpus-observed entity references once during edition creation and retaining safe BitJita newspaper links.
+- [BitJita API runbook](BITJITA_API.md) — Supplied BitCraft Codex endpoint inventory and contract-watchpoint reference text for BitJita; its cross-repo links and refresh guidance remain reference material, not bc-news behavior.
 - [Product requirements](PRD.md) — Binding high-level product direction for rebuilding the regional BitCraft newspaper on Cloudflare with durable generation, replaceable models, and evaluation-led development.
-- [Structural discipline](ARCHITECTURE.md) — The binding architecture posture for bc-news v2 — TypeScript application code throughout, exactly two ports (model provider, evidence input), functional core with zod-validated rejecting boundaries, and deliberate Cloudflare coupling everywhere else.
+- [Structural discipline](ARCHITECTURE.md) — The binding architecture posture for bc-news v2 — TypeScript application code throughout, exactly three ports (model provider, evidence input, game reference resolver), functional core with zod-validated rejecting boundaries, and deliberate Cloudflare coupling everywhere else.
 - [Domain model](DOMAIN.md) — The binding domain vocabulary and identity rules for bc-news v2, including the two editorial products and four production model steps.
 - [Test and verification posture](TESTING.md) — The binding evidence discipline for bc-news v2 — what proves a change works, how model evidence is retained and measured, and what recorded replay accepts.
 - [Evaluation operations](evaluation-operations.md) — Descriptive operator guide to evaluation commands, local artifact routes, live-provider setup, and the boundaries between scratch, benchmark, corpus, scorecard, aggregate, acceptance, fixture, context, and walk evidence.
