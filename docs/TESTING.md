@@ -49,7 +49,11 @@ records. Historical readers keep prior committed formats readable without
 turning them into current evidence. The `packages/fixtures` package-root
 shorthand stays pinned to the representative full-evidence fixture; replay work
 that depends on the focused coordinate-token corpus must pass the explicit
-`packages/fixtures/evidence/game-reference-links.json` path instead.
+`packages/fixtures/evidence/game-reference-links.json` path instead. The
+repository-owned recorded provider may derive a scoped deterministic invalid
+first `main_story_write` completion from the current retry invocation id for
+composed retry proof; that walk behavior does not create a third committed
+recorded-response artifact.
 
 **Deterministic tests** protect warranted invariants, reproduced defects, and
 high-risk state transitions. A failing test is a hard failed test; it is not a
@@ -152,7 +156,9 @@ retain every exact per-step configuration and optional LM Studio inference
 setting. Historical versions keep their original meanings. Either tool may
 independently omit or set `temperature`, `top_p`, `top_k`, and
 `enable_thinking` for each LM Studio step; the declaration, not the command
-name, determines the experiment.
+name, determines the experiment. The committed replay artifact remains two
+accepted writer responses; retry proof belongs to the composed walk's
+invocation-aware recorded provider behavior and operator-status assertions.
 
 **The evaluation reference corpus** is a deterministic input-evidence domain,
 not a model evaluation result. `corpus extract --snapshot <sqlite-path>
@@ -293,10 +299,13 @@ generation Workflow; `main_story_write` and `announcements_write`; deterministic
 assembly, and publication; the operator status projection; API read; and the
 published/unavailable/Back reader experience in installed Chrome. It uses
 exactly two recorded responses and no production data, live model, paid
-service, or external origin. The status proof requires all five generation
-steps in order, exactly two ordered recorded-replay usage records at zero
-external billing, and writer-only diagnostics from the representative
-schema-valid output. A fixed walk-only bearer token is injected into local
+service, or external origin. The status proof requires strict `current_v2`
+parsing, the ordered retry-aware generation path, three distinct recorded
+provider attempts, one retained mechanically rejected `main_story_write`
+attempt, exactly two accepted recorded-replay usage records at zero external
+billing, accepted-only edition provenance, and no repeated accepted writer
+work. Writer-only diagnostics from schema-valid output remain publishable and
+must not consume the retry. A fixed walk-only bearer token is injected into local
 Wrangler: unauthenticated launch and pair status must be rejected without a
 created run, authenticated launch and pair status must succeed, and opaque
 Workflow-id paths must remain generic 404s with or without credentials. The
@@ -305,8 +314,8 @@ derive writer-only provenance from those two usages, and contain
 no internal announcement ids. The same walk must also prove the exact retained
 `game_references` roster, two truthful focused-map links for the named and bare
 displays of the same coordinate, and no active anchor for an arbitrary
-Markdown URL. Duplicate delivery must preserve edition bytes
-and usage, and an unknown pair must remain absent. The main document and both
+Markdown URL. Duplicate delivery must preserve edition bytes, accepted usage,
+attempt history, and diagnostics, and an unknown pair must remain absent. The main document and both
 successful and absent edition responses must carry the declared CSP, framing,
 content-type, referrer, and permissions policy; successful editions additionally
 declare the public browser/edge TTL, while absent responses are non-cacheable.

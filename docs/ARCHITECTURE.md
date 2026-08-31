@@ -129,14 +129,23 @@ is never the edition's durable home (ADR-005).
 
 `generation_run_status` is direct D1 shell code, not a repository or a third
 port. It holds queued/running/complete/errored progress, ordered completed
-generation steps, structured terminal failure, one usage record per completed
-production model step, and ordered editorial diagnostics. Full-array
+generation steps, structured terminal failure, ordered editorial diagnostics,
+accepted-only `model_usage` for completed writers, and append-only
+`model_attempts` evidence for `current_v2` runs. A current `current_v2` run may
+retry one writer exactly once when that writer fails with
+`EditorialOutputContractError`; each retained attempt carries writer identity,
+attempt ordinal, deterministic invocation id, accepted-or-mechanically-rejected
+outcome, and the full persisted usage and provenance record for that attempt.
+Historical `current_v1` and untagged legacy rows remain strict readable
+contracts and keep their older no-mechanical-retry behavior. Full-array
 replacement makes retried status writes idempotent; terminal rows cannot
 regress. Reads validate stored JSON and cross-field state strictly, and
 corruption surfaces as
 `generation_run_status_unreadable`, never absence or a partial projection.
 This operational evidence does not replace or mutate the immutable edition;
-diagnostics live in generation status and never enter `EditionSchema`.
+diagnostics and attempt history live in generation status and never enter
+`EditionSchema`. Edition provenance continues to carry only the two accepted
+writer usages.
 
 The model provider port returns content and provenance plus truthful execution,
 token-usage, and external-billing classifications. Recorded adapters report
@@ -704,16 +713,20 @@ The same walk uses authenticated
 `GET /generation-run?active_region_id=...&publication_date=...` as the operator
 surface rather than exposing an opaque Workflow id. It proves
 the absent-evidence pair reaches a structured prepare-evidence failure with no
-model usage, and proves region 7 reaches complete with all five ordered
-generation steps and exactly one recorded-replay usage record for each of the
-two production model steps, each with unavailable token measurement and zero
-external billing. It strictly observes writer-only diagnostics on the
+model usage, and proves region 7 reaches strict `current_v2` complete with one
+retained rejected `main_story_write` attempt, one accepted retry of that writer,
+one accepted `announcements_write` attempt, exactly two accepted recorded-replay
+usage records, and no repeated accepted writer work. Each retained recorded
+attempt keeps unavailable token measurement, zero external billing, and a
+distinct invocation id, while the immutable edition still carries only the two
+accepted writer provenances. It strictly observes writer-only diagnostics on the
 schema-valid recorded output, then proves deterministic assembly serves those
 writer products with the exact retained `game_references` roster and focused
 BitCraft Map destinations for both the named and bare displays of the same
 coordinate while generic Markdown destinations stay inert. Repeated
-scheduled delivery must leave edition bytes, retained usage, and retained
-diagnostics unchanged. The walk does not invoke evaluation, fixture-authoring,
+scheduled delivery must leave edition bytes, retained accepted usage, retained
+attempt history, and retained diagnostics unchanged. The walk does not invoke
+evaluation, fixture-authoring,
 context, or recorded-replay acceptance verifiers. It owns only its composed
 product observations and terminal `WALK PASS`; the exact successful observations
 from those direct verifiers must not appear in walk output.

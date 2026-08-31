@@ -8,12 +8,12 @@ tags: [wsd, direction, domain-model, evaluation, verification]
 status: stable
 generated:
   by: ebt-wsd/okf-v0.2
-  at: "2026-08-18T14:54:16Z"
+  at: "2026-08-31T18:56:43Z"
 ---
 # Domain Model: bc-news evaluation and verification
 
-**Last updated:** 2026-08-18
-**Update reason:** V3 evidence vocabulary — distinguish local hash-addressed source references from evaluated-code provenance while retaining repository source references for historical V2 readers.
+**Last updated:** 2026-08-31
+**Update reason:** retry-behavior thickening — its observable delta distinguishes one rejected writer completion from a generation run that exhausts its mechanical retry.
 
 ## Ubiquitous Language
 
@@ -30,7 +30,7 @@ generated:
 | Harness outcome | Whether the evaluation program retained valid, trustworthy evidence for its declared observation. | Subject outcome |
 | Evaluation finding | A structured parse, contract, preservation, or final-product observation derived from retained evidence. | Quality verdict |
 | Editorial diagnostic | A retained non-terminal preservation or final-product finding on schema-valid writer output. | Model-output contract failure |
-| Model-output contract failure | Malformed JSON or strict schema mismatch; the only terminal model-output failure. | Infrastructure failure or editorial diagnostic |
+| Model-output contract failure | Malformed JSON or strict schema mismatch that rejects one model completion; production gives the failed writer one fresh attempt before the generation run may fail. | Infrastructure failure, editorial diagnostic, or an exhausted generation run |
 | Production model step | One of the two configured writer calls in a generation run or evaluation trial. | Step invocation |
 | Runtime evidence record | One top-level Benchmark Run record whose identity and lifecycle exactly match one Step Invocation. | Model usage record |
 | Execution context | Normalized runtime observations that identify what comparable model environment executed an invocation. | Prediction observation |
@@ -61,7 +61,7 @@ generated:
 
 | Context | Scope | Vocabulary notes |
 |---|---|---|
-| Production generation | Creation and publication of one edition through two production model steps, with diagnostics retained separately from the edition. | Model-output contract or infrastructure failure is terminal; every schema-valid editorial finding is diagnostic and publication continues. |
+| Production generation | Creation and publication of one edition through two production model steps, with diagnostics retained separately from the edition. | The first model-output contract failure rejects that completion and retries only its writer once; exhaustion or infrastructure failure can end the run, while schema-valid editorial findings remain diagnostic. |
 | Model evaluation | Durable observation of real model behavior across declared benchmark runs and trials. | Parse rejection, contract rejection, and infrastructure incompletion are subject outcomes; lost invocation or runtime evidence is a harness failure. |
 | Acceptance verification | Recorded replay and explicit policies that accept or reject evidence. | It consumes evidence; it does not create a quality verdict. |
 | Composed product verification | The canonical local skeleton walk through deployable entrypoints. | Walking proves composition, not model quality. |
@@ -75,7 +75,7 @@ generated:
 
 | Aggregate | What it is (one line) |
 |---|---|
-| Generation Run | Production work that creates one edition for an active region and publication date. |
+| Generation Run | Production work that creates one edition for an active region and publication date, retaining every writer invocation while publishing provenance from accepted completions only. |
 | Benchmark Run | The lifecycle, invocation history, and complete runtime-evidence roster for one declared model experiment. |
 | Evaluation Trial | One configuration's two-track behavior and terminal subject outcome within a benchmark. |
 | Step Invocation | Immutable request, response or transport outcome, timing, findings, and retry linkage for one model call. |

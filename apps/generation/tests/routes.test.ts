@@ -1,6 +1,7 @@
 import { expect, it, vi } from "vitest";
 import { env } from "cloudflare:workers";
 import type { GenerationRunParams } from "@bc-news/contracts";
+import { generationRunAttemptInvocationId } from "../src/generation-run-instance-id";
 import {
 	CURRENT_GENERATION_RUN_CONTRACT_VERSION,
 	queueGenerationRunStatus,
@@ -31,6 +32,10 @@ function pairRequest(publicationDate: string): URL {
 	);
 }
 
+function pair(publicationDate: string): GenerationRunParams {
+	return { active_region_id: "7", publication_date: publicationDate };
+}
+
 const COMPLETE_MODEL_USAGE = [
 	"main_story_write",
 	"announcements_write",
@@ -42,6 +47,20 @@ const COMPLETE_MODEL_USAGE = [
 	token_usage: { measurement: "unavailable" },
 	external_billing: { classification: "none", amount_usd: 0, reason: "recorded_replay" },
 }));
+
+function acceptedAttempts(params: GenerationRunParams): string {
+	return JSON.stringify((["main_story_write", "announcements_write"] as const).map((productionStep, index) => ({
+		production_step: productionStep,
+		attempt: 1,
+		invocation_id: generationRunAttemptInvocationId(
+			params,
+			productionStep,
+			1,
+		),
+		outcome: { status: "accepted" },
+		model_usage: COMPLETE_MODEL_USAGE[index],
+	})));
+}
 
 const LEGACY_COMPLETE_MODEL_USAGE = [
 	{
@@ -157,12 +176,22 @@ it.each([
 	],
 ] as const)("composes strict current %s projection with a separate Workflow observation", async (state, currentStep, completed, usage, failure) => {
 	const publicationDate = `2026-03-0${String({ queued: 2, running: 3, complete: 4, errored: 5 }[state])}`;
+	const params = pair(publicationDate);
 	await env.DB.prepare(
 		`INSERT INTO generation_run_status (
 		 contract_version, active_region_id, publication_date, state, current_step, completed_steps_json,
-		 model_usage_json, diagnostics_json, failure_json, created_at_utc, updated_at_utc
-		) VALUES (?1, '7', ?2, ?3, ?4, ?5, ?6, '[]', ?7, '2026-08-04T23:00:00.000Z', '2026-08-04T23:00:00.000Z')`,
-	).bind(CURRENT_GENERATION_RUN_CONTRACT_VERSION, publicationDate, state, currentStep, completed, usage, failure).run();
+		 model_usage_json, model_attempts_json, diagnostics_json, failure_json, created_at_utc, updated_at_utc
+		) VALUES (?1, '7', ?2, ?3, ?4, ?5, ?6, ?7, '[]', ?8, '2026-08-04T23:00:00.000Z', '2026-08-04T23:00:00.000Z')`,
+	).bind(
+		CURRENT_GENERATION_RUN_CONTRACT_VERSION,
+		publicationDate,
+		state,
+		currentStep,
+		completed,
+		usage,
+		state === "complete" ? acceptedAttempts(params) : "[]",
+		failure,
+	).run();
 	const get = vi.fn().mockResolvedValue({
 		status: vi.fn().mockResolvedValue({ status: state === "errored" ? "errored" : state }),
 	});
@@ -286,6 +315,7 @@ it("returns unreadable projection as 500 and keeps failed Workflow observation e
 
 it("exposes retained writer diagnostics through the strict operator status route", async () => {
 	const publicationDate = "2026-03-09";
+	const params = pair(publicationDate);
 	const diagnostics = [{
 		kind: "final_product",
 		production_step: "main_story_write",
@@ -295,14 +325,15 @@ it("exposes retained writer diagnostics through the strict operator status route
 	await env.DB.prepare(
 		`INSERT INTO generation_run_status (
 		 contract_version, active_region_id, publication_date, state, current_step, completed_steps_json,
-		 model_usage_json, diagnostics_json, failure_json, created_at_utc, updated_at_utc
-		) VALUES (?1, '7', ?2, 'running', 'validate-edition', ?3, ?4, ?5, NULL,
+		 model_usage_json, model_attempts_json, diagnostics_json, failure_json, created_at_utc, updated_at_utc
+		) VALUES (?1, '7', ?2, 'running', 'validate-edition', ?3, ?4, ?5, ?6, NULL,
 		 '2026-08-04T23:00:00.000Z', '2026-08-04T23:00:00.000Z')`,
 	).bind(
 		CURRENT_GENERATION_RUN_CONTRACT_VERSION,
 		publicationDate,
 		JSON.stringify(["prepare-evidence", "main_story_write", "announcements_write"]),
 		JSON.stringify(COMPLETE_MODEL_USAGE),
+		acceptedAttempts(params),
 		JSON.stringify(diagnostics),
 	).run();
 	const get = vi.fn().mockResolvedValue({

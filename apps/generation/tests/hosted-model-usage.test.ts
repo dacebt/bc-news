@@ -1,6 +1,7 @@
 import { env } from "cloudflare:workers";
 import { expect, it } from "vitest";
 import { modelUsageRecord, type ModelCompletion } from "@bc-news/generation-core";
+import { generationRunAttemptInvocationId } from "../src/generation-run-instance-id";
 import {
 	queueGenerationRunStatus,
 	readGenerationRunStatus,
@@ -36,6 +37,13 @@ it("retains hosted completion usage and calculated billing in the D1 operator pr
 			currentStep: "announcements_write",
 			completedSteps: ["prepare-evidence", "main_story_write"],
 			modelUsage: [usage],
+			modelAttempts: [{
+				production_step: "main_story_write",
+				attempt: 1,
+				invocation_id: generationRunAttemptInvocationId(params, "main_story_write", 1),
+				outcome: { status: "accepted" },
+				model_usage: usage,
+			}],
 			diagnostics: [],
 		},
 		"2026-08-05T00:00:01.000Z",
@@ -43,6 +51,13 @@ it("retains hosted completion usage and calculated billing in the D1 operator pr
 
 	await expect(readGenerationRunStatus(env.DB, params)).resolves.toMatchObject({
 		model_usage: [usage],
+		model_attempts: [{
+			production_step: "main_story_write",
+			attempt: 1,
+			invocation_id: generationRunAttemptInvocationId(params, "main_story_write", 1),
+			outcome: { status: "accepted" },
+			model_usage: usage,
+		}],
 		diagnostics: [],
 	});
 });

@@ -30,6 +30,25 @@ const committedRecordedModelResponses: RecordedModelResponseRoster = {
 	announcements_write: RecordedModelResponseSchema.parse(announcementsWriteResponseJson),
 };
 
+const MAIN_STORY_FIRST_ATTEMPT_INVALID_JSON = "not json";
+
+function retryAwareRecordedText(
+	request: Parameters<ModelProviderPort["complete"]>[0],
+	response: RecordedModelResponse,
+): string {
+	const correlation = request.correlation;
+	if (correlation === undefined || request.productionStep !== "main_story_write") {
+		return response.text;
+	}
+	if (
+		correlation.invocation_id ===
+			`${correlation.run_id}-${request.productionStep}-attempt-1`
+	) {
+		return MAIN_STORY_FIRST_ATTEMPT_INVALID_JSON;
+	}
+	return response.text;
+}
+
 export function createRecordedModelProvider(roster: RecordedModelResponseRoster): ModelProviderPort {
 	return {
 		complete(request): Promise<ModelCompletion> {
@@ -43,7 +62,7 @@ export function createRecordedModelProvider(roster: RecordedModelResponseRoster)
 					);
 				}
 				return {
-					text: parsed.text,
+					text: retryAwareRecordedText(request, parsed),
 					provider: parsed.provider,
 					model: parsed.model,
 					execution: "recorded_replay" as const,

@@ -4,6 +4,7 @@ okf_version: "0.2"
 
 # bc-news documentation
 
+- [Active thickening: generation-run mechanical retry behavior](thickenings/active.md) — Active WSD thickening for recovering one mechanically invalid writer completion without publishing invalid output or repeating accepted work.
 - [BitJita API runbook](BITJITA_API.md) — Supplied BitCraft Codex endpoint inventory and contract-watchpoint reference text for BitJita; its cross-repo links and refresh guidance remain reference material, not bc-news behavior.
 - [Product requirements](PRD.md) — Binding high-level product direction for rebuilding the regional BitCraft newspaper on Cloudflare with durable generation, replaceable models, and evaluation-led development.
 - [Structural discipline](ARCHITECTURE.md) — The binding architecture posture for bc-news v2 — TypeScript application code throughout, exactly three ports (model provider, evidence input, game reference resolver), functional core with zod-validated rejecting boundaries, and deliberate Cloudflare coupling everywhere else.

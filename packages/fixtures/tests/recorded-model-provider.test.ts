@@ -205,3 +205,40 @@ test("replays v3 response text without treating retained configuration as an ins
 	expect(completion.provider).toBe(mainStoryWriteResponseJson.provider);
 	expect(completion.model).toBe(mainStoryWriteResponseJson.model);
 });
+
+test("replays a deterministic invalid first main-story attempt without changing accepted responses", async () => {
+	const provider = createRecordedModelProvider(committedRoster);
+	const firstMainAttempt = await provider.complete({
+		productionStep: "main_story_write",
+		system: "unused",
+		user: "unused",
+		correlation: {
+			run_id: "generation-run-7-2026-08-31",
+			invocation_id: "generation-run-7-2026-08-31-main_story_write-attempt-1",
+		},
+	});
+	const secondMainAttempt = await provider.complete({
+		productionStep: "main_story_write",
+		system: "unused",
+		user: "unused",
+		correlation: {
+			run_id: "generation-run-7-2026-08-31",
+			invocation_id: "generation-run-7-2026-08-31-main_story_write-attempt-2",
+		},
+	});
+	const announcementsAttempt = await provider.complete({
+		productionStep: "announcements_write",
+		system: "unused",
+		user: "unused",
+		correlation: {
+			run_id: "generation-run-7-2026-08-31",
+			invocation_id: "generation-run-7-2026-08-31-announcements_write-attempt-1",
+		},
+	});
+
+	expect(firstMainAttempt.text).toBe("not json");
+	expect(secondMainAttempt.text).toBe(mainStoryWriteResponseJson.text);
+	expect(announcementsAttempt.text).toBe(announcementsWriteResponseJson.text);
+	expect(firstMainAttempt.provider).toBe(mainStoryWriteResponseJson.provider);
+	expect(firstMainAttempt.model).toBe(mainStoryWriteResponseJson.model);
+});

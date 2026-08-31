@@ -8,7 +8,11 @@ import {
 import { recordedModelProvider } from "@bc-news/fixtures";
 import type { ModelCompletion } from "@bc-news/generation-core";
 import { readEdition } from "../src/edition-store";
-import { queueGenerationRunStatus, readGenerationRunStatus } from "../src/generation-run-status";
+import {
+	PREVIOUS_CURRENT_GENERATION_RUN_CONTRACT_VERSION,
+	queueGenerationRunStatus,
+	readGenerationRunStatus,
+} from "../src/generation-run-status";
 import * as configModule from "../src/config";
 
 afterEach(() => {
@@ -19,9 +23,11 @@ const TEST_COMPLETION_PROVIDER = "test_double";
 const TEST_COMPLETION_MODEL = "deterministic/editorial-workflow-v2";
 
 function mockDeterministicModelCompletions(
-	mutateOutputs?: (outputs: Record<"main_story_write" | "announcements_write", string>) => void,
+	mutateOutputs?: (
+		outputs: Record<"main_story_write" | "announcements_write", string | string[]>,
+	) => void,
 ) {
-	const outputs: Record<"main_story_write" | "announcements_write", string> = {
+	const outputs: Record<"main_story_write" | "announcements_write", string | string[]> = {
 		main_story_write: JSON.stringify({
 			title: "The Daily Dispatch",
 			main_story: {
@@ -37,13 +43,23 @@ function mockDeterministicModelCompletions(
 					summary: "Someone shared a message worth reporting with the region.",
 				},
 			],
-		}),
-	};
+			}),
+		};
 	mutateOutputs?.(outputs);
+	const callCounts = {
+		main_story_write: 0,
+		announcements_write: 0,
+	};
 
-		return vi.spyOn(recordedModelProvider, "complete").mockImplementation((request) => {
-			const completion: ModelCompletion = {
-				text: outputs[request.productionStep],
+	return vi.spyOn(recordedModelProvider, "complete").mockImplementation((request) => {
+		const candidate = outputs[request.productionStep];
+		const callIndex = callCounts[request.productionStep];
+		callCounts[request.productionStep] += 1;
+		const text = Array.isArray(candidate)
+			? candidate[Math.min(callIndex, candidate.length - 1)] ?? null
+			: candidate;
+		const completion: ModelCompletion = {
+			text,
 			provider: TEST_COMPLETION_PROVIDER,
 			model: TEST_COMPLETION_MODEL,
 			execution: "recorded_replay",
@@ -199,7 +215,9 @@ it("schema-valid writer findings publish after one pass and remain durable diagn
 	});
 	await queueGenerationRunStatus(env.DB, params, "2026-08-04T23:00:00.000Z");
 	const modelCalls = mockDeterministicModelCompletions((outputs) => {
-		const output = JSON.parse(outputs.main_story_write) as { main_story: { body: string } };
+		const currentOutput = outputs.main_story_write;
+		if (typeof currentOutput !== "string") throw new Error("Expected a single main_story_write output");
+		const output = JSON.parse(currentOutput) as { main_story: { body: string } };
 		output.main_story.body = "**Mallory** reported 2 claims.\n\nThey called it “invented words”—and cited a system prompt.";
 		outputs.main_story_write = JSON.stringify(output);
 	});
@@ -231,39 +249,277 @@ it("schema-valid writer findings publish after one pass and remain durable diagn
 });
 
 it.each([
-	["malformed JSON", "not json", "invalid_json"],
-	["schema mismatch", JSON.stringify({ title: "Incomplete" }), "contract_mismatch"],
-] as const)("%s from the main writer remains terminal", async (_label, writerOutput, code) => {
-	const publicationDate = code === "invalid_json" ? "2026-01-28" : "2026-01-29";
-	const params = { active_region_id: "7", publication_date: publicationDate } as const;
+	["malformed JSON", "2026-01-28", "not json", "invalid_json"],
+	["schema mismatch", "2026-01-29", JSON.stringify({ title: "Incomplete" }), "contract_mismatch"],
+] as const)(
+	"retries one mechanically invalid main-writer %s and publishes on the second attempt",
+	async (_label, publicationDate, firstWriterOutput, code) => {
+		const params = { active_region_id: "7", publication_date: publicationDate } as const;
+		await seedChatMessage({
+			id: `generation-run-test-${code}`,
+			regionId: 7,
+			text: "schema boundary evidence",
+			timestampUtc: `${publicationDate.slice(0, -2)}${String(Number(publicationDate.slice(-2)) - 1).padStart(2, "0")}T12:00:00Z`,
+		});
+		await queueGenerationRunStatus(env.DB, params, "2026-08-04T23:00:00.000Z");
+		const modelCalls = mockDeterministicModelCompletions((outputs) => {
+			outputs.main_story_write = [
+				firstWriterOutput,
+				JSON.stringify({
+					title: "Recovered Dispatch",
+					main_story: {
+						headline: "Retry Found the Story",
+						lede: "The second pass returned a valid dispatch.",
+						body: "Someone shared a message worth reporting with the region.",
+					},
+				}),
+			];
+		});
+		await using instance = await introspectWorkflowInstance(
+			env.GENERATION_RUN,
+			`generation-run-7-${publicationDate}`,
+		);
+		await instance.modify(async (m) => {
+			await m.disableRetryDelays();
+		});
+		await env.GENERATION_RUN.create({ id: `generation-run-7-${publicationDate}`, params });
+		await instance.waitForStatus("complete");
+
+		expect(modelCalls.mock.calls.map(([request]) => request.productionStep)).toEqual([
+			"main_story_write",
+			"main_story_write",
+			"announcements_write",
+		]);
+			expect(
+				modelCalls.mock.calls.map(([request]) => request.correlation?.invocation_id),
+			).toEqual([
+				`generation-run-7-${publicationDate}-main_story_write-attempt-1`,
+				`generation-run-7-${publicationDate}-main_story_write-attempt-2`,
+			`generation-run-7-${publicationDate}-announcements_write-attempt-1`,
+		]);
+		await expect(readEdition(env.DB, "7", publicationDate)).resolves.toMatchObject({
+			title: "Recovered Dispatch",
+		});
+		await expect(readGenerationRunStatus(env.DB, params)).resolves.toMatchObject({
+			state: "complete",
+			completed_steps: [
+				"prepare-evidence",
+				"main_story_write",
+				"announcements_write",
+				"validate-edition",
+				"publish-edition",
+			],
+			model_usage: [
+				{ production_step: "main_story_write" },
+				{ production_step: "announcements_write" },
+			],
+			model_attempts: [
+				{
+					production_step: "main_story_write",
+					attempt: 1,
+					outcome: { status: "rejected", code },
+				},
+				{
+					production_step: "main_story_write",
+					attempt: 2,
+					outcome: { status: "accepted" },
+				},
+				{
+					production_step: "announcements_write",
+					attempt: 1,
+					outcome: { status: "accepted" },
+				},
+			],
+			failure: null,
+		});
+	},
+);
+
+it("ends the run after a second mechanical main-writer rejection", async () => {
+	const params = { active_region_id: "7", publication_date: "2026-02-01" } as const;
 	await seedChatMessage({
-		id: `generation-run-test-${code}`,
+		id: "generation-run-double-main-reject",
 		regionId: 7,
-		text: "schema boundary evidence",
-		timestampUtc: `${publicationDate.slice(0, -2)}${String(Number(publicationDate.slice(-2)) - 1).padStart(2, "0")}T12:00:00Z`,
+		text: "schema exhaustion evidence",
+		timestampUtc: "2026-01-31T12:00:00Z",
 	});
 	await queueGenerationRunStatus(env.DB, params, "2026-08-04T23:00:00.000Z");
 	const modelCalls = mockDeterministicModelCompletions((outputs) => {
-		outputs.main_story_write = writerOutput;
+		outputs.main_story_write = ["not json", JSON.stringify({ title: "Incomplete" })];
 	});
 	await using instance = await introspectWorkflowInstance(
 		env.GENERATION_RUN,
-		`generation-run-7-${publicationDate}`,
+		"generation-run-7-2026-02-01",
 	);
 	await instance.modify(async (m) => {
 		await m.disableRetryDelays();
 	});
-	await env.GENERATION_RUN.create({ id: `generation-run-7-${publicationDate}`, params });
+	await env.GENERATION_RUN.create({ id: "generation-run-7-2026-02-01", params });
 	await instance.waitForStatus("errored");
-	const productionSteps = modelCalls.mock.calls.map(([request]) => request.productionStep);
-	expect(productionSteps).toEqual(["main_story_write"]);
-	await expect(readEdition(env.DB, "7", publicationDate)).resolves.toBeUndefined();
+
+	expect(modelCalls.mock.calls.map(([request]) => request.productionStep)).toEqual([
+		"main_story_write",
+		"main_story_write",
+	]);
+	await expect(readEdition(env.DB, "7", "2026-02-01")).resolves.toBeUndefined();
 	await expect(readGenerationRunStatus(env.DB, params)).resolves.toMatchObject({
 		state: "errored",
 		completed_steps: ["prepare-evidence"],
-		diagnostics: [],
-		failure: { step: "main_story_write", code },
+		model_usage: [],
+		model_attempts: [
+			{
+				production_step: "main_story_write",
+				attempt: 1,
+				outcome: { status: "rejected", code: "invalid_json" },
+			},
+			{
+				production_step: "main_story_write",
+				attempt: 2,
+				outcome: { status: "rejected", code: "contract_mismatch" },
+			},
+		],
+		failure: { step: "main_story_write", code: "contract_mismatch" },
 	});
+});
+
+it("retries only the announcements writer after a mechanical rejection", async () => {
+	const params = { active_region_id: "7", publication_date: "2026-02-02" } as const;
+	await seedChatMessage({
+		id: "generation-run-announcements-retry",
+		regionId: 7,
+		text: "announcement retry evidence",
+		timestampUtc: "2026-02-01T12:00:00Z",
+	});
+	await queueGenerationRunStatus(env.DB, params, "2026-08-04T23:00:00.000Z");
+	const modelCalls = mockDeterministicModelCompletions((outputs) => {
+		outputs.announcements_write = [
+			"not json",
+			JSON.stringify({
+				announcements: [
+					{
+						title: "Recovered Notice",
+						summary: "Someone shared a message worth reporting with the region.",
+					},
+				],
+			}),
+		];
+	});
+	await using instance = await introspectWorkflowInstance(
+		env.GENERATION_RUN,
+		"generation-run-7-2026-02-02",
+	);
+	await instance.modify(async (m) => {
+		await m.disableRetryDelays();
+	});
+	await env.GENERATION_RUN.create({ id: "generation-run-7-2026-02-02", params });
+	await instance.waitForStatus("complete");
+
+	expect(modelCalls.mock.calls.map(([request]) => request.productionStep)).toEqual([
+		"main_story_write",
+		"announcements_write",
+		"announcements_write",
+	]);
+	await expect(readEdition(env.DB, "7", "2026-02-02")).resolves.toMatchObject({
+		announcements: [{ title: "Recovered Notice" }],
+	});
+	await expect(readGenerationRunStatus(env.DB, params)).resolves.toMatchObject({
+		state: "complete",
+		model_usage: [
+			{ production_step: "main_story_write" },
+			{ production_step: "announcements_write" },
+		],
+		model_attempts: [
+			{
+				production_step: "main_story_write",
+				attempt: 1,
+				outcome: { status: "accepted" },
+			},
+			{
+				production_step: "announcements_write",
+				attempt: 1,
+				outcome: { status: "rejected", code: "invalid_json" },
+			},
+			{
+				production_step: "announcements_write",
+				attempt: 2,
+				outcome: { status: "accepted" },
+			},
+		],
+	});
+});
+
+it("does not retry a non-contract writer failure", async () => {
+	const params = { active_region_id: "7", publication_date: "2026-02-03" } as const;
+	await seedChatMessage({
+		id: "generation-run-non-contract-failure",
+		regionId: 7,
+		text: "provider failure evidence",
+		timestampUtc: "2026-02-02T12:00:00Z",
+	});
+	await queueGenerationRunStatus(env.DB, params, "2026-08-04T23:00:00.000Z");
+	const modelCalls = vi.spyOn(recordedModelProvider, "complete").mockRejectedValue(new Error("provider unavailable"));
+	await using instance = await introspectWorkflowInstance(
+		env.GENERATION_RUN,
+		"generation-run-7-2026-02-03",
+	);
+	await instance.modify(async (m) => {
+		await m.disableRetryDelays();
+	});
+	await env.GENERATION_RUN.create({ id: "generation-run-7-2026-02-03", params });
+	await instance.waitForStatus("errored");
+
+	expect(modelCalls).toHaveBeenCalledTimes(3);
+	expect(
+		new Set(modelCalls.mock.calls.map(([request]) => request.correlation?.invocation_id)),
+	).toEqual(new Set(["generation-run-7-2026-02-03-main_story_write-attempt-1"]));
+	await expect(readGenerationRunStatus(env.DB, params)).resolves.toMatchObject({
+		state: "errored",
+		model_attempts: [],
+		failure: { step: "main_story_write", code: "generation_run_failed", message: "provider unavailable" },
+	});
+});
+
+it("does not grant the mechanical retry to a current_v1 run", async () => {
+	const params = { active_region_id: "7", publication_date: "2026-02-04" } as const;
+	await seedChatMessage({
+		id: "generation-run-current-v1",
+		regionId: 7,
+		text: "current_v1 compatibility evidence",
+		timestampUtc: "2026-02-03T12:00:00Z",
+	});
+	await env.DB.prepare(
+		`INSERT INTO generation_run_status (
+		 contract_version, active_region_id, publication_date, state, current_step, completed_steps_json,
+		 model_usage_json, diagnostics_json, failure_json, created_at_utc, updated_at_utc
+		) VALUES (?1, ?2, ?3, 'queued', NULL, '[]', '[]', '[]', NULL, ?4, ?4)`,
+	).bind(
+		PREVIOUS_CURRENT_GENERATION_RUN_CONTRACT_VERSION,
+		params.active_region_id,
+		params.publication_date,
+		"2026-08-04T23:00:00.000Z",
+	).run();
+	const modelCalls = mockDeterministicModelCompletions((outputs) => {
+		outputs.main_story_write = "not json";
+	});
+	await using instance = await introspectWorkflowInstance(
+		env.GENERATION_RUN,
+		"generation-run-7-2026-02-04",
+	);
+	await instance.modify(async (m) => {
+		await m.disableRetryDelays();
+	});
+	await env.GENERATION_RUN.create({ id: "generation-run-7-2026-02-04", params });
+	await instance.waitForStatus("errored");
+
+	expect(modelCalls).toHaveBeenCalledTimes(1);
+	const status = await readGenerationRunStatus(env.DB, params);
+	expect(status).toMatchObject({
+		contract_version: PREVIOUS_CURRENT_GENERATION_RUN_CONTRACT_VERSION,
+		state: "errored",
+		failure: { step: "main_story_write", code: "invalid_json" },
+	});
+	if (status === undefined) throw new Error("Expected current_v1 generation run status");
+	expect(Object.hasOwn(status, "model_attempts")).toBe(false);
 });
 
 it("publishes retained coordinate references while leaving rich prose tokens intact", async () => {

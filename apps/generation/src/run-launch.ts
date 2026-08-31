@@ -3,7 +3,7 @@ import {
 	GenerationRunParamsSchema,
 	type GenerationRunParams,
 } from "@bc-news/contracts";
-import { generationRunInstanceId } from "./generation-run";
+import { generationRunInstanceId } from "./generation-run-instance-id";
 import { queueGenerationRunStatus, recordGenerationRunFailure } from "./generation-run-status";
 
 const ActiveGenerationRunParamsSchema = GenerationRunParamsSchema.superRefine((params, context) => {

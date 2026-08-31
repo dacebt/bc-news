@@ -5,10 +5,10 @@ title: >-
 description: >-
   Loose-cadence session boundary for resolving BitCraft chat references into safe, retained newspaper links.
 tags: [wsd, direction, shape, generation, client, bitjita, game-references]
-status: stable
+status: deprecated
 generated:
   by: ebt-wsd/okf-v0.2
-  at: "2026-08-30T14:37:52Z"
+  at: "2026-08-31T13:52:43Z"
 ---
 # Shape: game-reference links in newspaper editions
 

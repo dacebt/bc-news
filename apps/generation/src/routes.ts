@@ -1,9 +1,10 @@
 import { z } from "zod";
 import { GenerationRunParamsSchema } from "@bc-news/contracts";
 import { EditionUnreadableError, readEdition } from "./edition-store";
-import { generationRunInstanceId } from "./generation-run";
+import { generationRunInstanceId } from "./generation-run-instance-id";
 import {
-	CurrentGenerationRunProjectionSchema,
+	CurrentV1GenerationRunProjectionSchema,
+	CurrentV2GenerationRunProjectionSchema,
 	LegacyGenerationRunProjectionSchema,
 	GenerationRunStatusUnreadableError,
 	readGenerationRunStatus,
@@ -86,7 +87,12 @@ const WorkflowObservationSchema = z.discriminatedUnion("observation", [
 		error: ErrorShapeSchema,
 	}),
 ]);
-const CurrentGenerationRunStatusResponseSchema = CurrentGenerationRunProjectionSchema.extend({
+const CurrentV2GenerationRunStatusResponseSchema = CurrentV2GenerationRunProjectionSchema.extend({
+	generation_run_id: z.string().min(1),
+	workflow: WorkflowObservationSchema,
+});
+
+const CurrentV1GenerationRunStatusResponseSchema = CurrentV1GenerationRunProjectionSchema.extend({
 	generation_run_id: z.string().min(1),
 	workflow: WorkflowObservationSchema,
 });
@@ -97,7 +103,8 @@ const LegacyGenerationRunStatusResponseSchema = LegacyGenerationRunProjectionSch
 });
 
 export const GenerationRunStatusResponseSchema = z.union([
-	CurrentGenerationRunStatusResponseSchema,
+	CurrentV2GenerationRunStatusResponseSchema,
+	CurrentV1GenerationRunStatusResponseSchema,
 	LegacyGenerationRunStatusResponseSchema,
 ]);
 

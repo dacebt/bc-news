@@ -24,7 +24,7 @@ async function run(ctx: WalkContext): Promise<void> {
 		assertCompletedRecordedGenerationStatus(status, recordedResponses);
 		ctx.state.firstGenerationRunEvidence = recordedGenerationEvidence(status);
 		console.log(
-			"walk: operator status proved five steps, two zero-external-billing recorded writer replays, and writer-only editorial diagnostics",
+			"walk: operator status proved current_v2 retry history, three distinct recorded provider attempts, two accepted writer usages, and writer-only editorial diagnostics",
 		);
 		return;
 	}

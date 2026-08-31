@@ -1,11 +1,13 @@
 import { z } from "zod";
 import type { GenerationRunParams } from "@bc-news/contracts";
 import type { ModelUsageRecord } from "@bc-news/generation-core";
+import { sameModelAttemptRecord, type CurrentModelAttemptRecord } from "./generation-run-model-attempt";
 import {
 	CURRENT_GENERATION_RUN_CONTRACT_VERSION,
 	CurrentGenerationRunProjectionSchema,
 	GENERATION_STEPS,
 	isCurrentGenerationRunProjection,
+	isCurrentV2GenerationRunProjection,
 	parseGenerationRunStatusRow,
 	type CurrentEditorialDiagnostic,
 	type CurrentGenerationRunProjection,
@@ -20,16 +22,23 @@ const UtcTimestampSchema = z.iso.datetime({ offset: false });
 export {
 	CURRENT_GENERATION_RUN_CONTRACT_VERSION,
 	CurrentGenerationRunProjectionSchema,
+	CurrentV1GenerationRunProjectionSchema,
+	CurrentV2GenerationRunProjectionSchema,
 	GenerationRunProjectionSchema,
 	GenerationRunStatusUnreadableError,
 	GENERATION_STEPS,
 	LEGACY_GENERATION_STEPS,
 	LegacyGenerationRunProjectionSchema,
+	PREVIOUS_CURRENT_GENERATION_RUN_CONTRACT_VERSION,
+	isCurrentV2GenerationRunProjection,
 } from "./generation-run-status-schema";
 
 export type {
 	CurrentEditorialDiagnostic,
 	CurrentGenerationRunProjection,
+	CurrentModelAttemptRecord,
+	CurrentV1GenerationRunProjection,
+	CurrentV2GenerationRunProjection,
 	GenerationRunFailure,
 	GenerationRunProjection,
 	GenerationStep,
@@ -44,7 +53,7 @@ export async function readGenerationRunStatus(
 	const row = await db
 		.prepare(
 			`SELECT contract_version, active_region_id, publication_date, state, current_step,
-			        completed_steps_json, model_usage_json, diagnostics_json, failure_json,
+			        completed_steps_json, model_usage_json, model_attempts_json, diagnostics_json, failure_json,
 			        created_at_utc, updated_at_utc
 			 FROM generation_run_status
 			 WHERE active_region_id = ?1 AND publication_date = ?2`,
@@ -64,9 +73,9 @@ export async function queueGenerationRunStatus(
 		.prepare(
 			`INSERT INTO generation_run_status (
 				contract_version, active_region_id, publication_date, state, current_step,
-				completed_steps_json, model_usage_json, diagnostics_json, failure_json,
+				completed_steps_json, model_usage_json, model_attempts_json, diagnostics_json, failure_json,
 				created_at_utc, updated_at_utc
-			) VALUES (?1, ?2, ?3, 'queued', NULL, '[]', '[]', '[]', NULL, ?4, ?4)
+			) VALUES (?1, ?2, ?3, 'queued', NULL, '[]', '[]', '[]', '[]', NULL, ?4, ?4)
 			ON CONFLICT (active_region_id, publication_date) DO NOTHING`,
 		)
 		.bind(
@@ -112,12 +121,26 @@ async function replaceProjection(
 	next: CurrentGenerationRunProjection,
 ): Promise<void> {
 	CurrentGenerationRunProjectionSchema.parse(next);
+	const currentV2 = isCurrentV2GenerationRunProjection(current) ? current : null;
+	const nextV2 = isCurrentV2GenerationRunProjection(next) ? next : null;
+	if (current.contract_version !== next.contract_version) {
+		throw new Error("Generation run contract version cannot change in place");
+	}
 	if (current.state === "complete" || current.state === "errored") {
 		const isExactTerminalReplay =
+			current.contract_version === next.contract_version &&
 			current.state === next.state &&
 			current.current_step === next.current_step &&
 			JSON.stringify(current.completed_steps) === JSON.stringify(next.completed_steps) &&
 			JSON.stringify(current.model_usage) === JSON.stringify(next.model_usage) &&
+			((currentV2 === null && nextV2 === null) ||
+				(currentV2 !== null &&
+					nextV2 !== null &&
+					currentV2.model_attempts.length === nextV2.model_attempts.length &&
+					currentV2.model_attempts.every((record, index) => {
+						const nextRecord = nextV2.model_attempts[index];
+						return nextRecord !== undefined && sameModelAttemptRecord(record, nextRecord);
+					}))) &&
 			JSON.stringify(current.diagnostics) === JSON.stringify(next.diagnostics) &&
 			JSON.stringify(current.failure) === JSON.stringify(next.failure);
 		if (isExactTerminalReplay) return;
@@ -147,6 +170,20 @@ async function replaceProjection(
 	) {
 		throw new Error("Generation run model usage cannot regress or replace completed records");
 	}
+	if ((currentV2 === null) !== (nextV2 === null)) {
+		throw new Error("Generation run status cannot switch attempt retention modes");
+	}
+	if (
+		currentV2 !== null &&
+		nextV2 !== null &&
+		(nextV2.model_attempts.length < currentV2.model_attempts.length ||
+			currentV2.model_attempts.some((record, index) => {
+				const nextRecord = nextV2.model_attempts[index];
+				return nextRecord === undefined || !sameModelAttemptRecord(record, nextRecord);
+			}))
+	) {
+		throw new Error("Generation run model attempts cannot regress or replace retained attempts");
+	}
 	if (
 		next.diagnostics.length < current.diagnostics.length ||
 		current.diagnostics.some(
@@ -162,8 +199,9 @@ async function replaceProjection(
 		.prepare(
 			`UPDATE generation_run_status
 			 SET contract_version = ?3, state = ?4, current_step = ?5, completed_steps_json = ?6,
-			     model_usage_json = ?7, diagnostics_json = ?8, failure_json = ?9, updated_at_utc = ?10
-			 WHERE active_region_id = ?1 AND publication_date = ?2 AND state = ?11`,
+			     model_usage_json = ?7, model_attempts_json = ?8, diagnostics_json = ?9,
+			     failure_json = ?10, updated_at_utc = ?11
+			 WHERE active_region_id = ?1 AND publication_date = ?2 AND state = ?12`,
 		)
 		.bind(
 			next.active_region_id,
@@ -173,6 +211,7 @@ async function replaceProjection(
 			next.current_step,
 			JSON.stringify(next.completed_steps),
 			JSON.stringify(next.model_usage),
+			JSON.stringify(isCurrentV2GenerationRunProjection(next) ? next.model_attempts : []),
 			JSON.stringify(next.diagnostics),
 			next.failure === null ? null : JSON.stringify(next.failure),
 			next.updated_at_utc,
@@ -203,11 +242,26 @@ export async function recordGenerationRunProgress(
 		currentStep: GenerationStep;
 		completedSteps: readonly GenerationStep[];
 		modelUsage: readonly ModelUsageRecord[];
+		modelAttempts: readonly CurrentModelAttemptRecord[];
 		diagnostics: readonly CurrentEditorialDiagnostic[];
 	},
 	nowUtc: string,
 ): Promise<void> {
 	const current = await requireCurrentProjection(db, params);
+	if (isCurrentV2GenerationRunProjection(current)) {
+		await replaceProjection(db, current, {
+			...current,
+			state: "running",
+			current_step: progress.currentStep,
+			completed_steps: [...progress.completedSteps],
+			model_usage: [...progress.modelUsage],
+			model_attempts: [...progress.modelAttempts],
+			diagnostics: [...progress.diagnostics],
+			failure: null,
+			updated_at_utc: nowUtc,
+		});
+		return;
+	}
 	await replaceProjection(db, current, {
 		...current,
 		state: "running",
@@ -224,10 +278,25 @@ export async function recordGenerationRunComplete(
 	db: D1Database,
 	params: GenerationRunParams,
 	modelUsage: readonly ModelUsageRecord[],
+	modelAttempts: readonly CurrentModelAttemptRecord[],
 	diagnostics: readonly CurrentEditorialDiagnostic[],
 	nowUtc: string,
 ): Promise<void> {
 	const current = await requireCurrentProjection(db, params);
+	if (isCurrentV2GenerationRunProjection(current)) {
+		await replaceProjection(db, current, {
+			...current,
+			state: "complete",
+			current_step: null,
+			completed_steps: [...GENERATION_STEPS],
+			model_usage: [...modelUsage],
+			model_attempts: [...modelAttempts],
+			diagnostics: [...diagnostics],
+			failure: null,
+			updated_at_utc: nowUtc,
+		});
+		return;
+	}
 	await replaceProjection(db, current, {
 		...current,
 		state: "complete",

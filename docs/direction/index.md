@@ -1,5 +1,6 @@
 # Direction
 
+- [Shape: bounded mechanical output retry](2026-08-31-mechanical-output-retry.shape.md) — Loose-cadence session boundary for retrying one mechanically invalid writer completion without publishing invalid output or repeating accepted work.
 - [Shape: game-reference links in newspaper editions](2026-08-30-game-reference-links.shape.md) — Loose-cadence session boundary for resolving BitCraft chat references into safe, retained newspaper links.
 - [Capability map: game-reference links](2026-08-30-game-reference-links.map.md) — Risk-ordered vertical capabilities and feature conventions for safe game-reference links in newspaper editions.
 - [Shape: editorial generation ownership](2026-08-19-editorial-generation-ownership.shape.md) — Tight-cadence session boundary for two final editorial writers, proportionate in-world storytelling, and deterministic edition assembly.

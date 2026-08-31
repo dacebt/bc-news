@@ -2,10 +2,12 @@ import { env } from "cloudflare:workers";
 import { expect, it, vi } from "vitest";
 import type { GenerationRunParams } from "@bc-news/contracts";
 import type { ModelUsageRecord } from "@bc-news/generation-core";
+import { generationRunAttemptInvocationId } from "../src/generation-run-instance-id";
 import {
 	CURRENT_GENERATION_RUN_CONTRACT_VERSION,
 	GENERATION_STEPS,
 	GenerationRunStatusUnreadableError,
+	PREVIOUS_CURRENT_GENERATION_RUN_CONTRACT_VERSION,
 	queueGenerationRunStatus,
 	readGenerationRunStatus,
 	recordGenerationRunComplete,
@@ -37,6 +39,22 @@ const allUsage = [
 	usage("main_story_write"),
 	usage("announcements_write"),
 ] as const;
+
+function attempt(
+	params: GenerationRunParams,
+	productionStep: "main_story_write" | "announcements_write",
+	attemptNumber: 1 | 2,
+	outcome: { status: "accepted" } | { status: "rejected"; code: "invalid_json" | "contract_mismatch"; message: string } = { status: "accepted" },
+	modelUsage: ModelUsageRecord = usage(productionStep),
+) {
+	return {
+		production_step: productionStep,
+		attempt: attemptNumber,
+		invocation_id: generationRunAttemptInvocationId(params, productionStep, attemptNumber),
+		outcome,
+		model_usage: modelUsage,
+	};
+}
 
 const legacyCompleteUsage = [
 	{
@@ -106,6 +124,7 @@ it("queues a current-version projection and duplicate queue does not reset progr
 		currentStep: "main_story_write",
 		completedSteps: ["prepare-evidence"],
 		modelUsage: [],
+		modelAttempts: [],
 		diagnostics: [],
 	}, "2026-08-04T23:01:00.000Z");
 	await expect(queueGenerationRunStatus(env.DB, params, "2026-08-04T23:02:00.000Z")).resolves.toBe(false);
@@ -127,6 +146,9 @@ it("retains completed writer usage when the next writer is current", async () =>
 		currentStep: "announcements_write" as const,
 		completedSteps: ["prepare-evidence", "main_story_write"] as const,
 		modelUsage: [usage("main_story_write")] as const,
+		modelAttempts: [
+			attempt(params, "main_story_write", 1, { status: "accepted" }, usage("main_story_write")),
+		] as const,
 		diagnostics: [] as const,
 	};
 	await recordGenerationRunProgress(env.DB, params, progress, "2026-08-04T23:01:00.000Z");
@@ -138,7 +160,9 @@ it("retains completed writer usage when the next writer is current", async () =>
 	await expect(recordGenerationRunProgress(env.DB, params, {
 		...progress,
 		modelUsage: [{ ...progress.modelUsage[0], provider: "replacement" }],
-	}, "2026-08-04T23:03:00.000Z")).rejects.toThrow("cannot regress or replace");
+	}, "2026-08-04T23:03:00.000Z")).rejects.toThrow(
+		"accepted attempt evidence for main_story_write must match its accepted model usage",
+	);
 });
 
 it("rejects out-of-order, missing, or extra current model usage", async () => {
@@ -158,28 +182,45 @@ it("rejects out-of-order, missing, or extra current model usage", async () => {
 			currentStep: "validate-edition",
 			completedSteps,
 			modelUsage,
+			modelAttempts: [
+				attempt(params, "main_story_write", 1, { status: "accepted" }, usage("main_story_write")),
+				attempt(params, "announcements_write", 1, { status: "accepted" }, usage("announcements_write")),
+			],
 			diagnostics: [],
 		}, "2026-08-04T23:01:00.000Z")).rejects.toThrow();
 	}
 });
 
-it("records complete only with all five steps and two ordered usages", async () => {
+it("records complete only with all five steps and matching accepted attempts", async () => {
 	const params = pair("2026-02-04");
 	await queueGenerationRunStatus(env.DB, params, NOW);
+	const modelAttempts = [
+		attempt(params, "main_story_write", 1, { status: "accepted" }, allUsage[0]),
+		attempt(params, "announcements_write", 1, { status: "accepted" }, allUsage[1]),
+	] as const;
 	await recordGenerationRunProgress(env.DB, params, {
 		currentStep: "publish-edition",
 		completedSteps: GENERATION_STEPS.slice(0, -1),
 		modelUsage: allUsage,
+		modelAttempts,
 		diagnostics: [diagnostic(), diagnostic("announcements_write")],
 	}, "2026-08-04T23:01:00.000Z");
 	const diagnostics = [diagnostic(), diagnostic("announcements_write")];
-	await recordGenerationRunComplete(env.DB, params, allUsage, diagnostics, "2026-08-04T23:02:00.000Z");
+	await recordGenerationRunComplete(
+		env.DB,
+		params,
+		allUsage,
+		modelAttempts,
+		diagnostics,
+		"2026-08-04T23:02:00.000Z",
+	);
 	await expect(readGenerationRunStatus(env.DB, params)).resolves.toMatchObject({
 		contract_version: CURRENT_GENERATION_RUN_CONTRACT_VERSION,
 		state: "complete",
 		current_step: null,
 		completed_steps: GENERATION_STEPS,
 		model_usage: allUsage,
+		model_attempts: modelAttempts,
 		diagnostics,
 	});
 });
@@ -188,10 +229,15 @@ it("retains completed steps, usages, and diagnostics on later failure", async ()
 	const params = pair("2026-02-05");
 	await queueGenerationRunStatus(env.DB, params, NOW);
 	const diagnostics = [diagnostic(), diagnostic("announcements_write")];
+	const modelAttempts = [
+		attempt(params, "main_story_write", 1, { status: "accepted" }, allUsage[0]),
+		attempt(params, "announcements_write", 1, { status: "accepted" }, allUsage[1]),
+	] as const;
 	await recordGenerationRunProgress(env.DB, params, {
 		currentStep: "publish-edition",
 		completedSteps: GENERATION_STEPS.slice(0, -1),
 		modelUsage: allUsage,
+		modelAttempts,
 		diagnostics,
 	}, "2026-08-04T23:01:00.000Z");
 	await recordGenerationRunFailure(env.DB, params, {
@@ -203,6 +249,7 @@ it("retains completed steps, usages, and diagnostics on later failure", async ()
 		state: "errored",
 		completed_steps: GENERATION_STEPS.slice(0, -1),
 		model_usage: allUsage,
+		model_attempts: modelAttempts,
 		diagnostics,
 		failure: { step: "publish-edition", code: "publish_failed" },
 	});
@@ -216,6 +263,10 @@ it("rejects diagnostic regression, replacement, and out-of-order attribution", a
 		currentStep: "publish-edition" as const,
 		completedSteps: GENERATION_STEPS.slice(0, -1),
 		modelUsage: allUsage,
+		modelAttempts: [
+			attempt(params, "main_story_write", 1, { status: "accepted" }, allUsage[0]),
+			attempt(params, "announcements_write", 1, { status: "accepted" }, allUsage[1]),
+		] as const,
 		diagnostics: [retained],
 	};
 	await recordGenerationRunProgress(env.DB, params, progress, "2026-08-04T23:01:00.000Z");
@@ -233,14 +284,79 @@ it("rejects diagnostic regression, replacement, and out-of-order attribution", a
 	}, "2026-08-04T23:04:00.000Z")).rejects.toThrow("production step order");
 });
 
+it("retains a rejected first attempt while the same writer remains current and rejects mutated attempt history", async () => {
+	const params = pair("2026-02-07");
+	await queueGenerationRunStatus(env.DB, params, NOW);
+	const rejectedAttempt = attempt(params, "main_story_write", 1, {
+		status: "rejected",
+		code: "invalid_json",
+		message: "main_story_write model output is not valid JSON",
+	});
+	await recordGenerationRunProgress(env.DB, params, {
+		currentStep: "main_story_write",
+		completedSteps: ["prepare-evidence"],
+		modelUsage: [],
+		modelAttempts: [rejectedAttempt],
+		diagnostics: [],
+	}, "2026-08-04T23:01:00.000Z");
+	await recordGenerationRunProgress(env.DB, params, {
+		currentStep: "main_story_write",
+		completedSteps: ["prepare-evidence"],
+		modelUsage: [],
+		modelAttempts: [rejectedAttempt],
+		diagnostics: [],
+	}, "2026-08-04T23:02:00.000Z");
+	await expect(readGenerationRunStatus(env.DB, params)).resolves.toMatchObject({
+		state: "running",
+		current_step: "main_story_write",
+		model_usage: [],
+		model_attempts: [rejectedAttempt],
+	});
+	await expect(recordGenerationRunProgress(env.DB, params, {
+		currentStep: "main_story_write",
+		completedSteps: ["prepare-evidence"],
+		modelUsage: [],
+		modelAttempts: [{
+			...rejectedAttempt,
+			outcome: { status: "rejected", code: "invalid_json", message: "replacement" },
+		}],
+		diagnostics: [],
+	}, "2026-08-04T23:03:00.000Z")).rejects.toThrow("model attempts cannot regress or replace");
+});
+
+it("reads a current_v1 row without upgrading it into v2 attempt retention", async () => {
+	const params = pair("2026-02-14");
+	await env.DB.prepare(
+		`INSERT INTO generation_run_status (
+		 contract_version, active_region_id, publication_date, state, current_step, completed_steps_json,
+		 model_usage_json, diagnostics_json, failure_json, created_at_utc, updated_at_utc
+		) VALUES (?1, ?2, ?3, 'running', 'announcements_write', ?4, ?5, '[]', NULL, ?6, ?6)`,
+	).bind(
+		PREVIOUS_CURRENT_GENERATION_RUN_CONTRACT_VERSION,
+		params.active_region_id,
+		params.publication_date,
+		JSON.stringify(["prepare-evidence", "main_story_write"]),
+		JSON.stringify([usage("main_story_write")]),
+		NOW,
+	).run();
+	const status = await readGenerationRunStatus(env.DB, params);
+	expect(status).toMatchObject({
+		contract_version: PREVIOUS_CURRENT_GENERATION_RUN_CONTRACT_VERSION,
+		current_step: "announcements_write",
+		model_usage: [usage("main_story_write")],
+	});
+	if (status === undefined) throw new Error("Expected current_v1 generation run status");
+	expect(Object.hasOwn(status, "model_attempts")).toBe(false);
+});
+
 it("surfaces corrupt stored JSON as unreadable status", async () => {
 	await env.DB.prepare(
 		`INSERT INTO generation_run_status (
 		 contract_version, active_region_id, publication_date, state, current_step, completed_steps_json,
 		 model_usage_json, diagnostics_json, failure_json, created_at_utc, updated_at_utc
-		) VALUES (?1, '7', '2026-02-07', 'queued', NULL, ?2, '[]', '[]', NULL, ?3, ?3)`,
+		) VALUES (?1, '7', '2026-02-15', 'queued', NULL, ?2, '[]', '[]', NULL, ?3, ?3)`,
 	).bind(CURRENT_GENERATION_RUN_CONTRACT_VERSION, JSON.stringify({ invalid: true }), NOW).run();
-	await expect(readGenerationRunStatus(env.DB, pair("2026-02-07"))).rejects.toBeInstanceOf(
+	await expect(readGenerationRunStatus(env.DB, pair("2026-02-15"))).rejects.toBeInstanceOf(
 		GenerationRunStatusUnreadableError,
 	);
 });
@@ -365,6 +481,7 @@ it("queues before Workflow create and marks only a newly inserted row on rejecti
 		currentStep: "prepare-evidence",
 		completedSteps: [],
 		modelUsage: [],
+		modelAttempts: [],
 		diagnostics: [],
 	}, "2026-08-04T23:01:00.000Z");
 	await expect(launchGenerationRun(existing, workflow, env.DB)).rejects.toBe(createError);
