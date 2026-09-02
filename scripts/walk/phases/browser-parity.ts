@@ -1,3 +1,5 @@
+/// <reference lib="dom" />
+
 import { EditionSchema, type Edition, type GenerationRunParams } from "@bc-news/contracts";
 import { chromium, type Page } from "playwright-core";
 import {
@@ -86,6 +88,25 @@ async function assertReferenceLinks(
 		assertEqual(await link.getAttribute("href"), expectedHref, `${label} href ${String(index + 1)}`);
 		assertEqual(await link.getAttribute("target"), "_blank", `${label} target ${String(index + 1)}`);
 		assertEqual(await link.getAttribute("rel"), "noopener noreferrer", `${label} rel ${String(index + 1)}`);
+		const appearance = await link.evaluate((element) => {
+			const linkStyle = window.getComputedStyle(element);
+			const surroundingStyle = window.getComputedStyle(element.parentElement ?? element);
+			return {
+				color: linkStyle.color,
+				surroundingColor: surroundingStyle.color,
+				textDecorationLine: linkStyle.textDecorationLine,
+			};
+		});
+		assertEqual(
+			appearance.color === appearance.surroundingColor,
+			false,
+			`${label} visible link color ${String(index + 1)}`,
+		);
+		assertEqual(
+			appearance.textDecorationLine.includes("underline"),
+			true,
+			`${label} underline ${String(index + 1)}`,
+		);
 	}
 }
 

@@ -171,6 +171,23 @@ export function NewspaperText({
 				"& em": {
 					fontStyle: "italic",
 				},
+				"& a": {
+					color: "paper.link",
+					fontWeight: "medium",
+					textDecoration: "underline",
+					textDecorationThickness: "0.08em",
+					textUnderlineOffset: "0.15em",
+					transition: "color 0.15s ease",
+				},
+				"& a:hover": {
+					color: "paper.linkHover",
+				},
+				"& a:focus-visible": {
+					color: "paper.linkHover",
+					outline: "2px solid",
+					outlineColor: "paper.link",
+					outlineOffset: "2px",
+				},
 			}}
 		>
 			<Markdown

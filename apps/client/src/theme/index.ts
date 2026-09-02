@@ -21,6 +21,8 @@ export const theme = extendTheme({
 			muted: "#666666",     // Muted text for metadata
 			rule: "#d4d4d4",      // Hairline rules/borders
 			accent: "#4a4a4a",    // Subtle accent (optional)
+			link: "#1f5f99",      // Muted blue, distinct from newspaper ink
+			linkHover: "#17476f", // Darker blue for hover and keyboard focus
 		},
 	},
 	components,
